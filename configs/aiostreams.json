@@ -94,12 +94,15 @@
   "includedAudioChannels": [],
   "requiredAudioChannels": [],
   "preferredAudioChannels": [],
-  "excludedStreamTypes": [
-    "p2p"
-  ],
+  "excludedStreamTypes": [],
   "includedStreamTypes": [],
   "requiredStreamTypes": [],
-  "preferredStreamTypes": [],
+  "preferredStreamTypes": [
+    "debrid",
+    "usenet",
+    "http",
+    "p2p"
+  ],
   "excludedEncodes": [],
   "includedEncodes": [],
   "requiredEncodes": [],
@@ -234,6 +237,10 @@
       }
     ],
     "uncached": [
+      {
+        "key": "streamType",
+        "direction": "desc"
+      },
       {
         "key": "seadex",
         "direction": "desc"
@@ -413,7 +420,7 @@
         "resources": [
           "stream"
         ],
-        "includeP2P": false,
+        "includeP2P": true,
         "removeTrash": true,
         "useMultipleInstances": false,
         "mediaTypes": []
@@ -429,7 +436,7 @@
         "resources": [
           "stream"
         ],
-        "includeP2P": false,
+        "includeP2P": true,
         "removeTrash": true,
         "mediaTypes": []
       }
@@ -444,7 +451,7 @@
         "resources": [
           "stream"
         ],
-        "includeP2P": false,
+        "includeP2P": true,
         "useMultipleInstances": false,
         "mediaTypes": []
       }
@@ -460,6 +467,7 @@
           "stream"
         ],
         "useCachedResultsOnly": false,
+        "includeP2P": true,
         "enableWatchlistCatalogs": false,
         "downloadViaBrowser": false,
         "contributorStreams": false,
@@ -596,7 +604,8 @@
           "subtitles"
         ],
         "language": [
-          "en"
+          "en",
+          "kn"
         ],
         "sources": "all",
         "includeAiTranslated": true,
@@ -650,6 +659,6 @@
     "parallel": 1
   },
   "serviceWrap": {
-    "enabled": true
+    "enabled": false
   }
 }
