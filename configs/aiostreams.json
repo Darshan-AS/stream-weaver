@@ -159,7 +159,7 @@
   "rankedStreamExpressions": [],
   "regexOverrides": [],
   "dynamicAddonFetching": {
-    "enabled": false,
+    "enabled": true,
     "condition": "((count(regexMatched(resolution(language(quality(cached(totalStreams),'Bluray REMUX','Bluray','WEB-DL'),'English,Kannada,Hindi,Japanese'),'2160p')))>=3 or count(regexMatched(resolution(language(quality(cached(totalStreams),'Bluray REMUX','Bluray','WEB-DL'),'Original','Dual Audio','Multi','Dubbed','Unknown'),'2160p')))>=5) and (count(regexMatched(resolution(cached(totalStreams),'2160p')))>=5 or count(regexMatched(resolution(cached(totalStreams),'1080p')))>=5)) or (count(cached(totalStreams))>=5 and totalTimeTaken>5000) or (totalTimeTaken>5000+3000)"
   },
   "groups": {
@@ -360,7 +360,7 @@
       "enabled": true,
       "options": {
         "name": "Torrentio",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -374,7 +374,7 @@
       "enabled": true,
       "options": {
         "name": "Meteor",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -390,7 +390,7 @@
       "enabled": true,
       "options": {
         "name": "Comet",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -405,7 +405,7 @@
       "enabled": true,
       "options": {
         "name": "StremThru Torz",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -420,7 +420,7 @@
       "enabled": true,
       "options": {
         "name": "MediaFusion",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -439,18 +439,31 @@
       "enabled": true,
       "options": {
         "name": "Knaben",
-        "timeout": 5000,
+        "timeout": 7500,
         "mediaTypes": [],
         "useMultipleInstances": false
       }
     },
     {
-      "type": "peerflix",
-      "instanceId": "pfl",
+      "type": "seadex",
+      "instanceId": "sdx",
       "enabled": true,
       "options": {
+        "name": "SeaDex",
+        "timeout": 7500,
+        "mediaTypes": [
+          "anime"
+        ]
+      },
+      "category": "Anime"
+    },
+    {
+      "type": "peerflix",
+      "instanceId": "pfl",
+      "enabled": false,
+      "options": {
         "name": "Peerflix",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -465,7 +478,7 @@
       "enabled": true,
       "options": {
         "name": "Sootio",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -492,7 +505,7 @@
       "enabled": true,
       "options": {
         "name": "HD Hub",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
@@ -507,7 +520,7 @@
       "enabled": true,
       "options": {
         "name": "WebStreamr",
-        "timeout": 5000,
+        "timeout": 7500,
         "resources": [
           "stream"
         ],
