@@ -138,7 +138,7 @@
     "usenet"
   ],
   "digitalReleaseFilter": {
-    "enabled": true,
+    "enabled": false,
     "tolerance": 10,
     "requestTypes": [
       "movie",
@@ -296,7 +296,7 @@
   "tvdbApiKey": "{{SECRET_TVDB_API_KEY}}",
   "yearMatching": {
     "enabled": true,
-    "strict": true,
+    "strict": false,
     "requestTypes": [
       "movie",
       "series",
@@ -306,14 +306,19 @@
   },
   "titleMatching": {
     "mode": "exact",
-    "similarityThreshold": 1,
+    "similarityThreshold": 0.85,
     "enabled": true,
     "requestTypes": [
       "movie",
       "series",
       "anime"
     ],
-    "addons": []
+    "addons": [
+      "kna",
+      "hdh",
+      "soo",
+      "wst"
+    ]
   },
   "seasonEpisodeMatching": {
     "enabled": true,
@@ -553,12 +558,7 @@
         "providers": [
           "multi",
           "en",
-          "de",
-          "es",
-          "fr",
-          "hi",
-          "it",
-          "mx"
+          "hi"
         ],
         "includeExternalUrls": false,
         "showErrors": false
