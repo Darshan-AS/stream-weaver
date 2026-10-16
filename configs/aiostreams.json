@@ -175,7 +175,9 @@
           "com",
           "met",
           "mdf",
-          "sdx"
+          "tdb",
+          "sdx",
+          "atn"
         ],
         "condition": "true"
       },
@@ -198,6 +200,10 @@
       }
     ],
     "cached": [
+      {
+        "key": "library",
+        "direction": "desc"
+      },
       {
         "key": "seadex",
         "direction": "desc"
@@ -408,7 +414,7 @@
           "stream"
         ],
         "includeP2P": false,
-        "removeTrash": false,
+        "removeTrash": true,
         "useMultipleInstances": false,
         "mediaTypes": []
       }
@@ -424,7 +430,7 @@
           "stream"
         ],
         "includeP2P": false,
-        "removeTrash": false,
+        "removeTrash": true,
         "mediaTypes": []
       }
     },
@@ -453,12 +459,27 @@
         "resources": [
           "stream"
         ],
-        "useCachedResultsOnly": true,
+        "useCachedResultsOnly": false,
         "enableWatchlistCatalogs": false,
         "downloadViaBrowser": false,
         "contributorStreams": false,
         "certificationLevelsFilter": [],
         "nudityFilter": [],
+        "mediaTypes": []
+      }
+    },
+    {
+      "type": "torrents-db",
+      "instanceId": "tdb",
+      "enabled": true,
+      "options": {
+        "name": "TorrentsDB",
+        "timeout": 7500,
+        "resources": [
+          "stream"
+        ],
+        "includeP2P": false,
+        "useMultipleInstances": false,
         "mediaTypes": []
       }
     },
@@ -487,19 +508,18 @@
       "category": "Anime"
     },
     {
-      "type": "peerflix",
-      "instanceId": "pfl",
-      "enabled": false,
+      "type": "animetosho",
+      "instanceId": "atn",
+      "enabled": true,
       "options": {
-        "name": "Peerflix",
+        "name": "AnimeTosho",
         "timeout": 7500,
-        "resources": [
-          "stream"
+        "mediaTypes": [
+          "anime"
         ],
-        "mediaTypes": [],
-        "useMultipleInstances": false,
-        "showTorrentLinks": false
-      }
+        "useMultipleInstances": false
+      },
+      "category": "Anime"
     },
     {
       "type": "sootio",
@@ -615,16 +635,21 @@
   "cacheAndPlay": {
     "enabled": true,
     "streamTypes": [
-      "usenet"
+      "usenet",
+      "torrent"
     ]
   },
   "checkOwned": true,
   "failover": {
     "enabled": true,
     "contentTypes": [
-      "usenet"
+      "usenet",
+      "debrid"
     ],
     "allowCrossType": false,
     "parallel": 1
+  },
+  "serviceWrap": {
+    "enabled": true
   }
 }

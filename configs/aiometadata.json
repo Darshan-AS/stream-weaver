@@ -2,7 +2,7 @@
   "mal": {
     "skipRecap": false,
     "skipFiller": false,
-    "allowEpisodeMarking": false,
+    "allowEpisodeMarking": true,
     "useImdbIdForCatalogAndSearch": false
   },
   "sfw": true,
@@ -23,6 +23,11 @@
     "searchOrder": [
       "movie",
       "series",
+      "anime_series",
+      "anime_movie",
+      "tvdb.collections.search",
+      "people_search_movie",
+      "people_search_series",
       "gemini.search"
     ],
     "engineEnabled": {
@@ -33,16 +38,19 @@
       "mal.search.movie": false,
       "mal.search.series": false,
       "tmdb.people.search": false,
-      "people_search_movie": false,
-      "people_search_series": false,
-      "tvdb.collections.search": false,
+      "people_search_movie": true,
+      "people_search_series": true,
+      "tvdb.collections.search": true,
       "kitsu.search.series": true,
       "kitsu.search.movie": true
     },
     "engineRatingPosters": {
       "movie": true,
       "series": true,
-      "gemini.search": true
+      "gemini.search": true,
+      "anime_series": true,
+      "anime_movie": true,
+      "tvdb.collections.search": true
     }
   },
   "apiKeys": {

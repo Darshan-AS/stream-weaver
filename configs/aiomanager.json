@@ -772,24 +772,6 @@
       },
       "logo": "https://v3-cinemeta.strem.io/logo.png"
     },
-    "org.stremio.opensubtitlesv3:1.0.0": {
-      "id": "org.stremio.opensubtitlesv3",
-      "version": "1.0.0",
-      "name": "OpenSubtitles v3",
-      "description": "OpenSubtitles v3 Addon for Stremio",
-      "catalogs": [],
-      "resources": [
-        "subtitles"
-      ],
-      "types": [
-        "movie",
-        "series"
-      ],
-      "idPrefixes": [
-        "tt"
-      ],
-      "logo": "http://www.strem.io/images/addons/opensubtitles-logo.png"
-    },
     "aio-metadata:3.5.1": {
       "id": "aio-metadata",
       "version": "3.5.1",
@@ -3272,20 +3254,6 @@
           ]
         },
         {
-          "id": "gemini.search",
-          "type": "other",
-          "name": "AI Search",
-          "extra": [
-            {
-              "name": "search",
-              "isRequired": true
-            },
-            {
-              "name": "skip"
-            }
-          ]
-        },
-        {
           "id": "search.anime_series",
           "type": "anime.series",
           "name": "Anime Series Search",
@@ -3303,6 +3271,62 @@
           "id": "search.anime_movie",
           "type": "anime.movie",
           "name": "Anime Movies Search",
+          "extra": [
+            {
+              "name": "search",
+              "isRequired": true
+            },
+            {
+              "name": "skip"
+            }
+          ]
+        },
+        {
+          "id": "search.tvdb.collections.search",
+          "type": "collection",
+          "name": "TVDB Collections",
+          "extra": [
+            {
+              "name": "search",
+              "isRequired": true
+            },
+            {
+              "name": "skip"
+            }
+          ]
+        },
+        {
+          "id": "people_search.people_search_movie",
+          "type": "movie",
+          "name": "People Search",
+          "extra": [
+            {
+              "name": "search",
+              "isRequired": true
+            },
+            {
+              "name": "skip"
+            }
+          ]
+        },
+        {
+          "id": "people_search.people_search_series",
+          "type": "series",
+          "name": "People Search",
+          "extra": [
+            {
+              "name": "search",
+              "isRequired": true
+            },
+            {
+              "name": "skip"
+            }
+          ]
+        },
+        {
+          "id": "gemini.search",
+          "type": "other",
+          "name": "AI Search",
           "extra": [
             {
               "name": "search",
@@ -3332,14 +3356,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792170898658,
+      "configVersion": 1792172143255,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792170898658,
-        "timestamp": "2026-10-16T17:14:58.892Z"
+        "configVersion": 1792172143255,
+        "timestamp": "2026-10-16T17:35:43.495Z"
       },
-      "_timestamp": 1792170898892
+      "_timestamp": 1792172143495
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -3437,24 +3461,6 @@
       },
       "addonCatalogs": []
     },
-    "community.watch.next:0.0.1": {
-      "id": "community.watch.next",
-      "version": "0.0.1",
-      "catalogs": [],
-      "resources": [
-        "stream"
-      ],
-      "types": [
-        "movie",
-        "series"
-      ],
-      "name": "Watch Next",
-      "description": "Shows similar movies and series right below what you’re currently watching using TMDb recommendations.",
-      "idPrefixes": [
-        "tt"
-      ],
-      "logo": "https://myth-115.github.io/Dummy1/logo.png"
-    },
     "com.elfhosted.watchly:1.17.1": {
       "id": "com.elfhosted.watchly",
       "version": "1.17.1",
@@ -3500,13 +3506,13 @@
         {
           "type": "series",
           "id": "watchly.item.1",
-          "name": "Because you watched Lanterns",
+          "name": "Because you watched Gravity Falls",
           "extra": []
         },
         {
           "type": "series",
           "id": "watchly.item.2",
-          "name": "Because you watched Gravity Falls",
+          "name": "Because you watched The Final Problem",
           "extra": []
         }
       ],
@@ -6018,20 +6024,6 @@
                 ]
               },
               {
-                "id": "gemini.search",
-                "type": "other",
-                "name": "AI Search",
-                "extra": [
-                  {
-                    "name": "search",
-                    "isRequired": true
-                  },
-                  {
-                    "name": "skip"
-                  }
-                ]
-              },
-              {
                 "id": "search.anime_series",
                 "type": "anime.series",
                 "name": "Anime Series Search",
@@ -6049,6 +6041,62 @@
                 "id": "search.anime_movie",
                 "type": "anime.movie",
                 "name": "Anime Movies Search",
+                "extra": [
+                  {
+                    "name": "search",
+                    "isRequired": true
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ]
+              },
+              {
+                "id": "search.tvdb.collections.search",
+                "type": "collection",
+                "name": "TVDB Collections",
+                "extra": [
+                  {
+                    "name": "search",
+                    "isRequired": true
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ]
+              },
+              {
+                "id": "people_search.people_search_movie",
+                "type": "movie",
+                "name": "People Search",
+                "extra": [
+                  {
+                    "name": "search",
+                    "isRequired": true
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ]
+              },
+              {
+                "id": "people_search.people_search_series",
+                "type": "series",
+                "name": "People Search",
+                "extra": [
+                  {
+                    "name": "search",
+                    "isRequired": true
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ]
+              },
+              {
+                "id": "gemini.search",
+                "type": "other",
+                "name": "AI Search",
                 "extra": [
                   {
                     "name": "search",
@@ -6078,14 +6126,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792170898658,
+            "configVersion": 1792172143255,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792170898658,
-              "timestamp": "2026-10-16T17:14:58.892Z"
+              "configVersion": 1792172143255,
+              "timestamp": "2026-10-16T17:35:43.495Z"
             },
-            "_timestamp": 1792170898892
+            "_timestamp": 1792172143495
           },
           "flags": {
             "official": false,
@@ -6254,13 +6302,13 @@
               {
                 "type": "series",
                 "id": "watchly.item.1",
-                "name": "Because you watched Lanterns",
+                "name": "Because you watched Gravity Falls",
                 "extra": []
               },
               {
                 "type": "series",
                 "id": "watchly.item.2",
-                "name": "Because you watched Gravity Falls",
+                "name": "Because you watched The Final Problem",
                 "extra": []
               }
             ],
@@ -6279,37 +6327,6 @@
           "metadata": {
             "lastUpdated": 1792093742705,
             "customName": "Watchly | ElfHosted"
-          }
-        },
-        {
-          "transportUrl": "https://099757617587-watch-next.baby-beamup.club",
-          "transportName": "",
-          "manifestId": "community.watch.next:0.0.1",
-          "manifest": {
-            "id": "community.watch.next",
-            "version": "0.0.1",
-            "catalogs": [],
-            "resources": [
-              "stream"
-            ],
-            "types": [
-              "movie",
-              "series"
-            ],
-            "name": "Watch Next",
-            "description": "Shows similar movies and series right below what you’re currently watching using TMDb recommendations.",
-            "idPrefixes": [
-              "tt"
-            ],
-            "logo": "https://myth-115.github.io/Dummy1/logo.png"
-          },
-          "flags": {
-            "official": false,
-            "enabled": false
-          },
-          "metadata": {
-            "lastUpdated": 1792093742705,
-            "customName": "Watch Next"
           }
         },
         {
@@ -6408,36 +6425,6 @@
               "removeMeta": false
             }
           }
-        },
-        {
-          "transportUrl": "https://opensubtitles-v3.strem.io",
-          "transportName": "",
-          "manifestId": "org.stremio.opensubtitlesv3:1.0.0",
-          "manifest": {
-            "id": "org.stremio.opensubtitlesv3",
-            "version": "1.0.0",
-            "name": "OpenSubtitles v3",
-            "description": "OpenSubtitles v3 Addon for Stremio",
-            "catalogs": [],
-            "resources": [
-              "subtitles"
-            ],
-            "types": [
-              "movie",
-              "series"
-            ],
-            "idPrefixes": [
-              "tt"
-            ],
-            "logo": "http://www.strem.io/images/addons/opensubtitles-logo.png"
-          },
-          "flags": {
-            "enabled": false
-          },
-          "metadata": {
-            "lastUpdated": 1792093742705,
-            "customName": "OpenSubtitles v3"
-          }
         }
       ],
       "connections": [
@@ -6524,19 +6511,6 @@
           "syncToLibrary": false
         },
         {
-          "savedAddonId": "878741ea-dfd5-4026-81cd-6e3127698a49",
-          "addonId": "community.watch.next",
-          "installUrl": "https://099757617587-watch-next.baby-beamup.club",
-          "installedAt": "2026-10-15T18:21:40.385Z",
-          "installedVia": "manual",
-          "flags": {
-            "official": false,
-            "enabled": true
-          },
-          "syncToLibrary": false,
-          "enabled": false
-        },
-        {
           "savedAddonId": "8874cf69-88fd-402d-827f-c7040c034cdb",
           "addonId": "com.linvo.cinemeta",
           "installUrl": "https://v3-cinemeta.strem.io",
@@ -6545,18 +6519,6 @@
           "flags": {
             "enabled": true,
             "official": true
-          },
-          "syncToLibrary": false
-        },
-        {
-          "savedAddonId": "6e82deb6-f05a-4e34-b304-4bd571e79dbb",
-          "addonId": "org.stremio.opensubtitlesv3",
-          "installUrl": "https://opensubtitles-v3.strem.io",
-          "installedAt": "2026-10-15T18:21:40.385Z",
-          "installedVia": "manual",
-          "flags": {
-            "enabled": false,
-            "official": false
           },
           "syncToLibrary": false
         }
@@ -9264,20 +9226,6 @@
               ]
             },
             {
-              "id": "gemini.search",
-              "type": "other",
-              "name": "AI Search",
-              "extra": [
-                {
-                  "name": "search",
-                  "isRequired": true
-                },
-                {
-                  "name": "skip"
-                }
-              ]
-            },
-            {
               "id": "search.anime_series",
               "type": "anime.series",
               "name": "Anime Series Search",
@@ -9295,6 +9243,62 @@
               "id": "search.anime_movie",
               "type": "anime.movie",
               "name": "Anime Movies Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "search.tvdb.collections.search",
+              "type": "collection",
+              "name": "TVDB Collections",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "people_search.people_search_movie",
+              "type": "movie",
+              "name": "People Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "people_search.people_search_series",
+              "type": "series",
+              "name": "People Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "gemini.search",
+              "type": "other",
+              "name": "AI Search",
               "extra": [
                 {
                   "name": "search",
@@ -9324,14 +9328,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792170898658,
+          "configVersion": 1792172143255,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792170898658,
-            "timestamp": "2026-10-16T17:14:58.892Z"
+            "configVersion": 1792172143255,
+            "timestamp": "2026-10-16T17:35:43.495Z"
           },
-          "_timestamp": 1792170898892
+          "_timestamp": 1792172143495
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -9512,13 +9516,13 @@
             {
               "type": "series",
               "id": "watchly.item.1",
-              "name": "Because you watched Lanterns",
+              "name": "Because you watched Gravity Falls",
               "extra": []
             },
             {
               "type": "series",
               "id": "watchly.item.2",
-              "name": "Because you watched Gravity Falls",
+              "name": "Because you watched The Final Problem",
               "extra": []
             }
           ],
@@ -9537,43 +9541,6 @@
         "syncWithInstalled": false,
         "createdAt": "2026-10-15T19:36:07.328Z",
         "updatedAt": "2026-10-15T19:49:02.734Z",
-        "sourceType": "manual",
-        "health": {
-          "isOnline": true,
-          "lastChecked": 1792093048399
-        }
-      },
-      {
-        "id": "878741ea-dfd5-4026-81cd-6e3127698a49",
-        "name": "Watch Next",
-        "installUrl": "https://099757617587-watch-next.baby-beamup.club",
-        "manifest": {
-          "id": "community.watch.next",
-          "version": "0.0.1",
-          "catalogs": [],
-          "resources": [
-            "stream"
-          ],
-          "types": [
-            "movie",
-            "series"
-          ],
-          "name": "Watch Next",
-          "description": "Shows similar movies and series right below what you’re currently watching using TMDb recommendations.",
-          "idPrefixes": [
-            "tt"
-          ],
-          "logo": "https://myth-115.github.io/Dummy1/logo.png"
-        },
-        "tags": [],
-        "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
-        "metadata": {
-          "lastUpdated": 1792088499841
-        },
-        "autoRestore": false,
-        "syncWithInstalled": false,
-        "createdAt": "2026-10-15T19:17:14.743Z",
-        "updatedAt": "2026-10-15T19:49:02.731Z",
         "sourceType": "manual",
         "health": {
           "isOnline": true,
@@ -10364,43 +10331,6 @@
         "syncWithInstalled": false,
         "createdAt": "2026-10-15T19:16:18.886Z",
         "updatedAt": "2026-10-15T19:49:02.714Z",
-        "sourceType": "manual",
-        "health": {
-          "isOnline": true,
-          "lastChecked": 1792093048399
-        }
-      },
-      {
-        "id": "6e82deb6-f05a-4e34-b304-4bd571e79dbb",
-        "name": "OpenSubtitles v3",
-        "installUrl": "https://opensubtitles-v3.strem.io",
-        "manifest": {
-          "id": "org.stremio.opensubtitlesv3",
-          "version": "1.0.0",
-          "name": "OpenSubtitles v3",
-          "description": "OpenSubtitles v3 Addon for Stremio",
-          "catalogs": [],
-          "resources": [
-            "subtitles"
-          ],
-          "types": [
-            "movie",
-            "series"
-          ],
-          "idPrefixes": [
-            "tt"
-          ],
-          "logo": "http://www.strem.io/images/addons/opensubtitles-logo.png"
-        },
-        "tags": [],
-        "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
-        "metadata": {
-          "lastUpdated": 1792088499841
-        },
-        "autoRestore": false,
-        "syncWithInstalled": false,
-        "createdAt": "2026-10-15T19:16:30.747Z",
-        "updatedAt": "2026-10-15T19:49:02.719Z",
         "sourceType": "manual",
         "health": {
           "isOnline": true,
