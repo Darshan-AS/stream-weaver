@@ -189,6 +189,13 @@ def auto_harvest_secrets(service: str, cfg: Dict[str, Any], env: Dict[str, str])
                     ENV_FILE, env, f"SECRET_VAULT_{prov}_{v_id}", val
                 )
 
+        for sa in cfg.get("addons", {}).get("savedAddons", []):
+            if isinstance(sa, dict):
+                m_url = str(sa.get("installUrl", ""))
+                m_match = re.search(r"watchly\.[^/]+/([^/{}]+)/manifest\.json", m_url)
+                if m_match:
+                    persist_secret_to_env(ENV_FILE, env, "SECRET_WATCHLY_TOKEN", m_match.group(1))
+
 
 def get_secrets_map(env: Dict[str, str]) -> Dict[str, str]:
     """Returns mapping of SECRET_KEY_NAME -> actual_secret_value for non-empty secrets."""
@@ -649,6 +656,171 @@ def push_aiometadata(env: Dict[str, str], create: bool = False) -> None:
         print(f"✅ [AIOMetadata] Successfully updated UUID {uuid} in-place (Install URL unchanged)")
 
 
+def decrypt_aiomanager_field(enc_val: str, password: str, salt_b64: str) -> str:
+    if not enc_val or enc_val.startswith("eyJ"):
+        return enc_val
+    node_code = r"""
+const crypto = require("crypto");
+const { encVal, pw, saltB64 } = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const salt = Buffer.from(saltB64, "base64");
+const key = crypto.pbkdf2Sync(pw, salt, 600000, 32, "sha256");
+const buf = Buffer.from(encVal, "base64");
+const iv = buf.subarray(0, 12);
+const tag = buf.subarray(buf.length - 16);
+const ct = buf.subarray(12, buf.length - 16);
+const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+decipher.setAuthTag(tag);
+const dec = Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+process.stdout.write(dec);
+"""
+    res = subprocess.run(
+        ["node", "-e", node_code],
+        input=json.dumps({"encVal": enc_val, "pw": password, "saltB64": salt_b64}),
+        text=True,
+        capture_output=True,
+    )
+    if res.returncode != 0:
+        return enc_val
+    return res.stdout
+
+
+def refresh_aiomanager_manifests(state: Dict[str, Any]) -> None:
+    """Fetches fresh manifest.json for AIOMetadata, AIOStreams, and Watchly so AIOManager's cache matches live state."""
+    for acc in state.get("accounts", []):
+        for a in acc.get("addons", []):
+            mid = a.get("manifest", {}).get("id", "")
+            t_url = str(a.get("transportUrl", "")).rstrip("/")
+            if not t_url:
+                continue
+            if mid in ("aio-metadata", "com.elfhosted.watchly") or mid.startswith("aiostreams"):
+                m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
+                try:
+                    status, mf = http_json("GET", m_url)
+                    if status == 200 and isinstance(mf, dict) and mf.get("id"):
+                        if mid == "com.linvo.cinemeta":
+                            mf["catalogs"] = []
+                        a["manifest"] = mf
+                        ver = mf.get("version", "1.0.0")
+                        a["manifestId"] = f"{mf['id']}:{ver}"
+                        state.setdefault("manifests", {})[f"{mf['id']}:{ver}"] = mf
+                        for sa in state.get("addons", {}).get("savedAddons", []):
+                            if sa.get("manifest", {}).get("id") == mf["id"]:
+                                sa["manifest"] = mf
+                except Exception as exc:
+                    print(f"⚠️  [AIOManager] Could not refresh manifest from {m_url}: {exc}")
+
+
+def sync_addons_to_clients(state: Dict[str, Any], password: str, env: Dict[str, str]) -> None:
+    """Pushes the account's addon list directly to linked Nuvio and Stremio accounts."""
+    salt_b64 = state.get("salt", "")
+    nuvio_pub_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzgxNTIxMzQ2LCJleHAiOjE5MzkyMDEzNDZ9.tmQaj682pwzehpqlgCDMnySOqiUvpgRbrE43T4VJpDI"
+
+    for acc in state.get("accounts", []):
+        addons = acc.get("addons", [])
+        for conn in acc.get("connections", []):
+            if not conn.get("enabled", True):
+                continue
+            plat = conn.get("platform")
+            creds = conn.get("credentials") or {}
+            if plat == "nuvio" and creds.get("accessToken"):
+                try:
+                    access_token = decrypt_aiomanager_field(creds["accessToken"], password, salt_b64)
+                    headers = {
+                        "apikey": nuvio_pub_key,
+                        "Authorization": f"Bearer {access_token}",
+                    }
+                    p_status, profiles = http_json(
+                        "POST",
+                        "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
+                        headers=headers,
+                        body={},
+                    )
+                    if p_status == 401 and creds.get("refreshToken"):
+                        refresh_tok = decrypt_aiomanager_field(creds["refreshToken"], password, salt_b64)
+                        r_status, r_data = http_json(
+                            "POST",
+                            "https://api.nuvio.tv/auth/v1/token?grant_type=refresh_token",
+                            headers={"apikey": nuvio_pub_key},
+                            body={"refresh_token": refresh_tok},
+                        )
+                        if r_status == 200 and isinstance(r_data, dict) and r_data.get("access_token"):
+                            access_token = r_data["access_token"]
+                            persist_secret_to_env(ENV_FILE, env, "SECRET_NUVIO_ACCESS_TOKEN", access_token)
+                            if r_data.get("refresh_token"):
+                                persist_secret_to_env(ENV_FILE, env, "SECRET_NUVIO_REFRESH_TOKEN", r_data["refresh_token"])
+                            headers["Authorization"] = f"Bearer {access_token}"
+                            p_status, profiles = http_json(
+                                "POST",
+                                "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
+                                headers=headers,
+                                body={},
+                            )
+                    profile_idx = 1
+                    target_pid = creds.get("profileId")
+                    if p_status == 200 and isinstance(profiles, list):
+                        for p in profiles:
+                            if str(p.get("id")) == str(target_pid):
+                                profile_idx = int(p.get("profile_index") or p.get("profileIndex") or 1)
+                                break
+                    p_addons = []
+                    for idx, a in enumerate(addons):
+                        u = str(a.get("transportUrl", "")).rstrip("/")
+                        if u and not u.endswith("/manifest.json"):
+                            u = f"{u}/manifest.json"
+                        p_addons.append(
+                            {
+                                "url": u,
+                                "name": a.get("manifest", {}).get("name", ""),
+                                "enabled": a.get("flags", {}).get("enabled", True) is not False,
+                                "sort_order": idx,
+                            }
+                        )
+                    s_status, _ = http_json(
+                        "POST",
+                        "https://api.nuvio.tv/rest/v1/rpc/sync_push_addons",
+                        headers=headers,
+                        body={"p_profile_id": profile_idx, "p_addons": p_addons},
+                    )
+                    if s_status in (200, 204):
+                        print(f"✅ [Nuvio] Pushed {len(p_addons)} addons directly to Nuvio profile #{profile_idx}")
+                    else:
+                        print(f"⚠️  [Nuvio] Push returned HTTP {s_status}")
+                except Exception as exc:
+                    print(f"⚠️  [Nuvio] Direct client sync warning: {exc}")
+
+            elif plat == "stremio" and creds.get("authKey") and salt_b64:
+                try:
+                    auth_key = decrypt_aiomanager_field(creds["authKey"], password, salt_b64)
+                    stremio_addons = []
+                    for a in addons:
+                        if a.get("flags", {}).get("enabled", True) is False:
+                            continue
+                        u = str(a.get("transportUrl", "")).rstrip("/")
+                        if u and not u.endswith("/manifest.json"):
+                            u = f"{u}/manifest.json"
+                        stremio_addons.append(
+                            {
+                                "transportUrl": u,
+                                "transportName": a.get("transportName", ""),
+                                "manifest": a.get("manifest", {}),
+                                "flags": a.get("flags", {}),
+                            }
+                        )
+                    s_status, s_resp = http_json(
+                        "POST",
+                        "https://api.strem.io/api/addonCollectionSet",
+                        body={
+                            "type": "AddonCollectionSet",
+                            "authKey": auth_key,
+                            "addons": stremio_addons,
+                        },
+                    )
+                    if s_status == 200 and isinstance(s_resp, dict) and s_resp.get("result", {}).get("success"):
+                        print(f"✅ [Stremio] Pushed {len(stremio_addons)} enabled addons directly to Stremio account")
+                except Exception as exc:
+                    print(f"⚠️  [Stremio] Direct client sync warning: {exc}")
+
+
 def push_aiomanager(env: Dict[str, str]) -> None:
     cfg_file = CONFIGS_DIR / "aiomanager.json"
     if not cfg_file.exists():
@@ -663,6 +835,9 @@ def push_aiomanager(env: Dict[str, str]) -> None:
         return
 
     injected_state = load_injected_json("aiomanager", env)
+    refresh_aiomanager_manifests(injected_state)
+    save_clean_json("aiomanager", normalize_aiomanager_config(injected_state), env)
+
     envelope = aiomanager_encrypt_envelope(injected_state, password)
     derived_token = derive_aiomanager_sync_token(password)
 
@@ -672,6 +847,7 @@ def push_aiomanager(env: Dict[str, str]) -> None:
     if status not in (200, 201):
         raise RuntimeError(f"[AIOManager] Push failed (HTTP {status}): {json.dumps(resp)}")
     print(f"✅ [AIOManager] Successfully pushed encrypted sync state for UUID {uuid}")
+    sync_addons_to_clients(injected_state, password, env)
 
 
 # ==============================================================================

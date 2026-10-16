@@ -342,7 +342,8 @@
         "name": "Library",
         "timeout": 5000,
         "resources": [
-          "stream"
+          "stream",
+          "catalog"
         ],
         "mediaTypes": [],
         "showRefreshActions": [
@@ -550,7 +551,17 @@
     "Anime": "orange",
     "HTTP": "emerald"
   },
-  "catalogModifications": [],
+  "catalogModifications": [
+    {
+      "id": "lib791b.aiostreams::library.torbox",
+      "type": "library",
+      "name": "TorBox Cloud Library",
+      "enabled": true,
+      "showOnHome": true,
+      "disableSearch": true,
+      "overrideType": "movie"
+    }
+  ],
   "mergedCatalogs": [],
   "cacheAndPlay": {
     "enabled": true,
