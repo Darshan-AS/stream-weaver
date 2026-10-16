@@ -4432,14 +4432,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792165414698,
+      "configVersion": 1792170407175,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792165414698,
-        "timestamp": "2026-10-16T15:43:34.921Z"
+        "configVersion": 1792170407175,
+        "timestamp": "2026-10-16T17:06:47.586Z"
       },
-      "_timestamp": 1792165414921
+      "_timestamp": 1792170407586
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -8278,14 +8278,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792165414698,
+            "configVersion": 1792170407175,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792165414698,
-              "timestamp": "2026-10-16T15:43:34.921Z"
+              "configVersion": 1792170407175,
+              "timestamp": "2026-10-16T17:06:47.586Z"
             },
-            "_timestamp": 1792165414921
+            "_timestamp": 1792170407586
           },
           "flags": {
             "official": false,
@@ -8505,7 +8505,7 @@
           },
           "flags": {
             "official": false,
-            "enabled": true
+            "enabled": false
           },
           "metadata": {
             "lastUpdated": 1792093742705,
@@ -8733,7 +8733,8 @@
             "official": false,
             "enabled": true
           },
-          "syncToLibrary": false
+          "syncToLibrary": false,
+          "enabled": false
         },
         {
           "savedAddonId": "8874cf69-88fd-402d-827f-c7040c034cdb",
@@ -12623,14 +12624,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792165414698,
+          "configVersion": 1792170407175,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792165414698,
-            "timestamp": "2026-10-16T15:43:34.921Z"
+            "configVersion": 1792170407175,
+            "timestamp": "2026-10-16T17:06:47.586Z"
           },
-          "_timestamp": 1792165414921
+          "_timestamp": 1792170407586
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",

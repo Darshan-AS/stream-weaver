@@ -582,6 +582,18 @@
         "includeAiTranslated": true,
         "movieHashPlusAutoAdjustment": true
       }
+    },
+    {
+      "type": "opensubtitles",
+      "instanceId": "osv",
+      "enabled": true,
+      "options": {
+        "name": "OpenSubtitles v3 (Fallback)",
+        "timeout": 10000,
+        "resources": [
+          "subtitles"
+        ]
+      }
     }
   ],
   "addonCategoryColors": {
