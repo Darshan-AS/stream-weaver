@@ -1,0 +1,21 @@
+# Environment & Secrets (NEVER commit these)
+.env
+.env.*
+!.env.example
+!docker/.env.selfhost.example
+
+# Unscrubbed / backup config files
+*.raw.json
+*.bak
+*.tmp
+
+# Self-hosted Docker persistent volumes
+docker/data/
+
+# OS / Editor files
+.DS_Store
+.vscode/
+.idea/
+.history/
+__pycache__/
+

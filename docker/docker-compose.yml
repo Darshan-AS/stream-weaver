@@ -1,0 +1,97 @@
+services:
+  # ============================================================================
+  # 1. AIOStreams (Stream Aggregator, Filtering, Sorting & Formatter)
+  # ============================================================================
+  aiostreams:
+    image: ghcr.io/viren070/aiostreams:latest
+    container_name: aiostreams
+    restart: unless-stopped
+    ports:
+      - "${AIOSTREAMS_PORT:-3000}:3000"
+    env_file:
+      - .env.selfhost
+    environment:
+      - PORT=3000
+      - BASE_URL=${AIOSTREAMS_BASE_URL:-http://localhost:3000}
+      - SECRET_KEY=${AIOSTREAMS_SECRET_KEY}
+      - ADDON_PASSWORD=${AIOSTREAMS_ADDON_PASSWORD:-}
+      - DATABASE_URI=sqlite://./data/db.sqlite
+    volumes:
+      - ./data/aiostreams:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================================================
+  # 2. AIOMetadata (Multi-Source Metadata, Catalogs & Artwork) + Redis
+  # ============================================================================
+  aiometadata:
+    image: ghcr.io/cedya77/aiometadata:latest
+    container_name: aiometadata
+    restart: unless-stopped
+    ports:
+      - "${AIOMETADATA_PORT:-3232}:3232"
+    init: true
+    env_file:
+      - .env.selfhost
+    environment:
+      - PORT=3232
+      - HOST_NAME=${AIOMETADATA_BASE_URL:-http://localhost:3232}
+      - REDIS_URL=redis://aiometadata-redis:6379
+      - DATABASE_URI=sqlite:///app/addon/data/db.sqlite
+      - ADDON_PASSWORD=${AIOMETADATA_ADDON_PASSWORD:-}
+    volumes:
+      - ./data/aiometadata:/app/addon/data
+    depends_on:
+      aiometadata-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3232/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  aiometadata-redis:
+    image: redis:7-alpine
+    container_name: aiometadata_redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - ./data/aiometadata-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # 3. AIOManager (Addon Manager, Autopilot Failover & Stremio/Nuvio Reconciler)
+  # ============================================================================
+  aiomanager:
+    image: sonicx161/aiomanager:latest
+    container_name: aiomanager
+    restart: unless-stopped
+    ports:
+      - "${AIOMANAGER_PORT:-1610}:1610"
+    env_file:
+      - .env.selfhost
+    environment:
+      - NODE_ENV=production
+      - PORT=1610
+      - DATA_DIR=/app/data
+      - DB_TYPE=sqlite
+      - ENCRYPTION_KEY=${AIOMANAGER_ENCRYPTION_KEY}
+      - CORS_ORIGINS=${AIOMANAGER_CORS_ORIGINS:-*}
+    volumes:
+      - ./data/aiomanager:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:1610/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
