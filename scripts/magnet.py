@@ -139,7 +139,7 @@ def torbox_request(
     url = f"{TORBOX_API_BASE}{endpoint}"
     req_headers = {
         "Authorization": f"Bearer {api_key}",
-        "User-Agent": "AIO-Configs-CLI/1.0",
+        "User-Agent": "Stream-Weaver-CLI/1.0",
         "Accept": "application/json",
     }
     if headers:
@@ -172,7 +172,7 @@ def check_cached_on_torbox(info_hash: str, api_key: str) -> Optional[Dict[str, A
 
 
 def add_magnet_to_torbox(magnet_uri: str, api_key: str, name: Optional[str] = None) -> Tuple[int, Any]:
-    boundary = f"----AIOConfigsBoundary{uuid.uuid4().hex}"
+    boundary = f"----StreamWeaverBoundary{uuid.uuid4().hex}"
     fields = {"magnet": magnet_uri, "allow_zip": "true"}
     if name:
         fields["name"] = name
@@ -195,7 +195,7 @@ def add_magnet_to_torbox(magnet_uri: str, api_key: str, name: Optional[str] = No
 
 
 def add_torrent_file_to_torbox(torrent_path: Path, api_key: str) -> Tuple[int, Any]:
-    boundary = f"----AIOConfigsBoundary{uuid.uuid4().hex}"
+    boundary = f"----StreamWeaverBoundary{uuid.uuid4().hex}"
     file_bytes = torrent_path.read_bytes()
 
     parts: List[bytes] = [
@@ -237,7 +237,7 @@ def refresh_aiostreams_library_cache() -> None:
         refresh_url = f"{install_url}/stream/movie/aiostreams::library.torbox.action.refresh.json"
         req = urllib.request.Request(
             refresh_url,
-            headers={"User-Agent": "AIO-Configs-CLI/1.0"},
+            headers={"User-Agent": "Stream-Weaver-CLI/1.0"},
             method="GET",
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
