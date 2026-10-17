@@ -68,6 +68,29 @@ def normalize_aiometadata(data: Any) -> Result[JsonDict, ConfigValidationError]:
     return Ok(cfg)
 
 
+def sanitize_manifest_home_catalogs(manifest: JsonDict) -> JsonDict:
+    """
+    Strips forced `"default"` values from optional (`isRequired: false`) `"genre"` extras
+    in addon catalog definitions so Nuvio/Stremio request the fast unfiltered root Home
+    catalog instead of an accidental default genre filter (e.g. `"Action"`).
+    """
+    catalogs = manifest.get("catalogs")
+    if isinstance(catalogs, list):
+        for cat in catalogs:
+            if not isinstance(cat, dict):
+                continue
+            extras = cat.get("extra")
+            if isinstance(extras, list):
+                for extra in extras:
+                    if (
+                        isinstance(extra, dict)
+                        and extra.get("name") == "genre"
+                        and not extra.get("isRequired", False)
+                    ):
+                        extra.pop("default", None)
+    return manifest
+
+
 def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
     """
     Purely strips volatile runtime telemetry (`watchEvents`, `changelog`, etc.) and
@@ -91,7 +114,7 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
     if isinstance(existing_manifests, Mapping):
         for k, v in existing_manifests.items():
             if isinstance(v, Mapping):
-                manifest_by_id[str(k)] = dict(v)
+                manifest_by_id[str(k)] = sanitize_manifest_home_catalogs(dict(v))
 
     addons_section = cfg.get("addons")
     saved_by_id: dict[str, JsonDict] = {}
@@ -103,6 +126,7 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
                     continue
                 mf = sa.get("manifest")
                 if isinstance(mf, dict) and mf.get("id"):
+                    sanitize_manifest_home_catalogs(mf)
                     mid = f"{mf['id']}:{mf.get('version', '1.0.0')}"
                     saved_by_id[mid] = mf
                 elif isinstance(mf, dict):
@@ -123,6 +147,8 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
                     continue
                 mid = str(addon_entry.get("manifestId") or "")
                 mf = addon_entry.get("manifest")
+                if isinstance(mf, dict):
+                    sanitize_manifest_home_catalogs(mf)
                 canonical_mf = saved_by_id.get(mid) or manifest_by_id.get(mid)
                 if isinstance(mf, dict) and isinstance(canonical_mf, dict) and mf == canonical_mf:
                     addon_entry["manifest"] = {
@@ -147,7 +173,7 @@ def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
     if isinstance(existing_manifests, dict):
         for k, v in existing_manifests.items():
             if isinstance(v, dict):
-                manifests_map[str(k)] = v
+                manifests_map[str(k)] = sanitize_manifest_home_catalogs(v)
 
     addons_section = state.get("addons")
     if isinstance(addons_section, dict):
@@ -157,6 +183,7 @@ def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
                 if isinstance(sa, dict):
                     mf = sa.get("manifest")
                     if isinstance(mf, dict) and mf.get("id") and not mf.get("_deduped"):
+                        sanitize_manifest_home_catalogs(mf)
                         mid = f"{mf['id']}:{mf.get('version', '1.0.0')}"
                         manifests_map[mid] = copy.deepcopy(mf)
 
@@ -176,6 +203,7 @@ def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
                 if isinstance(mf, dict) and mf.get("_deduped") and mid in manifests_map:
                     addon_entry["manifest"] = copy.deepcopy(manifests_map[mid])
                 elif isinstance(mf, dict) and mf.get("id") and mid not in manifests_map:
+                    sanitize_manifest_home_catalogs(mf)
                     manifests_map[mid] = copy.deepcopy(mf)
 
     state["manifests"] = manifests_map

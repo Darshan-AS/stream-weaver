@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import concurrent.futures
 import copy
 import json
+import urllib.parse
 from collections.abc import Mapping
 from typing import Any
 
@@ -13,6 +15,7 @@ from stream_weaver.core.coercions import (
     normalize_aiometadata,
     normalize_aiostreams,
     rehydrate_aiomanager,
+    sanitize_manifest_home_catalogs,
 )
 from stream_weaver.core.crypto import (
     decrypt_envelope,
@@ -28,9 +31,17 @@ from stream_weaver.providers.services.clients import NuvioClientSync, StremioCli
 
 
 def _http_err(label: str, action: str, status_code: int, data: Any, url: str) -> Err[NetworkError]:
+    if isinstance(data, Mapping) and isinstance(data.get("error"), str):
+        err_str = data["error"].strip()
+        if err_str.startswith(("<!DOCTYPE", "<html")):
+            detail = f"Upstream gateway error (Cloudflare/HTML HTTP {status_code})"
+        else:
+            detail = err_str[:240]
+    else:
+        detail = json.dumps(data)[:240]
     return Err(
         NetworkError(
-            message=f"[{label}] {action} failed (HTTP {status_code}): {json.dumps(data)}",
+            message=f"[{label}] {action} failed (HTTP {status_code}): {detail}",
             status_code=status_code,
             url=url,
         )
@@ -335,7 +346,7 @@ class AIOManagerService:
                             and isinstance(resp.data, dict)
                             and resp.data.get("id")
                         ):
-                            mf = dict(resp.data)
+                            mf = sanitize_manifest_home_catalogs(dict(resp.data))
                             if mid == "com.linvo.cinemeta":
                                 mf["catalogs"] = []
                             a["manifest"] = mf
@@ -421,6 +432,10 @@ class AIOManagerService:
                             case Err():
                                 continue
 
+        warmed, total = warm_home_catalogs(refreshed, self._http)
+        if total > 0:
+            synced_summaries.append(f"[warm] Pre-warmed {warmed}/{total} Home catalog rows")
+
         return Ok(
             (
                 ServicePushOutcome(
@@ -433,6 +448,105 @@ class AIOManagerService:
                 discovered_secrets,
             )
         )
+
+
+def extract_home_catalog_urls(state: JsonDict) -> list[str]:
+    """
+    Purely extracts all unique Stremio/Nuvio Home catalog endpoint URLs
+    (`/catalog/{type}/{id}.json`) from a rehydrated AIOManager state object.
+    """
+    rehydrated = rehydrate_aiomanager(state) if "manifests" not in state else state
+    seen: set[str] = set()
+    urls: list[str] = []
+
+    accounts = rehydrated.get("accounts")
+    if not isinstance(accounts, list):
+        return urls
+
+    for acc in accounts:
+        if not isinstance(acc, dict):
+            continue
+        addons = acc.get("addons")
+        if not isinstance(addons, list):
+            continue
+        for addon in addons:
+            if not isinstance(addon, dict):
+                continue
+            flags = addon.get("flags")
+            if isinstance(flags, dict) and not flags.get("enabled", True):
+                continue
+            t_url = str(addon.get("transportUrl") or "").strip()
+            if not t_url:
+                continue
+            addon_base = t_url.removesuffix("/manifest.json").rstrip("/")
+            mf = addon.get("manifest")
+            if not isinstance(mf, dict):
+                continue
+            catalogs = mf.get("catalogs")
+            if not isinstance(catalogs, list):
+                continue
+            for cat in catalogs:
+                if not isinstance(cat, dict):
+                    continue
+                cat_type = str(cat.get("type") or "").strip()
+                cat_id = str(cat.get("id") or "").strip()
+                if not cat_type or not cat_id:
+                    continue
+                extras = cat.get("extra")
+                is_home = not isinstance(extras, list) or all(
+                    not (isinstance(e, dict) and e.get("isRequired", False)) for e in extras
+                )
+                if not is_home:
+                    continue
+                q_type = urllib.parse.quote(cat_type, safe=".:_-")
+                q_id = urllib.parse.quote(cat_id, safe=".:_-")
+                cat_url = f"{addon_base}/catalog/{q_type}/{q_id}.json"
+                if cat_url not in seen:
+                    seen.add(cat_url)
+                    urls.append(cat_url)
+    return urls
+
+
+def warm_home_catalogs(
+    state: JsonDict,
+    http_client: HttpClientProtocol,
+    *,
+    max_workers: int = 8,
+) -> tuple[int, int]:
+    """
+    Concurrently fetches all Home catalog endpoints across enabled addons so server-side
+    caches (AIOMetadata / Watchly / AIOStreams) are warm before Nuvio scrolls the Home feed.
+    Short-circuits unreachable origins (e.g. Cloudflare 52x) so offline hosts fail fast.
+    Returns `(warmed_count, total_count)`.
+    """
+    urls = extract_home_catalog_urls(state)
+    if not urls:
+        return 0, 0
+
+    dead_hosts: set[str] = set()
+
+    def _fetch_one(url: str) -> bool:
+        host = urllib.parse.urlsplit(url).netloc
+        if host in dead_hosts:
+            return False
+        match http_client.request_json("GET", url, timeout=8.0):
+            case Ok(resp) if resp.status_code == 200 and isinstance(resp.data, dict):
+                return isinstance(resp.data.get("metas"), list)
+            case Ok(resp) if resp.status_code >= 520:
+                dead_hosts.add(host)
+                return False
+            case Err():
+                dead_hosts.add(host)
+                return False
+            case _:
+                return False
+
+    warmed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+        for ok in pool.map(_fetch_one, urls):
+            if ok:
+                warmed += 1
+    return warmed, len(urls)
 
 
 def build_config_services(
