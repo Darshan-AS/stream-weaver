@@ -3876,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792225350949,
+      "configVersion": 1792226862420,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792225350949,
-        "timestamp": "2026-10-17T08:22:31.168Z"
+        "configVersion": 1792226862420,
+        "timestamp": "2026-10-17T08:47:42.640Z"
       },
-      "_timestamp": 1792225351168
+      "_timestamp": 1792226862640
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -3893,8 +3893,20 @@
       "catalogs": [
         {
           "type": "series",
-          "id": "pace3b0.peterson_academy",
-          "name": "Peterson Academy"
+          "id": "swce3b0.courses",
+          "name": "Courses & Lectures",
+          "extra": [
+            {
+              "name": "genre",
+              "isRequired": false,
+              "options": [
+                "Peterson Academy",
+                "History",
+                "Humanities",
+                "Education"
+              ]
+            }
+          ]
         },
         {
           "type": "movie",
@@ -3936,6 +3948,7 @@
             "library"
           ],
           "idPrefixes": [
+            "sw_",
             "pa_",
             "aiostreams::library.torbox.torrent.",
             "aiostreams::library.torbox",
@@ -3955,6 +3968,7 @@
             "HdHub"
           ],
           "idPrefixes": [
+            "sw_",
             "pa_",
             "aiostreams::library.torbox.torrent.",
             "tt",
@@ -7190,14 +7204,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792225350949,
+            "configVersion": 1792226862420,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792225350949,
-              "timestamp": "2026-10-17T08:22:31.168Z"
+              "configVersion": 1792226862420,
+              "timestamp": "2026-10-17T08:47:42.640Z"
             },
-            "_timestamp": 1792225351168
+            "_timestamp": 1792226862640
           },
           "flags": {
             "official": false,
@@ -7220,8 +7234,20 @@
             "catalogs": [
               {
                 "type": "series",
-                "id": "pace3b0.peterson_academy",
-                "name": "Peterson Academy"
+                "id": "swce3b0.courses",
+                "name": "Courses & Lectures",
+                "extra": [
+                  {
+                    "name": "genre",
+                    "isRequired": false,
+                    "options": [
+                      "Peterson Academy",
+                      "History",
+                      "Humanities",
+                      "Education"
+                    ]
+                  }
+                ]
               },
               {
                 "type": "movie",
@@ -7263,6 +7289,7 @@
                   "library"
                 ],
                 "idPrefixes": [
+                  "sw_",
                   "pa_",
                   "aiostreams::library.torbox.torrent.",
                   "aiostreams::library.torbox",
@@ -7282,6 +7309,7 @@
                   "HdHub"
                 ],
                 "idPrefixes": [
+                  "sw_",
                   "pa_",
                   "aiostreams::library.torbox.torrent.",
                   "tt",
@@ -10936,14 +10964,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792225350949,
+          "configVersion": 1792226862420,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792225350949,
-            "timestamp": "2026-10-17T08:22:31.168Z"
+            "configVersion": 1792226862420,
+            "timestamp": "2026-10-17T08:47:42.640Z"
           },
-          "_timestamp": 1792225351168
+          "_timestamp": 1792226862640
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -10972,8 +11000,20 @@
           "catalogs": [
             {
               "type": "series",
-              "id": "pace3b0.peterson_academy",
-              "name": "Peterson Academy"
+              "id": "swce3b0.courses",
+              "name": "Courses & Lectures",
+              "extra": [
+                {
+                  "name": "genre",
+                  "isRequired": false,
+                  "options": [
+                    "Peterson Academy",
+                    "History",
+                    "Humanities",
+                    "Education"
+                  ]
+                }
+              ]
             },
             {
               "type": "movie",
@@ -11015,6 +11055,7 @@
                 "library"
               ],
               "idPrefixes": [
+                "sw_",
                 "pa_",
                 "aiostreams::library.torbox.torrent.",
                 "aiostreams::library.torbox",
@@ -11034,6 +11075,7 @@
                 "HdHub"
               ],
               "idPrefixes": [
+                "sw_",
                 "pa_",
                 "aiostreams::library.torbox.torrent.",
                 "tt",
