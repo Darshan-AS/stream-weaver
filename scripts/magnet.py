@@ -470,7 +470,10 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
             if m:
                 synced_ids.add(int(m.group(1)))
 
-    print("👀 Watching TorBox Queue — keeping 3 parallel slots active & auto-syncing finished courses...")
+    print(
+        "👀 Watching TorBox Queue — keeping 3 parallel slots active & auto-syncing finished courses...",
+        flush=True,
+    )
     while True:
         st_l, resp_l = torbox_request("GET", "/torrents/mylist?bypass_cache=true&limit=1000", api_key)
         st_q, resp_q = torbox_request("GET", "/queued/getqueued?bypass_cache=true&limit=1000", api_key)
@@ -485,7 +488,7 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
             files = item.get("files") or []
             if not t_id or not name or not info_hash:
                 continue
-            if not item.get("download_finished"):
+            if not item.get("download_finished") or not files:
                 active_items.append(item)
             elif t_id not in synced_ids:
                 if maybe_build_course_metadata(
@@ -499,6 +502,7 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
                     synced_ids.add(t_id)
                 else:
                     synced_ids.add(t_id)
+                sys.stdout.flush()
 
         active_count = len(active_items)
         while active_count < 3 and q_items:
@@ -517,14 +521,18 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
                 if st_s == 200 and isinstance(resp_s, dict) and resp_s.get("success"):
                     active_count += 1
                     print(
-                        f"🚀 [TorBox Queue] Started next download ({active_count}/3 active, {len(q_items)} queued): {qname}"
+                        f"🚀 [TorBox Queue] Started next download ({active_count}/3 active, {len(q_items)} queued): {qname}",
+                        flush=True,
                     )
                 else:
                     break
 
         if active_count == 0 and not q_items:
             refresh_aiostreams_library_cache()
-            print("\n🎉 All queued TorBox downloads have finished and synced into addon/!")
+            print(
+                "\n🎉 All queued TorBox downloads have finished and synced into addon/!",
+                flush=True,
+            )
             return 0
 
         prog_summary = ", ".join(
@@ -532,7 +540,8 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
             for a in active_items
         )
         print(
-            f"⏳ Active: {active_count}/3 [{prog_summary or 'starting...'}] | Queued: {len(q_items)}"
+            f"⏳ Active: {active_count}/3 [{prog_summary or 'starting...'}] | Queued: {len(q_items)}",
+            flush=True,
         )
         time.sleep(poll_seconds)
 
