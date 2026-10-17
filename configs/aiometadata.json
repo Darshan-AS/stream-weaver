@@ -682,52 +682,6 @@
       "sortDirection": "desc"
     },
     {
-      "id": "streaming.sst",
-      "name": "SkyShowtime",
-      "sort": "popularity",
-      "type": "movie",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "movie",
-      "sortDirection": "desc"
-    },
-    {
-      "id": "streaming.sst",
-      "name": "SkyShowtime",
-      "sort": "popularity",
-      "type": "series",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "series",
-      "sortDirection": "desc"
-    },
-    {
-      "id": "streaming.wow",
-      "name": "WOW",
-      "sort": "default",
-      "type": "movie",
-      "order": "asc",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "movie",
-      "sortDirection": "desc"
-    },
-    {
-      "id": "streaming.wow",
-      "name": "WOW",
-      "sort": "default",
-      "type": "series",
-      "order": "asc",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "series",
-      "sortDirection": "desc"
-    },
-    {
       "id": "streaming.cts",
       "name": "Curiosity Stream",
       "sort": "default",
@@ -768,366 +722,6 @@
       "showInHome": false
     },
     {
-      "id": "trakt.list.33123064",
-      "name": "Latest Action",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123064",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-action-movies\r\nUpdated at 2026-02-05 10:29:04"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33122883",
-      "name": "Latest Action",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33122883",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 499,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-action-tv-shows\r\nUpdated at 2026-02-05 09:30:57"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123038",
-      "name": "Latest Animated",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123038",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-animated-movies\r\nUpdated at 2026-02-05 12:01:00"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123032",
-      "name": "Latest Animated",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123032",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 497,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-animated-shows\r\nUpdated at 2026-02-05 11:24:54"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123094",
-      "type": "all",
-      "name": "Latest Animation/Anime",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 500,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-animationanime-movies\r\nUpdated at 2026-02-05 09:25:05",
-        "url": "https://trakt.tv/lists/33123094"
-      },
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123092",
-      "type": "all",
-      "name": "Latest Animation/Anime",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 500,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-animationanime-shows\r\nUpdated at 2026-02-05 10:59:27",
-        "url": "https://trakt.tv/lists/33123092"
-      },
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123123",
-      "name": "Latest Comedy",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123123",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-comedy-movies\r\nUpdated at 2026-02-05 10:22:08"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123136",
-      "name": "Latest Comedy",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123136",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-comedy-shows\r\nUpdated at 2026-02-05 09:49:06"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123210",
-      "name": "Latest Drama",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123210",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-drama-movies\r\nUpdated at 2026-02-05 09:39:10"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123222",
-      "name": "Latest Drama",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123222",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-drama-shows\r\nUpdated at 2026-02-05 11:44:45"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33122833",
-      "type": "all",
-      "name": "Latest Documentary",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 200,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-documentary-movies\r\nUpdated at 2026-02-05 10:43:06",
-        "url": "https://trakt.tv/lists/33122833"
-      },
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33122848",
-      "type": "all",
-      "name": "Latest Documentary",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 500,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-documentary-tv-shows\r\nUpdated at 2026-02-05 09:30:56",
-        "url": "https://trakt.tv/lists/33122848"
-      },
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123250",
-      "type": "all",
-      "name": "Latest Horror",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 500,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-horror-movies\r\nUpdated at 2026-02-05 09:55:10",
-        "url": "https://trakt.tv/lists/33123250"
-      },
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123257",
-      "type": "all",
-      "name": "Latest Horror",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 411,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-horror-shows\r\nUpdated at 2026-02-05 10:55:49",
-        "url": "https://trakt.tv/lists/33123257"
-      },
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33132629",
-      "type": "all",
-      "name": "Latest Romance",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 500,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-romance-movies\r\nUpdated at 2026-02-05 11:28:53",
-        "url": "https://trakt.tv/lists/33132629"
-      },
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33132707",
-      "type": "all",
-      "name": "Latest Romance",
-      "enabled": false,
-      "showInHome": false,
-      "source": "trakt",
-      "sort": "rank",
-      "sortDirection": "asc",
-      "metadata": {
-        "itemCount": 200,
-        "privacy": "public",
-        "author": "snoak",
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-romance-shows\r\nUpdated at 2026-02-05 10:26:41",
-        "url": "https://trakt.tv/lists/33132707"
-      },
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123270",
-      "name": "Latest Sci-Fi",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123270",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 499,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-sci-fi-movies\r\nUpdated at 2026-02-05 11:07:47"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123276",
-      "name": "Latest Sci-Fi",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123276",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-sci-fi-shows\r\nUpdated at 2026-02-05 10:29:00"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
-      "id": "trakt.list.33123316",
-      "name": "Latest Thriller",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123316",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-thriller-movies\r\nUpdated at 2026-02-05 10:37:16"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "movie"
-    },
-    {
-      "id": "trakt.list.33123324",
-      "name": "Latest Thriller",
-      "sort": "rank",
-      "type": "all",
-      "source": "trakt",
-      "enabled": false,
-      "metadata": {
-        "url": "https://trakt.tv/lists/33123324",
-        "author": "snoak",
-        "privacy": "public",
-        "itemCount": 500,
-        "description": "This list is maintained by mdblist.com\r\nCreate your own: https://mdblist.com/lists/snoak/latest-thriller-shows\r\nUpdated at 2026-02-05 09:35:12"
-      },
-      "showInHome": false,
-      "sortDirection": "asc",
-      "displayType": "series"
-    },
-    {
       "id": "tmdb.airing_today",
       "name": "TMDB Airing Today",
       "sort": "default",
@@ -1144,7 +738,7 @@
       "type": "movie",
       "order": "asc",
       "source": "tmdb",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
@@ -1154,7 +748,7 @@
       "type": "series",
       "order": "asc",
       "source": "tmdb",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
@@ -1234,7 +828,7 @@
       "type": "anime",
       "order": "asc",
       "source": "mal",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
@@ -1304,7 +898,7 @@
       "type": "anime",
       "order": "asc",
       "source": "mal",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
@@ -1324,7 +918,7 @@
       "type": "anime",
       "order": "asc",
       "source": "mal",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
@@ -1334,7 +928,7 @@
       "type": "anime",
       "order": "asc",
       "source": "mal",
-      "enabled": false,
+      "enabled": true,
       "showInHome": false
     },
     {
