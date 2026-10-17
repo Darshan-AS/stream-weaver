@@ -404,7 +404,7 @@ def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
         return 1
 
     st_q, resp_q = torbox_request("GET", "/queued/getqueued?bypass_cache=true&limit=1000", api_key)
-    q_count = len((resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else [])
+    q_items = (resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else []
 
     items = resp.get("data") or []
     built_count = 0
@@ -429,9 +429,29 @@ def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
         ):
             built_count += 1
 
+    # If fewer than 3 active slots are running and items are waiting in the queue, start them immediately
+    while active_count < 3 and q_items:
+        next_q = q_items.pop(0)
+        qid = next_q.get("id")
+        qname = next_q.get("name") or next_q.get("hash")
+        if qid:
+            body = json.dumps({"queued_id": qid, "operation": "start"}).encode("utf-8")
+            st_s, resp_s = torbox_request(
+                "POST",
+                "/queued/controlqueued",
+                api_key,
+                headers={"Content-Type": "application/json"},
+                body=body,
+            )
+            if st_s == 200 and isinstance(resp_s, dict) and resp_s.get("success"):
+                active_count += 1
+                print(f"🚀 [TorBox Queue] Promoted queued download to active slot: {qname} (Queue ID: {qid})")
+            else:
+                break
+
     print(
         f"\n✅ Synced metadata for {built_count} completed course(s) in addon/ "
-        f"({active_count} actively downloading, {q_count} waiting in TorBox Cloud Queue)."
+        f"({active_count} actively downloading, {len(q_items)} waiting in TorBox Cloud Queue)."
     )
     return 0
 
