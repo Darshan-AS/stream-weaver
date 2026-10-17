@@ -172,6 +172,7 @@
     "groupings": [
       {
         "addons": [
+          "pac",
           "lib",
           "tio",
           "stz",
@@ -378,6 +379,22 @@
     }
   ],
   "presets": [
+    {
+      "type": "custom",
+      "instanceId": "pac",
+      "enabled": true,
+      "options": {
+        "name": "Peterson Academy",
+        "manifestUrl": "https://raw.githubusercontent.com/Darshan-AS/stream-weaver/main/addon/manifest.json",
+        "timeout": 5000,
+        "resources": [
+          "catalog",
+          "meta",
+          "stream"
+        ],
+        "mediaTypes": []
+      }
+    },
     {
       "type": "library",
       "instanceId": "lib",
@@ -662,6 +679,6 @@
     "parallel": 1
   },
   "serviceWrap": {
-    "enabled": false
+    "enabled": true
   }
 }
