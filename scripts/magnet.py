@@ -293,36 +293,43 @@ def maybe_build_course_metadata(
     info_hash: str,
     torrent_id: int,
     api_key: str,
+    explicit_url: Optional[str] = None,
     explicit_slug: Optional[str] = None,
+    force_course: bool = False,
 ) -> None:
     from build_course_metadata import (
         ADDON_DIR,
+        TorBoxFileFallbackProvider,
         build_static_addon_for_course,
-        fetch_peterson_course_html,
-        infer_peterson_slug,
-        map_torbox_files_to_episodes,
-        scrape_peterson_course_html,
+        match_torbox_files_to_lectures,
+        resolve_course_metadata,
     )
 
-    slug = infer_peterson_slug(display_title, explicit_slug)
-    if not slug:
-        return
-
-    print(f"   🎨 [Metadata] Detected Peterson Academy course (slug: '{slug}') — fetching artwork & synopses...")
-    html_text = fetch_peterson_course_html(slug)
-    if not html_text:
-        return
-
-    meta = scrape_peterson_course_html(html_text)
-    if not meta:
-        print(f"   ⚠️  [Metadata] Could not parse course data from petersonacademy.com/courses/{slug}")
-        return
+    lower_title = display_title.lower()
+    has_known_course_kw = any(
+        kw in lower_title for kw in TorBoxFileFallbackProvider.PROVIDER_KEYWORDS
+    )
+    allow_fallback = bool(force_course or has_known_course_kw)
 
     tb_files = fetch_torbox_torrent_files(torrent_id, api_key)
-    ep_map = map_torbox_files_to_episodes(tb_files)
+    meta = resolve_course_metadata(
+        display_title=display_title,
+        torbox_files=tb_files,
+        torbox_torrent_id=torrent_id,
+        explicit_url=explicit_url,
+        explicit_slug=explicit_slug,
+        allow_fallback=allow_fallback,
+    )
+    if not meta:
+        return
+
+    print(
+        f"   🎨 [Metadata] Matched provider '{meta.provider}' for '{meta.title}' — weaving artwork & synopses..."
+    )
+    ep_map = match_torbox_files_to_lectures(tb_files, meta.lectures)
     build_static_addon_for_course(meta, info_hash, torrent_id, ep_map)
     print(
-        f"   ✨ [Metadata] Built poster, backdrop & {len(meta['lectures'])} lecture synopses in {ADDON_DIR.relative_to(ADDON_DIR.parent)}/"
+        f"   ✨ [Metadata] Built poster, backdrop & {len(meta.lectures) or len(ep_map)} lectures in {ADDON_DIR.relative_to(ADDON_DIR.parent)}/ ({meta.stremio_id})"
     )
 
 
@@ -340,8 +347,17 @@ def main() -> int:
         help="Optional custom title override for the torrent in your TorBox Library",
     )
     parser.add_argument(
+        "--url",
+        help="Optional course webpage URL (e.g. MasterClass, Wondrium, Peterson Academy, Coursera) to scrape metadata from",
+    )
+    parser.add_argument(
         "--slug",
-        help="Optional Peterson Academy course slug override (e.g. 'napoleon' for petersonacademy.com/courses/napoleon)",
+        help="Optional course slug override (e.g. 'napoleon')",
+    )
+    parser.add_argument(
+        "--course",
+        action="store_true",
+        help="Force building structured course metadata from TorBox video filenames even without a webpage URL",
     )
     parser.add_argument(
         "--list",
@@ -435,7 +451,15 @@ def main() -> int:
             t_id = (resp.get("data") or {}).get("torrent_id")
             print(f"   ✅ [TorBox] {detail}" + (f" (ID: {t_id})" if t_id else ""))
             if t_id and info_hash:
-                maybe_build_course_metadata(display_title, info_hash, int(t_id), api_key, args.slug)
+                maybe_build_course_metadata(
+                    display_title,
+                    info_hash,
+                    int(t_id),
+                    api_key,
+                    explicit_url=args.url,
+                    explicit_slug=args.slug,
+                    force_course=args.course,
+                )
             added_any = True
         else:
             detail = resp.get("detail") if isinstance(resp, dict) else str(resp)
