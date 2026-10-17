@@ -179,6 +179,7 @@
           "met",
           "mdf",
           "tdb",
+          "kna",
           "sdx",
           "atn"
         ],
@@ -186,7 +187,6 @@
       },
       {
         "addons": [
-          "kna",
           "hdh",
           "soo",
           "wst"
@@ -327,7 +327,6 @@
       "anime"
     ],
     "addons": [
-      "kna",
       "hdh",
       "soo",
       "wst"
@@ -335,7 +334,7 @@
   },
   "seasonEpisodeMatching": {
     "enabled": true,
-    "strict": true,
+    "strict": false,
     "requestTypes": [
       "series"
     ],
@@ -388,7 +387,8 @@
         "timeout": 5000,
         "resources": [
           "stream",
-          "catalog"
+          "catalog",
+          "meta"
         ],
         "mediaTypes": [],
         "showRefreshActions": [
@@ -639,7 +639,7 @@
       "name": "TorBox Cloud Library",
       "enabled": true,
       "showOnHome": true,
-      "disableSearch": true,
+      "disableSearch": false,
       "overrideType": "movie"
     }
   ],

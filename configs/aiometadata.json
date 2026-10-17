@@ -538,6 +538,90 @@
       }
     },
     {
+      "id": "streaming.cts",
+      "name": "Curiosity Stream",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc"
+    },
+    {
+      "id": "streaming.cts",
+      "name": "Curiosity Stream",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc"
+    },
+    {
+      "id": "tmdb.discover.popular_docuseries",
+      "type": "series",
+      "name": "Popular Docuseries & Education",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "tmdb.discover.top_docuseries",
+      "type": "series",
+      "name": "Top Rated Docuseries & Courses",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 50
+          }
+        }
+      }
+    },
+    {
+      "id": "tmdb.discover.top_documentaries",
+      "type": "movie",
+      "name": "Top Rated Documentaries",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 100
+          }
+        }
+      }
+    },
+    {
       "id": "tmdb.trending",
       "name": "TMDB Trending",
       "sort": "default",
@@ -672,30 +756,6 @@
     {
       "id": "streaming.hlu",
       "name": "Hulu",
-      "sort": "default",
-      "type": "series",
-      "order": "asc",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "series",
-      "sortDirection": "desc"
-    },
-    {
-      "id": "streaming.cts",
-      "name": "Curiosity Stream",
-      "sort": "default",
-      "type": "movie",
-      "order": "asc",
-      "source": "streaming",
-      "enabled": true,
-      "showInHome": false,
-      "displayType": "movie",
-      "sortDirection": "desc"
-    },
-    {
-      "id": "streaming.cts",
-      "name": "Curiosity Stream",
       "sort": "default",
       "type": "series",
       "order": "asc",

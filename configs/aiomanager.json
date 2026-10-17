@@ -2135,6 +2135,184 @@
           "showInHome": true
         },
         {
+          "id": "streaming.cts_movie",
+          "type": "movie",
+          "name": "Curiosity Stream",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Music",
+                "Mystery",
+                "Romance",
+                "Science Fiction",
+                "TV Movie",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "isRequired": false,
+              "default": "Action"
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "streaming.cts_series",
+          "type": "series",
+          "name": "Curiosity Stream",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action & Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Kids",
+                "Mystery",
+                "News",
+                "Reality",
+                "Sci-Fi & Fantasy",
+                "Soap",
+                "Talk",
+                "War & Politics",
+                "Western"
+              ],
+              "isRequired": false,
+              "default": "Action & Adventure"
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "tmdb.discover.popular_docuseries",
+          "type": "series",
+          "name": "Popular Docuseries & Education",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action & Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Kids",
+                "Mystery",
+                "News",
+                "Reality",
+                "Sci-Fi & Fantasy",
+                "Soap",
+                "Talk",
+                "War & Politics",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "tmdb.discover.top_docuseries",
+          "type": "series",
+          "name": "Top Rated Docuseries & Courses",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action & Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Kids",
+                "Mystery",
+                "News",
+                "Reality",
+                "Sci-Fi & Fantasy",
+                "Soap",
+                "Talk",
+                "War & Politics",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "tmdb.discover.top_documentaries",
+          "type": "movie",
+          "name": "Top Rated Documentaries",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Music",
+                "Mystery",
+                "Romance",
+                "Science Fiction",
+                "TV Movie",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
           "id": "tmdb.trending",
           "type": "movie",
           "name": "TMDB Trending",
@@ -3012,81 +3190,6 @@
           "showInHome": false
         },
         {
-          "id": "streaming.cts_movie",
-          "type": "movie",
-          "name": "Curiosity Stream",
-          "pageSize": 50,
-          "extra": [
-            {
-              "name": "genre",
-              "options": [
-                "None",
-                "Action",
-                "Adventure",
-                "Animation",
-                "Comedy",
-                "Crime",
-                "Documentary",
-                "Drama",
-                "Family",
-                "Fantasy",
-                "History",
-                "Horror",
-                "Music",
-                "Mystery",
-                "Romance",
-                "Science Fiction",
-                "TV Movie",
-                "Thriller",
-                "War",
-                "Western"
-              ],
-              "isRequired": true,
-              "default": "None"
-            },
-            {
-              "name": "skip"
-            }
-          ],
-          "showInHome": false
-        },
-        {
-          "id": "streaming.cts_series",
-          "type": "series",
-          "name": "Curiosity Stream",
-          "pageSize": 50,
-          "extra": [
-            {
-              "name": "genre",
-              "options": [
-                "None",
-                "Action & Adventure",
-                "Animation",
-                "Comedy",
-                "Crime",
-                "Documentary",
-                "Drama",
-                "Family",
-                "Kids",
-                "Mystery",
-                "News",
-                "Reality",
-                "Sci-Fi & Fantasy",
-                "Soap",
-                "Talk",
-                "War & Politics",
-                "Western"
-              ],
-              "isRequired": true,
-              "default": "None"
-            },
-            {
-              "name": "skip"
-            }
-          ],
-          "showInHome": false
-        },
-        {
           "id": "trakt.recommendations.movies",
           "type": "movie",
           "name": "Trakt Recommendations",
@@ -3773,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792216465317,
+      "configVersion": 1792220025402,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792216465317,
-        "timestamp": "2026-10-17T05:54:25.545Z"
+        "configVersion": 1792220025402,
+        "timestamp": "2026-10-17T06:53:45.615Z"
       },
-      "_timestamp": 1792216465545
+      "_timestamp": 1792220025615
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -3795,6 +3898,9 @@
           "extra": [
             {
               "name": "skip"
+            },
+            {
+              "name": "search"
             },
             {
               "name": "genre",
@@ -3845,6 +3951,16 @@
           "name": "catalog",
           "types": [
             "movie"
+          ]
+        },
+        {
+          "name": "meta",
+          "types": [
+            "library"
+          ],
+          "idPrefixes": [
+            "aiostreams::library.torbox",
+            "aiostreamserror"
           ]
         },
         {
@@ -5322,6 +5438,184 @@
                 "showInHome": true
               },
               {
+                "id": "streaming.cts_movie",
+                "type": "movie",
+                "name": "Curiosity Stream",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Fantasy",
+                      "History",
+                      "Horror",
+                      "Music",
+                      "Mystery",
+                      "Romance",
+                      "Science Fiction",
+                      "TV Movie",
+                      "Thriller",
+                      "War",
+                      "Western"
+                    ],
+                    "isRequired": false,
+                    "default": "Action"
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "streaming.cts_series",
+                "type": "series",
+                "name": "Curiosity Stream",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action & Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Kids",
+                      "Mystery",
+                      "News",
+                      "Reality",
+                      "Sci-Fi & Fantasy",
+                      "Soap",
+                      "Talk",
+                      "War & Politics",
+                      "Western"
+                    ],
+                    "isRequired": false,
+                    "default": "Action & Adventure"
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "tmdb.discover.popular_docuseries",
+                "type": "series",
+                "name": "Popular Docuseries & Education",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action & Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Kids",
+                      "Mystery",
+                      "News",
+                      "Reality",
+                      "Sci-Fi & Fantasy",
+                      "Soap",
+                      "Talk",
+                      "War & Politics",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "tmdb.discover.top_docuseries",
+                "type": "series",
+                "name": "Top Rated Docuseries & Courses",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action & Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Kids",
+                      "Mystery",
+                      "News",
+                      "Reality",
+                      "Sci-Fi & Fantasy",
+                      "Soap",
+                      "Talk",
+                      "War & Politics",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "tmdb.discover.top_documentaries",
+                "type": "movie",
+                "name": "Top Rated Documentaries",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Fantasy",
+                      "History",
+                      "Horror",
+                      "Music",
+                      "Mystery",
+                      "Romance",
+                      "Science Fiction",
+                      "TV Movie",
+                      "Thriller",
+                      "War",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
                 "id": "tmdb.trending",
                 "type": "movie",
                 "name": "TMDB Trending",
@@ -6199,81 +6493,6 @@
                 "showInHome": false
               },
               {
-                "id": "streaming.cts_movie",
-                "type": "movie",
-                "name": "Curiosity Stream",
-                "pageSize": 50,
-                "extra": [
-                  {
-                    "name": "genre",
-                    "options": [
-                      "None",
-                      "Action",
-                      "Adventure",
-                      "Animation",
-                      "Comedy",
-                      "Crime",
-                      "Documentary",
-                      "Drama",
-                      "Family",
-                      "Fantasy",
-                      "History",
-                      "Horror",
-                      "Music",
-                      "Mystery",
-                      "Romance",
-                      "Science Fiction",
-                      "TV Movie",
-                      "Thriller",
-                      "War",
-                      "Western"
-                    ],
-                    "isRequired": true,
-                    "default": "None"
-                  },
-                  {
-                    "name": "skip"
-                  }
-                ],
-                "showInHome": false
-              },
-              {
-                "id": "streaming.cts_series",
-                "type": "series",
-                "name": "Curiosity Stream",
-                "pageSize": 50,
-                "extra": [
-                  {
-                    "name": "genre",
-                    "options": [
-                      "None",
-                      "Action & Adventure",
-                      "Animation",
-                      "Comedy",
-                      "Crime",
-                      "Documentary",
-                      "Drama",
-                      "Family",
-                      "Kids",
-                      "Mystery",
-                      "News",
-                      "Reality",
-                      "Sci-Fi & Fantasy",
-                      "Soap",
-                      "Talk",
-                      "War & Politics",
-                      "Western"
-                    ],
-                    "isRequired": true,
-                    "default": "None"
-                  },
-                  {
-                    "name": "skip"
-                  }
-                ],
-                "showInHome": false
-              },
-              {
                 "id": "trakt.recommendations.movies",
                 "type": "movie",
                 "name": "Trakt Recommendations",
@@ -6960,14 +7179,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792216465317,
+            "configVersion": 1792220025402,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792216465317,
-              "timestamp": "2026-10-17T05:54:25.545Z"
+              "configVersion": 1792220025402,
+              "timestamp": "2026-10-17T06:53:45.615Z"
             },
-            "_timestamp": 1792216465545
+            "_timestamp": 1792220025615
           },
           "flags": {
             "official": false,
@@ -6995,6 +7214,9 @@
                 "extra": [
                   {
                     "name": "skip"
+                  },
+                  {
+                    "name": "search"
                   },
                   {
                     "name": "genre",
@@ -7045,6 +7267,16 @@
                 "name": "catalog",
                 "types": [
                   "movie"
+                ]
+              },
+              {
+                "name": "meta",
+                "types": [
+                  "library"
+                ],
+                "idPrefixes": [
+                  "aiostreams::library.torbox",
+                  "aiostreamserror"
                 ]
               },
               {
@@ -8941,6 +9173,184 @@
               "showInHome": true
             },
             {
+              "id": "streaming.cts_movie",
+              "type": "movie",
+              "name": "Curiosity Stream",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false,
+                  "default": "Action"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.cts_series",
+              "type": "series",
+              "name": "Curiosity Stream",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false,
+                  "default": "Action & Adventure"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.popular_docuseries",
+              "type": "series",
+              "name": "Popular Docuseries & Education",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.top_docuseries",
+              "type": "series",
+              "name": "Top Rated Docuseries & Courses",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.top_documentaries",
+              "type": "movie",
+              "name": "Top Rated Documentaries",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.trending",
               "type": "movie",
               "name": "TMDB Trending",
@@ -9818,81 +10228,6 @@
               "showInHome": false
             },
             {
-              "id": "streaming.cts_movie",
-              "type": "movie",
-              "name": "Curiosity Stream",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "None",
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": true,
-                  "default": "None"
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": false
-            },
-            {
-              "id": "streaming.cts_series",
-              "type": "series",
-              "name": "Curiosity Stream",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "None",
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": true,
-                  "default": "None"
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": false
-            },
-            {
               "id": "trakt.recommendations.movies",
               "type": "movie",
               "name": "Trakt Recommendations",
@@ -10579,14 +10914,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792216465317,
+          "configVersion": 1792220025402,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792216465317,
-            "timestamp": "2026-10-17T05:54:25.545Z"
+            "configVersion": 1792220025402,
+            "timestamp": "2026-10-17T06:53:45.615Z"
           },
-          "_timestamp": 1792216465545
+          "_timestamp": 1792220025615
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -10620,6 +10955,9 @@
               "extra": [
                 {
                   "name": "skip"
+                },
+                {
+                  "name": "search"
                 },
                 {
                   "name": "genre",
@@ -10670,6 +11008,16 @@
               "name": "catalog",
               "types": [
                 "movie"
+              ]
+            },
+            {
+              "name": "meta",
+              "types": [
+                "library"
+              ],
+              "idPrefixes": [
+                "aiostreams::library.torbox",
+                "aiostreamserror"
               ]
             },
             {
