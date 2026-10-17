@@ -456,6 +456,87 @@ def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
     return 0
 
 
+def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds: int = 20) -> int:
+    """Continuously keeps 3 active downloads running on TorBox and syncs finished courses until queue is empty."""
+    import time
+
+    from build_course_metadata import ADDON_DIR
+
+    synced_ids = set()
+    lib_meta_dir = ADDON_DIR / "meta" / "library"
+    if lib_meta_dir.exists():
+        for p in lib_meta_dir.glob("aiostreams::library.torbox.torrent.*.json"):
+            m = re.search(r"\.(\d+)\.json$", p.name)
+            if m:
+                synced_ids.add(int(m.group(1)))
+
+    print("👀 Watching TorBox Queue — keeping 3 parallel slots active & auto-syncing finished courses...")
+    while True:
+        st_l, resp_l = torbox_request("GET", "/torrents/mylist?bypass_cache=true&limit=1000", api_key)
+        st_q, resp_q = torbox_request("GET", "/queued/getqueued?bypass_cache=true&limit=1000", api_key)
+        items = (resp_l.get("data") or []) if (st_l == 200 and isinstance(resp_l, dict)) else []
+        q_items = (resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else []
+
+        active_items = []
+        for item in items:
+            t_id = int(item.get("id") or 0)
+            name = item.get("name") or ""
+            info_hash = item.get("hash") or ""
+            files = item.get("files") or []
+            if not t_id or not name or not info_hash:
+                continue
+            if not item.get("download_finished"):
+                active_items.append(item)
+            elif t_id not in synced_ids:
+                if maybe_build_course_metadata(
+                    display_title=name,
+                    info_hash=info_hash,
+                    torrent_id=t_id,
+                    api_key=api_key,
+                    force_course=force_course,
+                    preloaded_files=files,
+                ):
+                    synced_ids.add(t_id)
+                else:
+                    synced_ids.add(t_id)
+
+        active_count = len(active_items)
+        while active_count < 3 and q_items:
+            next_q = q_items.pop(0)
+            qid = next_q.get("id")
+            qname = next_q.get("name") or next_q.get("hash")
+            if qid:
+                body = json.dumps({"queued_id": qid, "operation": "start"}).encode("utf-8")
+                st_s, resp_s = torbox_request(
+                    "POST",
+                    "/queued/controlqueued",
+                    api_key,
+                    headers={"Content-Type": "application/json"},
+                    body=body,
+                )
+                if st_s == 200 and isinstance(resp_s, dict) and resp_s.get("success"):
+                    active_count += 1
+                    print(
+                        f"🚀 [TorBox Queue] Started next download ({active_count}/3 active, {len(q_items)} queued): {qname}"
+                    )
+                else:
+                    break
+
+        if active_count == 0 and not q_items:
+            refresh_aiostreams_library_cache()
+            print("\n🎉 All queued TorBox downloads have finished and synced into addon/!")
+            return 0
+
+        prog_summary = ", ".join(
+            f"{str(a.get('name',''))[:28]} ({float(a.get('progress') or 0)*100:.0f}%)"
+            for a in active_items
+        )
+        print(
+            f"⏳ Active: {active_count}/3 [{prog_summary or 'starting...'}] | Queued: {len(q_items)}"
+        )
+        time.sleep(poll_seconds)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Add course/educational magnet links, markdown/text lists, or .torrent files to TorBox & Nuvio"
@@ -492,6 +573,11 @@ def main() -> int:
         help="Scan your TorBox Cloud Library and rebuild/update course metadata for all finished downloads",
     )
     parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Watch TorBox queue continuously, keeping 3 parallel slots active and syncing finished courses until empty",
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         help="List all torrents currently in your TorBox Cloud Library",
@@ -506,6 +592,9 @@ def main() -> int:
 
     if args.list:
         return list_torbox_library(api_key)
+
+    if args.watch:
+        return watch_and_drain_queue(api_key, force_course=args.course)
 
     if args.sync_library:
         return sync_library_metadata(api_key, force_course=args.course)
