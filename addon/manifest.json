@@ -1,6 +1,6 @@
 {
   "id": "com.darshan.streamweaver",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "name": "Stream Weaver Courses",
   "description": "Rich posters, backdrops, lecture thumbnails, and synopses for courses and educational series on TorBox",
   "logo": "https://petersonacademy.com/favicon-apple-touch-v3.png",
@@ -29,29 +29,6 @@
           "isRequired": false,
           "options": [
             "Humanities",
-            "Science",
-            "Social Sciences",
-            "History",
-            "Psychology",
-            "Philosophy",
-            "Mathematics",
-            "Religion"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "series",
-      "id": "courses",
-      "name": "Courses & Lectures",
-      "extra": [
-        {
-          "name": "genre",
-          "isRequired": false,
-          "options": [
-            "Peterson Academy",
-            "Humanities",
-            "Education",
             "Science",
             "Social Sciences",
             "History",

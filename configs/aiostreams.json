@@ -659,14 +659,6 @@
       "disableSearch": false
     },
     {
-      "id": "swce3b0.courses",
-      "type": "series",
-      "name": "Courses & Lectures",
-      "enabled": true,
-      "showOnHome": true,
-      "disableSearch": false
-    },
-    {
       "id": "lib791b.aiostreams::library.torbox",
       "type": "library",
       "name": "TorBox Cloud Library",
