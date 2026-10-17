@@ -275,6 +275,57 @@ def list_torbox_library(api_key: str) -> int:
     return 0
 
 
+def fetch_torbox_torrent_files(torrent_id: int, api_key: str) -> List[Dict[str, Any]]:
+    status, resp = torbox_request(
+        "GET", f"/torrents/mylist?id={torrent_id}&bypass_cache=true", api_key
+    )
+    if status == 200 and isinstance(resp, dict):
+        data = resp.get("data")
+        if isinstance(data, dict):
+            return data.get("files") or []
+        if isinstance(data, list) and data:
+            return data[0].get("files") or []
+    return []
+
+
+def maybe_build_course_metadata(
+    display_title: str,
+    info_hash: str,
+    torrent_id: int,
+    api_key: str,
+    explicit_slug: Optional[str] = None,
+) -> None:
+    from build_course_metadata import (
+        ADDON_DIR,
+        build_static_addon_for_course,
+        fetch_peterson_course_html,
+        infer_peterson_slug,
+        map_torbox_files_to_episodes,
+        scrape_peterson_course_html,
+    )
+
+    slug = infer_peterson_slug(display_title, explicit_slug)
+    if not slug:
+        return
+
+    print(f"   🎨 [Metadata] Detected Peterson Academy course (slug: '{slug}') — fetching artwork & synopses...")
+    html_text = fetch_peterson_course_html(slug)
+    if not html_text:
+        return
+
+    meta = scrape_peterson_course_html(html_text)
+    if not meta:
+        print(f"   ⚠️  [Metadata] Could not parse course data from petersonacademy.com/courses/{slug}")
+        return
+
+    tb_files = fetch_torbox_torrent_files(torrent_id, api_key)
+    ep_map = map_torbox_files_to_episodes(tb_files)
+    build_static_addon_for_course(meta, info_hash, torrent_id, ep_map)
+    print(
+        f"   ✨ [Metadata] Built poster, backdrop & {len(meta['lectures'])} lecture synopses in {ADDON_DIR.relative_to(ADDON_DIR.parent)}/"
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Add course/educational magnet links or .torrent files to TorBox & Nuvio"
@@ -287,6 +338,10 @@ def main() -> int:
     parser.add_argument(
         "--name",
         help="Optional custom title override for the torrent in your TorBox Library",
+    )
+    parser.add_argument(
+        "--slug",
+        help="Optional Peterson Academy course slug override (e.g. 'napoleon' for petersonacademy.com/courses/napoleon)",
     )
     parser.add_argument(
         "--list",
@@ -324,6 +379,7 @@ def main() -> int:
         if is_file_target and t_path is not None:
             print(f"\n📦 Inspecting .torrent file: {t_path.name}")
             info_hash, t_name, total_size, files = parse_torrent_file(t_path)
+            display_title = args.name or t_name
             video_files = [
                 (p, s)
                 for p, s in files
@@ -378,6 +434,8 @@ def main() -> int:
             detail = resp.get("detail") or "Added to TorBox Cloud Library"
             t_id = (resp.get("data") or {}).get("torrent_id")
             print(f"   ✅ [TorBox] {detail}" + (f" (ID: {t_id})" if t_id else ""))
+            if t_id and info_hash:
+                maybe_build_course_metadata(display_title, info_hash, int(t_id), api_key, args.slug)
             added_any = True
         else:
             detail = resp.get("detail") if isinstance(resp, dict) else str(resp)
