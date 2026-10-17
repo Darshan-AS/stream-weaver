@@ -651,6 +651,14 @@
   },
   "catalogModifications": [
     {
+      "id": "swce3b0.peterson_academy",
+      "type": "series",
+      "name": "Peterson Academy",
+      "enabled": true,
+      "showOnHome": true,
+      "disableSearch": false
+    },
+    {
       "id": "swce3b0.courses",
       "type": "series",
       "name": "Courses & Lectures",
