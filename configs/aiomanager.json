@@ -3876,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792226862420,
+      "configVersion": 1792230104778,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792226862420,
-        "timestamp": "2026-10-17T08:47:42.640Z"
+        "configVersion": 1792230104778,
+        "timestamp": "2026-10-17T09:41:45.004Z"
       },
-      "_timestamp": 1792226862640
+      "_timestamp": 1792230105004
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -3901,9 +3901,15 @@
               "isRequired": false,
               "options": [
                 "Peterson Academy",
-                "History",
+                "Psychology",
+                "Education",
                 "Humanities",
-                "Education"
+                "Social Sciences",
+                "Science",
+                "Philosophy",
+                "History",
+                "Mathematics",
+                "Religion"
               ]
             }
           ]
@@ -7204,14 +7210,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792226862420,
+            "configVersion": 1792230104778,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792226862420,
-              "timestamp": "2026-10-17T08:47:42.640Z"
+              "configVersion": 1792230104778,
+              "timestamp": "2026-10-17T09:41:45.004Z"
             },
-            "_timestamp": 1792226862640
+            "_timestamp": 1792230105004
           },
           "flags": {
             "official": false,
@@ -7242,9 +7248,15 @@
                     "isRequired": false,
                     "options": [
                       "Peterson Academy",
-                      "History",
+                      "Psychology",
+                      "Education",
                       "Humanities",
-                      "Education"
+                      "Social Sciences",
+                      "Science",
+                      "Philosophy",
+                      "History",
+                      "Mathematics",
+                      "Religion"
                     ]
                   }
                 ]
@@ -10964,14 +10976,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792226862420,
+          "configVersion": 1792230104778,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792226862420,
-            "timestamp": "2026-10-17T08:47:42.640Z"
+            "configVersion": 1792230104778,
+            "timestamp": "2026-10-17T09:41:45.004Z"
           },
-          "_timestamp": 1792226862640
+          "_timestamp": 1792230105004
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -11008,9 +11020,15 @@
                   "isRequired": false,
                   "options": [
                     "Peterson Academy",
-                    "History",
+                    "Psychology",
+                    "Education",
                     "Humanities",
-                    "Education"
+                    "Social Sciences",
+                    "Science",
+                    "Philosophy",
+                    "History",
+                    "Mathematics",
+                    "Religion"
                   ]
                 }
               ]
