@@ -29,7 +29,7 @@ from stream_weaver.effects.storage import (
     write_json_file,
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
-from stream_weaver.providers.services import build_config_services
+from stream_weaver.providers.services import build_config_services, warm_home_catalogs
 
 app = typer.Typer(
     name="sw",
@@ -303,6 +303,39 @@ def cmd_config_sanitize(
 
     if not found_any:
         console.print("ℹ️  No config files found in configs/ to sanitize.")
+
+
+@config_app.command("warm")
+@app.command("warm")
+def cmd_config_warm(
+    workers: Annotated[
+        int,
+        typer.Option("--workers", "-w", help="Number of concurrent requests to warm Home catalogs"),
+    ] = 8,
+) -> None:
+    """Concurrently pre-warm all Home catalog endpoints across enabled addons."""
+    _, _, configs_dir, env = _resolve_paths()
+    cfg_path = configs_dir / "aiomanager.json"
+    if not cfg_path.exists():
+        err_console.print("❌ Missing configs/aiomanager.json")
+        raise typer.Exit(code=1)
+
+    match read_json_file(cfg_path):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(scrubbed_cfg):
+            pass
+
+    match inject_secrets(scrubbed_cfg, env):
+        case Err(sec_err):
+            err_console.print(f"❌ {sec_err}")
+            raise typer.Exit(code=1)
+        case Ok(injected_cfg):
+            pass
+
+    warmed, total = warm_home_catalogs(injected_cfg, HttpxClient(), max_workers=workers)
+    console.print(f"🔥 [warm] Pre-warmed {warmed}/{total} Home catalog rows")
 
 
 def main() -> None:

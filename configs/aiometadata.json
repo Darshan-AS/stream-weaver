@@ -72,7 +72,8 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.watchlist.series",
@@ -80,7 +81,8 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.trending.movies",
@@ -88,7 +90,8 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.trending.shows",
@@ -96,7 +99,8 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 7200
     },
     {
       "id": "tmdb.top",
@@ -106,7 +110,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.top",
@@ -116,7 +121,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.top_rated",
@@ -126,7 +132,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.top_rated",
@@ -136,7 +143,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true
+      "showInHome": true,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.airing",
@@ -147,7 +155,8 @@
       "source": "mal",
       "enabled": true,
       "showInHome": true,
-      "displayType": "series"
+      "displayType": "series",
+      "cacheTTL": 43200
     },
     {
       "id": "mal.most_popular",
@@ -158,7 +167,8 @@
       "source": "mal",
       "enabled": true,
       "showInHome": true,
-      "displayType": "series"
+      "displayType": "series",
+      "cacheTTL": 86400
     },
     {
       "id": "mal.top_anime",
@@ -169,7 +179,8 @@
       "source": "mal",
       "enabled": true,
       "showInHome": true,
-      "displayType": "series"
+      "displayType": "series",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.nfx",
@@ -181,7 +192,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.nfx",
@@ -193,7 +205,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.amp",
@@ -205,7 +218,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.amp",
@@ -217,7 +231,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hst",
@@ -229,7 +244,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hst",
@@ -241,7 +257,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hbm",
@@ -253,7 +270,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hbm",
@@ -265,7 +283,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.atp",
@@ -277,7 +296,8 @@
       "showInHome": true,
       "displayType": "movie",
       "sortDirection": "desc",
-      "order": "asc"
+      "order": "asc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.atp",
@@ -289,7 +309,8 @@
       "showInHome": true,
       "displayType": "series",
       "sortDirection": "desc",
-      "order": "asc"
+      "order": "asc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.dnp",
@@ -301,7 +322,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.dnp",
@@ -313,7 +335,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.slv",
@@ -325,7 +348,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.slv",
@@ -337,7 +361,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.zee",
@@ -349,7 +374,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.zee",
@@ -361,7 +387,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.hindi_movies",
@@ -380,7 +407,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.hindi_new_movies",
@@ -400,7 +428,8 @@
             "vote_count.gte": 5
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.hindi_series",
@@ -419,7 +448,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.kannada_movies",
@@ -438,7 +468,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.kannada_new_movies",
@@ -458,7 +489,8 @@
             "vote_count.gte": 3
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.kannada_top_movies",
@@ -478,7 +510,8 @@
             "vote_count.gte": 20
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.kannada_series",
@@ -497,7 +530,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.japanese_movies",
@@ -516,7 +550,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.japanese_series",
@@ -535,7 +570,8 @@
             "sort_by": "popularity.desc"
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.cts",
@@ -547,7 +583,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.cts",
@@ -559,7 +596,8 @@
       "enabled": true,
       "showInHome": true,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.popular_docuseries",
@@ -579,7 +617,8 @@
             "vote_count.gte": 10
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.top_docuseries",
@@ -599,7 +638,8 @@
             "vote_count.gte": 50
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.discover.top_documentaries",
@@ -619,7 +659,8 @@
             "vote_count.gte": 100
           }
         }
-      }
+      },
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.trending",
@@ -629,7 +670,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.trending",
@@ -639,7 +681,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.language",
@@ -649,7 +692,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.language",
@@ -659,7 +703,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "trakt.popular.movies",
@@ -667,7 +712,8 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.popular.shows",
@@ -675,7 +721,8 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.most_favorited.movies.weekly",
@@ -683,7 +730,8 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.most_favorited.shows.weekly",
@@ -691,7 +739,8 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "streaming.pmp",
@@ -703,7 +752,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.pmp",
@@ -715,7 +765,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.pcp",
@@ -727,7 +778,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.pcp",
@@ -739,7 +791,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hlu",
@@ -751,7 +804,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "movie",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "streaming.hlu",
@@ -763,7 +817,8 @@
       "enabled": true,
       "showInHome": false,
       "displayType": "series",
-      "sortDirection": "desc"
+      "sortDirection": "desc",
+      "cacheTTL": 86400
     },
     {
       "id": "trakt.recommendations.movies",
@@ -771,7 +826,8 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "trakt.recommendations.shows",
@@ -779,7 +835,8 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 7200
     },
     {
       "id": "tmdb.airing_today",
@@ -789,7 +846,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 43200
     },
     {
       "id": "tmdb.year",
@@ -799,7 +857,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tmdb.year",
@@ -809,7 +868,8 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvdb.trending",
@@ -819,7 +879,8 @@
       "order": "asc",
       "source": "tvdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvdb.trending",
@@ -829,7 +890,8 @@
       "order": "asc",
       "source": "tvdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvdb.genres",
@@ -839,7 +901,8 @@
       "order": "asc",
       "source": "tvdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvdb.genres",
@@ -849,7 +912,8 @@
       "order": "asc",
       "source": "tvdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvdb.collections",
@@ -859,7 +923,8 @@
       "order": "asc",
       "source": "tvdb",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "tvmaze.schedule",
@@ -869,7 +934,8 @@
       "order": "asc",
       "source": "tvmaze",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.upcoming",
@@ -879,7 +945,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.schedule",
@@ -889,7 +956,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 43200
     },
     {
       "id": "mal.seasons",
@@ -899,7 +967,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.80sDecade",
@@ -909,7 +978,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.90sDecade",
@@ -919,7 +989,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.00sDecade",
@@ -929,7 +1000,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.10sDecade",
@@ -939,7 +1011,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.20sDecade",
@@ -949,7 +1022,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.genres",
@@ -959,7 +1033,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.studios",
@@ -969,7 +1044,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.top_movies",
@@ -979,7 +1055,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.top_series",
@@ -989,7 +1066,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": true,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     },
     {
       "id": "mal.most_favorites",
@@ -999,7 +1077,8 @@
       "order": "asc",
       "source": "mal",
       "enabled": false,
-      "showInHome": false
+      "showInHome": false,
+      "cacheTTL": 86400
     }
   ],
   "language": "en-US",
@@ -1009,7 +1088,7 @@
   "providers": {
     "anime": "tvdb",
     "movie": "tmdb",
-    "series": "tvdb",
+    "series": "tmdb",
     "anime_id_provider": "kitsu",
     "forceAnimeForDetectedImdb": true
   },
@@ -1053,7 +1132,7 @@
   "includeAdult": false,
   "searchEnabled": true,
   "tvdbSeasonType": "default",
-  "usePosterProxy": true,
+  "usePosterProxy": false,
   "displayAgeRating": true,
   "showRateMeButton": false,
   "anilistWatchTracking": false,

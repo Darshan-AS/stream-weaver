@@ -9,8 +9,10 @@ from stream_weaver.core.coercions import (
     normalize_aiometadata,
     normalize_aiostreams,
     rehydrate_aiomanager,
+    sanitize_manifest_home_catalogs,
 )
 from stream_weaver.core.result import Ok
+from stream_weaver.providers.services import extract_home_catalog_urls
 
 
 def test_normalize_aiostreams_unwraps_and_strips_volatile() -> None:
@@ -115,3 +117,48 @@ def test_aiomanager_dehydrate_and_rehydrate_roundtrip() -> None:
     assert rehydrated["accounts"][0]["addons"][1]["manifest"] == cinemeta_account_mf
     assert rehydrated["manifests"]["aio-metadata:3.5.1"] == huge_manifest
     assert rehydrated["watchEvents"] == []
+
+
+def test_sanitize_manifest_home_catalogs_and_extract_urls() -> None:
+    manifest: dict[str, Any] = {
+        "id": "aio-metadata",
+        "version": "3.5.1",
+        "catalogs": [
+            {
+                "type": "movie",
+                "id": "streaming.nfx_movie",
+                "extra": [
+                    {"name": "genre", "isRequired": False, "default": "Action"},
+                    {"name": "skip"},
+                ],
+            },
+            {
+                "type": "movie",
+                "id": "tmdb.trending",
+                "extra": [
+                    {"name": "genre", "isRequired": True, "default": "Day"},
+                ],
+            },
+        ],
+    }
+    sanitized = sanitize_manifest_home_catalogs(manifest)
+    assert "default" not in sanitized["catalogs"][0]["extra"][0]
+    assert sanitized["catalogs"][1]["extra"][0]["default"] == "Day"
+
+    state: dict[str, Any] = {
+        "manifests": {"aio-metadata:3.5.1": sanitized},
+        "accounts": [
+            {
+                "addons": [
+                    {
+                        "transportUrl": "https://example.com/stremio/u-1/manifest.json",
+                        "manifestId": "aio-metadata:3.5.1",
+                        "manifest": sanitized,
+                        "flags": {"enabled": True},
+                    }
+                ]
+            }
+        ],
+    }
+    urls = extract_home_catalog_urls(state)
+    assert urls == ["https://example.com/stremio/u-1/catalog/movie/streaming.nfx_movie.json"]

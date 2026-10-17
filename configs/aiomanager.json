@@ -549,8 +549,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -584,8 +583,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -622,8 +620,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -657,8 +654,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -677,8 +673,7 @@
                   "options": [
                     "None"
                   ],
-                  "isRequired": false,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -697,8 +692,7 @@
                   "options": [
                     "None"
                   ],
-                  "isRequired": false,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -717,8 +711,7 @@
                   "options": [
                     "None"
                   ],
-                  "isRequired": false,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -755,8 +748,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -790,8 +782,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -828,8 +819,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -863,8 +853,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -901,8 +890,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -936,8 +924,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -974,8 +961,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1009,8 +995,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1047,8 +1032,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1082,8 +1066,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1120,8 +1103,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1155,8 +1137,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1193,8 +1174,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1228,8 +1208,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1266,8 +1245,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1301,8 +1279,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1663,8 +1640,7 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -1698,8 +1674,7 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": false,
-                  "default": "Action & Adventure"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
@@ -3376,14 +3351,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792243460457,
+          "configVersion": 1792261665969,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792243460457,
-            "timestamp": "2026-10-17T13:24:20.710Z"
+            "configVersion": 1792261665969,
+            "timestamp": "2026-10-17T18:27:46.238Z"
           },
-          "_timestamp": 1792243460710
+          "_timestamp": 1792261666238
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3606,13 +3581,13 @@
             {
               "type": "series",
               "id": "watchly.item.1",
-              "name": "Because you watched Gravity Falls",
+              "name": "Because you watched Lanterns",
               "extra": []
             },
             {
               "type": "series",
               "id": "watchly.item.2",
-              "name": "Because you watched The Final Problem",
+              "name": "Because you watched Gravity Falls",
               "extra": []
             }
           ],
