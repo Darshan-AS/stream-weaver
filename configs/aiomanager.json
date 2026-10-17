@@ -1848,6 +1848,43 @@
           "showInHome": true
         },
         {
+          "id": "tmdb.discover.hindi_new_movies",
+          "type": "movie",
+          "name": "New Hindi Releases",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Music",
+                "Mystery",
+                "Romance",
+                "Science Fiction",
+                "TV Movie",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
           "id": "tmdb.discover.hindi_series",
           "type": "series",
           "name": "Hindi Series",
@@ -1885,6 +1922,80 @@
           "id": "tmdb.discover.kannada_movies",
           "type": "movie",
           "name": "Kannada Movies",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Music",
+                "Mystery",
+                "Romance",
+                "Science Fiction",
+                "TV Movie",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "tmdb.discover.kannada_new_movies",
+          "type": "movie",
+          "name": "New Kannada Releases",
+          "pageSize": 50,
+          "extra": [
+            {
+              "name": "genre",
+              "options": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Music",
+                "Mystery",
+                "Romance",
+                "Science Fiction",
+                "TV Movie",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "isRequired": false
+            },
+            {
+              "name": "skip"
+            }
+          ],
+          "showInHome": true
+        },
+        {
+          "id": "tmdb.discover.kannada_top_movies",
+          "type": "movie",
+          "name": "Top Rated Kannada Movies",
           "pageSize": 50,
           "extra": [
             {
@@ -3356,14 +3467,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792172143255,
+      "configVersion": 1792208256671,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792172143255,
-        "timestamp": "2026-10-16T17:35:43.495Z"
+        "configVersion": 1792208256671,
+        "timestamp": "2026-10-17T03:37:36.866Z"
       },
-      "_timestamp": 1792172143495
+      "_timestamp": 1792208256866
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -4618,6 +4729,43 @@
                 "showInHome": true
               },
               {
+                "id": "tmdb.discover.hindi_new_movies",
+                "type": "movie",
+                "name": "New Hindi Releases",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Fantasy",
+                      "History",
+                      "Horror",
+                      "Music",
+                      "Mystery",
+                      "Romance",
+                      "Science Fiction",
+                      "TV Movie",
+                      "Thriller",
+                      "War",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
                 "id": "tmdb.discover.hindi_series",
                 "type": "series",
                 "name": "Hindi Series",
@@ -4655,6 +4803,80 @@
                 "id": "tmdb.discover.kannada_movies",
                 "type": "movie",
                 "name": "Kannada Movies",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Fantasy",
+                      "History",
+                      "Horror",
+                      "Music",
+                      "Mystery",
+                      "Romance",
+                      "Science Fiction",
+                      "TV Movie",
+                      "Thriller",
+                      "War",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "tmdb.discover.kannada_new_movies",
+                "type": "movie",
+                "name": "New Kannada Releases",
+                "pageSize": 50,
+                "extra": [
+                  {
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Animation",
+                      "Comedy",
+                      "Crime",
+                      "Documentary",
+                      "Drama",
+                      "Family",
+                      "Fantasy",
+                      "History",
+                      "Horror",
+                      "Music",
+                      "Mystery",
+                      "Romance",
+                      "Science Fiction",
+                      "TV Movie",
+                      "Thriller",
+                      "War",
+                      "Western"
+                    ],
+                    "isRequired": false
+                  },
+                  {
+                    "name": "skip"
+                  }
+                ],
+                "showInHome": true
+              },
+              {
+                "id": "tmdb.discover.kannada_top_movies",
+                "type": "movie",
+                "name": "Top Rated Kannada Movies",
                 "pageSize": 50,
                 "extra": [
                   {
@@ -6126,14 +6348,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792172143255,
+            "configVersion": 1792208256671,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792172143255,
-              "timestamp": "2026-10-16T17:35:43.495Z"
+              "configVersion": 1792208256671,
+              "timestamp": "2026-10-17T03:37:36.866Z"
             },
-            "_timestamp": 1792172143495
+            "_timestamp": 1792208256866
           },
           "flags": {
             "official": false,
@@ -7820,6 +8042,43 @@
               "showInHome": true
             },
             {
+              "id": "tmdb.discover.hindi_new_movies",
+              "type": "movie",
+              "name": "New Hindi Releases",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.discover.hindi_series",
               "type": "series",
               "name": "Hindi Series",
@@ -7857,6 +8116,80 @@
               "id": "tmdb.discover.kannada_movies",
               "type": "movie",
               "name": "Kannada Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_new_movies",
+              "type": "movie",
+              "name": "New Kannada Releases",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_top_movies",
+              "type": "movie",
+              "name": "Top Rated Kannada Movies",
               "pageSize": 50,
               "extra": [
                 {
@@ -9328,14 +9661,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792172143255,
+          "configVersion": 1792208256671,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792172143255,
-            "timestamp": "2026-10-16T17:35:43.495Z"
+            "configVersion": 1792208256671,
+            "timestamp": "2026-10-17T03:37:36.866Z"
           },
-          "_timestamp": 1792172143495
+          "_timestamp": 1792208256866
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
