@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stream-weaver"
+version = "2.0.0"
+description = "Pure functional GitOps control plane and static Stremio addon compiler for AIOStreams, AIOMetadata, AIOManager, Nuvio, Stremio, and Contraband."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Darshan AS" }]
+dependencies = [
+    "cryptography>=43.0.0",
+    "httpx>=0.27.0",
+    "rich>=13.8.0",
+    "typer>=0.12.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis>=6.112.0",
+    "mypy>=1.11.2",
+    "pytest>=8.3.3",
+    "ruff>=0.6.8",
+]
+
+[project.scripts]
+sw = "stream_weaver.cli.app:main"
+stream-weaver = "stream_weaver.cli.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stream_weaver"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RET", "C4", "PIE", "PT"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+no_implicit_optional = true
+check_untyped_defs = true
+packages = ["stream_weaver", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

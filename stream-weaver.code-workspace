@@ -11,16 +11,24 @@
   ],
   "settings": {
     "window.title": "${activeEditorShort}${separator}${rootName}${separator}Stream Weaver & Contraband",
+    "python.defaultInterpreterPath": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}/.venv/bin/python",
     "python.analysis.extraPaths": [
-      "${workspaceFolder:🧶 Stream Weaver (Control Plane)}/scripts"
+      "${workspaceFolder:🧶 Stream Weaver (Control Plane)}/src",
+      "${workspaceFolder:🕶️ Contraband (Addon Repo)}/src"
     ],
     "files.exclude": {
       "**/__pycache__": true,
-      "**/.DS_Store": true
+      "**/.DS_Store": true,
+      "**/.mypy_cache": true,
+      "**/.pytest_cache": true,
+      "**/.ruff_cache": true,
+      "**/.hypothesis": true
     },
     "search.exclude": {
       "**/stream/series/**": true,
-      "**/meta/library/**": true
+      "**/stream/movie/**": true,
+      "**/meta/library/**": true,
+      "**/.venv/**": true
     },
     "editor.formatOnSave": true,
     "[json]": {
@@ -34,9 +42,9 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "⬆️ Push Configs (AIOStreams, AIOManager, Nuvio & Stremio)",
+        "label": "⬆️ Push Configs (AIOStreams, AIOMetadata, AIOManager, Nuvio & Stremio)",
         "type": "shell",
-        "command": "./scripts/push.sh",
+        "command": "uv run sw push",
         "options": {
           "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
         },
@@ -49,7 +57,7 @@
       {
         "label": "⬇️ Pull & Sanitize Configs",
         "type": "shell",
-        "command": "./scripts/pull.sh",
+        "command": "uv run sw pull",
         "options": {
           "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
         },
@@ -62,9 +70,9 @@
       {
         "label": "🔄 Sync TorBox Library -> Contraband",
         "type": "shell",
-        "command": "./scripts/add_magnet.sh --sync-library",
+        "command": "uv run cb sync",
         "options": {
-          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+          "cwd": "${workspaceFolder:🕶️ Contraband (Addon Repo)}"
         },
         "problemMatcher": [],
         "presentation": {
@@ -75,9 +83,9 @@
       {
         "label": "👀 Watch & Drain TorBox Queue (3x Parallel)",
         "type": "shell",
-        "command": "./scripts/add_magnet.sh --watch",
+        "command": "uv run cb watch",
         "options": {
-          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+          "cwd": "${workspaceFolder:🕶️ Contraband (Addon Repo)}"
         },
         "problemMatcher": [],
         "presentation": {
@@ -88,7 +96,20 @@
       {
         "label": "📋 List TorBox Cloud Library & Queue",
         "type": "shell",
-        "command": "./scripts/add_magnet.sh --list",
+        "command": "uv run cb list",
+        "options": {
+          "cwd": "${workspaceFolder:🕶️ Contraband (Addon Repo)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "✅ Run Tests, Ruff & Strict Mypy (Stream Weaver)",
+        "type": "shell",
+        "command": "uv run ruff check src tests && uv run mypy src tests && uv run pytest",
         "options": {
           "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
         },
