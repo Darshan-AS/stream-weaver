@@ -1,0 +1,103 @@
+{
+  "folders": [
+    {
+      "name": "🧶 Stream Weaver (Control Plane)",
+      "path": "."
+    },
+    {
+      "name": "🕶️ Contraband (Addon Repo)",
+      "path": "../aio_contraband"
+    }
+  ],
+  "settings": {
+    "window.title": "${activeEditorShort}${separator}${rootName}${separator}Stream Weaver & Contraband",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder:🧶 Stream Weaver (Control Plane)}/scripts"
+    ],
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/.DS_Store": true
+    },
+    "search.exclude": {
+      "**/stream/series/**": true,
+      "**/meta/library/**": true
+    },
+    "editor.formatOnSave": true,
+    "[json]": {
+      "editor.tabSize": 2
+    },
+    "[jsonc]": {
+      "editor.tabSize": 2
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "⬆️ Push Configs (AIOStreams, AIOManager, Nuvio & Stremio)",
+        "type": "shell",
+        "command": "./scripts/push.sh",
+        "options": {
+          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "⬇️ Pull & Sanitize Configs",
+        "type": "shell",
+        "command": "./scripts/pull.sh",
+        "options": {
+          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "🔄 Sync TorBox Library -> Contraband",
+        "type": "shell",
+        "command": "./scripts/add_magnet.sh --sync-library",
+        "options": {
+          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "👀 Watch & Drain TorBox Queue (3x Parallel)",
+        "type": "shell",
+        "command": "./scripts/add_magnet.sh --watch",
+        "options": {
+          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "📋 List TorBox Cloud Library & Queue",
+        "type": "shell",
+        "command": "./scripts/add_magnet.sh --list",
+        "options": {
+          "cwd": "${workspaceFolder:🧶 Stream Weaver (Control Plane)}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      }
+    ]
+  }
+}
