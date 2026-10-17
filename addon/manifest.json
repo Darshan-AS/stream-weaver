@@ -1,8 +1,8 @@
 {
-  "id": "com.darshan.petersonacademy",
-  "version": "1.0.0",
-  "name": "Peterson Academy Metadata",
-  "description": "Rich posters, backdrops, lecture thumbnails, and descriptions for Peterson Academy courses on TorBox",
+  "id": "com.darshan.streamweaver",
+  "version": "1.1.0",
+  "name": "Stream Weaver Courses",
+  "description": "Rich posters, backdrops, lecture thumbnails, and synopses for courses and educational series on TorBox",
   "logo": "https://petersonacademy.com/favicon-apple-touch-v3.png",
   "resources": [
     "catalog",
@@ -14,14 +14,27 @@
     "library"
   ],
   "idPrefixes": [
+    "sw_",
     "pa_",
     "aiostreams::library.torbox.torrent."
   ],
   "catalogs": [
     {
       "type": "series",
-      "id": "peterson_academy",
-      "name": "Peterson Academy"
+      "id": "courses",
+      "name": "Courses & Lectures",
+      "extra": [
+        {
+          "name": "genre",
+          "isRequired": false,
+          "options": [
+            "Peterson Academy",
+            "History",
+            "Humanities",
+            "Education"
+          ]
+        }
+      ]
     }
   ]
 }

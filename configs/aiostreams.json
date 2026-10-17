@@ -172,7 +172,7 @@
     "groupings": [
       {
         "addons": [
-          "pac",
+          "swc",
           "lib",
           "tio",
           "stz",
@@ -381,10 +381,10 @@
   "presets": [
     {
       "type": "custom",
-      "instanceId": "pac",
+      "instanceId": "swc",
       "enabled": true,
       "options": {
-        "name": "Peterson Academy",
+        "name": "Stream Weaver Courses",
         "manifestUrl": "https://raw.githubusercontent.com/Darshan-AS/stream-weaver/main/addon/manifest.json",
         "timeout": 5000,
         "resources": [
@@ -651,9 +651,9 @@
   },
   "catalogModifications": [
     {
-      "id": "pace3b0.peterson_academy",
+      "id": "swce3b0.courses",
       "type": "series",
-      "name": "Peterson Academy",
+      "name": "Courses & Lectures",
       "enabled": true,
       "showOnHome": true,
       "disableSearch": false

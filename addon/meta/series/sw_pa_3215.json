@@ -1,6 +1,6 @@
 {
   "meta": {
-    "id": "pa_3215",
+    "id": "sw_pa_3215",
     "type": "series",
     "name": "Napoleon — Lord Andrew Roberts",
     "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fthumb?tr=h-1200&alt=media",
@@ -8,6 +8,7 @@
     "description": "[HIST 402] In Napoleon, an eight-hour course, Lord Andrew Roberts presents the life and legacy of Napoleon Bonaparte. We examine his military genius demonstrated in campaigns across Europe and Egypt, his transformative reforms of French society and law, and his complex character combining ruthless ambition with intellectual depth. The course analyzes Napoleon's strategic innovations, leadership style, and ultimate downfall at Waterloo, while assessing his enduring legacy as both a visionary reformer and flawed conqueror whose influence continues to shape our understanding of leadership and modern Europe.",
     "releaseInfo": "HIST 402",
     "genres": [
+      "Peterson Academy",
       "History",
       "Humanities",
       "Education"

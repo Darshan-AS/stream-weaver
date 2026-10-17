@@ -101,17 +101,21 @@ git diff configs/
 ```
 
 ### Adding Custom Course / Educational Magnets to TorBox & Nuvio
-To queue a magnet link or `.torrent` file directly into your TorBox Cloud Library and force-refresh AIOStreams so it immediately appears in Nuvio's Home screen and Search Bar:
+To queue a magnet link or `.torrent` file directly into your TorBox Cloud Library, weave rich course metadata into `addon/` (posters, hero backdrops, lecture thumbnails, and episode synopses), and force-refresh AIOStreams:
 ```bash
-# Add a magnet link (with optional custom title)
-./scripts/add_magnet.sh --name "Peterson Academy - Napoleon" "magnet:?xt=urn:btih:..."
+# 1. Auto-detected providers (e.g. Peterson Academy, MasterClass, The Great Courses / Wondrium)
+./scripts/add_magnet.sh "magnet:?xt=urn:btih:..."
 
-# Add a local .torrent file
-./scripts/add_magnet.sh ~/Downloads/course.torrent
+# 2. Scrape metadata from any course webpage URL (Schema.org JSON-LD + OpenGraph)
+./scripts/add_magnet.sh --url "https://www.masterclass.com/classes/..." ~/Downloads/course.torrent
 
-# List all items in your TorBox Cloud Library
+# 3. Zero-config filename fallback for any multi-video lecture torrent
+./scripts/add_magnet.sh --course ~/Downloads/lectures.torrent
+
+# 4. List all items in your TorBox Cloud Library
 ./scripts/add_magnet.sh --list
 ```
+After `addon/` is updated, commit and push (`git add addon/ && git commit -m "feat(addon): Add <Course> metadata" && git push`) so AIOStreams serves the new course cards in your **Courses & Lectures** catalog row.
 
 ---
 
