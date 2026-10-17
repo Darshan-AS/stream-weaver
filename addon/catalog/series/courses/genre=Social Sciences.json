@@ -1,6 +1,23 @@
 {
   "metas": [
     {
+      "id": "sw_pa_3242",
+      "type": "series",
+      "name": "Free Market Economics — Dr. David Henderson",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fhero?tr=w-1920&alt=media",
+      "description": "[ECON 110] In Free Market Economics, Dr. David Henderson guides us through ten foundational pillars of economic wisdom and the major schools of thought—Austrian, Chicago, UCLA, and Public Choice. Along the way, we explore how markets coordinate through decentralized knowledge, property rights, and voluntary exchange, and why central planning so often falls short. Drawing on vivid historical cases—from the Soviet economic collapse to West Germany’s postwar miracle—the course brings core ideas like subjective value, spontaneous order, and entrepreneurial discovery to life. Ultimately, it shows how economic freedom and open inquiry fuel innovation and prosperity, while government intervention frequently produces unintended consequences and inefficiencies.",
+      "releaseInfo": "ECON 110",
+      "genres": [
+        "Peterson Academy",
+        "Social Sciences",
+        "Education"
+      ],
+      "cast": [
+        "Dr. David Henderson"
+      ]
+    },
+    {
       "id": "sw_pa_32",
       "type": "series",
       "name": "Introduction to Political Science — Dr. Eric Kaufmann",
@@ -49,23 +66,6 @@
       ],
       "cast": [
         "Dr. Marian L. Tupy"
-      ]
-    },
-    {
-      "id": "sw_pa_3242",
-      "type": "series",
-      "name": "Free Market Economics — Dr. David Henderson",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fhero?tr=w-1920&alt=media",
-      "description": "[ECON 110] In Free Market Economics, Dr. David Henderson guides us through ten foundational pillars of economic wisdom and the major schools of thought—Austrian, Chicago, UCLA, and Public Choice. Along the way, we explore how markets coordinate through decentralized knowledge, property rights, and voluntary exchange, and why central planning so often falls short. Drawing on vivid historical cases—from the Soviet economic collapse to West Germany’s postwar miracle—the course brings core ideas like subjective value, spontaneous order, and entrepreneurial discovery to life. Ultimately, it shows how economic freedom and open inquiry fuel innovation and prosperity, while government intervention frequently produces unintended consequences and inefficiencies.",
-      "releaseInfo": "ECON 110",
-      "genres": [
-        "Peterson Academy",
-        "Social Sciences",
-        "Education"
-      ],
-      "cast": [
-        "Dr. David Henderson"
       ]
     }
   ]

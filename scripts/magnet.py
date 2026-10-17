@@ -286,13 +286,23 @@ def refresh_aiostreams_library_cache() -> None:
 
 
 def list_torbox_library(api_key: str) -> int:
-    status, resp = torbox_request("GET", "/torrents/mylist?bypass_cache=true", api_key)
+    st_q, resp_q = torbox_request("GET", "/queued/getqueued?bypass_cache=true&limit=1000", api_key)
+    q_items = (resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else []
+    if q_items:
+        print(f"⏳ TorBox Cloud Queue ({len(q_items)} items — Web UI only displays 12 at a time):\n")
+        for idx, qitem in enumerate(q_items, 1):
+            qname = qitem.get("name") or qitem.get("hash") or "Untitled"
+            qid = qitem.get("id")
+            print(f"  Q{idx:02d}. 🕒 Queued (ID: {qid}) | {qname}")
+        print()
+
+    status, resp = torbox_request("GET", "/torrents/mylist?bypass_cache=true&limit=1000", api_key)
     if status != 200 or not isinstance(resp, dict):
         print(f"❌ Failed to fetch TorBox library (HTTP {status}): {resp}", file=sys.stderr)
         return 1
 
     items = resp.get("data") or []
-    if not items:
+    if not items and not q_items:
         print("📭 Your TorBox Cloud Library is currently empty.")
         return 0
 
@@ -388,19 +398,26 @@ def maybe_build_course_metadata(
 
 def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
     """Scans all torrents in TorBox Cloud Library and builds/updates course metadata in addon/."""
-    status, resp = torbox_request("GET", "/torrents/mylist?bypass_cache=true", api_key)
+    status, resp = torbox_request("GET", "/torrents/mylist?bypass_cache=true&limit=1000", api_key)
     if status != 200 or not isinstance(resp, dict):
         print(f"❌ Failed to fetch TorBox library (HTTP {status}): {resp}", file=sys.stderr)
         return 1
 
+    st_q, resp_q = torbox_request("GET", "/queued/getqueued?bypass_cache=true&limit=1000", api_key)
+    q_count = len((resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else [])
+
     items = resp.get("data") or []
     built_count = 0
+    active_count = 0
     for item in items:
         t_id = item.get("id")
         name = item.get("name") or ""
         info_hash = item.get("hash") or ""
         files = item.get("files") or []
         if not t_id or not name or not info_hash:
+            continue
+        if not item.get("download_finished"):
+            active_count += 1
             continue
         if maybe_build_course_metadata(
             display_title=name,
@@ -412,7 +429,10 @@ def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
         ):
             built_count += 1
 
-    print(f"\n✅ Synced metadata for {built_count} course(s) in addon/.")
+    print(
+        f"\n✅ Synced metadata for {built_count} completed course(s) in addon/ "
+        f"({active_count} actively downloading, {q_count} waiting in TorBox Cloud Queue)."
+    )
     return 0
 
 

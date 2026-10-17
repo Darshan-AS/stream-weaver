@@ -1,6 +1,91 @@
 {
   "metas": [
     {
+      "id": "sw_pa_3215",
+      "type": "series",
+      "name": "Napoleon — Lord Andrew Roberts",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fhero?tr=w-1920&alt=media",
+      "description": "[HIST 402] In Napoleon, an eight-hour course, Lord Andrew Roberts presents the life and legacy of Napoleon Bonaparte. We examine his military genius demonstrated in campaigns across Europe and Egypt, his transformative reforms of French society and law, and his complex character combining ruthless ambition with intellectual depth. The course analyzes Napoleon's strategic innovations, leadership style, and ultimate downfall at Waterloo, while assessing his enduring legacy as both a visionary reformer and flawed conqueror whose influence continues to shape our understanding of leadership and modern Europe.",
+      "releaseInfo": "HIST 402",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Lord Andrew Roberts"
+      ]
+    },
+    {
+      "id": "sw_pa_3237",
+      "type": "series",
+      "name": "The Pharmaceutical Industry: Practices, Incentives, and Patient Awareness — Gerald Posner",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3237%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3237%2Fhero?tr=w-1920&alt=media",
+      "description": "[JOUR 350] In The Pharmaceutical Industry: Practices, Incentives, and Patient Awareness, an eight-hour course, Gerald Posner traces the pharmaceutical industry's evolution from 19th-century snake oil sellers to modern Big Pharma giants. We examine how profit-driven motives have shaped the industry through aggressive marketing, regulatory capture, and exploitation of loopholes from the Orphan Drug Act to COVID-19 partnerships. The course explores how companies target vulnerable populations, manipulate regulations, and prioritize profits over patient welfare, concluding with guidance on becoming informed healthcare consumers who recognize the financial incentives driving modern medicine.",
+      "releaseInfo": "JOUR 350",
+      "genres": [
+        "Peterson Academy",
+        "Science",
+        "Education"
+      ],
+      "cast": [
+        "Gerald Posner"
+      ]
+    },
+    {
+      "id": "sw_pa_3242",
+      "type": "series",
+      "name": "Free Market Economics — Dr. David Henderson",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fhero?tr=w-1920&alt=media",
+      "description": "[ECON 110] In Free Market Economics, Dr. David Henderson guides us through ten foundational pillars of economic wisdom and the major schools of thought—Austrian, Chicago, UCLA, and Public Choice. Along the way, we explore how markets coordinate through decentralized knowledge, property rights, and voluntary exchange, and why central planning so often falls short. Drawing on vivid historical cases—from the Soviet economic collapse to West Germany’s postwar miracle—the course brings core ideas like subjective value, spontaneous order, and entrepreneurial discovery to life. Ultimately, it shows how economic freedom and open inquiry fuel innovation and prosperity, while government intervention frequently produces unintended consequences and inefficiencies.",
+      "releaseInfo": "ECON 110",
+      "genres": [
+        "Peterson Academy",
+        "Social Sciences",
+        "Education"
+      ],
+      "cast": [
+        "Dr. David Henderson"
+      ]
+    },
+    {
+      "id": "sw_pa_3234",
+      "type": "series",
+      "name": "Ideas of the 20th Century Part 1 — Dr. Daniel Bonevac",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 215] In Ideas of the 20th Century Part 1, an eight-hour course, Dr. Daniel Bonevac explores how the Scientific, Agricultural, and Industrial Revolutions created a lasting tension between human agency and scientific determinism. We examine how this crisis of belief contributed to the erosion of traditional values and upheavals like World War I and the Russian Revolution. By examining key thinkers including Nietzsche, Marx, Freud, and modernist writers like Eliot and Fitzgerald, the course traces the search for meaning in a fractured world and shows how this struggle still shapes modern culture and politics.",
+      "releaseInfo": "PHIL 215",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Daniel Bonevac"
+      ]
+    },
+    {
+      "id": "sw_pa_9",
+      "type": "series",
+      "name": "Brain Plasticity — Dr. David Eagleman",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F9%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F9%2Fhero?tr=w-1920&alt=media",
+      "description": "[NEUR 210] In Brain Plasticity, an eight-hour course, Dr. David Eagleman explores the brain’s remarkable ability to adapt and reshape itself throughout life. The course covers how plasticity enables the brain to fine-tune its neural circuits, from constructing dynamic maps of the body and senses to learning movement control. It also investigates how the brain processes non-traditional sensory inputs, such as \"seeing\" through the skin or \"hearing\" vibrations. Dr. Eagleman discusses the role of relevance in developing expertise, the evolution of plasticity across the lifespan, and strategies for maintaining brain health. The course concludes with insights into learning, memory, and the brain’s ability to continually adapt to a changing world.",
+      "releaseInfo": "NEUR 210",
+      "genres": [
+        "Peterson Academy",
+        "Science",
+        "Education"
+      ],
+      "cast": [
+        "Dr. David Eagleman"
+      ]
+    },
+    {
       "id": "sw_pa_2735",
       "type": "series",
       "name": "The Neuroscience of Dreams — Dr. Baland Jalal",
@@ -358,23 +443,6 @@
       ]
     },
     {
-      "id": "sw_pa_3215",
-      "type": "series",
-      "name": "Napoleon — Lord Andrew Roberts",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fhero?tr=w-1920&alt=media",
-      "description": "[HIST 402] In Napoleon, an eight-hour course, Lord Andrew Roberts presents the life and legacy of Napoleon Bonaparte. We examine his military genius demonstrated in campaigns across Europe and Egypt, his transformative reforms of French society and law, and his complex character combining ruthless ambition with intellectual depth. The course analyzes Napoleon's strategic innovations, leadership style, and ultimate downfall at Waterloo, while assessing his enduring legacy as both a visionary reformer and flawed conqueror whose influence continues to shape our understanding of leadership and modern Europe.",
-      "releaseInfo": "HIST 402",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Lord Andrew Roberts"
-      ]
-    },
-    {
       "id": "sw_pa_2767",
       "type": "series",
       "name": "Introductory Applied Mathematics — Dr. Robert Snellman",
@@ -389,23 +457,6 @@
       ],
       "cast": [
         "Dr. Robert Snellman"
-      ]
-    },
-    {
-      "id": "sw_pa_9",
-      "type": "series",
-      "name": "Brain Plasticity — Dr. David Eagleman",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F9%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F9%2Fhero?tr=w-1920&alt=media",
-      "description": "[NEUR 210] In Brain Plasticity, an eight-hour course, Dr. David Eagleman explores the brain’s remarkable ability to adapt and reshape itself throughout life. The course covers how plasticity enables the brain to fine-tune its neural circuits, from constructing dynamic maps of the body and senses to learning movement control. It also investigates how the brain processes non-traditional sensory inputs, such as \"seeing\" through the skin or \"hearing\" vibrations. Dr. Eagleman discusses the role of relevance in developing expertise, the evolution of plasticity across the lifespan, and strategies for maintaining brain health. The course concludes with insights into learning, memory, and the brain’s ability to continually adapt to a changing world.",
-      "releaseInfo": "NEUR 210",
-      "genres": [
-        "Peterson Academy",
-        "Science",
-        "Education"
-      ],
-      "cast": [
-        "Dr. David Eagleman"
       ]
     },
     {
@@ -613,40 +664,6 @@
       ]
     },
     {
-      "id": "sw_pa_3234",
-      "type": "series",
-      "name": "Ideas of the 20th Century Part 1 — Dr. Daniel Bonevac",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 215] In Ideas of the 20th Century Part 1, an eight-hour course, Dr. Daniel Bonevac explores how the Scientific, Agricultural, and Industrial Revolutions created a lasting tension between human agency and scientific determinism. We examine how this crisis of belief contributed to the erosion of traditional values and upheavals like World War I and the Russian Revolution. By examining key thinkers including Nietzsche, Marx, Freud, and modernist writers like Eliot and Fitzgerald, the course traces the search for meaning in a fractured world and shows how this struggle still shapes modern culture and politics.",
-      "releaseInfo": "PHIL 215",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Daniel Bonevac"
-      ]
-    },
-    {
-      "id": "sw_pa_3242",
-      "type": "series",
-      "name": "Free Market Economics — Dr. David Henderson",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3242%2Fhero?tr=w-1920&alt=media",
-      "description": "[ECON 110] In Free Market Economics, Dr. David Henderson guides us through ten foundational pillars of economic wisdom and the major schools of thought—Austrian, Chicago, UCLA, and Public Choice. Along the way, we explore how markets coordinate through decentralized knowledge, property rights, and voluntary exchange, and why central planning so often falls short. Drawing on vivid historical cases—from the Soviet economic collapse to West Germany’s postwar miracle—the course brings core ideas like subjective value, spontaneous order, and entrepreneurial discovery to life. Ultimately, it shows how economic freedom and open inquiry fuel innovation and prosperity, while government intervention frequently produces unintended consequences and inefficiencies.",
-      "releaseInfo": "ECON 110",
-      "genres": [
-        "Peterson Academy",
-        "Social Sciences",
-        "Education"
-      ],
-      "cast": [
-        "Dr. David Henderson"
-      ]
-    },
-    {
       "id": "sw_pa_3244",
       "type": "series",
       "name": "The Philosophy of History — Dr. James Orr",
@@ -661,23 +678,6 @@
       ],
       "cast": [
         "Dr. James Orr"
-      ]
-    },
-    {
-      "id": "sw_pa_3237",
-      "type": "series",
-      "name": "The Pharmaceutical Industry: Practices, Incentives, and Patient Awareness — Gerald Posner",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3237%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3237%2Fhero?tr=w-1920&alt=media",
-      "description": "[JOUR 350] In The Pharmaceutical Industry: Practices, Incentives, and Patient Awareness, an eight-hour course, Gerald Posner traces the pharmaceutical industry's evolution from 19th-century snake oil sellers to modern Big Pharma giants. We examine how profit-driven motives have shaped the industry through aggressive marketing, regulatory capture, and exploitation of loopholes from the Orphan Drug Act to COVID-19 partnerships. The course explores how companies target vulnerable populations, manipulate regulations, and prioritize profits over patient welfare, concluding with guidance on becoming informed healthcare consumers who recognize the financial incentives driving modern medicine.",
-      "releaseInfo": "JOUR 350",
-      "genres": [
-        "Peterson Academy",
-        "Science",
-        "Education"
-      ],
-      "cast": [
-        "Gerald Posner"
       ]
     }
   ]

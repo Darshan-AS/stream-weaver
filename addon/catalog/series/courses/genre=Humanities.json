@@ -1,6 +1,40 @@
 {
   "metas": [
     {
+      "id": "sw_pa_3215",
+      "type": "series",
+      "name": "Napoleon — Lord Andrew Roberts",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fhero?tr=w-1920&alt=media",
+      "description": "[HIST 402] In Napoleon, an eight-hour course, Lord Andrew Roberts presents the life and legacy of Napoleon Bonaparte. We examine his military genius demonstrated in campaigns across Europe and Egypt, his transformative reforms of French society and law, and his complex character combining ruthless ambition with intellectual depth. The course analyzes Napoleon's strategic innovations, leadership style, and ultimate downfall at Waterloo, while assessing his enduring legacy as both a visionary reformer and flawed conqueror whose influence continues to shape our understanding of leadership and modern Europe.",
+      "releaseInfo": "HIST 402",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Lord Andrew Roberts"
+      ]
+    },
+    {
+      "id": "sw_pa_3234",
+      "type": "series",
+      "name": "Ideas of the 20th Century Part 1 — Dr. Daniel Bonevac",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 215] In Ideas of the 20th Century Part 1, an eight-hour course, Dr. Daniel Bonevac explores how the Scientific, Agricultural, and Industrial Revolutions created a lasting tension between human agency and scientific determinism. We examine how this crisis of belief contributed to the erosion of traditional values and upheavals like World War I and the Russian Revolution. By examining key thinkers including Nietzsche, Marx, Freud, and modernist writers like Eliot and Fitzgerald, the course traces the search for meaning in a fractured world and shows how this struggle still shapes modern culture and politics.",
+      "releaseInfo": "PHIL 215",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Daniel Bonevac"
+      ]
+    },
+    {
       "id": "sw_pa_3216",
       "type": "series",
       "name": "Introduction to Music Theory — Samuel Andreyev",
@@ -66,23 +100,6 @@
       ],
       "cast": [
         "Dr. Charles Calomiris"
-      ]
-    },
-    {
-      "id": "sw_pa_3215",
-      "type": "series",
-      "name": "Napoleon — Lord Andrew Roberts",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3215%2Fhero?tr=w-1920&alt=media",
-      "description": "[HIST 402] In Napoleon, an eight-hour course, Lord Andrew Roberts presents the life and legacy of Napoleon Bonaparte. We examine his military genius demonstrated in campaigns across Europe and Egypt, his transformative reforms of French society and law, and his complex character combining ruthless ambition with intellectual depth. The course analyzes Napoleon's strategic innovations, leadership style, and ultimate downfall at Waterloo, while assessing his enduring legacy as both a visionary reformer and flawed conqueror whose influence continues to shape our understanding of leadership and modern Europe.",
-      "releaseInfo": "HIST 402",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Lord Andrew Roberts"
       ]
     },
     {
@@ -168,23 +185,6 @@
       ],
       "cast": [
         "Dr. Stephen R. C. Hicks"
-      ]
-    },
-    {
-      "id": "sw_pa_3234",
-      "type": "series",
-      "name": "Ideas of the 20th Century Part 1 — Dr. Daniel Bonevac",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3234%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 215] In Ideas of the 20th Century Part 1, an eight-hour course, Dr. Daniel Bonevac explores how the Scientific, Agricultural, and Industrial Revolutions created a lasting tension between human agency and scientific determinism. We examine how this crisis of belief contributed to the erosion of traditional values and upheavals like World War I and the Russian Revolution. By examining key thinkers including Nietzsche, Marx, Freud, and modernist writers like Eliot and Fitzgerald, the course traces the search for meaning in a fractured world and shows how this struggle still shapes modern culture and politics.",
-      "releaseInfo": "PHIL 215",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Daniel Bonevac"
       ]
     },
     {
