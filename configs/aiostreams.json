@@ -46,19 +46,26 @@
   ],
   "excludedLanguages": [],
   "includedLanguages": [],
-  "requiredLanguages": [],
-  "preferredLanguages": [
+  "requiredLanguages": [
+    "Original",
     "English",
     "Kannada",
     "Hindi",
     "Japanese",
-    "Original",
     "Dual Audio",
     "Multi",
     "Dubbed",
-    "Tamil",
-    "Telugu",
-    "Malayalam",
+    "Unknown"
+  ],
+  "preferredLanguages": [
+    "Original",
+    "English",
+    "Kannada",
+    "Hindi",
+    "Japanese",
+    "Dual Audio",
+    "Multi",
+    "Dubbed",
     "Unknown"
   ],
   "excludedVisualTags": [
