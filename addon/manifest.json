@@ -29,9 +29,15 @@
           "isRequired": false,
           "options": [
             "Peterson Academy",
-            "History",
+            "Psychology",
+            "Education",
             "Humanities",
-            "Education"
+            "Social Sciences",
+            "Science",
+            "Philosophy",
+            "History",
+            "Mathematics",
+            "Religion"
           ]
         }
       ]

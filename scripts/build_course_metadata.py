@@ -146,6 +146,7 @@ class CourseProvider:
 class PetersonAcademyProvider(CourseProvider):
     name = "Peterson Academy"
     BASE_URL = "https://petersonacademy.com"
+    _catalog_cache: Optional[List[Dict[str, Any]]] = None
 
     def can_handle(
         self,
@@ -159,17 +160,68 @@ class PetersonAcademyProvider(CourseProvider):
             return True
         return "peterson academy" in display_title.lower()
 
-    @staticmethod
-    def infer_slug(
+    @classmethod
+    def _load_catalog_index(cls) -> List[Dict[str, Any]]:
+        if cls._catalog_cache is not None:
+            return cls._catalog_cache
+
+        cls._catalog_cache = []
+        raw_html = fetch_url_text(f"{cls.BASE_URL}/courses")
+        if not raw_html:
+            return cls._catalog_cache
+
+        subj_blocks = re.finditer(
+            r'\{label:"([^"]+)",icon:"[^"]+",courses:\[(.*?)\]\}', raw_html
+        )
+        by_slug: Dict[str, Dict[str, Any]] = {}
+        entry_pat = re.compile(
+            r'\{id:(\d+),slug:"([^"]+)",title:"((?:\\.|[^"])*)",courseCode:"([^"]+)",instructor:"((?:\\.|[^"])*)"'
+        )
+        for sb in subj_blocks:
+            subject = sb.group(1)
+            for em in entry_pat.finditer(sb.group(2)):
+                cid, slug, title, code, inst = em.groups()
+                by_slug[slug] = {
+                    "id": int(cid),
+                    "slug": slug,
+                    "title": html.unescape(title),
+                    "courseCode": code,
+                    "instructor": html.unescape(inst),
+                    "subject": subject,
+                }
+
+        for em in entry_pat.finditer(raw_html):
+            cid, slug, title, code, inst = em.groups()
+            if slug not in by_slug:
+                by_slug[slug] = {
+                    "id": int(cid),
+                    "slug": slug,
+                    "title": html.unescape(title),
+                    "courseCode": code,
+                    "instructor": html.unescape(inst),
+                    "subject": "Humanities",
+                }
+
+        cls._catalog_cache = list(by_slug.values())
+        return cls._catalog_cache
+
+    @classmethod
+    def infer_slug_and_subject(
+        cls,
         display_title: str,
         explicit_url: Optional[str] = None,
         explicit_slug: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> Tuple[Optional[str], Optional[str]]:
+        catalog = cls._load_catalog_index()
+        subj_by_slug = {c["slug"]: c.get("subject") for c in catalog}
+
         if explicit_url and "petersonacademy.com/courses/" in explicit_url.lower():
             path = urllib.parse.urlparse(explicit_url).path.rstrip("/")
-            return path.split("/")[-1].lower()
+            s = path.split("/")[-1].lower()
+            return s, subj_by_slug.get(s)
         if explicit_slug:
-            return explicit_slug.strip().strip("/").lower()
+            s = explicit_slug.strip().strip("/").lower()
+            return s, subj_by_slug.get(s)
 
         cleaned = re.sub(
             r"\b(EDU4U|1080p|720p|2160p|4K|WEB-DL|WEBRip|x264|x265|HEVC|AAC|MP4|MKV)\b.*",
@@ -177,15 +229,82 @@ class PetersonAcademyProvider(CourseProvider):
             display_title,
             flags=re.IGNORECASE,
         ).strip(" -_.")
-        parts = [p.strip() for p in re.split(r"\s+-\s+|\s+–\s+", cleaned) if p.strip()]
+        parts = [p.strip() for p in re.split(r"\s+[-–—]\s+", cleaned) if p.strip()]
         if len(parts) >= 2 and "peterson" in parts[0].lower():
             course_name = parts[1]
+            instructor_hint = " ".join(parts[2:])
         elif parts:
-            course_name = re.sub(r"^peterson\s+academy\s*[:\-]?\s*", "", parts[0], flags=re.IGNORECASE)
+            course_name = re.sub(
+                r"^peterson\s+academy\s*[:\-]?\s*", "", parts[0], flags=re.IGNORECASE
+            )
+            instructor_hint = " ".join(parts[1:])
         else:
-            return None
-        slug = re.sub(r"[^a-z0-9]+", "-", course_name.lower()).strip("-")
-        return slug or None
+            return None, None
+
+        raw_slug = re.sub(
+            r"[^a-z0-9]+", "-", course_name.lower().replace("&", "and")
+        ).strip("-")
+        slug_aliases = {
+            "the-secrets-of-big-pharma": "the-pharmaceutical-industry-practices-incentives-and-patient-awareness",
+            "secrets-of-big-pharma": "the-pharmaceutical-industry-practices-incentives-and-patient-awareness",
+        }
+        if raw_slug in slug_aliases:
+            mapped = slug_aliases[raw_slug]
+            return mapped, subj_by_slug.get(mapped)
+
+        if not catalog:
+            return raw_slug or None, None
+
+        # 1. Direct or "the-" prefixed slug match
+        for candidate in (
+            raw_slug,
+            f"the-{raw_slug}",
+            raw_slug.replace("intro-to-", "introduction-to-"),
+            raw_slug.replace("introduction-to-", "intro-to-"),
+        ):
+            if candidate in subj_by_slug:
+                return candidate, subj_by_slug[candidate]
+
+        # 2. Fuzzy token match across title + instructor (supports 80-char truncated TPB names)
+        def norm_tokens(text: str) -> set:
+            t = text.lower().replace("&", "and").replace("intro ", "introduction ")
+            return {
+                w
+                for w in re.findall(r"[a-z0-9]{2,}", t)
+                if w not in {"the", "of", "in", "to", "and", "dr", "lord", "part"}
+            }
+
+        query_title_tokens = norm_tokens(" ".join(parts[1:-1]) if len(parts) > 3 else course_name)
+        query_all_tokens = norm_tokens(" ".join(parts[1:]))
+        best_entry = None
+        best_score = 0.0
+
+        for entry in catalog:
+            entry_title_tokens = norm_tokens(entry["title"])
+            entry_inst_tokens = norm_tokens(entry["instructor"])
+            title_overlap = len(query_title_tokens & entry_title_tokens)
+            inst_overlap = sum(
+                1
+                for qt in query_all_tokens
+                if any(et == qt or (len(qt) >= 3 and et.startswith(qt)) for et in entry_inst_tokens)
+            )
+
+            # Handle part 1 vs part 2 explicitly
+            for part_tag in ("part-1", "part-2"):
+                if part_tag in raw_slug and part_tag not in entry["slug"]:
+                    title_overlap -= 3
+
+            score = title_overlap * 3.0 + inst_overlap * 2.0
+            if entry_title_tokens and title_overlap == len(entry_title_tokens):
+                score += 4.0
+            if score > best_score:
+                best_score = score
+                best_entry = entry
+
+        if best_entry and best_score >= 3.0:
+            return best_entry["slug"], best_entry.get("subject")
+
+        return raw_slug or None, None
 
     def fetch_metadata(
         self,
@@ -195,7 +314,9 @@ class PetersonAcademyProvider(CourseProvider):
         explicit_url: Optional[str] = None,
         explicit_slug: Optional[str] = None,
     ) -> Optional[CourseMetadata]:
-        slug = self.infer_slug(display_title, explicit_url, explicit_slug)
+        slug, subject = self.infer_slug_and_subject(
+            display_title, explicit_url, explicit_slug
+        )
         if not slug:
             return None
 
@@ -211,14 +332,23 @@ class PetersonAcademyProvider(CourseProvider):
         if not m:
             return None
 
+        def unescape_js(val: str) -> str:
+            try:
+                return html.unescape(json.loads(f'"{val}"'))
+            except Exception:
+                return html.unescape(
+                    val.replace('\\"', '"').replace("\\'", "'").replace("\\n", "\n").replace("\\\\", "\\")
+                )
+
         course_id, title, description, parsed_slug, course_code = m.groups()
-        description = description.encode("utf-8").decode("unicode_escape", errors="replace")
+        title = unescape_js(title)
+        description = unescape_js(description)
 
         inst_match = re.search(
             r'instructors:\[\{id:\d+,fullName:"([^"]+)",slug:"([^"]+)",title:"([^"]+)"',
             raw_html[m.start() : m.start() + 4000],
         )
-        instructor = inst_match.group(1) if inst_match else ""
+        instructor = unescape_js(inst_match.group(1)) if inst_match else ""
 
         trailer_match = re.search(
             r'trailerPlaybackId:"([^"]+)"',
@@ -244,13 +374,16 @@ class PetersonAcademyProvider(CourseProvider):
             if lec_num not in lectures_by_num:
                 lectures_by_num[lec_num] = LectureMetadata(
                     number=lec_num,
-                    title=html.unescape(lec_title),
-                    description=html.unescape(lec_desc),
+                    title=unescape_js(lec_title),
+                    description=unescape_js(lec_desc),
                     duration_seconds=int(dur_str),
                     thumbnail=thumb_landscape,
                 )
 
-        genres = ["Peterson Academy", "History", "Humanities", "Education"]
+        genres = ["Peterson Academy"]
+        if subject and subject not in genres:
+            genres.append(subject)
+        genres.append("Education")
 
         return CourseMetadata(
             stremio_id=f"sw_pa_{course_id}",
@@ -604,6 +737,11 @@ def build_static_addon_for_course(
     videos_series: List[Dict[str, Any]] = []
     videos_library: List[Dict[str, Any]] = []
 
+    stream_series_dir = ADDON_DIR / "stream" / "series"
+    if stream_series_dir.exists():
+        for stale in stream_series_dir.glob(f"{stremio_id}_s*.json"):
+            stale.unlink(missing_ok=True)
+
     for lec in lectures:
         ep_num = lec.number
         file_idx, filename = file_index_by_episode.get(
@@ -624,7 +762,11 @@ def build_static_addon_for_course(
         ep_overview = f"{header}\n\n{lec.description}".strip() if header else lec.description
 
         vid_series_id = f"{stremio_id}_s{lec.season}e{ep_num}"
-        vid_playback_id = f"{torbox_lib_id}:{file_idx}" if torbox_torrent_id else vid_series_id
+        vid_playback_id = (
+            f"{torbox_lib_id}:{file_idx}"
+            if (torbox_torrent_id and ep_num in file_index_by_episode)
+            else vid_series_id
+        )
 
         videos_series.append(
             {

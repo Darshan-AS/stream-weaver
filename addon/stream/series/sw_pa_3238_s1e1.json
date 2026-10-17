@@ -1,0 +1,14 @@
+{
+  "streams": [
+    {
+      "name": "Peterson Academy",
+      "title": "1. What is Human Progress?.mp4",
+      "infoHash": "88ba5340386de3cd99772f6a3dcd4eb809701c72",
+      "fileIdx": 0,
+      "behaviorHints": {
+        "filename": "1. What is Human Progress?.mp4",
+        "bingeGroup": "sw-human-progress"
+      }
+    }
+  ]
+}

@@ -171,9 +171,13 @@ def check_cached_on_torbox(info_hash: str, api_key: str) -> Optional[Dict[str, A
     return None
 
 
-def add_magnet_to_torbox(magnet_uri: str, api_key: str, name: Optional[str] = None) -> Tuple[int, Any]:
+def add_magnet_to_torbox(
+    magnet_uri: str, api_key: str, name: Optional[str] = None, as_queued: bool = False
+) -> Tuple[int, Any]:
     boundary = f"----StreamWeaverBoundary{uuid.uuid4().hex}"
     fields = {"magnet": magnet_uri, "allow_zip": "true"}
+    if as_queued:
+        fields["as_queued"] = "true"
     if name:
         fields["name"] = name
 
@@ -185,16 +189,23 @@ def add_magnet_to_torbox(magnet_uri: str, api_key: str, name: Optional[str] = No
     lines.append(f"--{boundary}--\r\n".encode("utf-8"))
     body = b"".join(lines)
 
-    return torbox_request(
+    status, resp = torbox_request(
         "POST",
         "/torrents/createtorrent",
         api_key,
         headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         body=body,
     )
+    if not as_queued and (
+        status not in (200, 201) or not (isinstance(resp, dict) and resp.get("success"))
+    ):
+        return add_magnet_to_torbox(magnet_uri, api_key, name=name, as_queued=True)
+    return status, resp
 
 
-def add_torrent_file_to_torbox(torrent_path: Path, api_key: str) -> Tuple[int, Any]:
+def add_torrent_file_to_torbox(
+    torrent_path: Path, api_key: str, as_queued: bool = False
+) -> Tuple[int, Any]:
     boundary = f"----StreamWeaverBoundary{uuid.uuid4().hex}"
     file_bytes = torrent_path.read_bytes()
 
@@ -204,17 +215,44 @@ def add_torrent_file_to_torbox(torrent_path: Path, api_key: str) -> Tuple[int, A
         b"Content-Type: application/x-bittorrent\r\n\r\n",
         file_bytes,
         b"\r\n",
-        f"--{boundary}--\r\n".encode("utf-8"),
     ]
+    if as_queued:
+        parts.extend(
+            [
+                f"--{boundary}\r\n".encode("utf-8"),
+                b'Content-Disposition: form-data; name="as_queued"\r\n\r\ntrue\r\n',
+            ]
+        )
+    parts.append(f"--{boundary}--\r\n".encode("utf-8"))
     body = b"".join(parts)
 
-    return torbox_request(
+    status, resp = torbox_request(
         "POST",
         "/torrents/createtorrent",
         api_key,
         headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         body=body,
     )
+    if not as_queued and (
+        status not in (200, 201) or not (isinstance(resp, dict) and resp.get("success"))
+    ):
+        return add_torrent_file_to_torbox(torrent_path, api_key, as_queued=True)
+    return status, resp
+
+
+def extract_magnets_from_text_file(path: Path) -> List[str]:
+    """Extracts all magnet:?xt=urn:btih:... URIs from a Markdown (.md) or text file."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    magnets = re.findall(r"magnet:\?xt=urn:btih:[^\s\)\"'>\]|]+", text, re.IGNORECASE)
+    seen = set()
+    ordered: List[str] = []
+    for m in magnets:
+        ih, _ = extract_info_hash_from_magnet(m)
+        key = ih or m
+        if key not in seen:
+            seen.add(key)
+            ordered.append(m)
+    return ordered
 
 
 def refresh_aiostreams_library_cache() -> None:
@@ -276,15 +314,19 @@ def list_torbox_library(api_key: str) -> int:
 
 
 def fetch_torbox_torrent_files(torrent_id: int, api_key: str) -> List[Dict[str, Any]]:
+    if not torrent_id or torrent_id <= 0:
+        return []
     status, resp = torbox_request(
         "GET", f"/torrents/mylist?id={torrent_id}&bypass_cache=true", api_key
     )
     if status == 200 and isinstance(resp, dict):
         data = resp.get("data")
-        if isinstance(data, dict):
+        if isinstance(data, dict) and int(data.get("id") or 0) == torrent_id:
             return data.get("files") or []
-        if isinstance(data, list) and data:
-            return data[0].get("files") or []
+        if isinstance(data, list):
+            for item in data:
+                if int(item.get("id") or 0) == torrent_id:
+                    return item.get("files") or []
     return []
 
 
@@ -296,7 +338,8 @@ def maybe_build_course_metadata(
     explicit_url: Optional[str] = None,
     explicit_slug: Optional[str] = None,
     force_course: bool = False,
-) -> None:
+    preloaded_files: Optional[List[Dict[str, Any]]] = None,
+) -> bool:
     from build_course_metadata import (
         ADDON_DIR,
         TorBoxFileFallbackProvider,
@@ -311,7 +354,11 @@ def maybe_build_course_metadata(
     )
     allow_fallback = bool(force_course or has_known_course_kw)
 
-    tb_files = fetch_torbox_torrent_files(torrent_id, api_key)
+    tb_files = (
+        preloaded_files
+        if preloaded_files is not None
+        else fetch_torbox_torrent_files(torrent_id, api_key)
+    )
     meta = resolve_course_metadata(
         display_title=display_title,
         torbox_files=tb_files,
@@ -321,26 +368,66 @@ def maybe_build_course_metadata(
         allow_fallback=allow_fallback,
     )
     if not meta:
-        return
+        return False
 
     print(
         f"   🎨 [Metadata] Matched provider '{meta.provider}' for '{meta.title}' — weaving artwork & synopses..."
     )
     ep_map = match_torbox_files_to_lectures(tb_files, meta.lectures)
     build_static_addon_for_course(meta, info_hash, torrent_id, ep_map)
-    print(
-        f"   ✨ [Metadata] Built poster, backdrop & {len(meta.lectures) or len(ep_map)} lectures in {ADDON_DIR.relative_to(ADDON_DIR.parent)}/ ({meta.stremio_id})"
+    status_note = (
+        f"{len(ep_map)}/{len(meta.lectures) or len(ep_map)} files linked"
+        if ep_map
+        else "queued (run --sync-library once download finishes)"
     )
+    print(
+        f"   ✨ [Metadata] Built '{meta.title}' in {ADDON_DIR.relative_to(ADDON_DIR.parent)}/ ({meta.stremio_id}, {status_note})"
+    )
+    return True
+
+
+def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
+    """Scans all torrents in TorBox Cloud Library and builds/updates course metadata in addon/."""
+    status, resp = torbox_request("GET", "/torrents/mylist?bypass_cache=true", api_key)
+    if status != 200 or not isinstance(resp, dict):
+        print(f"❌ Failed to fetch TorBox library (HTTP {status}): {resp}", file=sys.stderr)
+        return 1
+
+    items = resp.get("data") or []
+    built_count = 0
+    for item in items:
+        t_id = item.get("id")
+        name = item.get("name") or ""
+        info_hash = item.get("hash") or ""
+        files = item.get("files") or []
+        if not t_id or not name or not info_hash:
+            continue
+        if maybe_build_course_metadata(
+            display_title=name,
+            info_hash=info_hash,
+            torrent_id=int(t_id),
+            api_key=api_key,
+            force_course=force_course,
+            preloaded_files=files,
+        ):
+            built_count += 1
+
+    print(f"\n✅ Synced metadata for {built_count} course(s) in addon/.")
+    return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Add course/educational magnet links or .torrent files to TorBox & Nuvio"
+        description="Add course/educational magnet links, markdown/text lists, or .torrent files to TorBox & Nuvio"
     )
     parser.add_argument(
         "targets",
         nargs="*",
-        help="One or more magnet links, 40-char infoHashes, or paths to .torrent files",
+        help="Magnet links, 40-char infoHashes, .md/.txt magnet list files, or .torrent files",
+    )
+    parser.add_argument(
+        "--from-file",
+        help="Path to a Markdown (.md) or text file containing magnet links (e.g. tpb-magnets.md)",
     )
     parser.add_argument(
         "--name",
@@ -360,6 +447,11 @@ def main() -> int:
         help="Force building structured course metadata from TorBox video filenames even without a webpage URL",
     )
     parser.add_argument(
+        "--sync-library",
+        action="store_true",
+        help="Scan your TorBox Cloud Library and rebuild/update course metadata for all finished downloads",
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         help="List all torrents currently in your TorBox Cloud Library",
@@ -375,12 +467,63 @@ def main() -> int:
     if args.list:
         return list_torbox_library(api_key)
 
-    if not args.targets:
+    if args.sync_library:
+        return sync_library_metadata(api_key, force_course=args.course)
+
+    expanded_targets: List[str] = []
+    if args.from_file:
+        fpath = Path(args.from_file).expanduser()
+        if not fpath.exists():
+            print(f"❌ File not found: {fpath}", file=sys.stderr)
+            return 1
+        found = extract_magnets_from_text_file(fpath)
+        print(f"📄 Extracted {len(found)} magnet links from {fpath.name}")
+        expanded_targets.extend(found)
+
+    for t in args.targets:
+        if not t.strip().lower().startswith("magnet:?") and len(t) < 255:
+            try:
+                cand = Path(t).expanduser()
+                if cand.exists() and cand.is_file() and cand.suffix.lower() in (".md", ".txt", ".csv"):
+                    found = extract_magnets_from_text_file(cand)
+                    print(f"📄 Extracted {len(found)} magnet links from {cand.name}")
+                    expanded_targets.extend(found)
+                    continue
+            except OSError:
+                pass
+        expanded_targets.append(t)
+
+    if not expanded_targets:
         parser.print_help()
         return 1
 
     added_any = False
-    for target in args.targets:
+    cached_count = 0
+    queued_count = 0
+    failed_count = 0
+
+    # Pre-fetch existing TorBox library and queue once to avoid redundant POSTs / 429 rate limits
+    library_by_hash: Dict[str, Dict[str, Any]] = {}
+    queued_by_hash: Dict[str, Dict[str, Any]] = {}
+    active_downloads = 0
+
+    st_lib, resp_lib = torbox_request("GET", "/torrents/mylist?bypass_cache=true", api_key)
+    if st_lib == 200 and isinstance(resp_lib, dict):
+        for item in resp_lib.get("data") or []:
+            h = str(item.get("hash") or "").lower()
+            if h:
+                library_by_hash[h] = item
+            if not item.get("download_finished"):
+                active_downloads += 1
+
+    st_q, resp_q = torbox_request("GET", "/queued/getqueued", api_key)
+    if st_q == 200 and isinstance(resp_q, dict):
+        for qitem in resp_q.get("data") or []:
+            h = str(qitem.get("hash") or "").lower()
+            if h:
+                queued_by_hash[h] = qitem
+
+    for idx, target in enumerate(expanded_targets, 1):
         is_file_target = False
         t_path = None
         if not target.strip().lower().startswith("magnet:?") and len(target) < 255:
@@ -392,8 +535,10 @@ def main() -> int:
             except OSError:
                 is_file_target = False
 
+        prefix_label = f"[{idx}/{len(expanded_targets)}] " if len(expanded_targets) > 1 else ""
+
         if is_file_target and t_path is not None:
-            print(f"\n📦 Inspecting .torrent file: {t_path.name}")
+            print(f"\n📦 {prefix_label}Inspecting .torrent file: {t_path.name}")
             info_hash, t_name, total_size, files = parse_torrent_file(t_path)
             display_title = args.name or t_name
             video_files = [
@@ -408,18 +553,12 @@ def main() -> int:
                 print(
                     f"   ⚠️  Warning: Torrent size ({format_bytes(total_size)}) exceeds the 200 GB Essential plan limit!"
                 )
-
-            cached_info = check_cached_on_torbox(info_hash, api_key)
-            if cached_info:
-                print("   • Status:     ⚡ INSTANTLY CACHED on TorBox")
-            else:
-                print("   • Status:     ⏳ Uncached (TorBox will download it in the cloud)")
-
-            status, resp = add_torrent_file_to_torbox(t_path, api_key)
+            magnet_uri = f"magnet:?xt=urn:btih:{info_hash}"
         else:
             info_hash, dn = extract_info_hash_from_magnet(target)
             if not info_hash:
                 print(f"❌ Could not parse magnet link or find file: {target}", file=sys.stderr)
+                failed_count += 1
                 continue
             magnet_uri = (
                 target.strip()
@@ -427,47 +566,115 @@ def main() -> int:
                 else f"magnet:?xt=urn:btih:{info_hash}"
             )
             display_title = args.name or dn or info_hash
-            print(f"\n🧲 Inspecting magnet: {display_title}")
+            print(f"\n🧲 {prefix_label}Inspecting magnet: {display_title}")
             print(f"   • InfoHash:   {info_hash}")
 
-            cached_info = check_cached_on_torbox(info_hash, api_key)
-            if cached_info:
-                c_size = int(cached_info.get("size") or 0)
-                c_files = cached_info.get("files") or []
-                print(
-                    f"   • Status:     ⚡ INSTANTLY CACHED on TorBox ({format_bytes(c_size)}, {len(c_files)} files)"
-                )
-                if c_size > MAX_ESSENTIAL_BYTES:
-                    print(
-                        f"   ⚠️  Warning: Torrent size ({format_bytes(c_size)}) exceeds the 200 GB Essential plan limit!"
-                    )
+        ih_lower = info_hash.lower()
+        if ih_lower in library_by_hash:
+            lib_item = library_by_hash[ih_lower]
+            t_id = int(lib_item.get("id") or 0)
+            is_done = bool(lib_item.get("download_finished"))
+            lib_files = (lib_item.get("files") or []) if is_done else []
+            if is_done:
+                cached_count += 1
+                print(f"   • Status:     ⚡ Already in TorBox Library & Ready (ID: {t_id})")
             else:
-                print("   • Status:     ⏳ Uncached (TorBox will download & cache it in the cloud)")
+                queued_count += 1
+                prog = float(lib_item.get("progress") or 0.0) * 100
+                print(
+                    f"   • Status:     ⏳ Actively Downloading on TorBox ({prog:.1f}%, ID: {t_id})"
+                )
+            maybe_build_course_metadata(
+                display_title,
+                info_hash,
+                t_id if is_done else 0,
+                api_key,
+                explicit_url=args.url,
+                explicit_slug=args.slug,
+                force_course=args.course,
+                preloaded_files=lib_files,
+            )
+            added_any = True
+            continue
 
-            status, resp = add_magnet_to_torbox(magnet_uri, api_key, name=args.name or dn)
+        if ih_lower in queued_by_hash:
+            q_item = queued_by_hash[ih_lower]
+            q_id = q_item.get("id")
+            queued_count += 1
+            print(f"   • Status:     ⏳ Already Queued on TorBox (Queue ID: {q_id})")
+            maybe_build_course_metadata(
+                display_title,
+                info_hash,
+                0,
+                api_key,
+                explicit_url=args.url,
+                explicit_slug=args.slug,
+                force_course=args.course,
+                preloaded_files=[],
+            )
+            added_any = True
+            continue
+
+        cached_info = check_cached_on_torbox(info_hash, api_key)
+        if cached_info:
+            c_size = int(cached_info.get("size") or 0)
+            c_files = cached_info.get("files") or []
+            print(
+                f"   • Status:     ⚡ INSTANTLY CACHED on TorBox ({format_bytes(c_size)}, {len(c_files)} files)"
+            )
+            if c_size > MAX_ESSENTIAL_BYTES:
+                print(
+                    f"   ⚠️  Warning: Torrent size ({format_bytes(c_size)}) exceeds the 200 GB Essential plan limit!"
+                )
+            should_queue = False
+        else:
+            print("   • Status:     ⏳ Uncached (TorBox will queue & download it in the cloud)")
+            should_queue = active_downloads >= 3
+
+        if is_file_target and t_path is not None:
+            status, resp = add_torrent_file_to_torbox(t_path, api_key, as_queued=should_queue)
+        else:
+            status, resp = add_magnet_to_torbox(
+                magnet_uri, api_key, name=args.name or dn, as_queued=should_queue
+            )
 
         if status in (200, 201) and isinstance(resp, dict) and resp.get("success"):
             detail = resp.get("detail") or "Added to TorBox Cloud Library"
-            t_id = (resp.get("data") or {}).get("torrent_id")
+            data_obj = resp.get("data") or {}
+            t_id = data_obj.get("torrent_id") or data_obj.get("queued_id")
+            if cached_info or "Cached" in str(detail):
+                cached_count += 1
+            else:
+                queued_count += 1
+                if not should_queue and "torrent_id" in data_obj:
+                    active_downloads += 1
             print(f"   ✅ [TorBox] {detail}" + (f" (ID: {t_id})" if t_id else ""))
-            if t_id and info_hash:
+            if info_hash:
+                real_tid = int(t_id) if (t_id and "torrent_id" in data_obj and cached_info) else 0
                 maybe_build_course_metadata(
                     display_title,
                     info_hash,
-                    int(t_id),
+                    real_tid,
                     api_key,
                     explicit_url=args.url,
                     explicit_slug=args.slug,
                     force_course=args.course,
+                    preloaded_files=None if real_tid else [],
                 )
             added_any = True
         else:
+            failed_count += 1
             detail = resp.get("detail") if isinstance(resp, dict) else str(resp)
             print(f"   ❌ [TorBox] Failed (HTTP {status}): {detail}", file=sys.stderr)
 
+    if len(expanded_targets) > 1:
+        print(
+            f"\n📊 Batch Summary: {cached_count} instantly cached, {queued_count} queued on TorBox, {failed_count} failed."
+        )
+
     if added_any:
         refresh_aiostreams_library_cache()
-        print("\n🎬 Done! Open Nuvio -> search by course name (or check 'TorBox Cloud Library' on Home) to watch.")
+        print("\n🎬 Done! Open Nuvio -> 'Courses & Lectures' (or 'TorBox Cloud Library') on Home to watch.")
         return 0
     return 1
 
