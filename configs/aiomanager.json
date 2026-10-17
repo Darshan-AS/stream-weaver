@@ -3876,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792238169385,
+      "configVersion": 1792238570959,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792238169385,
-        "timestamp": "2026-10-17T11:56:09.615Z"
+        "configVersion": 1792238570959,
+        "timestamp": "2026-10-17T12:02:51.183Z"
       },
-      "_timestamp": 1792238169615
+      "_timestamp": 1792238571183
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -4105,29 +4105,6 @@
               "isRequired": false,
               "options": [
                 "Humanities",
-                "Science",
-                "Social Sciences",
-                "History",
-                "Psychology",
-                "Philosophy",
-                "Mathematics",
-                "Religion"
-              ]
-            }
-          ]
-        },
-        {
-          "type": "series",
-          "id": "swce3b0.courses",
-          "name": "Courses & Lectures",
-          "extra": [
-            {
-              "name": "genre",
-              "isRequired": false,
-              "options": [
-                "Peterson Academy",
-                "Humanities",
-                "Education",
                 "Science",
                 "Social Sciences",
                 "History",
@@ -7371,14 +7348,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792238169385,
+            "configVersion": 1792238570959,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792238169385,
-              "timestamp": "2026-10-17T11:56:09.615Z"
+              "configVersion": 1792238570959,
+              "timestamp": "2026-10-17T12:02:51.183Z"
             },
-            "_timestamp": 1792238169615
+            "_timestamp": 1792238571183
           },
           "flags": {
             "official": false,
@@ -7409,29 +7386,6 @@
                     "isRequired": false,
                     "options": [
                       "Humanities",
-                      "Science",
-                      "Social Sciences",
-                      "History",
-                      "Psychology",
-                      "Philosophy",
-                      "Mathematics",
-                      "Religion"
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "series",
-                "id": "swce3b0.courses",
-                "name": "Courses & Lectures",
-                "extra": [
-                  {
-                    "name": "genre",
-                    "isRequired": false,
-                    "options": [
-                      "Peterson Academy",
-                      "Humanities",
-                      "Education",
                       "Science",
                       "Social Sciences",
                       "History",
@@ -11158,14 +11112,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792238169385,
+          "configVersion": 1792238570959,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792238169385,
-            "timestamp": "2026-10-17T11:56:09.615Z"
+            "configVersion": 1792238570959,
+            "timestamp": "2026-10-17T12:02:51.183Z"
           },
-          "_timestamp": 1792238169615
+          "_timestamp": 1792238571183
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -11202,29 +11156,6 @@
                   "isRequired": false,
                   "options": [
                     "Humanities",
-                    "Science",
-                    "Social Sciences",
-                    "History",
-                    "Psychology",
-                    "Philosophy",
-                    "Mathematics",
-                    "Religion"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "series",
-              "id": "swce3b0.courses",
-              "name": "Courses & Lectures",
-              "extra": [
-                {
-                  "name": "genre",
-                  "isRequired": false,
-                  "options": [
-                    "Peterson Academy",
-                    "Humanities",
-                    "Education",
                     "Science",
                     "Social Sciences",
                     "History",
