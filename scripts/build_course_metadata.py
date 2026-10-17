@@ -196,9 +196,10 @@ def build_static_addon_for_course(
         ep_overview = f"⏱️ {dur_mins} min · {course_meta['instructor']}\n\n{lec['description']}"
 
         vid_series_id = f"{stremio_id}_s1e{ep_num}"
+        vid_playback_id = f"{torbox_lib_id}:{file_idx}" if torbox_torrent_id else vid_series_id
         videos_series.append(
             {
-                "id": vid_series_id,
+                "id": vid_playback_id,
                 "title": f"{ep_num}. {lec['title']}",
                 "season": 1,
                 "episode": ep_num,
