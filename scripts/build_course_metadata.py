@@ -873,6 +873,31 @@ def build_static_addon_for_course(
             encoding="utf-8",
         )
 
+    # Also build dedicated Peterson Academy catalog (`addon/catalog/series/peterson_academy.json`)
+    pa_metas = [
+        m
+        for m in existing_metas
+        if "Peterson Academy" in m.get("genres", []) or str(m.get("id", "")).startswith("sw_pa_")
+    ]
+    pa_catalog_path = ADDON_DIR / "catalog" / "series" / "peterson_academy.json"
+    pa_catalog_path.write_text(
+        json.dumps({"metas": pa_metas}, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    pa_genres: List[str] = []
+    for m in pa_metas:
+        for g in m.get("genres", []):
+            if g not in ("Peterson Academy", "Education") and g not in pa_genres:
+                pa_genres.append(g)
+    pa_genre_dir = ADDON_DIR / "catalog" / "series" / "peterson_academy"
+    pa_genre_dir.mkdir(parents=True, exist_ok=True)
+    for g in pa_genres:
+        filtered_pa = [m for m in pa_metas if g in m.get("genres", [])]
+        (pa_genre_dir / f"genre={g}.json").write_text(
+            json.dumps({"metas": filtered_pa}, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
     # Write series meta (`addon/meta/series/sw_*.json`)
     meta_series_path = ADDON_DIR / "meta" / "series" / f"{stremio_id}.json"
     meta_series_path.parent.mkdir(parents=True, exist_ok=True)
@@ -902,7 +927,7 @@ def build_static_addon_for_course(
     # Write provider-agnostic manifest (`addon/manifest.json`)
     manifest = {
         "id": "com.darshan.streamweaver",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "name": "Stream Weaver Courses",
         "description": "Rich posters, backdrops, lecture thumbnails, and synopses for courses and educational series on TorBox",
         "logo": "https://petersonacademy.com/favicon-apple-touch-v3.png",
@@ -912,16 +937,28 @@ def build_static_addon_for_course(
         "catalogs": [
             {
                 "type": "series",
+                "id": "peterson_academy",
+                "name": "Peterson Academy",
+                "extra": [
+                    {
+                        "name": "genre",
+                        "isRequired": False,
+                        "options": pa_genres,
+                    }
+                ],
+            },
+            {
+                "type": "series",
                 "id": "courses",
                 "name": "Courses & Lectures",
                 "extra": [
                     {
                         "name": "genre",
-                        "isRequired": false if False else False,
+                        "isRequired": False,
                         "options": all_genres,
                     }
                 ],
-            }
+            },
         ],
     }
     manifest_path = ADDON_DIR / "manifest.json"
