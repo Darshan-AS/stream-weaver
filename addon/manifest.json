@@ -1,0 +1,27 @@
+{
+  "id": "com.darshan.petersonacademy",
+  "version": "1.0.0",
+  "name": "Peterson Academy Metadata",
+  "description": "Rich posters, backdrops, lecture thumbnails, and descriptions for Peterson Academy courses on TorBox",
+  "logo": "https://petersonacademy.com/favicon-apple-touch-v3.png",
+  "resources": [
+    "catalog",
+    "meta",
+    "stream"
+  ],
+  "types": [
+    "series",
+    "library"
+  ],
+  "idPrefixes": [
+    "pa_",
+    "aiostreams::library.torbox.torrent."
+  ],
+  "catalogs": [
+    {
+      "type": "series",
+      "id": "peterson_academy",
+      "name": "Peterson Academy"
+    }
+  ]
+}
