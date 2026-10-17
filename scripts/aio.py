@@ -45,7 +45,7 @@ def load_env(env_path: Path) -> Dict[str, str]:
             env[key] = val
     # Allow process environment variables to override .env
     for k, v in os.environ.items():
-        if k.startswith(("AIOSTREAMS_", "AIOMETADATA_", "AIOMANAGER_", "SECRET_")):
+        if k.startswith(("AIOSTREAMS_", "AIOMETADATA_", "AIOMANAGER_", "SECRET_", "ADDON_")):
             env[k] = v
     return env
 

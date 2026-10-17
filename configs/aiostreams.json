@@ -384,8 +384,8 @@
       "instanceId": "swc",
       "enabled": true,
       "options": {
-        "name": "Stream Weaver Courses",
-        "manifestUrl": "https://raw.githubusercontent.com/Darshan-AS/stream-weaver/main/addon/manifest.json",
+        "name": "Contraband",
+        "manifestUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/manifest.json",
         "timeout": 5000,
         "resources": [
           "catalog",

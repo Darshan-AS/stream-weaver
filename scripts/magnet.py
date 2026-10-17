@@ -449,8 +449,13 @@ def sync_library_metadata(api_key: str, force_course: bool = False) -> int:
             else:
                 break
 
+    if built_count > 0:
+        from build_course_metadata import publish_addon_repo
+
+        publish_addon_repo(f"feat(catalog): Sync {built_count} completed course(s) from TorBox")
+
     print(
-        f"\n✅ Synced metadata for {built_count} completed course(s) in addon/ "
+        f"\n✅ Synced metadata for {built_count} completed course(s) in Contraband "
         f"({active_count} actively downloading, {len(q_items)} waiting in TorBox Cloud Queue)."
     )
     return 0
@@ -460,7 +465,7 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
     """Continuously keeps 3 active downloads running on TorBox and syncs finished courses until queue is empty."""
     import time
 
-    from build_course_metadata import ADDON_DIR
+    from build_course_metadata import ADDON_DIR, publish_addon_repo
 
     synced_ids = set()
     lib_meta_dir = ADDON_DIR / "meta" / "library"
@@ -481,6 +486,7 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
         q_items = (resp_q.get("data") or []) if (st_q == 200 and isinstance(resp_q, dict)) else []
 
         active_items = []
+        newly_synced = 0
         for item in items:
             t_id = int(item.get("id") or 0)
             name = item.get("name") or ""
@@ -500,9 +506,13 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
                     preloaded_files=files,
                 ):
                     synced_ids.add(t_id)
+                    newly_synced += 1
                 else:
                     synced_ids.add(t_id)
                 sys.stdout.flush()
+
+        if newly_synced > 0:
+            publish_addon_repo(f"feat(catalog): Auto-sync {newly_synced} newly completed download(s)")
 
         active_count = len(active_items)
         while active_count < 3 and q_items:
@@ -528,9 +538,10 @@ def watch_and_drain_queue(api_key: str, force_course: bool = False, poll_seconds
                     break
 
         if active_count == 0 and not q_items:
+            publish_addon_repo("feat(catalog): Finalize Contraband queue sync")
             refresh_aiostreams_library_cache()
             print(
-                "\n🎉 All queued TorBox downloads have finished and synced into addon/!",
+                "\n🎉 All queued TorBox downloads have finished and published to Contraband!",
                 flush=True,
             )
             return 0
@@ -811,8 +822,11 @@ def main() -> int:
         )
 
     if added_any:
+        from build_course_metadata import publish_addon_repo
+
+        publish_addon_repo("feat(catalog): Add new Contraband metadata and stream links")
         refresh_aiostreams_library_cache()
-        print("\n🎬 Done! Open Nuvio -> 'Courses & Lectures' (or 'TorBox Cloud Library') on Home to watch.")
+        print("\n🎬 Done! Open Nuvio or Stremio on Home to watch.")
         return 0
     return 1
 

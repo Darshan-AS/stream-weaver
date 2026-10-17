@@ -26,6 +26,7 @@ import hashlib
 import html
 import json
 import re
+import subprocess
 import sys
 import urllib.parse
 import urllib.request
@@ -34,7 +35,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from aio import CONFIGS_DIR, ENV_FILE, ROOT_DIR, load_env
 
-ADDON_DIR = ROOT_DIR / "addon"
+_ENV = load_env(ENV_FILE)
+ADDON_DIR = Path(
+    _ENV.get("ADDON_REPO_DIR") or str(ROOT_DIR.parent / "aio_contraband")
+).expanduser()
+ADDON_ID = "dev.darshanas.contraband"
+ADDON_NAME = "Contraband"
+ADDON_DESCRIPTION = "Curated niche courses, rare lectures, and unlisted specials"
 VIDEO_EXTENSIONS = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v")
 
 
@@ -900,30 +907,47 @@ def build_static_addon_for_course(
             encoding="utf-8",
         )
 
-    # Write provider-agnostic manifest (`addon/manifest.json`)
+    # Write dynamic multi-collection manifest (`manifest.json` in ADDON_DIR)
+    catalog_series_dir = ADDON_DIR / "catalog" / "series"
+    catalogs_manifest: List[Dict[str, Any]] = []
+    if catalog_series_dir.exists():
+        for cat_file in sorted(catalog_series_dir.glob("*.json")):
+            cat_id = cat_file.stem
+            cat_display = cat_id.replace("_", " ").title()
+            cat_genres: List[str] = []
+            try:
+                cat_metas = json.loads(cat_file.read_text(encoding="utf-8")).get("metas", [])
+                for m in cat_metas:
+                    for g in m.get("genres", []):
+                        if g.lower() != cat_display.lower() and g != "Education" and g not in cat_genres:
+                            cat_genres.append(g)
+            except Exception:
+                pass
+            cat_entry: Dict[str, Any] = {
+                "type": "series",
+                "id": cat_id,
+                "name": cat_display,
+            }
+            if cat_genres:
+                cat_entry["extra"] = [
+                    {
+                        "name": "genre",
+                        "isRequired": False,
+                        "options": cat_genres,
+                    }
+                ]
+            catalogs_manifest.append(cat_entry)
+
     manifest = {
-        "id": "com.darshan.streamweaver",
-        "version": "1.2.1",
-        "name": "Stream Weaver Courses",
-        "description": "Rich posters, backdrops, lecture thumbnails, and synopses for courses and educational series on TorBox",
+        "id": ADDON_ID,
+        "version": "1.3.0",
+        "name": ADDON_NAME,
+        "description": ADDON_DESCRIPTION,
         "logo": "https://petersonacademy.com/favicon-apple-touch-v3.png",
         "resources": ["catalog", "meta", "stream"],
         "types": ["series", "library"],
         "idPrefixes": ["sw_", "pa_", "aiostreams::library.torbox.torrent."],
-        "catalogs": [
-            {
-                "type": "series",
-                "id": "peterson_academy",
-                "name": "Peterson Academy",
-                "extra": [
-                    {
-                        "name": "genre",
-                        "isRequired": False,
-                        "options": pa_genres,
-                    }
-                ],
-            }
-        ],
+        "catalogs": catalogs_manifest,
     }
     manifest_path = ADDON_DIR / "manifest.json"
     manifest_path.write_text(
@@ -932,22 +956,61 @@ def build_static_addon_for_course(
     )
 
 
+def publish_addon_repo(commit_msg: Optional[str] = None) -> bool:
+    """Commits and pushes any modified static addon files in ADDON_DIR to GitHub."""
+    if not (ADDON_DIR / ".git").exists():
+        return False
+    try:
+        st = subprocess.run(
+            ["git", "-C", str(ADDON_DIR), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if not st.stdout.strip():
+            return False
+        msg = commit_msg or "feat(catalog): Sync Contraband metadata and stream links"
+        subprocess.run(["git", "-C", str(ADDON_DIR), "add", "-A"], check=True)
+        subprocess.run(
+            ["git", "-C", str(ADDON_DIR), "commit", "-m", msg],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(ADDON_DIR), "push", "origin", "main"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        print(f"🚀 [Contraband] Published updated addon files in {ADDON_DIR.name} to GitHub!")
+        return True
+    except Exception as exc:
+        print(f"⚠️  [Contraband] Auto-publish warning: {exc}", file=sys.stderr)
+        return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build static Stremio course metadata for TorBox torrents"
+        description="Build static Stremio course metadata for Contraband (dev.darshanas.contraband)"
     )
     parser.add_argument("--title", default="", help="Torrent display title")
     parser.add_argument("--slug", help="Optional Peterson Academy slug (e.g. 'napoleon')")
     parser.add_argument("--url", help="Optional course webpage URL (MasterClass, Wondrium, etc.)")
+    parser.add_argument("--collection", help="Optional custom catalog row name (e.g. 'MasterClass')")
     parser.add_argument("--hash", required=True, help="40-char torrent infoHash")
     parser.add_argument("--torrent-id", type=int, default=0, help="TorBox torrent ID")
-    parser.add_argument("--clean", action="store_true", help="Clean addon/ directory before building")
+    parser.add_argument("--clean", action="store_true", help="Clean catalog/meta/stream directories before building")
+    parser.add_argument("--publish", action="store_true", help="Commit and push addon repo changes to GitHub")
     args = parser.parse_args()
 
     if args.clean and ADDON_DIR.exists():
         import shutil
 
-        shutil.rmtree(ADDON_DIR)
+        for subdir in ("catalog", "meta", "stream"):
+            target_sub = ADDON_DIR / subdir
+            if target_sub.exists():
+                shutil.rmtree(target_sub)
 
     from magnet import fetch_torbox_torrent_files
 
@@ -972,12 +1035,17 @@ def main() -> int:
         print(f"❌ Could not build metadata for '{display_title}'", file=sys.stderr)
         return 1
 
+    if args.collection:
+        meta.provider = args.collection
+
     ep_map = match_torbox_files_to_lectures(tb_files, meta.lectures)
     build_static_addon_for_course(meta, args.hash, args.torrent_id, ep_map)
     print(f"✅ Built {meta.provider} metadata for '{meta.title}' ({meta.stremio_id})")
     print(f"   Poster:   {meta.poster}")
     print(f"   Backdrop: {meta.background}")
     print(f"   Lectures: {len(meta.lectures)} episodes mapped in {ADDON_DIR}/")
+    if args.publish:
+        publish_addon_repo(f"feat(catalog): Add {meta.title} ({meta.provider})")
     return 0
 
 
