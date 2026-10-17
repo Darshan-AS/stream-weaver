@@ -1,0 +1,243 @@
+"""Client sync providers (`NuvioClientSync`, `StremioClientSync`) implementing `ClientSyncProtocol`."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
+
+from stream_weaver.core.crypto import decrypt_field
+from stream_weaver.core.errors import NetworkError, StreamWeaverError
+from stream_weaver.core.result import Err, Ok, Result
+from stream_weaver.core.types import EnvMap, JsonDict
+from stream_weaver.effects.http import HttpClientProtocol
+
+
+def build_nuvio_addons_payload(addons: list[Any]) -> list[JsonDict]:
+    """Pure function: transforms AIOManager account addons into Nuvio's `p_addons` RPC format."""
+    p_addons: list[JsonDict] = []
+    for idx, addon in enumerate(addons):
+        if not isinstance(addon, dict):
+            continue
+        url = str(addon.get("transportUrl", "")).rstrip("/")
+        if url and not url.endswith("/manifest.json"):
+            url = f"{url}/manifest.json"
+        raw_mf = addon.get("manifest")
+        raw_flags = addon.get("flags")
+        manifest: dict[str, Any] = raw_mf if isinstance(raw_mf, dict) else {}
+        flags: dict[str, Any] = raw_flags if isinstance(raw_flags, dict) else {}
+        p_addons.append(
+            {
+                "url": url,
+                "name": str(manifest.get("name", "")),
+                "enabled": flags.get("enabled", True) is not False,
+                "sort_order": idx,
+            }
+        )
+    return p_addons
+
+
+def build_stremio_addons_payload(addons: list[Any]) -> list[JsonDict]:
+    """Pure function: transforms AIOManager account addons into Stremio's `AddonCollectionSet` format."""
+    stremio_addons: list[JsonDict] = []
+    for addon in addons:
+        if not isinstance(addon, dict):
+            continue
+        raw_flags = addon.get("flags")
+        flags: dict[str, Any] = raw_flags if isinstance(raw_flags, dict) else {}
+        if flags.get("enabled", True) is False:
+            continue
+        url = str(addon.get("transportUrl", "")).rstrip("/")
+        if url and not url.endswith("/manifest.json"):
+            url = f"{url}/manifest.json"
+        raw_mf = addon.get("manifest")
+        manifest: dict[str, Any] = raw_mf if isinstance(raw_mf, dict) else {}
+        stremio_addons.append(
+            {
+                "transportUrl": url,
+                "transportName": str(addon.get("transportName", "")),
+                "manifest": manifest,
+                "flags": flags,
+            }
+        )
+    return stremio_addons
+
+
+class NuvioClientSync:
+    """Pushes an account's addon list directly to a linked Nuvio profile."""
+
+    def __init__(self, http_client: HttpClientProtocol) -> None:
+        self._http = http_client
+
+    @property
+    def platform_id(self) -> str:
+        return "nuvio"
+
+    def sync_account(
+        self,
+        account: Mapping[str, Any],
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+    ) -> Result[tuple[str, dict[str, str]], StreamWeaverError]:
+        creds = connection.get("credentials")
+        if not isinstance(creds, Mapping) or not creds.get("accessToken"):
+            return Err(StreamWeaverError("Nuvio connection has no accessToken."))
+
+        nuvio_anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
+        if not nuvio_anon_key:
+            return Err(
+                StreamWeaverError(
+                    "NUVIO_SUPABASE_ANON_KEY is not set in .env; skipping direct Nuvio sync."
+                )
+            )
+
+        access_token = decrypt_field(str(creds["accessToken"]), master_password, salt_b64)
+        headers: dict[str, str] = {
+            "apikey": nuvio_anon_key,
+            "Authorization": f"Bearer {access_token}",
+        }
+        updated_secrets: dict[str, str] = {}
+
+        prof_res = self._http.request_json(
+            "POST",
+            "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
+            headers=headers,
+            json_body={},
+        )
+        match prof_res:
+            case Err() as err:
+                return err
+            case Ok(prof_resp):
+                p_status = prof_resp.status_code
+                profiles = prof_resp.data
+
+        if p_status == 401 and creds.get("refreshToken"):
+            refresh_tok = decrypt_field(str(creds["refreshToken"]), master_password, salt_b64)
+            refresh_res = self._http.request_json(
+                "POST",
+                "https://api.nuvio.tv/auth/v1/token?grant_type=refresh_token",
+                headers={"apikey": nuvio_anon_key},
+                json_body={"refresh_token": refresh_tok},
+            )
+            match refresh_res:
+                case Ok(r_resp) if (
+                    r_resp.status_code == 200
+                    and isinstance(r_resp.data, dict)
+                    and r_resp.data.get("access_token")
+                ):
+                    access_token = str(r_resp.data["access_token"])
+                    updated_secrets["SECRET_NUVIO_ACCESS_TOKEN"] = access_token
+                    if r_resp.data.get("refresh_token"):
+                        updated_secrets["SECRET_NUVIO_REFRESH_TOKEN"] = str(
+                            r_resp.data["refresh_token"]
+                        )
+                    headers["Authorization"] = f"Bearer {access_token}"
+                    retry_prof = self._http.request_json(
+                        "POST",
+                        "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
+                        headers=headers,
+                        json_body={},
+                    )
+                    if isinstance(retry_prof, Ok):
+                        p_status = retry_prof.value.status_code
+                        profiles = retry_prof.value.data
+                case _:
+                    pass
+
+        profile_idx = 1
+        target_pid = creds.get("profileId")
+        if p_status == 200 and isinstance(profiles, list):
+            for p in profiles:
+                if isinstance(p, dict) and str(p.get("id")) == str(target_pid):
+                    profile_idx = int(p.get("profile_index") or p.get("profileIndex") or 1)
+                    break
+
+        raw_addons = account.get("addons")
+        addons_list = raw_addons if isinstance(raw_addons, list) else []
+        p_addons = build_nuvio_addons_payload(addons_list)
+
+        push_res = self._http.request_json(
+            "POST",
+            "https://api.nuvio.tv/rest/v1/rpc/sync_push_addons",
+            headers=headers,
+            json_body={"p_profile_id": profile_idx, "p_addons": p_addons},
+        )
+        match push_res:
+            case Err() as err:
+                return err
+            case Ok(s_resp):
+                if s_resp.status_code in (200, 204):
+                    return Ok(
+                        (
+                            f"Pushed {len(p_addons)} addons directly to Nuvio profile #{profile_idx}",
+                            updated_secrets,
+                        )
+                    )
+                return Err(
+                    NetworkError(
+                        message=f"Nuvio push returned HTTP {s_resp.status_code}",
+                        status_code=s_resp.status_code,
+                    )
+                )
+
+
+class StremioClientSync:
+    """Pushes an account's enabled addon list directly to a linked Stremio account."""
+
+    def __init__(self, http_client: HttpClientProtocol) -> None:
+        self._http = http_client
+
+    @property
+    def platform_id(self) -> str:
+        return "stremio"
+
+    def sync_account(
+        self,
+        account: Mapping[str, Any],
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+    ) -> Result[tuple[str, dict[str, str]], StreamWeaverError]:
+        _ = env
+        creds = connection.get("credentials")
+        if not isinstance(creds, Mapping) or not creds.get("authKey") or not salt_b64:
+            return Err(StreamWeaverError("Stremio connection is missing authKey or salt."))
+
+        auth_key = decrypt_field(str(creds["authKey"]), master_password, salt_b64)
+        raw_addons = account.get("addons")
+        addons_list = raw_addons if isinstance(raw_addons, list) else []
+        stremio_addons = build_stremio_addons_payload(addons_list)
+
+        res = self._http.request_json(
+            "POST",
+            "https://api.strem.io/api/addonCollectionSet",
+            json_body={
+                "type": "AddonCollectionSet",
+                "authKey": auth_key,
+                "addons": stremio_addons,
+            },
+        )
+        match res:
+            case Err() as err:
+                return err
+            case Ok(s_resp):
+                if (
+                    s_resp.status_code == 200
+                    and isinstance(s_resp.data, dict)
+                    and isinstance(s_resp.data.get("result"), dict)
+                    and s_resp.data["result"].get("success")
+                ):
+                    return Ok(
+                        (
+                            f"Pushed {len(stremio_addons)} enabled addons directly to Stremio account",
+                            {},
+                        )
+                    )
+                return Err(
+                    NetworkError(
+                        message=f"Stremio sync returned HTTP {s_resp.status_code}",
+                        status_code=s_resp.status_code,
+                    )
+                )

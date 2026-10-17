@@ -1,0 +1,117 @@
+"""Unit tests for config normalizers and AIOManager dehydration/rehydration."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from stream_weaver.core.coercions import (
+    dehydrate_aiomanager,
+    normalize_aiometadata,
+    normalize_aiostreams,
+    rehydrate_aiomanager,
+)
+from stream_weaver.core.result import Ok
+
+
+def test_normalize_aiostreams_unwraps_and_strips_volatile() -> None:
+    wrapped = {
+        "data": {
+            "userData": {
+                "uuid": "u-123",
+                "encryptedPassword": "enc",
+                "ip": "1.2.3.4",
+                "services": [{"id": "torbox"}],
+            }
+        }
+    }
+    res = normalize_aiostreams(wrapped)
+    assert isinstance(res, Ok)
+    assert res.value == {"services": [{"id": "torbox"}]}
+
+
+def test_normalize_aiometadata_strips_volatile() -> None:
+    wrapped = {
+        "config": {
+            "lastModified": "2026-10-17",
+            "configVersion": 4,
+            "search": {"enabled": True},
+        }
+    }
+    res = normalize_aiometadata(wrapped)
+    assert isinstance(res, Ok)
+    assert res.value == {"search": {"enabled": True}}
+
+
+def test_aiomanager_dehydrate_and_rehydrate_roundtrip() -> None:
+    huge_manifest = {
+        "id": "aio-metadata",
+        "version": "3.5.1",
+        "name": "AIOMetadata",
+        "catalogs": [{"id": f"cat_{i}"} for i in range(50)],
+    }
+    cinemeta_saved_mf = {
+        "id": "com.linvo.cinemeta",
+        "version": "3.0.14",
+        "name": "Cinemeta",
+        "catalogs": [{"id": "top"}],
+    }
+    cinemeta_account_mf = {
+        "id": "com.linvo.cinemeta",
+        "version": "3.0.14",
+        "name": "Cinemeta",
+        "catalogs": [],  # Customized override in account!
+    }
+
+    raw_state: dict[str, Any] = {
+        "version": "2.0.0",
+        "syncedAt": "2026-10-17T00:00:00Z",
+        "watchEvents": [{"id": "evt1"}, {"id": "evt2"}],
+        "changelog": [{"action": "sync"}],
+        "manifests": {
+            "aio-metadata:3.5.1": huge_manifest,
+            "com.linvo.cinemeta:3.0.14": cinemeta_saved_mf,
+        },
+        "addons": {
+            "savedAddons": [
+                {"name": "AIOMetadata", "manifest": huge_manifest},
+                {"name": "Cinemeta", "manifest": cinemeta_saved_mf},
+            ]
+        },
+        "accounts": [
+            {
+                "id": "acc-1",
+                "addons": [
+                    {
+                        "manifestId": "aio-metadata:3.5.1",
+                        "manifest": huge_manifest,
+                    },
+                    {
+                        "manifestId": "com.linvo.cinemeta:3.0.14",
+                        "manifest": cinemeta_account_mf,
+                    },
+                ],
+            }
+        ],
+    }
+
+    dehydrated_res = dehydrate_aiomanager(raw_state)
+    assert isinstance(dehydrated_res, Ok)
+    dehydrated = dehydrated_res.value
+
+    # Telemetry and top-level manifests cache must be stripped
+    assert "watchEvents" not in dehydrated
+    assert "changelog" not in dehydrated
+    assert "manifests" not in dehydrated
+
+    # Duplicate manifest in account addon 0 must be compacted, while custom Cinemeta override stays intact
+    acc_addons = dehydrated["accounts"][0]["addons"]
+    assert acc_addons[0]["manifest"]["_deduped"] is True
+    assert "catalogs" not in acc_addons[0]["manifest"]
+    assert acc_addons[1]["manifest"]["catalogs"] == []
+
+    # Rehydrating must restore full manifests and default telemetry fields
+    rehydrated = rehydrate_aiomanager(dehydrated)
+    assert rehydrated["accounts"][0]["addons"][0]["manifest"] == huge_manifest
+    assert rehydrated["accounts"][0]["addons"][1]["manifest"] == cinemeta_account_mf
+    assert rehydrated["manifests"]["aio-metadata:3.5.1"] == huge_manifest
+    assert rehydrated["watchEvents"] == []
