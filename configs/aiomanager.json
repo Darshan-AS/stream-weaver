@@ -3876,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792230104778,
+      "configVersion": 1792238169385,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792230104778,
-        "timestamp": "2026-10-17T09:41:45.004Z"
+        "configVersion": 1792238169385,
+        "timestamp": "2026-10-17T11:56:09.615Z"
       },
-      "_timestamp": 1792230105004
+      "_timestamp": 1792238169615
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -4088,6 +4088,167 @@
         "issuer": "https://stremio-addons.net",
         "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..WSrhzzlj1TuDycD6QoVLuA.Dzmxzr4y83uqQF15r4tC1bB9-vtZRh1Rvy4BqgDYxu91c2esiJuov9KnnI_cboQCgZS7hjwnIqRSlQ-jEyGwXHHRerh9QklyfdxpXqNUyBgTWFzDOVdVvDYJeM_tGMmR.sezAChlWGV7lNS-t9HWB6A"
       }
+    },
+    "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.36.0": {
+      "name": "AIOStreams",
+      "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
+      "version": "2.36.0",
+      "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
+      "catalogs": [
+        {
+          "type": "series",
+          "id": "swce3b0.peterson_academy",
+          "name": "Peterson Academy",
+          "extra": [
+            {
+              "name": "genre",
+              "isRequired": false,
+              "options": [
+                "Humanities",
+                "Science",
+                "Social Sciences",
+                "History",
+                "Psychology",
+                "Philosophy",
+                "Mathematics",
+                "Religion"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "series",
+          "id": "swce3b0.courses",
+          "name": "Courses & Lectures",
+          "extra": [
+            {
+              "name": "genre",
+              "isRequired": false,
+              "options": [
+                "Peterson Academy",
+                "Humanities",
+                "Education",
+                "Science",
+                "Social Sciences",
+                "History",
+                "Psychology",
+                "Philosophy",
+                "Mathematics",
+                "Religion"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "movie",
+          "id": "lib791b.aiostreams::library.torbox",
+          "name": "TorBox Cloud Library",
+          "extra": [
+            {
+              "name": "skip"
+            },
+            {
+              "name": "search"
+            },
+            {
+              "name": "genre",
+              "isRequired": false,
+              "options": [
+                "Date Added ↓",
+                "Date Added ↑",
+                "Title A-Z",
+                "Title Z-A",
+                "Actions"
+              ]
+            }
+          ]
+        }
+      ],
+      "resources": [
+        {
+          "name": "catalog",
+          "types": [
+            "series",
+            "movie"
+          ]
+        },
+        {
+          "name": "meta",
+          "types": [
+            "series",
+            "library"
+          ],
+          "idPrefixes": [
+            "sw_",
+            "pa_",
+            "aiostreams::library.torbox.torrent.",
+            "aiostreams::library.torbox",
+            "aiostreamserror"
+          ]
+        },
+        {
+          "name": "stream",
+          "types": [
+            "series",
+            "library",
+            "movie",
+            "other",
+            "anime",
+            "tv",
+            "events",
+            "HdHub"
+          ],
+          "idPrefixes": [
+            "sw_",
+            "pa_",
+            "aiostreams::library.torbox.torrent.",
+            "tt",
+            "imdb",
+            "mal",
+            "tvdb",
+            "tmdb",
+            "kitsu",
+            "aiostreams::library.torbox",
+            "anilist",
+            "anidb",
+            "kitsu:",
+            "mal:",
+            "tmdb:",
+            "tvdb:",
+            "mf",
+            "dl"
+          ]
+        },
+        {
+          "name": "subtitles",
+          "types": [
+            "movie",
+            "series",
+            "subtitles"
+          ],
+          "idPrefixes": [
+            "tt",
+            "kitsu"
+          ]
+        }
+      ],
+      "types": [
+        "series",
+        "movie",
+        "library",
+        "other",
+        "anime",
+        "tv",
+        "events",
+        "HdHub",
+        "subtitles"
+      ],
+      "logo": "https://numb3rs.stream/assets/images/aiostreams.svg",
+      "behaviorHints": {
+        "configurable": true,
+        "configurationRequired": false
+      },
+      "addonCatalogs": []
     }
   },
   "accounts": [
@@ -7210,14 +7371,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792230104778,
+            "configVersion": 1792238169385,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792230104778,
-              "timestamp": "2026-10-17T09:41:45.004Z"
+              "configVersion": 1792238169385,
+              "timestamp": "2026-10-17T11:56:09.615Z"
             },
-            "_timestamp": 1792230105004
+            "_timestamp": 1792238169615
           },
           "flags": {
             "official": false,
@@ -7231,13 +7392,34 @@
         {
           "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/eyJpIjoiOXduNkdTN2V0cFJiam5BT21TN2RkUT09IiwiZSI6IjF0OTdZd24ydlZydWNmd3dmZ1ZLdFhjd0JtY2JhY2ZXZ0d2dUV0NHpvOStIMGdCWWMrY0RmOXR1a3BhWjFtU0YiLCJ0IjoiYSJ9",
           "transportName": "",
-          "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9",
+          "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.36.0",
           "manifest": {
             "name": "AIOStreams",
             "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-            "version": "2.35.9",
+            "version": "2.36.0",
             "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
             "catalogs": [
+              {
+                "type": "series",
+                "id": "swce3b0.peterson_academy",
+                "name": "Peterson Academy",
+                "extra": [
+                  {
+                    "name": "genre",
+                    "isRequired": false,
+                    "options": [
+                      "Humanities",
+                      "Science",
+                      "Social Sciences",
+                      "History",
+                      "Psychology",
+                      "Philosophy",
+                      "Mathematics",
+                      "Religion"
+                    ]
+                  }
+                ]
+              },
               {
                 "type": "series",
                 "id": "swce3b0.courses",
@@ -7248,13 +7430,13 @@
                     "isRequired": false,
                     "options": [
                       "Peterson Academy",
-                      "Psychology",
-                      "Education",
                       "Humanities",
-                      "Social Sciences",
+                      "Education",
                       "Science",
-                      "Philosophy",
+                      "Social Sciences",
                       "History",
+                      "Psychology",
+                      "Philosophy",
                       "Mathematics",
                       "Religion"
                     ]
@@ -10976,14 +11158,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792230104778,
+          "configVersion": 1792238169385,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792230104778,
-            "timestamp": "2026-10-17T09:41:45.004Z"
+            "configVersion": 1792238169385,
+            "timestamp": "2026-10-17T11:56:09.615Z"
           },
-          "_timestamp": 1792230105004
+          "_timestamp": 1792238169615
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -11007,9 +11189,30 @@
         "manifest": {
           "name": "AIOStreams",
           "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-          "version": "2.35.9",
+          "version": "2.36.0",
           "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
           "catalogs": [
+            {
+              "type": "series",
+              "id": "swce3b0.peterson_academy",
+              "name": "Peterson Academy",
+              "extra": [
+                {
+                  "name": "genre",
+                  "isRequired": false,
+                  "options": [
+                    "Humanities",
+                    "Science",
+                    "Social Sciences",
+                    "History",
+                    "Psychology",
+                    "Philosophy",
+                    "Mathematics",
+                    "Religion"
+                  ]
+                }
+              ]
+            },
             {
               "type": "series",
               "id": "swce3b0.courses",
@@ -11020,13 +11223,13 @@
                   "isRequired": false,
                   "options": [
                     "Peterson Academy",
-                    "Psychology",
-                    "Education",
                     "Humanities",
-                    "Social Sciences",
+                    "Education",
                     "Science",
-                    "Philosophy",
+                    "Social Sciences",
                     "History",
+                    "Psychology",
+                    "Philosophy",
                     "Mathematics",
                     "Religion"
                   ]
