@@ -35,37 +35,20 @@
       ]
     },
     {
-      "id": "sw_pa_37",
+      "id": "sw_pa_2711",
       "type": "series",
-      "name": "Intro to Neuroscience — Dr. Baland Jalal",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F37%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F37%2Fhero?tr=w-1920&alt=media",
-      "description": "[NEUR 101] In Intro to Neuroscience, an eight-hour course, Dr. Jalal embarks on a captivating journey through the intricacies of the human brain, exploring its structure, function, and the fascinating phenomena it produces. We delve into topics such as the neuroscience of body image, neuroplasticity, memory, sleep, and the fascinating realm of dreams. Throughout the course, we highlight the complex interplay between the mind, brain, and body. This exploration also covers the potential clinical applications of neuroscience findings, culminating in empowering insights on how to lead a fulfilling and purposeful life.",
-      "releaseInfo": "NEUR 101",
+      "name": "Astronomy 101 — Dr. Brian Keating",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2711%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2711%2Fhero?tr=w-1920&alt=media",
+      "description": "[ASTR 101] In Astronomy 101, a seven-hour course, Dr. Brian Keating launches into a fascinating exploration of the history and principles of astronomy—from ancient observations to cutting-edge discoveries. We follow the evolution of astronomical tools and techniques, the cosmic distance ladder, and the properties and life cycles of stars and galaxies. The course delves into the fundamental principles of gravity, the Big Bang theory, and the search for extraterrestrial life, while also highlighting the contributions of groundbreaking scientists and the profound impact of astronomy on our understanding of the universe and our place within it.",
+      "releaseInfo": "ASTR 101",
       "genres": [
         "Peterson Academy",
         "Science",
         "Education"
       ],
       "cast": [
-        "Dr. Baland Jalal"
-      ]
-    },
-    {
-      "id": "sw_pa_2715",
-      "type": "series",
-      "name": "The Fundamentals of Physiology — Dr. Benjamin Bikman",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2715%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2715%2Fhero?tr=w-1920&alt=media",
-      "description": "[BIO 110] In The Fundamentals of Physiology, a seven-hour course, Dr. Benjamin Bikman provides a comprehensive exploration of human physiology, beginning with cellular fundamentals and progressing through major body systems. We examine the complex mechanisms that maintain homeostasis, delve into the intricate relationships between various organ systems, and discuss clinically relevant topics and modern applications. The course offers a thorough understanding of how the human body functions and the crucial role of each system in maintaining overall health.",
-      "releaseInfo": "BIO 110",
-      "genres": [
-        "Peterson Academy",
-        "Science",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Benjamin Bikman"
+        "Dr. Brian Keating"
       ]
     },
     {
@@ -86,20 +69,20 @@
       ]
     },
     {
-      "id": "sw_pa_2711",
+      "id": "sw_pa_3223",
       "type": "series",
-      "name": "Astronomy 101 — Dr. Brian Keating",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2711%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2711%2Fhero?tr=w-1920&alt=media",
-      "description": "[ASTR 101] In Astronomy 101, a seven-hour course, Dr. Brian Keating launches into a fascinating exploration of the history and principles of astronomy—from ancient observations to cutting-edge discoveries. We follow the evolution of astronomical tools and techniques, the cosmic distance ladder, and the properties and life cycles of stars and galaxies. The course delves into the fundamental principles of gravity, the Big Bang theory, and the search for extraterrestrial life, while also highlighting the contributions of groundbreaking scientists and the profound impact of astronomy on our understanding of the universe and our place within it.",
-      "releaseInfo": "ASTR 101",
+      "name": "Evolution, Sex & The Birth Control Pill — Dr. Sarah Hill",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3223%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3223%2Fhero?tr=w-1920&alt=media",
+      "description": "[BIO 330] In Evolution, Sex & The Birth Control Pill, an eight-hour course, Dr. Sarah Hill takes students on a deep dive into how evolutionary psychology and reproductive biology shape sex differences in human behavior, mate preferences, and hormone regulation. She explores the complex effects of hormonal birth control on women's bodies, minds, and partner choices, highlighting both its benefits and potential risks, including heightened rates of depression. The course concludes by examining the wider societal impact of birth control and underscores the critical importance of sex-aware research in medicine and beyond.",
+      "releaseInfo": "BIO 330",
       "genres": [
         "Peterson Academy",
         "Science",
         "Education"
       ],
       "cast": [
-        "Dr. Brian Keating"
+        "Dr. Sarah Hill"
       ]
     },
     {
@@ -120,20 +103,37 @@
       ]
     },
     {
-      "id": "sw_pa_3223",
+      "id": "sw_pa_2715",
       "type": "series",
-      "name": "Evolution, Sex & The Birth Control Pill — Dr. Sarah Hill",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3223%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3223%2Fhero?tr=w-1920&alt=media",
-      "description": "[BIO 330] In Evolution, Sex & The Birth Control Pill, an eight-hour course, Dr. Sarah Hill takes students on a deep dive into how evolutionary psychology and reproductive biology shape sex differences in human behavior, mate preferences, and hormone regulation. She explores the complex effects of hormonal birth control on women's bodies, minds, and partner choices, highlighting both its benefits and potential risks, including heightened rates of depression. The course concludes by examining the wider societal impact of birth control and underscores the critical importance of sex-aware research in medicine and beyond.",
-      "releaseInfo": "BIO 330",
+      "name": "The Fundamentals of Physiology — Dr. Benjamin Bikman",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2715%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2715%2Fhero?tr=w-1920&alt=media",
+      "description": "[BIO 110] In The Fundamentals of Physiology, a seven-hour course, Dr. Benjamin Bikman provides a comprehensive exploration of human physiology, beginning with cellular fundamentals and progressing through major body systems. We examine the complex mechanisms that maintain homeostasis, delve into the intricate relationships between various organ systems, and discuss clinically relevant topics and modern applications. The course offers a thorough understanding of how the human body functions and the crucial role of each system in maintaining overall health.",
+      "releaseInfo": "BIO 110",
       "genres": [
         "Peterson Academy",
         "Science",
         "Education"
       ],
       "cast": [
-        "Dr. Sarah Hill"
+        "Dr. Benjamin Bikman"
+      ]
+    },
+    {
+      "id": "sw_pa_37",
+      "type": "series",
+      "name": "Intro to Neuroscience — Dr. Baland Jalal",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F37%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F37%2Fhero?tr=w-1920&alt=media",
+      "description": "[NEUR 101] In Intro to Neuroscience, an eight-hour course, Dr. Jalal embarks on a captivating journey through the intricacies of the human brain, exploring its structure, function, and the fascinating phenomena it produces. We delve into topics such as the neuroscience of body image, neuroplasticity, memory, sleep, and the fascinating realm of dreams. Throughout the course, we highlight the complex interplay between the mind, brain, and body. This exploration also covers the potential clinical applications of neuroscience findings, culminating in empowering insights on how to lead a fulfilling and purposeful life.",
+      "releaseInfo": "NEUR 101",
+      "genres": [
+        "Peterson Academy",
+        "Science",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Baland Jalal"
       ]
     }
   ]

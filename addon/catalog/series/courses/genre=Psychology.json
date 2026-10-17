@@ -1,57 +1,6 @@
 {
   "metas": [
     {
-      "id": "sw_pa_2735",
-      "type": "series",
-      "name": "The Neuroscience of Dreams — Dr. Baland Jalal",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2735%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2735%2Fhero?tr=w-1920&alt=media",
-      "description": "[NEUR 310] In The Neuroscience of Dreams, a seven-hour course, we embark on a fascinating exploration of sleep and dreams, delving into the neurological processes, evolutionary theories, and practical implications of these essential human experiences. Dr. Baland Jalal guides us through the stages of sleep, the neuroscience of dreaming, and various sleep disorders, while also examining the creative potential and cultural interpretations of dreams. The course highlights the importance of understanding sleep for both personal well-being and scientific inquiry, concluding with practical strategies for improving sleep quality and harnessing the power of dreams in our waking lives.",
-      "releaseInfo": "NEUR 310",
-      "genres": [
-        "Peterson Academy",
-        "Psychology",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Baland Jalal"
-      ]
-    },
-    {
-      "id": "sw_pa_17",
-      "type": "series",
-      "name": "Brain Metabolism and Mental Health — Dr. Chris Palmer",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F17%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F17%2Fhero?tr=w-1920&alt=media",
-      "description": "[NEUR 340] In Brain Metabolism and Mental Health, a nine-hour course, Dr. Chris Palmer explores the brain energy theory, which suggests that mental disorders are fundamentally metabolic disorders of the brain. The lectures examine the critical role of mitochondria in mental health, highlighting their influence on neurotransmitters, inflammation, and overall brain function. The lectures also explore the complex relationship between mental illness and metabolic conditions, addressing the impact of lifestyle factors, trauma, and substance use. Key interventions discussed include the ketogenic diet and the six pillars of lifestyle medicine. The course concludes with practical strategies for improving both metabolic and mental health through a sustainable, whole-person approach focused on long-term recovery.",
-      "releaseInfo": "NEUR 340",
-      "genres": [
-        "Peterson Academy",
-        "Psychology",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Chris Palmer"
-      ]
-    },
-    {
-      "id": "sw_pa_35",
-      "type": "series",
-      "name": "The Boy Crisis — Dr. Warren Farrell",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F35%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F35%2Fhero?tr=w-1920&alt=media",
-      "description": "[PSYC 340] In The Boy Crisis, a six-hour course, Dr. Warren Farrell explores the Boy Crisis, a phenomenon in developed nations where boys face challenges in various aspects of life. He presents evidence of this crisis and identifies five main causes: the absence of father involvement, misguided beliefs about male power and privilege, a lack of purpose, fear of psychological attachment, and a repulsion for male vulnerability. Dr. Farrell discusses the impact of these factors on boys' development, education, and future prospects, emphasizing the need for a more balanced approach to parenting and gender issues.",
-      "releaseInfo": "PSYC 340",
-      "genres": [
-        "Peterson Academy",
-        "Psychology",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Warren Farrell"
-      ]
-    },
-    {
       "id": "sw_pa_36",
       "type": "series",
       "name": "Introduction to Intelligence — Dr. John Vervaeke",
@@ -117,6 +66,57 @@
       ],
       "cast": [
         "Dr. Jordan B. Peterson"
+      ]
+    },
+    {
+      "id": "sw_pa_35",
+      "type": "series",
+      "name": "The Boy Crisis — Dr. Warren Farrell",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F35%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F35%2Fhero?tr=w-1920&alt=media",
+      "description": "[PSYC 340] In The Boy Crisis, a six-hour course, Dr. Warren Farrell explores the Boy Crisis, a phenomenon in developed nations where boys face challenges in various aspects of life. He presents evidence of this crisis and identifies five main causes: the absence of father involvement, misguided beliefs about male power and privilege, a lack of purpose, fear of psychological attachment, and a repulsion for male vulnerability. Dr. Farrell discusses the impact of these factors on boys' development, education, and future prospects, emphasizing the need for a more balanced approach to parenting and gender issues.",
+      "releaseInfo": "PSYC 340",
+      "genres": [
+        "Peterson Academy",
+        "Psychology",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Warren Farrell"
+      ]
+    },
+    {
+      "id": "sw_pa_17",
+      "type": "series",
+      "name": "Brain Metabolism and Mental Health — Dr. Chris Palmer",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F17%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F17%2Fhero?tr=w-1920&alt=media",
+      "description": "[NEUR 340] In Brain Metabolism and Mental Health, a nine-hour course, Dr. Chris Palmer explores the brain energy theory, which suggests that mental disorders are fundamentally metabolic disorders of the brain. The lectures examine the critical role of mitochondria in mental health, highlighting their influence on neurotransmitters, inflammation, and overall brain function. The lectures also explore the complex relationship between mental illness and metabolic conditions, addressing the impact of lifestyle factors, trauma, and substance use. Key interventions discussed include the ketogenic diet and the six pillars of lifestyle medicine. The course concludes with practical strategies for improving both metabolic and mental health through a sustainable, whole-person approach focused on long-term recovery.",
+      "releaseInfo": "NEUR 340",
+      "genres": [
+        "Peterson Academy",
+        "Psychology",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Chris Palmer"
+      ]
+    },
+    {
+      "id": "sw_pa_2735",
+      "type": "series",
+      "name": "The Neuroscience of Dreams — Dr. Baland Jalal",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2735%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F2735%2Fhero?tr=w-1920&alt=media",
+      "description": "[NEUR 310] In The Neuroscience of Dreams, a seven-hour course, we embark on a fascinating exploration of sleep and dreams, delving into the neurological processes, evolutionary theories, and practical implications of these essential human experiences. Dr. Baland Jalal guides us through the stages of sleep, the neuroscience of dreaming, and various sleep disorders, while also examining the creative potential and cultural interpretations of dreams. The course highlights the importance of understanding sleep for both personal well-being and scientific inquiry, concluding with practical strategies for improving sleep quality and harnessing the power of dreams in our waking lives.",
+      "releaseInfo": "NEUR 310",
+      "genres": [
+        "Peterson Academy",
+        "Psychology",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Baland Jalal"
       ]
     }
   ]

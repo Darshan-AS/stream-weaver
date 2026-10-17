@@ -1,40 +1,6 @@
 {
   "metas": [
     {
-      "id": "sw_pa_23",
-      "type": "series",
-      "name": "Intelligence, Rationality, Wisdom and Spirituality — Dr. John Vervaeke",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F23%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F23%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 305] In Intelligence, Rationality, Wisdom, and Spirituality, an eight-hour course, Dr. Vervaeke explores the core components of cognitive agency, including intelligence, rationality, wisdom, and spirituality. We delve into the challenges of adaptive intelligence, the deep continuity between mind and life, and the role of meaning, love, and mattering in human cognition. The course examines the complex nature of rationality, its relationship to intelligence and the environment, and introduces the concept of proleptic rationality and the importance of imaginal practices for personal growth. Finally, we discover the profound connections between ritual, rationality, wisdom, and spirituality, emphasizing the transformative power of serious play and imaginal engagement in fostering perspectival and participatory knowing.",
-      "releaseInfo": "PHIL 305",
-      "genres": [
-        "Peterson Academy",
-        "Philosophy",
-        "Education"
-      ],
-      "cast": [
-        "Dr. John Vervaeke"
-      ]
-    },
-    {
-      "id": "sw_pa_20",
-      "type": "series",
-      "name": "Deconstructing Decolonization — Dr. Nigel Biggar",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F20%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F20%2Fhero?tr=w-1920&alt=media",
-      "description": "[POLS 310] In Deconstructing Decolonization, a five-hour course, Dr. Biggar critically examines the concept of decolonization, arguing that the movement is largely misguided and threatens to undermine faith in the liberal West. The course delves into the complex histories of slavery and racism within the British Empire, emphasizing the role of Christian thought and the conviction in human equality in driving abolition and shaping colonial policies. Dr. Biggar rejects the characterization of these policies as \"cultural genocide\" and questions the case for reparations, advocating for a nuanced understanding of historical legacies and a focus on addressing current inequalities.",
-      "releaseInfo": "POLS 310",
-      "genres": [
-        "Peterson Academy",
-        "Philosophy",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Nigel Biggar"
-      ]
-    },
-    {
       "id": "sw_pa_15",
       "type": "series",
       "name": "The Philosophy of Ethics — Dr. Stephen R. C. Hicks",
@@ -66,6 +32,40 @@
       ],
       "cast": [
         "Dr. Stephen R. C. Hicks"
+      ]
+    },
+    {
+      "id": "sw_pa_20",
+      "type": "series",
+      "name": "Deconstructing Decolonization — Dr. Nigel Biggar",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F20%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F20%2Fhero?tr=w-1920&alt=media",
+      "description": "[POLS 310] In Deconstructing Decolonization, a five-hour course, Dr. Biggar critically examines the concept of decolonization, arguing that the movement is largely misguided and threatens to undermine faith in the liberal West. The course delves into the complex histories of slavery and racism within the British Empire, emphasizing the role of Christian thought and the conviction in human equality in driving abolition and shaping colonial policies. Dr. Biggar rejects the characterization of these policies as \"cultural genocide\" and questions the case for reparations, advocating for a nuanced understanding of historical legacies and a focus on addressing current inequalities.",
+      "releaseInfo": "POLS 310",
+      "genres": [
+        "Peterson Academy",
+        "Philosophy",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Nigel Biggar"
+      ]
+    },
+    {
+      "id": "sw_pa_23",
+      "type": "series",
+      "name": "Intelligence, Rationality, Wisdom and Spirituality — Dr. John Vervaeke",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F23%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F23%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 305] In Intelligence, Rationality, Wisdom, and Spirituality, an eight-hour course, Dr. Vervaeke explores the core components of cognitive agency, including intelligence, rationality, wisdom, and spirituality. We delve into the challenges of adaptive intelligence, the deep continuity between mind and life, and the role of meaning, love, and mattering in human cognition. The course examines the complex nature of rationality, its relationship to intelligence and the environment, and introduces the concept of proleptic rationality and the importance of imaginal practices for personal growth. Finally, we discover the profound connections between ritual, rationality, wisdom, and spirituality, emphasizing the transformative power of serious play and imaginal engagement in fostering perspectival and participatory knowing.",
+      "releaseInfo": "PHIL 305",
+      "genres": [
+        "Peterson Academy",
+        "Philosophy",
+        "Education"
+      ],
+      "cast": [
+        "Dr. John Vervaeke"
       ]
     }
   ]

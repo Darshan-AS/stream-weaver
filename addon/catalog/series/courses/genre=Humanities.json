@@ -52,40 +52,6 @@
       ]
     },
     {
-      "id": "sw_pa_3216",
-      "type": "series",
-      "name": "Introduction to Music Theory — Samuel Andreyev",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3216%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3216%2Fhero?tr=w-1920&alt=media",
-      "description": "[MUS 101] In Introduction to Music Theory, an eight-hour course, Samuel Andreyev takes us through the foundations of Western music theory, from the five-line staff system and rhythmic notation to pitch, intervals, scales, and harmony. We examine how music creates movement through consonance and dissonance, cadences, voice leading, and formal structures, while developing practical skills like ear training and score analysis. The course emphasizes that music theory serves as a descriptive language rather than prescriptive rules, enabling musicians to communicate across time and cultures while acknowledging that notation remains an abstraction of embodied musical experience.",
-      "releaseInfo": "MUS 101",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Samuel Andreyev"
-      ]
-    },
-    {
-      "id": "sw_pa_25",
-      "type": "series",
-      "name": "The Shakespearean Tragedies — Dr. Andrew Doyle",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F25%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F25%2Fhero?tr=w-1920&alt=media",
-      "description": "[ENGL 310] In The Shakespearean Tragedies, an eight-hour course, Dr. Andrew Doyle guides us through the genius of William Shakespeare, exploring the historical context that shaped his works and his unmatched talent for creating complex, timeless characters. We examine the themes, subversions, and intricacies of plays like Hamlet, King Lear, Macbeth, Romeo and Juliet, Antony and Cleopatra, and Julius Caesar. The course emphasizes Shakespeare's mastery of language, deep insight into the human heart, and his ability to challenge audiences, cementing his lasting influence on literature and culture.",
-      "releaseInfo": "ENGL 310",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Andrew Doyle"
-      ]
-    },
-    {
       "id": "sw_pa_38",
       "type": "series",
       "name": "The Nature of Capitalism — Dr. Yaron Brook",
@@ -100,6 +66,40 @@
       ],
       "cast": [
         "Dr. Yaron Brook"
+      ]
+    },
+    {
+      "id": "sw_pa_3235",
+      "type": "series",
+      "name": "The Centrality of Goodness — Dr. John Vervaeke",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3235%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3235%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 307] In The Centrality of Goodness, a nine-hour course, Dr. John Vervaeke presents goodness within the ancient triad of transcendentals—truth, beauty, and goodness—as pathways to Being itself, highlighting ontonormativity, or the inherent goodness of reality. We examine how modern dichotomies like mind/body and fact/value obscure this goodness, contributing to nihilism and the meaning crisis. Through key concepts like relevance realization, metanoetic passage, voluntary necessity, and anagoge, we discover practical ways to transcend these philosophical limitations and recover our capacity to perceive and participate in the goodness of the real, offering hope beyond nihilism.",
+      "releaseInfo": "PHIL 307",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. John Vervaeke"
+      ]
+    },
+    {
+      "id": "sw_pa_3226",
+      "type": "series",
+      "name": "The Philosophy of Mind — Dr. James Orr",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3226%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3226%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 301] In The Philosophy of Mind, an eight-hour course, Dr. James Orr traces how thinkers from ancient Greece to today have wrestled with the relationship between consciousness and the physical world. We explore key approaches—from Platonic dualism and Aristotelian hylomorphism to Cartesian dualism and 20th-century physicalist theories like behaviorism, identity theory, and functionalism—highlighting why reducing mind to matter remains a challenge. The course concludes by connecting these ideas to contemporary issues, including AI, mental health, and human enhancement, asking what it truly means to be human in a rapidly changing world.",
+      "releaseInfo": "PHIL 301",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. James Orr"
       ]
     },
     {
@@ -120,20 +120,20 @@
       ]
     },
     {
-      "id": "sw_pa_3226",
+      "id": "sw_pa_3228",
       "type": "series",
-      "name": "The Philosophy of Mind — Dr. James Orr",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3226%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3226%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 301] In The Philosophy of Mind, an eight-hour course, Dr. James Orr traces how thinkers from ancient Greece to today have wrestled with the relationship between consciousness and the physical world. We explore key approaches—from Platonic dualism and Aristotelian hylomorphism to Cartesian dualism and 20th-century physicalist theories like behaviorism, identity theory, and functionalism—highlighting why reducing mind to matter remains a challenge. The course concludes by connecting these ideas to contemporary issues, including AI, mental health, and human enhancement, asking what it truly means to be human in a rapidly changing world.",
-      "releaseInfo": "PHIL 301",
+      "name": "Business Leadership Ethics — Dr. Stephen R. C. Hicks",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3228%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3228%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 270] In Business Leadership Ethics, a nine-hour course, Professor Hicks explores the philosophical foundations of entrepreneurship and business leadership, examining how moral frameworks—egoism, altruism, and predation—shape leadership styles, resource management, and economic systems. We also analyze key entrepreneurial virtues such as rationality, courage, integrity, and productivity. Tracing the dramatic rise in global prosperity over the past two centuries, the course emphasizes how innovation, critical thinking, and strong character equip leaders to navigate complex ethical, economic, and political challenges in a rapidly changing world.",
+      "releaseInfo": "PHIL 270",
       "genres": [
         "Peterson Academy",
         "Humanities",
         "Education"
       ],
       "cast": [
-        "Dr. James Orr"
+        "Dr. Stephen R. C. Hicks"
       ]
     },
     {
@@ -171,37 +171,37 @@
       ]
     },
     {
-      "id": "sw_pa_3235",
+      "id": "sw_pa_25",
       "type": "series",
-      "name": "The Centrality of Goodness — Dr. John Vervaeke",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3235%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3235%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 307] In The Centrality of Goodness, a nine-hour course, Dr. John Vervaeke presents goodness within the ancient triad of transcendentals—truth, beauty, and goodness—as pathways to Being itself, highlighting ontonormativity, or the inherent goodness of reality. We examine how modern dichotomies like mind/body and fact/value obscure this goodness, contributing to nihilism and the meaning crisis. Through key concepts like relevance realization, metanoetic passage, voluntary necessity, and anagoge, we discover practical ways to transcend these philosophical limitations and recover our capacity to perceive and participate in the goodness of the real, offering hope beyond nihilism.",
-      "releaseInfo": "PHIL 307",
+      "name": "The Shakespearean Tragedies — Dr. Andrew Doyle",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F25%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F25%2Fhero?tr=w-1920&alt=media",
+      "description": "[ENGL 310] In The Shakespearean Tragedies, an eight-hour course, Dr. Andrew Doyle guides us through the genius of William Shakespeare, exploring the historical context that shaped his works and his unmatched talent for creating complex, timeless characters. We examine the themes, subversions, and intricacies of plays like Hamlet, King Lear, Macbeth, Romeo and Juliet, Antony and Cleopatra, and Julius Caesar. The course emphasizes Shakespeare's mastery of language, deep insight into the human heart, and his ability to challenge audiences, cementing his lasting influence on literature and culture.",
+      "releaseInfo": "ENGL 310",
       "genres": [
         "Peterson Academy",
         "Humanities",
         "Education"
       ],
       "cast": [
-        "Dr. John Vervaeke"
+        "Dr. Andrew Doyle"
       ]
     },
     {
-      "id": "sw_pa_3228",
+      "id": "sw_pa_3216",
       "type": "series",
-      "name": "Business Leadership Ethics — Dr. Stephen R. C. Hicks",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3228%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3228%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 270] In Business Leadership Ethics, a nine-hour course, Professor Hicks explores the philosophical foundations of entrepreneurship and business leadership, examining how moral frameworks—egoism, altruism, and predation—shape leadership styles, resource management, and economic systems. We also analyze key entrepreneurial virtues such as rationality, courage, integrity, and productivity. Tracing the dramatic rise in global prosperity over the past two centuries, the course emphasizes how innovation, critical thinking, and strong character equip leaders to navigate complex ethical, economic, and political challenges in a rapidly changing world.",
-      "releaseInfo": "PHIL 270",
+      "name": "Introduction to Music Theory — Samuel Andreyev",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3216%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3216%2Fhero?tr=w-1920&alt=media",
+      "description": "[MUS 101] In Introduction to Music Theory, an eight-hour course, Samuel Andreyev takes us through the foundations of Western music theory, from the five-line staff system and rhythmic notation to pitch, intervals, scales, and harmony. We examine how music creates movement through consonance and dissonance, cadences, voice leading, and formal structures, while developing practical skills like ear training and score analysis. The course emphasizes that music theory serves as a descriptive language rather than prescriptive rules, enabling musicians to communicate across time and cultures while acknowledging that notation remains an abstraction of embodied musical experience.",
+      "releaseInfo": "MUS 101",
       "genres": [
         "Peterson Academy",
         "Humanities",
         "Education"
       ],
       "cast": [
-        "Dr. Stephen R. C. Hicks"
+        "Samuel Andreyev"
       ]
     }
   ]
