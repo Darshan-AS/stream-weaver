@@ -16,6 +16,52 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 ADDON_DIR = ROOT_DIR / "addon"
 
 
+def infer_peterson_slug(title: str, explicit_slug: Optional[str] = None) -> Optional[str]:
+    """Extracts a Peterson Academy course slug from a torrent title like
+    'Peterson Academy - Napoleon - Andrew Roberts EDU4U' -> 'napoleon'.
+    """
+    if explicit_slug:
+        return explicit_slug.strip().lower().strip("/")
+
+    if "peterson" not in title.lower():
+        return None
+
+    parts = [p.strip() for p in re.split(r"\s+[-–—]\s+", title) if p.strip()]
+    course_part = None
+    for idx, p in enumerate(parts):
+        if "peterson" in p.lower() and idx + 1 < len(parts):
+            course_part = parts[idx + 1]
+            break
+    if not course_part and len(parts) >= 2:
+        course_part = parts[1]
+    if not course_part:
+        return None
+
+    # Strip trailing release tags if no separator was used
+    course_part = re.sub(r"\b(EDU4U|1080p|720p|WEBRip|WEB-DL)\b.*$", "", course_part, flags=re.IGNORECASE).strip()
+    slug = re.sub(r"[^a-z0-9]+", "-", course_part.lower().replace("&", "and")).strip("-")
+    return slug or None
+
+
+def fetch_peterson_course_html(slug: str) -> Optional[str]:
+    url = f"https://petersonacademy.com/courses/{slug}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            if resp.status == 200:
+                return resp.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        print(f"   ⚠️  [Metadata] Could not fetch {url}: {exc}")
+    return None
+
+
 def scrape_peterson_course_html(html_text: str) -> Optional[Dict[str, Any]]:
     """Extracts course and lecture metadata from Peterson Academy SSR HTML."""
     m = re.search(
@@ -38,7 +84,7 @@ def scrape_peterson_course_html(html_text: str) -> Optional[Dict[str, Any]]:
         r'trailerPlaybackId:"([^"]+)"',
         html_text[m.start() : m.start() + 2000],
     )
-    trailer_mux_id = trailer_match.group(1) if trailer_match else None
+    trailer_mux_id = trailer_match.group(1) if trailer_mux_id_present(trailer_match) else None
 
     lec_pattern = re.compile(
         r'\{id:"[^"]+",lectureId:(\d+),lectureNumber:(\d+),path:"([^"]+)",title:"((?:\\.|[^"])*)",description:"((?:\\.|[^"])*)",durationSeconds:(\d+),muxAssetId:"([^"]+)"'
@@ -81,6 +127,34 @@ def scrape_peterson_course_html(html_text: str) -> Optional[Dict[str, Any]]:
     }
 
 
+def trailer_mux_id_present(match: Optional[re.Match]) -> bool:
+    return bool(match and match.group(1))
+
+
+def map_torbox_files_to_episodes(files: List[Dict[str, Any]]) -> Dict[int, Tuple[int, str]]:
+    """Maps 1-based episode number -> (torbox_file_idx, short_filename) from TorBox's files array."""
+    video_exts = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v")
+    ep_map: Dict[int, Tuple[int, str]] = {}
+    video_entries: List[Tuple[int, str]] = []
+
+    for idx, f in enumerate(files):
+        raw_name = str(f.get("short_name") or f.get("name") or "")
+        short_name = raw_name.split("/")[-1]
+        if not short_name.lower().endswith(video_exts):
+            continue
+        file_idx = int(f.get("id")) if f.get("id") is not None and int(f.get("id")) < 500 else idx
+        video_entries.append((file_idx, short_name))
+        m = re.match(r"^\s*0*(\d+)[\.\s_-]", short_name)
+        if m:
+            ep_map[int(m.group(1))] = (file_idx, short_name)
+
+    if not ep_map:
+        for ep_num, (file_idx, short_name) in enumerate(sorted(video_entries, key=lambda x: x[1]), 1):
+            ep_map[ep_num] = (file_idx, short_name)
+
+    return ep_map
+
+
 def build_static_addon_for_course(
     course_meta: Dict[str, Any],
     info_hash: str,
@@ -92,7 +166,6 @@ def build_static_addon_for_course(
     stremio_id = f"pa_{course_meta['courseId']}"
     torbox_lib_id = f"aiostreams::library.torbox.torrent.{torbox_torrent_id}"
 
-    # 1. Manifest
     manifest = {
         "id": "com.darshan.petersonacademy",
         "version": "1.0.0",
@@ -120,7 +193,7 @@ def build_static_addon_for_course(
         dur_mins = round(lec["durationSeconds"] / 60)
 
         ep_thumb = course_meta["episodeThumbnail"]
-        ep_overview = f"⏱️ {dur_mins} min · { course_meta['instructor'] }\n\n{lec['description']}"
+        ep_overview = f"⏱️ {dur_mins} min · {course_meta['instructor']}\n\n{lec['description']}"
 
         vid_series_id = f"{stremio_id}_s1e{ep_num}"
         videos_series.append(
@@ -147,7 +220,6 @@ def build_static_addon_for_course(
             }
         )
 
-        # Write stream JSON for series episode (AIOStreams serviceWrap converts infoHash + fileIdx into a TorBox stream)
         stream_path = ADDON_DIR / "stream" / "series" / f"{vid_series_id}.json"
         stream_path.parent.mkdir(parents=True, exist_ok=True)
         stream_payload = {
@@ -166,7 +238,6 @@ def build_static_addon_for_course(
         }
         stream_path.write_text(json.dumps(stream_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    # 2. Catalog preview card
     catalog_card = {
         "id": stremio_id,
         "type": "series",
@@ -194,7 +265,6 @@ def build_static_addon_for_course(
         encoding="utf-8",
     )
 
-    # 3. Full Meta for series card (pa_3215)
     meta_series_path = ADDON_DIR / "meta" / "series" / f"{stremio_id}.json"
     meta_series_path.parent.mkdir(parents=True, exist_ok=True)
     meta_series_payload = {
@@ -208,7 +278,6 @@ def build_static_addon_for_course(
         encoding="utf-8",
     )
 
-    # 4. Full Meta override for TorBox Library ID (aiostreams::library.torbox.torrent.120832854)
     meta_lib_path = ADDON_DIR / "meta" / "library" / f"{torbox_lib_id}.json"
     meta_lib_path.parent.mkdir(parents=True, exist_ok=True)
     meta_lib_payload = {
@@ -224,7 +293,6 @@ def build_static_addon_for_course(
         encoding="utf-8",
     )
 
-    # Write manifest.json
     ADDON_DIR.mkdir(parents=True, exist_ok=True)
     (ADDON_DIR / "manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
@@ -242,7 +310,6 @@ if __name__ == "__main__":
         print("Failed to parse course metadata", file=sys.stderr)
         sys.exit(1)
 
-    # Exact file indices from TorBox torrent 120832854
     napoleon_file_map = {
         1: (4, "1. Rise of Napoleon.mp4"),
         2: (1, "2. Italian and Egyptian Campaigns.mp4"),
