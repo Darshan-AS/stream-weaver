@@ -18,6 +18,23 @@
       ]
     },
     {
+      "id": "sw_pa_3244",
+      "type": "series",
+      "name": "The Philosophy of History — Dr. James Orr",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 311] In The Philosophy of History, an eight-hour course, Dr. James Orr traces the philosophy of history from its ancient Greek origins to today’s debates over meaning, progress, and identity. Starting with the contrasting methods of Herodotus and Thucydides, we follow the evolution of historical thinking through medieval theology, Enlightenment secularism, and modern theories of change. Key figures such as Augustine, Hegel, and Marx reveal competing visions of history as divinely guided, rationally unfolding, or shaped by material forces. The course also explores 20th-century responses from Spengler and Heidegger, before turning to the collapse of grand narratives and today’s “history wars,” where the struggle to interpret the past remains deeply tied to how we understand ourselves.",
+      "releaseInfo": "PHIL 311",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. James Orr"
+      ]
+    },
+    {
       "id": "sw_pa_3234",
       "type": "series",
       "name": "Ideas of the 20th Century Part 1 — Dr. Daniel Bonevac",
@@ -185,23 +202,6 @@
       ],
       "cast": [
         "Dr. Stephen R. C. Hicks"
-      ]
-    },
-    {
-      "id": "sw_pa_3244",
-      "type": "series",
-      "name": "The Philosophy of History — Dr. James Orr",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 311] In The Philosophy of History, an eight-hour course, Dr. James Orr traces the philosophy of history from its ancient Greek origins to today’s debates over meaning, progress, and identity. Starting with the contrasting methods of Herodotus and Thucydides, we follow the evolution of historical thinking through medieval theology, Enlightenment secularism, and modern theories of change. Key figures such as Augustine, Hegel, and Marx reveal competing visions of history as divinely guided, rationally unfolding, or shaped by material forces. The course also explores 20th-century responses from Spengler and Heidegger, before turning to the collapse of grand narratives and today’s “history wars,” where the struggle to interpret the past remains deeply tied to how we understand ourselves.",
-      "releaseInfo": "PHIL 311",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Dr. James Orr"
       ]
     }
   ]

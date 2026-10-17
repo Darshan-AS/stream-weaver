@@ -1,23 +1,6 @@
 {
   "metas": [
     {
-      "id": "sw_pa_10",
-      "type": "series",
-      "name": "The Greatest Leaders in History — Lord Andrew Roberts",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F10%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F10%2Fhero?tr=w-1920&alt=media",
-      "description": "[HIST 320] In The Greatest Leaders in History, an eight-hour course, Lord Andrew Roberts explores the lives and leadership of eight extraordinary figures: Pericles, Julius Caesar, Napoleon Bonaparte, Horatio Nelson, Winston Churchill, George C. Marshall, Dwight D. Eisenhower, and Margaret Thatcher. Through examining their military victories, political reforms, and personal qualities, we gain insights into the nature of effective leadership across different eras and contexts. The course highlights the importance of strategic vision, moral courage, oratorical skills, and the ability to inspire and manage strong personalities while pursuing decisive goals.",
-      "releaseInfo": "HIST 320",
-      "genres": [
-        "Peterson Academy",
-        "History",
-        "Education"
-      ],
-      "cast": [
-        "Lord Andrew Roberts"
-      ]
-    },
-    {
       "id": "sw_pa_44",
       "type": "series",
       "name": "Winston Churchill: The Roaming Lion — Dr. Larry P. Arnn",
@@ -32,6 +15,23 @@
       ],
       "cast": [
         "Dr. Larry P. Arnn"
+      ]
+    },
+    {
+      "id": "sw_pa_10",
+      "type": "series",
+      "name": "The Greatest Leaders in History — Lord Andrew Roberts",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F10%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F10%2Fhero?tr=w-1920&alt=media",
+      "description": "[HIST 320] In The Greatest Leaders in History, an eight-hour course, Lord Andrew Roberts explores the lives and leadership of eight extraordinary figures: Pericles, Julius Caesar, Napoleon Bonaparte, Horatio Nelson, Winston Churchill, George C. Marshall, Dwight D. Eisenhower, and Margaret Thatcher. Through examining their military victories, political reforms, and personal qualities, we gain insights into the nature of effective leadership across different eras and contexts. The course highlights the importance of strategic vision, moral courage, oratorical skills, and the ability to inspire and manage strong personalities while pursuing decisive goals.",
+      "releaseInfo": "HIST 320",
+      "genres": [
+        "Peterson Academy",
+        "History",
+        "Education"
+      ],
+      "cast": [
+        "Lord Andrew Roberts"
       ]
     }
   ]

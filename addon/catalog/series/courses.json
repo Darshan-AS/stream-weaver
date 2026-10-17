@@ -35,6 +35,23 @@
       ]
     },
     {
+      "id": "sw_pa_3244",
+      "type": "series",
+      "name": "The Philosophy of History — Dr. James Orr",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fhero?tr=w-1920&alt=media",
+      "description": "[PHIL 311] In The Philosophy of History, an eight-hour course, Dr. James Orr traces the philosophy of history from its ancient Greek origins to today’s debates over meaning, progress, and identity. Starting with the contrasting methods of Herodotus and Thucydides, we follow the evolution of historical thinking through medieval theology, Enlightenment secularism, and modern theories of change. Key figures such as Augustine, Hegel, and Marx reveal competing visions of history as divinely guided, rationally unfolding, or shaped by material forces. The course also explores 20th-century responses from Spengler and Heidegger, before turning to the collapse of grand narratives and today’s “history wars,” where the struggle to interpret the past remains deeply tied to how we understand ourselves.",
+      "releaseInfo": "PHIL 311",
+      "genres": [
+        "Peterson Academy",
+        "Humanities",
+        "Education"
+      ],
+      "cast": [
+        "Dr. James Orr"
+      ]
+    },
+    {
       "id": "sw_pa_3242",
       "type": "series",
       "name": "Free Market Economics — Dr. David Henderson",
@@ -83,6 +100,40 @@
       ],
       "cast": [
         "Dr. David Eagleman"
+      ]
+    },
+    {
+      "id": "sw_pa_3217",
+      "type": "series",
+      "name": "Big Ideas in Psychology Part 2 — Dr. Roy Baumeister",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3217%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3217%2Fhero?tr=w-1920&alt=media",
+      "description": "[PSYC 221] In Big Ideas in Psychology Part 2, an eight-hour course, we continue our study of several fascinating aspects of human psychology, including our relationship with time and future-oriented thinking, the roots of evil behavior, self-destructive tendencies, and addiction mechanisms. Dr. Roy Baumeister discusses the nature of the self, and considers alternative theories of gender relations focused on complementary partnership. The course also investigates the evolutionary purpose of consciousness as a tool for internal processing and social communication, and concludes by analyzing human sexual behavior through an economic framework of supply and demand.",
+      "releaseInfo": "PSYC 221",
+      "genres": [
+        "Peterson Academy",
+        "Social Sciences",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Roy Baumeister"
+      ]
+    },
+    {
+      "id": "sw_pa_44",
+      "type": "series",
+      "name": "Winston Churchill: The Roaming Lion — Dr. Larry P. Arnn",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F44%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F44%2Fhero?tr=w-1920&alt=media",
+      "description": "[HIST 450] In Winston Churchill: The Roaming Lion, a six-hour course, Dr. Larry Arnn examines Winston Churchill's life, philosophy, and political legacy through a comprehensive analysis of his military experiences, leadership principles, and views on governance. The lectures explore Churchill's evolution from a soldier-writer to a statesman, highlighting his perspectives on warfare, democracy, and individual liberty, while examining how Britain's geography and history shaped his strategic thinking. The course delves into Churchill's complex political philosophy, including his approach to just war, constitutional government, and the balance between social welfare and individual freedom.",
+      "releaseInfo": "HIST 450",
+      "genres": [
+        "Peterson Academy",
+        "History",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Larry P. Arnn"
       ]
     },
     {
@@ -168,23 +219,6 @@
       ],
       "cast": [
         "Dr. Benjamin Bikman"
-      ]
-    },
-    {
-      "id": "sw_pa_3217",
-      "type": "series",
-      "name": "Big Ideas in Psychology Part 2 — Dr. Roy Baumeister",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3217%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3217%2Fhero?tr=w-1920&alt=media",
-      "description": "[PSYC 221] In Big Ideas in Psychology Part 2, an eight-hour course, we continue our study of several fascinating aspects of human psychology, including our relationship with time and future-oriented thinking, the roots of evil behavior, self-destructive tendencies, and addiction mechanisms. Dr. Roy Baumeister discusses the nature of the self, and considers alternative theories of gender relations focused on complementary partnership. The course also investigates the evolutionary purpose of consciousness as a tool for internal processing and social communication, and concludes by analyzing human sexual behavior through an economic framework of supply and demand.",
-      "releaseInfo": "PSYC 221",
-      "genres": [
-        "Peterson Academy",
-        "Social Sciences",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Roy Baumeister"
       ]
     },
     {
@@ -406,23 +440,6 @@
       ],
       "cast": [
         "Lord Andrew Roberts"
-      ]
-    },
-    {
-      "id": "sw_pa_44",
-      "type": "series",
-      "name": "Winston Churchill: The Roaming Lion — Dr. Larry P. Arnn",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F44%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F44%2Fhero?tr=w-1920&alt=media",
-      "description": "[HIST 450] In Winston Churchill: The Roaming Lion, a six-hour course, Dr. Larry Arnn examines Winston Churchill's life, philosophy, and political legacy through a comprehensive analysis of his military experiences, leadership principles, and views on governance. The lectures explore Churchill's evolution from a soldier-writer to a statesman, highlighting his perspectives on warfare, democracy, and individual liberty, while examining how Britain's geography and history shaped his strategic thinking. The course delves into Churchill's complex political philosophy, including his approach to just war, constitutional government, and the balance between social welfare and individual freedom.",
-      "releaseInfo": "HIST 450",
-      "genres": [
-        "Peterson Academy",
-        "History",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Larry P. Arnn"
       ]
     },
     {
@@ -661,23 +678,6 @@
       ],
       "cast": [
         "Wesley Huff"
-      ]
-    },
-    {
-      "id": "sw_pa_3244",
-      "type": "series",
-      "name": "The Philosophy of History — Dr. James Orr",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F3244%2Fhero?tr=w-1920&alt=media",
-      "description": "[PHIL 311] In The Philosophy of History, an eight-hour course, Dr. James Orr traces the philosophy of history from its ancient Greek origins to today’s debates over meaning, progress, and identity. Starting with the contrasting methods of Herodotus and Thucydides, we follow the evolution of historical thinking through medieval theology, Enlightenment secularism, and modern theories of change. Key figures such as Augustine, Hegel, and Marx reveal competing visions of history as divinely guided, rationally unfolding, or shaped by material forces. The course also explores 20th-century responses from Spengler and Heidegger, before turning to the collapse of grand narratives and today’s “history wars,” where the struggle to interpret the past remains deeply tied to how we understand ourselves.",
-      "releaseInfo": "PHIL 311",
-      "genres": [
-        "Peterson Academy",
-        "Humanities",
-        "Education"
-      ],
-      "cast": [
-        "Dr. James Orr"
       ]
     }
   ]

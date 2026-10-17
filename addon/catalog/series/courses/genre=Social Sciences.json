@@ -18,23 +18,6 @@
       ]
     },
     {
-      "id": "sw_pa_32",
-      "type": "series",
-      "name": "Introduction to Political Science — Dr. Eric Kaufmann",
-      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F32%2Fthumb?tr=h-1200&alt=media",
-      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F32%2Fhero?tr=w-1920&alt=media",
-      "description": "[POLS 101] In Introduction to Political Science, an eight-hour course, we explore the fundamentals of political science, delving into comparative political institutions, electoral systems, voting behavior, and the causes of war. We examine the design of democracy in ethnically divided societies and trace the historical evolution of the modern nation-state. The course concludes by discussing the impact of globalization on the nation-state as the primary unit of human political organization.",
-      "releaseInfo": "POLS 101",
-      "genres": [
-        "Peterson Academy",
-        "Social Sciences",
-        "Education"
-      ],
-      "cast": [
-        "Dr. Eric Kaufmann"
-      ]
-    },
-    {
       "id": "sw_pa_3217",
       "type": "series",
       "name": "Big Ideas in Psychology Part 2 — Dr. Roy Baumeister",
@@ -49,6 +32,23 @@
       ],
       "cast": [
         "Dr. Roy Baumeister"
+      ]
+    },
+    {
+      "id": "sw_pa_32",
+      "type": "series",
+      "name": "Introduction to Political Science — Dr. Eric Kaufmann",
+      "poster": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F32%2Fthumb?tr=h-1200&alt=media",
+      "background": "https://ik.imagekit.io/0qkyxdfkk/prod/courses%2F32%2Fhero?tr=w-1920&alt=media",
+      "description": "[POLS 101] In Introduction to Political Science, an eight-hour course, we explore the fundamentals of political science, delving into comparative political institutions, electoral systems, voting behavior, and the causes of war. We examine the design of democracy in ethnically divided societies and trace the historical evolution of the modern nation-state. The course concludes by discussing the impact of globalization on the nation-state as the primary unit of human political organization.",
+      "releaseInfo": "POLS 101",
+      "genres": [
+        "Peterson Academy",
+        "Social Sciences",
+        "Education"
+      ],
+      "cast": [
+        "Dr. Eric Kaufmann"
       ]
     },
     {
