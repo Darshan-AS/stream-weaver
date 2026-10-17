@@ -279,7 +279,7 @@
   "rpdbApiKey": "{{SECRET_RPDB_API_KEY}}",
   "posterService": "rpdb",
   "usePosterRedirectApi": true,
-  "usePosterServiceForMeta": true,
+  "usePosterServiceForMeta": false,
   "formatter": {
     "id": "custom",
     "definitions": {
@@ -650,6 +650,14 @@
     "HTTP": "emerald"
   },
   "catalogModifications": [
+    {
+      "id": "pace3b0.peterson_academy",
+      "type": "series",
+      "name": "Peterson Academy",
+      "enabled": true,
+      "showOnHome": true,
+      "disableSearch": false
+    },
     {
       "id": "lib791b.aiostreams::library.torbox",
       "type": "library",

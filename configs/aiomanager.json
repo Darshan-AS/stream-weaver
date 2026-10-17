@@ -3876,14 +3876,14 @@
           "name": "Calendar videos"
         }
       ],
-      "configVersion": 1792220025402,
+      "configVersion": 1792225350949,
       "language": "en-US",
       "_debug": {
         "language": "en-US",
-        "configVersion": 1792220025402,
-        "timestamp": "2026-10-17T06:53:45.615Z"
+        "configVersion": 1792225350949,
+        "timestamp": "2026-10-17T08:22:31.168Z"
       },
-      "_timestamp": 1792220025615
+      "_timestamp": 1792225351168
     },
     "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.35.9": {
       "name": "AIOStreams",
@@ -3891,6 +3891,11 @@
       "version": "2.35.9",
       "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
       "catalogs": [
+        {
+          "type": "series",
+          "id": "pace3b0.peterson_academy",
+          "name": "Peterson Academy"
+        },
         {
           "type": "movie",
           "id": "lib791b.aiostreams::library.torbox",
@@ -3918,11 +3923,31 @@
       ],
       "resources": [
         {
+          "name": "catalog",
+          "types": [
+            "series",
+            "movie"
+          ]
+        },
+        {
+          "name": "meta",
+          "types": [
+            "series",
+            "library"
+          ],
+          "idPrefixes": [
+            "pa_",
+            "aiostreams::library.torbox.torrent.",
+            "aiostreams::library.torbox",
+            "aiostreamserror"
+          ]
+        },
+        {
           "name": "stream",
           "types": [
-            "movie",
             "series",
             "library",
+            "movie",
             "other",
             "anime",
             "tv",
@@ -3930,6 +3955,8 @@
             "HdHub"
           ],
           "idPrefixes": [
+            "pa_",
+            "aiostreams::library.torbox.torrent.",
             "tt",
             "imdb",
             "mal",
@@ -3948,22 +3975,6 @@
           ]
         },
         {
-          "name": "catalog",
-          "types": [
-            "movie"
-          ]
-        },
-        {
-          "name": "meta",
-          "types": [
-            "library"
-          ],
-          "idPrefixes": [
-            "aiostreams::library.torbox",
-            "aiostreamserror"
-          ]
-        },
-        {
           "name": "subtitles",
           "types": [
             "movie",
@@ -3977,8 +3988,8 @@
         }
       ],
       "types": [
-        "movie",
         "series",
+        "movie",
         "library",
         "other",
         "anime",
@@ -7179,14 +7190,14 @@
                 "name": "Calendar videos"
               }
             ],
-            "configVersion": 1792220025402,
+            "configVersion": 1792225350949,
             "language": "en-US",
             "_debug": {
               "language": "en-US",
-              "configVersion": 1792220025402,
-              "timestamp": "2026-10-17T06:53:45.615Z"
+              "configVersion": 1792225350949,
+              "timestamp": "2026-10-17T08:22:31.168Z"
             },
-            "_timestamp": 1792220025615
+            "_timestamp": 1792225351168
           },
           "flags": {
             "official": false,
@@ -7207,6 +7218,11 @@
             "version": "2.35.9",
             "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
             "catalogs": [
+              {
+                "type": "series",
+                "id": "pace3b0.peterson_academy",
+                "name": "Peterson Academy"
+              },
               {
                 "type": "movie",
                 "id": "lib791b.aiostreams::library.torbox",
@@ -7234,11 +7250,31 @@
             ],
             "resources": [
               {
+                "name": "catalog",
+                "types": [
+                  "series",
+                  "movie"
+                ]
+              },
+              {
+                "name": "meta",
+                "types": [
+                  "series",
+                  "library"
+                ],
+                "idPrefixes": [
+                  "pa_",
+                  "aiostreams::library.torbox.torrent.",
+                  "aiostreams::library.torbox",
+                  "aiostreamserror"
+                ]
+              },
+              {
                 "name": "stream",
                 "types": [
-                  "movie",
                   "series",
                   "library",
+                  "movie",
                   "other",
                   "anime",
                   "tv",
@@ -7246,6 +7282,8 @@
                   "HdHub"
                 ],
                 "idPrefixes": [
+                  "pa_",
+                  "aiostreams::library.torbox.torrent.",
                   "tt",
                   "imdb",
                   "mal",
@@ -7264,22 +7302,6 @@
                 ]
               },
               {
-                "name": "catalog",
-                "types": [
-                  "movie"
-                ]
-              },
-              {
-                "name": "meta",
-                "types": [
-                  "library"
-                ],
-                "idPrefixes": [
-                  "aiostreams::library.torbox",
-                  "aiostreamserror"
-                ]
-              },
-              {
                 "name": "subtitles",
                 "types": [
                   "movie",
@@ -7293,8 +7315,8 @@
               }
             ],
             "types": [
-              "movie",
               "series",
+              "movie",
               "library",
               "other",
               "anime",
@@ -10914,14 +10936,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792220025402,
+          "configVersion": 1792225350949,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792220025402,
-            "timestamp": "2026-10-17T06:53:45.615Z"
+            "configVersion": 1792225350949,
+            "timestamp": "2026-10-17T08:22:31.168Z"
           },
-          "_timestamp": 1792220025615
+          "_timestamp": 1792225351168
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -10949,6 +10971,11 @@
           "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
           "catalogs": [
             {
+              "type": "series",
+              "id": "pace3b0.peterson_academy",
+              "name": "Peterson Academy"
+            },
+            {
               "type": "movie",
               "id": "lib791b.aiostreams::library.torbox",
               "name": "TorBox Cloud Library",
@@ -10975,11 +11002,31 @@
           ],
           "resources": [
             {
+              "name": "catalog",
+              "types": [
+                "series",
+                "movie"
+              ]
+            },
+            {
+              "name": "meta",
+              "types": [
+                "series",
+                "library"
+              ],
+              "idPrefixes": [
+                "pa_",
+                "aiostreams::library.torbox.torrent.",
+                "aiostreams::library.torbox",
+                "aiostreamserror"
+              ]
+            },
+            {
               "name": "stream",
               "types": [
-                "movie",
                 "series",
                 "library",
+                "movie",
                 "other",
                 "anime",
                 "tv",
@@ -10987,6 +11034,8 @@
                 "HdHub"
               ],
               "idPrefixes": [
+                "pa_",
+                "aiostreams::library.torbox.torrent.",
                 "tt",
                 "imdb",
                 "mal",
@@ -11005,22 +11054,6 @@
               ]
             },
             {
-              "name": "catalog",
-              "types": [
-                "movie"
-              ]
-            },
-            {
-              "name": "meta",
-              "types": [
-                "library"
-              ],
-              "idPrefixes": [
-                "aiostreams::library.torbox",
-                "aiostreamserror"
-              ]
-            },
-            {
               "name": "subtitles",
               "types": [
                 "movie",
@@ -11034,8 +11067,8 @@
             }
           ],
           "types": [
-            "movie",
             "series",
+            "movie",
             "library",
             "other",
             "anime",
