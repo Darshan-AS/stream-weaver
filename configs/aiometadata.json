@@ -383,6 +383,26 @@
       }
     },
     {
+      "id": "tmdb.discover.hindi_new_movies",
+      "type": "movie",
+      "name": "New Hindi Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 5
+          }
+        }
+      }
+    },
+    {
       "id": "tmdb.discover.hindi_series",
       "type": "series",
       "name": "Hindi Series",
@@ -416,6 +436,46 @@
           "params": {
             "with_original_language": "kn",
             "sort_by": "popularity.desc"
+          }
+        }
+      }
+    },
+    {
+      "id": "tmdb.discover.kannada_new_movies",
+      "type": "movie",
+      "name": "New Kannada Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "tmdb.discover.kannada_top_movies",
+      "type": "movie",
+      "name": "Top Rated Kannada Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 20
           }
         }
       }
