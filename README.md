@@ -1,6 +1,6 @@
-# AIO Streaming Setup — Config-as-Code (GitOps)
+# Stream Weaver — Config-as-Code (GitOps)
 
-This repository manages the configurations for your **Stremio** + **Nuvio** streaming stack across:
+This repository (**`stream-weaver`**) weaves together and manages the declarative configurations for your **Stremio** + **Nuvio** streaming stack across:
 
 1. **[AIOStreams](https://github.com/Viren070/AIOStreams)** (`configs/aiostreams.json`) — Stream scrapers, Debrid/Usenet services, SEL filtering/sorting, and stream formatting.
 2. **[AIOMetadata](https://github.com/cedya77/aiometadata)** (`configs/aiometadata.json`) — TMDB/TVDB/MAL/AniList metadata providers, MDBList/Trakt catalogs, artwork rules, and search.
@@ -12,10 +12,10 @@ This repository manages the configurations for your **Stremio** + **Nuvio** stre
 
 ```mermaid
 flowchart LR
-    subgraph GitRepo["Local Git Repo (AIO_configs)"]
+    subgraph GitRepo["Local Git Repo (stream-weaver)"]
         Env[".env<br/>(Secrets & UUIDs)"]
         JSONs["configs/*.json<br/>(Scrubbed JSONs)"]
-        CLI["scripts/pull.sh<br/>scripts/push.sh"]
+        CLI["scripts/pull.sh<br/>scripts/push.sh<br/>scripts/add_magnet.sh"]
     end
 
     subgraph Hosted["Public Hosted (Now) / Self-Hosted (Later)"]
@@ -98,6 +98,19 @@ If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web
 ```bash
 ./scripts/pull.sh
 git diff configs/
+```
+
+### Adding Custom Course / Educational Magnets to TorBox & Nuvio
+To queue a magnet link or `.torrent` file directly into your TorBox Cloud Library and force-refresh AIOStreams so it immediately appears in Nuvio's Home screen and Search Bar:
+```bash
+# Add a magnet link (with optional custom title)
+./scripts/add_magnet.sh --name "Peterson Academy - Napoleon" "magnet:?xt=urn:btih:..."
+
+# Add a local .torrent file
+./scripts/add_magnet.sh ~/Downloads/course.torrent
+
+# List all items in your TorBox Cloud Library
+./scripts/add_magnet.sh --list
 ```
 
 ---

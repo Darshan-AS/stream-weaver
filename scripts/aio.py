@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AIO Configs GitOps CLI (AIOStreams, AIOMetadata, AIOManager)
+Stream Weaver GitOps CLI (AIOStreams, AIOMetadata, AIOManager)
 
 Supports:
   - pull:     Download live configs from public/self-hosted instances, auto-harvest & scrub secrets
@@ -441,7 +441,7 @@ def http_json(
 ) -> Tuple[int, Any]:
     req_headers = {
         "Accept": "application/json",
-        "User-Agent": "AIO-GitOps-CLI/1.0",
+        "User-Agent": "Stream-Weaver-CLI/1.0",
     }
     if headers:
         req_headers.update(headers)
@@ -881,7 +881,7 @@ def sanitize_local_files(targets: List[str], env: Dict[str, str]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="AIO Streaming Setup GitOps CLI")
+    parser = argparse.ArgumentParser(description="Stream Weaver GitOps CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     pull_p = subparsers.add_parser("pull", help="Pull live configs from servers into configs/")
