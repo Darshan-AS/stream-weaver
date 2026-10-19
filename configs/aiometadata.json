@@ -67,6 +67,19 @@
   },
   "catalogs": [
     {
+      "id": "trakt.upnext",
+      "name": "Trakt Up Next",
+      "type": "series",
+      "source": "trakt",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 300,
+      "metadata": {
+        "useShowPosterForUpNext": true,
+        "includeAnimeInUpNext": true
+      }
+    },
+    {
       "id": "trakt.watchlist.movies",
       "name": "Trakt Watchlist",
       "type": "movie",
@@ -839,6 +852,27 @@
       "cacheTTL": 7200
     },
     {
+      "id": "trakt.unwatched",
+      "name": "My Recently Aired",
+      "type": "series",
+      "source": "trakt",
+      "enabled": true,
+      "showInHome": false,
+      "cacheTTL": 300
+    },
+    {
+      "id": "trakt.calendar",
+      "name": "Airing Soon",
+      "type": "series",
+      "source": "trakt",
+      "enabled": true,
+      "showInHome": false,
+      "cacheTTL": 300,
+      "metadata": {
+        "airingSoonDays": 7
+      }
+    },
+    {
       "id": "tmdb.airing_today",
       "name": "TMDB Airing Today",
       "sort": "default",
@@ -1145,7 +1179,8 @@
   "enableRatingPostersForLibrary": true,
   "catalogSetupComplete": true,
   "simklWatchTracking": false,
-  "hideWatchedTrakt": false,
+  "traktWatchTracking": true,
+  "hideWatchedTrakt": true,
   "hideWatchedMdblist": false,
   "catalogModeOnly": false,
   "configHash": "8d0162683b7a2a46",

@@ -247,7 +247,7 @@
             "enabled": true,
             "official": false
           },
-          "syncToLibrary": false
+          "syncToLibrary": true
         },
         {
           "savedAddonId": "8874cf69-88fd-402d-827f-c7040c034cdb",
@@ -320,6 +320,61 @@
             "newEpisodeNotifications": true
           },
           "catalogs": [
+            {
+              "id": "trakt.upnext",
+              "type": "series",
+              "name": "Trakt Up Next",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "None",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
             {
               "id": "trakt.watchlist.movies",
               "type": "movie",
@@ -2765,6 +2820,116 @@
               "showInHome": false
             },
             {
+              "id": "trakt.unwatched",
+              "type": "series",
+              "name": "My Recently Aired",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.calendar",
+              "type": "series",
+              "name": "Airing Soon",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
               "id": "tmdb.year",
               "type": "movie",
               "name": "TMDB By Year",
@@ -3351,14 +3516,14 @@
               "name": "Calendar videos"
             }
           ],
-          "configVersion": 1792261665969,
+          "configVersion": 1792393929846,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792261665969,
-            "timestamp": "2026-10-17T18:27:46.238Z"
+            "configVersion": 1792393929846,
+            "timestamp": "2026-10-19T07:12:12.063Z"
           },
-          "_timestamp": 1792261666238
+          "_timestamp": 1792393932063
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3569,25 +3734,25 @@
             {
               "type": "movie",
               "id": "watchly.item.1",
-              "name": "Because you watched TRON: Legacy",
+              "name": "Because you watched Main Hoon Na",
               "extra": []
             },
             {
               "type": "movie",
               "id": "watchly.item.2",
-              "name": "Because you watched The Godfather",
+              "name": "Because you watched TRON: Legacy",
               "extra": []
             },
             {
               "type": "series",
               "id": "watchly.item.1",
-              "name": "Because you watched Lanterns",
+              "name": "Because you watched Gravity Falls",
               "extra": []
             },
             {
               "type": "series",
               "id": "watchly.item.2",
-              "name": "Because you watched Gravity Falls",
+              "name": "Because you watched Lanterns",
               "extra": []
             }
           ],
@@ -3602,8 +3767,8 @@
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
-        "autoRestore": false,
-        "syncWithInstalled": false,
+        "autoRestore": true,
+        "syncWithInstalled": true,
         "createdAt": "2026-10-15T19:36:07.328Z",
         "updatedAt": "2026-10-15T19:49:02.734Z",
         "sourceType": "manual",
