@@ -1,9 +1,10 @@
-"""Typed HTTP client adapter using `httpx` with explicit `Result` returns."""
+"""Typed HTTP client adapter using `httpx` with connection pooling and explicit `Result` returns."""
 
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol
+from types import TracebackType
+from typing import Any, Protocol, Self
 
 import httpx
 
@@ -38,7 +39,25 @@ class HttpClientProtocol(Protocol):
 
 
 class HttpxClient:
-    """Production `HttpClientProtocol` implementation backed by `httpx`."""
+    """Production `HttpClientProtocol` implementation backed by a pooled `httpx.Client`."""
+
+    def __init__(self) -> None:
+        self._client = httpx.Client(follow_redirects=True)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Closes the underlying connection pool."""
+        self._client.close()
 
     def request_json(
         self,
@@ -66,13 +85,13 @@ class HttpxClient:
             req_headers.setdefault("Content-Type", "application/json")
 
         try:
-            with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-                resp = client.request(
-                    method=method,
-                    url=url,
-                    headers=req_headers,
-                    content=content_bytes,
-                )
+            resp = self._client.request(
+                method=method,
+                url=url,
+                headers=req_headers,
+                content=content_bytes,
+                timeout=timeout,
+            )
         except httpx.HTTPError as exc:
             return Err(
                 NetworkError(
