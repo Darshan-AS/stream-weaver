@@ -62,3 +62,24 @@ def write_json_file(path: Path, data: Mapping[str, Any]) -> Result[Path, Storage
         return Ok(path)
     except OSError as exc:
         return Err(StorageError(message=f"Failed to write JSON to {path}: {exc}", path=str(path)))
+
+
+def read_text_file(path: Path) -> Result[str, StorageError]:
+    """Reads UTF-8 text from `path`."""
+    if not path.exists():
+        return Err(StorageError(message=f"File not found: {path}", path=str(path)))
+    try:
+        return Ok(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return Err(StorageError(message=f"Failed to read text from {path}: {exc}", path=str(path)))
+
+
+def write_text_file(path: Path, content: str) -> Result[Path, StorageError]:
+    """Writes UTF-8 text `content` to `path`, creating parent directories if needed."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return Ok(path)
+    except OSError as exc:
+        return Err(StorageError(message=f"Failed to write text to {path}: {exc}", path=str(path)))
+

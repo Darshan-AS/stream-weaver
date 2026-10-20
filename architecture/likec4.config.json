@@ -1,0 +1,5 @@
+{
+  "$schema": "https://likec4.dev/schemas/config.json",
+  "name": "stream-weaver-topology",
+  "title": "Stream Weaver — AIO Streaming Stack Architecture"
+}

@@ -126,6 +126,17 @@ git diff configs/
 uv run sw sanitize
 ```
 
+### Self-Updating Architecture Topology (`LikeC4` & `ARCHITECTURE.md`)
+`stream-weaver` automatically compiles your live `configs/*.json` into an interactive **LikeC4** model (`architecture/topology.c4`) and a GitHub-rendered Markdown overview ([`ARCHITECTURE.md`](ARCHITECTURE.md)) on every `sw pull`, `sw push`, `sw sanitize`, and `git commit`:
+```bash
+# Manually regenerate or check for drift:
+uv run sw diagram
+uv run sw diagram --check
+
+# Launch the interactive LikeC4 zoomable architecture explorer:
+npx likec4 start architecture
+```
+
 ---
 
 ## 3. Development & Verification Suite
