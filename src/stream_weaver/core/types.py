@@ -36,3 +36,15 @@ class ServicePushOutcome:
     created: bool
     install_url: str | None = None
     synced_clients: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ConfigDiffOutcome:
+    """Immutable structural and unified diff summary between local and remote configs."""
+
+    target: str
+    in_sync: bool
+    changed_keys: tuple[str, ...] = ()
+    added_lines: int = 0
+    removed_lines: int = 0
+    unified_diff: str = ""

@@ -3,6 +3,7 @@
 from typing import Any
 
 from stream_weaver.core.coercions import (
+    compute_config_diff,
     dehydrate_aiomanager,
     normalize_aiometadata,
     normalize_aiostreams,
@@ -228,3 +229,20 @@ def test_compile_nuvio_collections_expands_dynamic_bingecat_lists_and_builds_cat
         "type": "movie",
         "genre": "None",
     }
+
+
+def test_compute_config_diff_identifies_in_sync_and_drift() -> None:
+    base = {"language": "en-US", "catalogs": [{"id": "trakt.upnext", "enabled": True}]}
+    same = compute_config_diff(base, dict(base), target="aiometadata")
+    assert same.in_sync is True
+    assert same.changed_keys == ()
+    assert same.unified_diff == ""
+
+    remote = {"language": "ja-JP", "catalogs": [{"id": "trakt.upnext", "enabled": True}]}
+    diff = compute_config_diff(base, remote, target="aiometadata")
+    assert diff.in_sync is False
+    assert diff.changed_keys == ("language",)
+    assert diff.added_lines == 1
+    assert diff.removed_lines == 1
+    assert "-  \"language\": \"ja-JP\"" in diff.unified_diff
+    assert "+  \"language\": \"en-US\"" in diff.unified_diff
