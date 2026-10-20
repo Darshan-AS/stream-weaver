@@ -13,6 +13,7 @@ from stream_weaver.core.coercions import (
 )
 from stream_weaver.core.result import Ok
 from stream_weaver.providers.services import extract_home_catalog_urls
+from stream_weaver.providers.services.clients import compile_nuvio_collections
 
 
 def test_normalize_aiostreams_unwraps_and_strips_volatile() -> None:
@@ -162,3 +163,70 @@ def test_sanitize_manifest_home_catalogs_and_extract_urls() -> None:
     }
     urls = extract_home_catalog_urls(state)
     assert urls == ["https://example.com/stremio/u-1/catalog/movie/streaming.nfx_movie.json"]
+
+
+def test_compile_nuvio_collections_expands_dynamic_bingecat_lists_and_builds_catalog_sources() -> None:
+    addons: list[dict[str, Any]] = [
+        {
+            "manifest": {
+                "id": "com.aicat.41792326-0a8b-4c9d-b1d1-9a5aae34d13b",
+                "catalogs": [
+                    {
+                        "id": "aicat_list_for_you_238348",
+                        "name": "Mystery Thrillers",
+                        "type": "series",
+                        "showInHome": True,
+                    },
+                    {
+                        "id": "aicat_list_for_you_238351",
+                        "name": "Machines, AI & Cyberpunk",
+                        "type": "movie",
+                        "showInHome": True,
+                    },
+                    {
+                        "id": "aicat_list_for_you_238347",
+                        "name": "When Hearts Meet",
+                        "type": "movie",
+                        "showInHome": False,
+                    },
+                ],
+            }
+        }
+    ]
+    raw_collections: list[dict[str, Any]] = [
+        {
+            "id": "col-for-you",
+            "title": "For You",
+            "folders": [
+                {
+                    "id": "fld-dynamic",
+                    "title": "Daily AI Micro-Genres",
+                    "dynamicBingecatLists": True,
+                    "sources": [
+                        {
+                            "addonId": "aio-metadata",
+                            "catalogId": "trakt.trending.movies",
+                            "type": "movie",
+                            "title": "Trending Movies",
+                        }
+                    ],
+                }
+            ],
+        }
+    ]
+    compiled = compile_nuvio_collections(raw_collections, addons)
+    assert len(compiled) == 1
+    fld = compiled[0]["folders"][0]
+    assert "dynamicBingecatLists" not in fld
+    assert len(fld["sources"]) == 3
+    assert len(fld["catalogSources"]) == 3
+    assert fld["sources"][1]["catalogId"] == "aicat_list_for_you_238348"
+    assert fld["sources"][1]["title"] == "Mystery Thrillers (Series)"
+    assert fld["sources"][2]["catalogId"] == "aicat_list_for_you_238351"
+    assert fld["sources"][2]["title"] == "Machines, AI & Cyberpunk (Movies)"
+    assert fld["catalogSources"][0] == {
+        "addonId": "aio-metadata",
+        "catalogId": "trakt.trending.movies",
+        "type": "movie",
+        "genre": "None",
+    }

@@ -132,6 +132,21 @@ def _push_service(
         case Ok(injected_cfg):
             pass
 
+    if service_id == "aiomanager":
+        nuvio_cols_path = configs_dir / "nuvio_collections.json"
+        if nuvio_cols_path.exists():
+            match read_json_file(nuvio_cols_path):
+                case Err() as err:
+                    return err
+                case Ok(raw_cols_doc):
+                    match inject_secrets(raw_cols_doc, env):
+                        case Err() as err:
+                            return err
+                        case Ok(injected_cols_doc):
+                            cols_list = injected_cols_doc.get("collections")
+                            if isinstance(cols_list, list) and cols_list:
+                                injected_cfg["nuvioCollections"] = cols_list
+
     match svc.push_remote(injected_cfg, env, create=create):
         case Err() as err:
             return err

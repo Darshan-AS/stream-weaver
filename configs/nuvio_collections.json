@@ -1,0 +1,775 @@
+{
+  "version": "1.0.0",
+  "collections": [
+    {
+      "id": "col-for-you-discovery",
+      "title": "For You & Discovery",
+      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/for-you-cover.png",
+      "pinToTop": true,
+      "focusGlowEnabled": true,
+      "viewMode": "TABBED_GRID",
+      "showAllTab": true,
+      "folders": [
+        {
+          "id": "fld-ai-picks",
+          "title": "AI Picks For You",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/for-you-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/for-you-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172517",
+              "type": "movie",
+              "genre": "None",
+              "title": "AI Picks — Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172518",
+              "type": "series",
+              "genre": "None",
+              "title": "AI Picks — Series"
+            },
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172519",
+              "type": "movie",
+              "genre": "None",
+              "title": "Latest Movies For You"
+            },
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172520",
+              "type": "series",
+              "genre": "None",
+              "title": "Latest Series For You"
+            }
+          ]
+        },
+        {
+          "id": "fld-because-you-watched",
+          "title": "Because You Watched",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/top-streaming-movies-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/top-streaming-movies-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172514",
+              "type": "movie",
+              "genre": "None",
+              "title": "Similar Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+              "catalogId": "aicat_list_172515",
+              "type": "series",
+              "genre": "None",
+              "title": "Similar Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-daily-micro-genres",
+          "title": "Daily AI Micro-Genres",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/sci-fi/sci-fi-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/sci-fi/sci-fi-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "dynamicBingecatLists": true,
+          "sources": []
+        },
+        {
+          "id": "fld-trending-popular",
+          "title": "Trending & Popular",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/trending-movies/trending-movies-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/top-streaming-movies-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "trakt.trending.movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Trakt Trending Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "trakt.trending.shows",
+              "type": "series",
+              "genre": "None",
+              "title": "Trakt Trending Series"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.top",
+              "type": "movie",
+              "genre": "None",
+              "title": "TMDB Popular Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.top",
+              "type": "series",
+              "genre": "None",
+              "title": "TMDB Popular Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-top-rated",
+          "title": "Top Rated All-Time",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/trending-tv/trending-tv-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.top_rated",
+              "type": "movie",
+              "genre": "None",
+              "title": "Top Rated Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.top_rated",
+              "type": "series",
+              "genre": "None",
+              "title": "Top Rated Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-watchlist-library",
+          "title": "Watchlist & Cloud Library",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/new-movies/new-movies-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/adventure/adventure-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "trakt.watchlist.movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Trakt Watchlist — Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "trakt.watchlist.series",
+              "type": "series",
+              "genre": "None",
+              "title": "Trakt Watchlist — Series"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
+              "catalogId": "lib791b.aiostreams::library.torbox",
+              "type": "movie",
+              "genre": "None",
+              "title": "TorBox Cloud Library"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "col-streaming-services",
+      "title": "Streaming Services",
+      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/netflix/netflix-backdrop.jpg",
+      "pinToTop": true,
+      "focusGlowEnabled": true,
+      "viewMode": "TABBED_GRID",
+      "showAllTab": true,
+      "folders": [
+        {
+          "id": "fld-netflix",
+          "title": "Netflix",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/49571953.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/netflix/netflix-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.nfx_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Netflix Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.nfx_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Netflix Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-prime-video",
+          "title": "Prime Video",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/2b6cd3de.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/prime-video/prime-video-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.amp_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Prime Video Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.amp_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Prime Video Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-apple-tv",
+          "title": "Apple TV+",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/8342ccda.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/apple-tv/apple-tv-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.atp_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Apple TV+ Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.atp_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Apple TV+ Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-hbo-max",
+          "title": "HBO Max",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/3571a791.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/hbo-max/hbo-max-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hbm_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "HBO Max Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hbm_series",
+              "type": "series",
+              "genre": "None",
+              "title": "HBO Max Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-disney-plus",
+          "title": "Disney+",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/8d5f1c71.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/disney-plus/disney-plus-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.dnp_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Disney+ Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.dnp_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Disney+ Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-hulu",
+          "title": "Hulu",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/b6ac4f31.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/hulu/hulu-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hlu_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Hulu Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hlu_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Hulu Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-paramount-plus",
+          "title": "Paramount+",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/f4f05d2d.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/paramount-plus/paramount-plus-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.pmp_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Paramount+ Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.pmp_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Paramount+ Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-peacock",
+          "title": "Peacock",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/f13f1cd7.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/peacock/peacock-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": true,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.pcp_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Peacock Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.pcp_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Peacock Series"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "col-indian-cinema",
+      "title": "Indian Cinema & Regional OTT",
+      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-backdrop.jpg",
+      "pinToTop": true,
+      "focusGlowEnabled": true,
+      "viewMode": "TABBED_GRID",
+      "showAllTab": true,
+      "folders": [
+        {
+          "id": "fld-kannada-cinema",
+          "title": "Kannada Cinema",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.kannada_new_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "New Kannada Releases"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.kannada_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Popular Kannada Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.kannada_top_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Top Rated Kannada Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.kannada_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Kannada Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-hindi-cinema",
+          "title": "Hindi Cinema & Series",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/action/action-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.hindi_new_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "New Hindi Releases"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.hindi_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Popular Hindi Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.hindi_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Hindi Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-jiohotstar",
+          "title": "JioHotstar",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/8d5f1c71.webp",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/disney-plus/disney-plus-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hst_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "JioHotstar Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.hst_series",
+              "type": "series",
+              "genre": "None",
+              "title": "JioHotstar Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-sonyliv",
+          "title": "Sony LIV",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/thriller/thriller-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/thriller/thriller-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.slv_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Sony LIV Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.slv_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Sony LIV Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-zee5",
+          "title": "ZEE5",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.zee_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "ZEE5 Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.zee_series",
+              "type": "series",
+              "genre": "None",
+              "title": "ZEE5 Series"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "col-anime-japanese",
+      "title": "Anime & Japanese",
+      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-backdrop.jpg",
+      "pinToTop": true,
+      "focusGlowEnabled": true,
+      "viewMode": "TABBED_GRID",
+      "showAllTab": true,
+      "folders": [
+        {
+          "id": "fld-airing-popular-anime",
+          "title": "Airing & Popular Anime",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "mal.airing_anime",
+              "type": "series",
+              "genre": "None",
+              "title": "Anime Airing Now"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "mal.most_popular_anime",
+              "type": "series",
+              "genre": "None",
+              "title": "Most Popular Anime"
+            }
+          ]
+        },
+        {
+          "id": "fld-top-rated-anime",
+          "title": "Top Rated Anime",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/shonen-and-action-anime/shonen-and-action-anime-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/shonen-and-action-anime/shonen-and-action-anime-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "mal.top_anime_anime",
+              "type": "series",
+              "genre": "None",
+              "title": "All-Time Top Anime"
+            }
+          ]
+        },
+        {
+          "id": "fld-japanese-cinema",
+          "title": "Japanese Cinema & Drama",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/japanese-cinema/japanese-cinema-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/japanese-cinema/japanese-cinema-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.japanese_movies",
+              "type": "movie",
+              "genre": "None",
+              "title": "Japanese Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.japanese_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Japanese Series"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "col-courses-docs",
+      "title": "Courses & Documentaries",
+      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/documentary/documentary-backdrop.jpg",
+      "pinToTop": true,
+      "focusGlowEnabled": true,
+      "viewMode": "TABBED_GRID",
+      "showAllTab": true,
+      "folders": [
+        {
+          "id": "fld-peterson-academy",
+          "title": "Peterson Academy",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/history/history-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/history/history-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
+              "catalogId": "swce3b0.peterson_academy",
+              "type": "series",
+              "genre": "None",
+              "title": "Peterson Academy Courses"
+            }
+          ]
+        },
+        {
+          "id": "fld-curiosity-stream",
+          "title": "Curiosity Stream",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/documentary/documentary-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/documentary/documentary-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.cts_movie",
+              "type": "movie",
+              "genre": "None",
+              "title": "Curiosity Stream Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "streaming.cts_series",
+              "type": "series",
+              "genre": "None",
+              "title": "Curiosity Stream Series"
+            }
+          ]
+        },
+        {
+          "id": "fld-docuseries-education",
+          "title": "Top Documentaries & Docuseries",
+          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/mystery/mystery-cover.png",
+          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/mystery/mystery-hover.gif",
+          "focusGifEnabled": true,
+          "tileShape": "LANDSCAPE",
+          "hideTitle": false,
+          "sources": [
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.popular_docuseries",
+              "type": "series",
+              "genre": "None",
+              "title": "Popular Docuseries & Education"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.top_docuseries",
+              "type": "series",
+              "genre": "None",
+              "title": "Top Rated Docuseries"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aio-metadata",
+              "catalogId": "tmdb.discover.top_documentaries",
+              "type": "movie",
+              "genre": "None",
+              "title": "Top Rated Documentaries"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

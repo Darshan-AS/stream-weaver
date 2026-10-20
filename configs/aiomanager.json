@@ -51,13 +51,13 @@
           }
         },
         {
-          "transportUrl": "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}/manifest.json",
+          "transportUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
           "transportName": "",
-          "manifestId": "com.elfhosted.watchly:1.17.1",
+          "manifestId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}:1.29.0",
           "manifest": {
-            "id": "com.elfhosted.watchly",
-            "version": "1.17.1",
-            "name": "Watchly | ElfHosted",
+            "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+            "version": "1.29.0",
+            "name": "Bingecat AI Assistant - darshan",
             "_deduped": true
           },
           "flags": {
@@ -65,7 +65,7 @@
           },
           "metadata": {
             "lastUpdated": 1792093742705,
-            "customName": "Watchly | ElfHosted"
+            "customName": "BingeCat"
           }
         },
         {
@@ -238,8 +238,8 @@
         },
         {
           "savedAddonId": "7bdefa1f-9e5a-4589-a437-7283f1df5c43",
-          "addonId": "com.elfhosted.watchly",
-          "installUrl": "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}/manifest.json",
+          "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio",
+          "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
           "installedAt": "2026-10-15T19:39:38.710Z",
           "installedVia": "saved-addon",
           "appliedTags": [],
@@ -247,7 +247,393 @@
             "enabled": true,
             "official": false
           },
-          "syncToLibrary": true
+          "syncToLibrary": true,
+          "manifest": {
+            "behaviorHints": {
+              "configurable": true,
+              "configurationRequired": false
+            },
+            "catalogs": [
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Comedy",
+                      "Adventure",
+                      "Thriller",
+                      "History",
+                      "Action",
+                      "Biography",
+                      "Fantasy",
+                      "War",
+                      "Animation",
+                      "Romance",
+                      "Documentary",
+                      "Family",
+                      "Horror",
+                      "Sci-Fi",
+                      "Crime",
+                      "Mystery",
+                      "Sport"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172519",
+                "name": "Latest movies for you",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Thriller",
+                      "Crime",
+                      "Action",
+                      "Mystery",
+                      "Comedy",
+                      "Sci-Fi",
+                      "Animation",
+                      "Horror",
+                      "Adventure",
+                      "Fantasy",
+                      "Sport",
+                      "Romance",
+                      "Documentary",
+                      "Game-Show",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172520",
+                "name": "Latest series for you",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Crime",
+                      "Thriller",
+                      "Biography",
+                      "Romance",
+                      "Mystery",
+                      "History",
+                      "Action",
+                      "Film-Noir",
+                      "Comedy",
+                      "Horror",
+                      "War",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172514",
+                "name": "Because you watched...",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Animation",
+                      "Drama",
+                      "Fantasy",
+                      "Action",
+                      "Adventure",
+                      "Romance",
+                      "Comedy",
+                      "Mystery",
+                      "Sci-Fi",
+                      "Thriller",
+                      "History",
+                      "Horror",
+                      "Crime",
+                      "War",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172515",
+                "name": "Because you watched...",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Sci-Fi",
+                      "Drama",
+                      "Thriller",
+                      "Fantasy",
+                      "Crime",
+                      "Animation",
+                      "Comedy",
+                      "Mystery",
+                      "Horror",
+                      "History",
+                      "War",
+                      "Biography",
+                      "Family",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172517",
+                "name": "AI Recommendations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Fantasy",
+                      "Adventure",
+                      "Comedy",
+                      "Sci-Fi",
+                      "Action",
+                      "Animation",
+                      "Mystery",
+                      "Crime",
+                      "Thriller",
+                      "Horror",
+                      "Romance",
+                      "History",
+                      "Family"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172518",
+                "name": "AI Recommendations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238347",
+                "name": "When Hearts Meet",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238348",
+                "name": "Mystery Thrillers",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238351",
+                "name": "Machines, AI & Cyberpunk",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238349",
+                "name": "Japanese Drama",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238352",
+                "name": "Manga Adaptations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238350",
+                "name": "Fantasy Anime",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238353",
+                "name": "Animated Comedies",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238354",
+                "name": "Case Closed",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "series"
+              }
+            ],
+            "description": "AI-generated movie and series catalogs personalized for you",
+            "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+            "idPrefixes": [
+              "tt",
+              "tmdb:",
+              "tvdb:"
+            ],
+            "logo": "https://bingecat.com/static/logo.png",
+            "name": "Bingecat AI Assistant - darshan",
+            "resources": [
+              "catalog"
+            ],
+            "types": [
+              "movie",
+              "series"
+            ],
+            "version": "1.29.0"
+          }
         },
         {
           "savedAddonId": "8874cf69-88fd-402d-827f-c7040c034cdb",
@@ -2504,7 +2890,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action",
                     "Adventure",
                     "Animation",
@@ -2525,14 +2910,13 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "streaming.pmp_series",
@@ -2543,7 +2927,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action & Adventure",
                     "Animation",
                     "Comedy",
@@ -2561,14 +2944,13 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "streaming.pcp_movie",
@@ -2579,7 +2961,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action",
                     "Adventure",
                     "Animation",
@@ -2600,14 +2981,13 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "streaming.pcp_series",
@@ -2618,7 +2998,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action & Adventure",
                     "Animation",
                     "Comedy",
@@ -2636,14 +3015,13 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "streaming.hlu_movie",
@@ -2654,7 +3032,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action",
                     "Adventure",
                     "Animation",
@@ -2675,14 +3052,13 @@
                     "War",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "streaming.hlu_series",
@@ -2693,7 +3069,6 @@
                 {
                   "name": "genre",
                   "options": [
-                    "None",
                     "Action & Adventure",
                     "Animation",
                     "Comedy",
@@ -2711,114 +3086,13 @@
                     "War & Politics",
                     "Western"
                   ],
-                  "isRequired": true,
-                  "default": "None"
+                  "isRequired": false
                 },
                 {
                   "name": "skip"
                 }
               ],
-              "showInHome": false
-            },
-            {
-              "id": "trakt.recommendations.movies",
-              "type": "movie",
-              "name": "Trakt Recommendations",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "None",
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Holiday",
-                    "Horror",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": true
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": false
-            },
-            {
-              "id": "trakt.recommendations.shows",
-              "type": "series",
-              "name": "Trakt Recommendations",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "None",
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Biography",
-                    "Children",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "Game Show",
-                    "History",
-                    "Holiday",
-                    "Home And Garden",
-                    "Horror",
-                    "Mini Series",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Soap",
-                    "Special Interest",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Talk Show",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": true
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": false
+              "showInHome": true
             },
             {
               "id": "trakt.unwatched",
@@ -3485,20 +3759,6 @@
               ]
             },
             {
-              "id": "gemini.search",
-              "type": "other",
-              "name": "AI Search",
-              "extra": [
-                {
-                  "name": "search",
-                  "isRequired": true
-                },
-                {
-                  "name": "skip"
-                }
-              ]
-            },
-            {
               "type": "series",
               "id": "calendar-videos",
               "extra": [
@@ -3561,14 +3821,14 @@
               ]
             }
           ],
-          "configVersion": 1792467168972,
+          "configVersion": 1792480453275,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792467168972,
-            "timestamp": "2026-10-20T03:38:17.216Z"
+            "configVersion": 1792480453275,
+            "timestamp": "2026-10-20T07:14:13.511Z"
           },
-          "_timestamp": 1792467497216
+          "_timestamp": 1792480453511
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3744,15 +4004,387 @@
       },
       {
         "id": "7bdefa1f-9e5a-4589-a437-7283f1df5c43",
-        "name": "Watchly | ElfHosted",
-        "installUrl": "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}/manifest.json",
+        "name": "Bingecat AI Assistant - darshan",
+        "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
         "manifest": {
-          "id": "com.elfhosted.watchly",
-          "version": "1.17.1",
-          "name": "Watchly | ElfHosted",
-          "description": "Movie and series recommendations based on your Stremio library.",
-          "logo": "https://raw.githubusercontent.com/TimilsinaBimal/Watchly/refs/heads/main/app/static/logo.png",
-          "background": "https://raw.githubusercontent.com/TimilsinaBimal/Watchly/refs/heads/main/app/static/cover.png",
+          "behaviorHints": {
+            "configurable": true,
+            "configurationRequired": false
+          },
+          "catalogs": [
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Comedy",
+                    "Adventure",
+                    "Thriller",
+                    "History",
+                    "Action",
+                    "Biography",
+                    "Fantasy",
+                    "War",
+                    "Animation",
+                    "Romance",
+                    "Documentary",
+                    "Family",
+                    "Horror",
+                    "Sci-Fi",
+                    "Crime",
+                    "Mystery",
+                    "Sport"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172519",
+              "name": "Latest movies for you",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Thriller",
+                    "Crime",
+                    "Action",
+                    "Mystery",
+                    "Comedy",
+                    "Sci-Fi",
+                    "Animation",
+                    "Horror",
+                    "Adventure",
+                    "Fantasy",
+                    "Sport",
+                    "Documentary",
+                    "Romance",
+                    "Game-Show",
+                    "History",
+                    "Western"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172520",
+              "name": "Latest series for you",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Crime",
+                    "Thriller",
+                    "Biography",
+                    "Romance",
+                    "Mystery",
+                    "History",
+                    "Action",
+                    "Film-Noir",
+                    "Comedy",
+                    "Horror",
+                    "War",
+                    "Western"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172514",
+              "name": "Because you watched...",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Animation",
+                    "Drama",
+                    "Fantasy",
+                    "Action",
+                    "Adventure",
+                    "Romance",
+                    "Comedy",
+                    "Mystery",
+                    "Sci-Fi",
+                    "Thriller",
+                    "History",
+                    "Horror",
+                    "Crime",
+                    "War",
+                    "Western"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172515",
+              "name": "Because you watched...",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Sci-Fi",
+                    "Drama",
+                    "Adventure",
+                    "Thriller",
+                    "Fantasy",
+                    "Crime",
+                    "Animation",
+                    "Comedy",
+                    "Horror",
+                    "Mystery",
+                    "History",
+                    "Romance",
+                    "War",
+                    "Western",
+                    "Biography",
+                    "Sport"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172517",
+              "name": "AI Recommendations",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Adventure",
+                    "Fantasy",
+                    "Sci-Fi",
+                    "Action",
+                    "Animation",
+                    "Comedy",
+                    "Thriller",
+                    "Mystery",
+                    "Horror",
+                    "Crime",
+                    "Family",
+                    "Romance",
+                    "War"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172518",
+              "name": "AI Recommendations",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238746",
+              "name": "When Hearts Meet",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238747",
+              "name": "Mystery Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238748",
+              "name": "Japanese Drama",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238749",
+              "name": "Fantasy Anime",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238750",
+              "name": "Machines, AI & Cyberpunk",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238751",
+              "name": "Manga Adaptations",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238752",
+              "name": "Animated Comedies",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_238753",
+              "name": "Case Closed",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            }
+          ],
+          "description": "AI-generated movie and series catalogs personalized for you",
+          "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+          "idPrefixes": [
+            "tt",
+            "tmdb:",
+            "tvdb:"
+          ],
+          "logo": "https://bingecat.com/static/logo.png",
+          "name": "Bingecat AI Assistant - darshan",
           "resources": [
             "catalog"
           ],
@@ -3760,55 +4392,7 @@
             "movie",
             "series"
           ],
-          "idPrefixes": [
-            "tt"
-          ],
-          "catalogs": [
-            {
-              "type": "movie",
-              "id": "watchly.rec",
-              "name": "Top Picks for You",
-              "extra": []
-            },
-            {
-              "type": "series",
-              "id": "watchly.rec",
-              "name": "Top Picks for You",
-              "extra": []
-            },
-            {
-              "type": "movie",
-              "id": "watchly.item.1",
-              "name": "Because you watched The Godfather",
-              "extra": []
-            },
-            {
-              "type": "movie",
-              "id": "watchly.item.2",
-              "name": "Because you watched TRON: Legacy",
-              "extra": []
-            },
-            {
-              "type": "series",
-              "id": "watchly.item.1",
-              "name": "Because you watched The Final Problem",
-              "extra": []
-            },
-            {
-              "type": "series",
-              "id": "watchly.item.2",
-              "name": "Because you watched Lanterns",
-              "extra": []
-            }
-          ],
-          "behaviorHints": {
-            "configurable": true,
-            "configurationRequired": false
-          },
-          "stremioAddonsConfig": {
-            "issuer": "https://stremio-addons.net",
-            "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..WSrhzzlj1TuDycD6QoVLuA.Dzmxzr4y83uqQF15r4tC1bB9-vtZRh1Rvy4BqgDYxu91c2esiJuov9KnnI_cboQCgZS7hjwnIqRSlQ-jEyGwXHHRerh9QklyfdxpXqNUyBgTWFzDOVdVvDYJeM_tGMmR.sezAChlWGV7lNS-t9HWB6A"
-          }
+          "version": "1.29.0"
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",

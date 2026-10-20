@@ -38,7 +38,7 @@ def test_harvest_and_inject_aiostreams_roundtrip() -> None:
     assert reinjected.value == raw_cfg
 
 
-def test_harvest_and_inject_aiomanager_watchly_and_vault() -> None:
+def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
     raw_cfg: dict[str, Any] = {
         "apiKeys": {"7d210008-bcdb-4bc4": "mgr_key_123456"},
         "accounts": [
@@ -49,7 +49,16 @@ def test_harvest_and_inject_aiomanager_watchly_and_vault() -> None:
                 "addons": [
                     {
                         "transportUrl": "https://watchly.elfhosted.com/my_watchly_tok/manifest.json"
-                    }
+                    },
+                    {
+                        "transportUrl": "https://bingecat.com/stremio/2ec3e4b9-31e3-48f0-935e-8896b1d8b012/manifest.json",
+                        "manifestId": "com.aicat.2ec3e4b9-31e3-48f0-935e-8896b1d8b012.nuvio:1.28.0",
+                        "manifest": {
+                            "id": "com.aicat.2ec3e4b9-31e3-48f0-935e-8896b1d8b012.nuvio",
+                            "version": "1.28.0",
+                            "name": "BingeCat",
+                        },
+                    },
                 ],
                 "connections": [
                     {
@@ -62,6 +71,26 @@ def test_harvest_and_inject_aiomanager_watchly_and_vault() -> None:
                 ],
             }
         ],
+        "accountStates": {
+            "7d210008-bcdb-4bc4": {
+                "installedAddons": [
+                    {
+                        "addonId": "com.aicat.2ec3e4b9-31e3-48f0-935e-8896b1d8b012.nuvio",
+                        "installUrl": "https://bingecat.com/stremio/2ec3e4b9-31e3-48f0-935e-8896b1d8b012/manifest.json",
+                    }
+                ]
+            }
+        },
+        "addons": {
+            "savedAddons": [
+                {
+                    "installUrl": "https://bingecat.com/stremio/2ec3e4b9-31e3-48f0-935e-8896b1d8b012/manifest.json",
+                    "manifest": {
+                        "id": "com.aicat.2ec3e4b9-31e3-48f0-935e-8896b1d8b012.nuvio",
+                    },
+                }
+            ]
+        },
         "vault": [
             {"id": "35c65899", "provider": "aiostreams", "value": "vault_secret_val_99"}
         ],
@@ -71,7 +100,28 @@ def test_harvest_and_inject_aiomanager_watchly_and_vault() -> None:
         scrubbed["accounts"][0]["addons"][0]["transportUrl"]
         == "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}/manifest.json"
     )
+    assert (
+        scrubbed["accounts"][0]["addons"][1]["transportUrl"]
+        == "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json"
+    )
+    assert (
+        scrubbed["accounts"][0]["addons"][1]["manifestId"]
+        == "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio:1.28.0"
+    )
+    assert (
+        scrubbed["accounts"][0]["addons"][1]["manifest"]["id"]
+        == "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio"
+    )
+    assert (
+        scrubbed["accountStates"]["7d210008-bcdb-4bc4"]["installedAddons"][0]["addonId"]
+        == "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio"
+    )
+    assert (
+        scrubbed["addons"]["savedAddons"][0]["installUrl"]
+        == "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json"
+    )
     assert env["SECRET_WATCHLY_TOKEN"] == "my_watchly_tok"
+    assert env["SECRET_BINGECAT_TOKEN"] == "2ec3e4b9-31e3-48f0-935e-8896b1d8b012"
     assert env["SECRET_NUVIO_ACCESS_TOKEN"] == "nuvio_acc_tok_123"
     assert env["SECRET_VAULT_AIOSTREAMS_35C658"] == "vault_secret_val_99"
 

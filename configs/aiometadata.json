@@ -18,7 +18,7 @@
       "anime_movie": "kitsu.search.movie",
       "anime_series": "kitsu.search.series"
     },
-    "ai_enabled": true,
+    "ai_enabled": false,
     "searchNames": {},
     "searchOrder": [
       "movie",
@@ -33,7 +33,7 @@
     "engineEnabled": {
       "tmdb.search": true,
       "tvdb.search": true,
-      "gemini.search": true,
+      "gemini.search": false,
       "tvmaze.search": true,
       "mal.search.movie": false,
       "mal.search.series": false,
@@ -758,12 +758,12 @@
     {
       "id": "streaming.pmp",
       "name": "Paramount+",
-      "sort": "default",
+      "sort": "popularity",
       "type": "movie",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -771,12 +771,12 @@
     {
       "id": "streaming.pmp",
       "name": "Paramount+",
-      "sort": "default",
+      "sort": "popularity",
       "type": "series",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -784,12 +784,12 @@
     {
       "id": "streaming.pcp",
       "name": "Peacock Premium",
-      "sort": "default",
+      "sort": "popularity",
       "type": "movie",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -797,12 +797,12 @@
     {
       "id": "streaming.pcp",
       "name": "Peacock Premium",
-      "sort": "default",
+      "sort": "popularity",
       "type": "series",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -810,12 +810,12 @@
     {
       "id": "streaming.hlu",
       "name": "Hulu",
-      "sort": "default",
+      "sort": "popularity",
       "type": "movie",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -823,12 +823,12 @@
     {
       "id": "streaming.hlu",
       "name": "Hulu",
-      "sort": "default",
+      "sort": "popularity",
       "type": "series",
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": false,
+      "showInHome": true,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -838,7 +838,7 @@
       "name": "Trakt Recommendations",
       "type": "movie",
       "source": "trakt",
-      "enabled": true,
+      "enabled": false,
       "showInHome": false,
       "cacheTTL": 7200
     },
@@ -847,7 +847,7 @@
       "name": "Trakt Recommendations",
       "type": "series",
       "source": "trakt",
-      "enabled": true,
+      "enabled": false,
       "showInHome": false,
       "cacheTTL": 7200
     },

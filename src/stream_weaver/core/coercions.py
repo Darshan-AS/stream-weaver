@@ -23,6 +23,7 @@ AIOMANAGER_VOLATILE_KEYS: tuple[str, ...] = (
     "changelog",
     "vaultTombstones",
     "notesTrash",
+    "nuvioCollections",
 )
 
 
@@ -139,6 +140,7 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
         for acc in accounts:
             if not isinstance(acc, dict):
                 continue
+            acc.pop("nuvioCollections", None)
             acc_addons = acc.get("addons")
             if not isinstance(acc_addons, list):
                 continue
@@ -187,11 +189,14 @@ def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
                         mid = f"{mf['id']}:{mf.get('version', '1.0.0')}"
                         manifests_map[mid] = copy.deepcopy(mf)
 
+    top_collections = state.pop("nuvioCollections", None)
     accounts = state.get("accounts")
     if isinstance(accounts, list):
         for acc in accounts:
             if not isinstance(acc, dict):
                 continue
+            if isinstance(top_collections, list) and top_collections:
+                acc.setdefault("nuvioCollections", copy.deepcopy(top_collections))
             acc_addons = acc.get("addons")
             if not isinstance(acc_addons, list):
                 continue

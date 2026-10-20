@@ -338,7 +338,9 @@ class AIOManagerService:
                 t_url = str(a.get("transportUrl", "")).rstrip("/")
                 if not t_url:
                     continue
-                if mid in ("aio-metadata", "com.elfhosted.watchly") or mid.startswith("aiostreams"):
+                if mid in ("aio-metadata", "com.elfhosted.watchly") or mid.startswith(
+                    ("aiostreams", "com.aicat.", "addon.aiometadata")
+                ):
                     m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
                     match self._http.request_json("GET", m_url, timeout=15.0):
                         case Ok(resp) if (
