@@ -85,6 +85,7 @@ Open `.env` and fill in:
    * `SECRET_RPDB_API_KEY` — RatingPosterDB key (use `t0-free-rpdb` if on the free tier)
    * `SECRET_GEMINI_API_KEY` — Google AI Studio key for AI search in AIOMetadata
    * `SECRET_TRAKT_TOKEN_ID` — Trakt token ID
+   * `SECRET_BINGECAT_TOKEN` — Your BingeCat profile UUID/token (from your `https://bingecat.com/stremio/<token>/manifest.json` URL)
 
 ### Step 3: Bootstrap Your Own AIOStreams & AIOMetadata Instances (`--create`)
 Run `sw push` with `--create` to provision brand-new user profiles on the servers:

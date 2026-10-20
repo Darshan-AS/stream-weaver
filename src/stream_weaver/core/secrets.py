@@ -14,6 +14,10 @@ from stream_weaver.core.types import EnvMap, JsonDict, ServiceId
 
 SECRET_PLACEHOLDER_RE = re.compile(r"\{\{(SECRET_[A-Z0-9_]+)\}\}")
 WATCHLY_URL_RE = re.compile(r"(watchly\.[^/]+/)([^/{}]+)(/manifest\.json)")
+BINGECAT_URL_RE = re.compile(
+    r"(bingecat\.[^/]+/(?:stremio/)?)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/nuvio)?(?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
+)
+BINGECAT_ID_RE = re.compile(r"^(com\.aicat\.)([^.:/{}]+)((?:\.[^:]+)?(?::.+)?)$")
 MIN_SECRET_LEN = 4
 
 ENV_OVERRIDE_PREFIXES: tuple[str, ...] = (
@@ -89,6 +93,16 @@ AIOSTREAMS_LENSES: tuple[SecretLens, ...] = (
             (str(parent.get("id", "")).lower(), path[-1]),
             f"SECRET_{_sanitize_token(str(parent.get('id', 'SVC')))}_{_sanitize_token(path[-1])}",
         ),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "manifestUrl"),
+        derive_key=lambda _, __: "SECRET_WATCHLY_TOKEN",
+        regex_sub=(WATCHLY_URL_RE, r"\1{{SECRET_WATCHLY_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "manifestUrl"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
     ),
 )
 
@@ -174,6 +188,41 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
         path=("accountStates", "*", "installedAddons", "*", "installUrl"),
         derive_key=lambda _, __: "SECRET_WATCHLY_TOKEN",
         regex_sub=(WATCHLY_URL_RE, r"\1{{SECRET_WATCHLY_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("addons", "savedAddons", "*", "installUrl"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accounts", "*", "addons", "*", "transportUrl"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accountStates", "*", "installedAddons", "*", "installUrl"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("addons", "savedAddons", "*", "manifest", "id"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accounts", "*", "addons", "*", "manifestId"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accounts", "*", "addons", "*", "manifest", "id"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accountStates", "*", "installedAddons", "*", "addonId"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
     ),
 )
 

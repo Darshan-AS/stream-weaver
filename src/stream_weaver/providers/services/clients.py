@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
 
@@ -10,6 +11,119 @@ from stream_weaver.core.errors import NetworkError, StreamWeaverError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict
 from stream_weaver.effects.http import HttpClientProtocol
+
+
+def compile_nuvio_collections(
+    raw_collections: list[Any],
+    addons: list[Any],
+) -> list[JsonDict]:
+    """
+    Pure function: compiles declarative Nuvio Collection definitions against the account's
+    live addon manifests, expanding dynamic BingeCat `aicat_list_for_you_*` catalogs and
+    populating both `sources` and `catalogSources` so Nuvio absorbs them from loose Home rows.
+    """
+    bingecat_addon_id: str | None = None
+    bingecat_catalogs: list[dict[str, Any]] = []
+    for addon in addons:
+        if not isinstance(addon, dict):
+            continue
+        mf = addon.get("manifest")
+        if not isinstance(mf, dict):
+            continue
+        mid = str(mf.get("id") or "")
+        if mid.startswith("com.aicat."):
+            bingecat_addon_id = mid
+            cats = mf.get("catalogs")
+            if isinstance(cats, list):
+                bingecat_catalogs = [c for c in cats if isinstance(c, dict)]
+            break
+
+    compiled: list[JsonDict] = []
+    for col in raw_collections:
+        if not isinstance(col, dict):
+            continue
+        col_copy: JsonDict = copy.deepcopy(col)
+        col_copy.setdefault("pinToTop", True)
+        col_copy.setdefault("focusGlowEnabled", True)
+        col_copy.setdefault("viewMode", "TABBED_GRID")
+        col_copy.setdefault("showAllTab", True)
+
+        raw_folders = col_copy.get("folders")
+        folders_out: list[JsonDict] = []
+        if isinstance(raw_folders, list):
+            for fld in raw_folders:
+                if not isinstance(fld, dict):
+                    continue
+                fld_copy: JsonDict = copy.deepcopy(fld)
+                dynamic_lists = bool(fld_copy.pop("dynamicBingecatLists", False))
+                fld_copy.setdefault("tileShape", "LANDSCAPE")
+                fld_copy.setdefault("focusGifEnabled", bool(fld_copy.get("focusGifUrl")))
+                fld_copy.setdefault("hideTitle", False)
+
+                raw_sources = fld_copy.get("sources")
+                sources_in: list[dict[str, Any]] = (
+                    [s for s in raw_sources if isinstance(s, dict)]
+                    if isinstance(raw_sources, list)
+                    else []
+                )
+
+                if dynamic_lists and bingecat_addon_id:
+                    for cat in bingecat_catalogs:
+                        cid = str(cat.get("id") or "")
+                        if not cid.startswith("aicat_list_for_you_"):
+                            continue
+                        if cat.get("showInHome", True) is False:
+                            continue
+                        ctype = str(cat.get("type") or "movie")
+                        cname = str(cat.get("name") or cid)
+                        type_label = "Movies" if ctype == "movie" else "Series"
+                        sources_in.append(
+                            {
+                                "provider": "addon",
+                                "addonId": bingecat_addon_id,
+                                "catalogId": cid,
+                                "type": ctype,
+                                "genre": "None",
+                                "title": f"{cname} ({type_label})",
+                            }
+                        )
+
+                norm_sources: list[JsonDict] = []
+                cat_sources: list[JsonDict] = []
+                for src in sources_in:
+                    addon_id = str(src.get("addonId") or "")
+                    cat_id = str(src.get("catalogId") or "")
+                    ctype = str(src.get("type") or "movie")
+                    genre = str(src.get("genre") or "None")
+                    title = str(src.get("title") or cat_id)
+                    if not addon_id or not cat_id:
+                        continue
+                    norm_sources.append(
+                        {
+                            "provider": str(src.get("provider") or "addon"),
+                            "addonId": addon_id,
+                            "catalogId": cat_id,
+                            "type": ctype,
+                            "genre": genre,
+                            "title": title,
+                        }
+                    )
+                    cat_sources.append(
+                        {
+                            "addonId": addon_id,
+                            "catalogId": cat_id,
+                            "type": ctype,
+                            "genre": genre,
+                        }
+                    )
+
+                fld_copy["sources"] = norm_sources
+                fld_copy["catalogSources"] = cat_sources
+                folders_out.append(fld_copy)
+
+        col_copy["folders"] = folders_out
+        compiled.append(col_copy)
+    return compiled
 
 
 def build_nuvio_addons_payload(addons: list[Any]) -> list[JsonDict]:
@@ -167,19 +281,55 @@ class NuvioClientSync:
             case Err() as err:
                 return err
             case Ok(s_resp):
-                if s_resp.status_code in (200, 204):
+                if s_resp.status_code not in (200, 204):
+                    return Err(
+                        NetworkError(
+                            message=f"Nuvio push returned HTTP {s_resp.status_code}",
+                            status_code=s_resp.status_code,
+                        )
+                    )
+
+        raw_collections = account.get("nuvioCollections")
+        if isinstance(raw_collections, list) and raw_collections:
+            compiled_cols = compile_nuvio_collections(raw_collections, addons_list)
+            col_res = self._http.request_json(
+                "POST",
+                "https://api.nuvio.tv/rest/v1/rpc/sync_push_collections",
+                headers=headers,
+                json_body={
+                    "p_profile_id": profile_idx,
+                    "p_collections_json": compiled_cols,
+                },
+            )
+            match col_res:
+                case Err() as err:
+                    return err
+                case Ok(c_resp):
+                    if c_resp.status_code not in (200, 204):
+                        return Err(
+                            NetworkError(
+                                message=f"Nuvio collections push returned HTTP {c_resp.status_code}",
+                                status_code=c_resp.status_code,
+                            )
+                        )
+                    total_folders = sum(
+                        len(c.get("folders", []))
+                        for c in compiled_cols
+                        if isinstance(c.get("folders"), list)
+                    )
                     return Ok(
                         (
-                            f"Pushed {len(p_addons)} addons directly to Nuvio profile #{profile_idx}",
+                            f"Pushed {len(p_addons)} addons and {len(compiled_cols)} collections ({total_folders} folders) to Nuvio profile #{profile_idx}",
                             updated_secrets,
                         )
                     )
-                return Err(
-                    NetworkError(
-                        message=f"Nuvio push returned HTTP {s_resp.status_code}",
-                        status_code=s_resp.status_code,
-                    )
-                )
+
+        return Ok(
+            (
+                f"Pushed {len(p_addons)} addons directly to Nuvio profile #{profile_idx}",
+                updated_secrets,
+            )
+        )
 
 
 class StremioClientSync:
