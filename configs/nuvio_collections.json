@@ -417,7 +417,7 @@
     {
       "id": "col-indian-cinema",
       "title": "Indian Cinema & Regional OTT",
-      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/681be020.webp",
+      "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -426,7 +426,7 @@
         {
           "id": "fld-kannada-cinema",
           "title": "Kannada Cinema",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/681be020.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/kannada_cinema.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -469,7 +469,7 @@
         {
           "id": "fld-hindi-cinema",
           "title": "Hindi Cinema & Series",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/4530e395.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/hindi_cinema.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -504,7 +504,7 @@
         {
           "id": "fld-jiohotstar",
           "title": "JioHotstar",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/b8c0d25b.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/jiohotstar.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/disney-plus/disney-plus-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -531,7 +531,7 @@
         {
           "id": "fld-sonyliv",
           "title": "Sony LIV",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/c0217498.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/sonyliv.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/thriller/thriller-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -558,7 +558,7 @@
         {
           "id": "fld-zee5",
           "title": "ZEE5",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/006dc836.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/zee5.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -680,7 +680,7 @@
         {
           "id": "fld-peterson-academy",
           "title": "Peterson Academy",
-          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/2653fb30.webp",
+          "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/peterson_academy.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/history-war-and-civilizations/history-war-and-civilizations-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
