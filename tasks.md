@@ -14,7 +14,7 @@
 - [x] Implement `compile_nuvio_collections` and `NuvioClient.sync_push_collections` (`POST /rest/v1/rpc/sync_push_collections`) in `src/stream_weaver/providers/services/clients.py`
 - [x] Wire Nuvio Collections compilation and push into `sw diff` and `sw push` (`src/stream_weaver/cli/app.py`, `src/stream_weaver/core/coercions.py`)
 - [x] Move the 3 rotating BingeCat daily micro-genre catalogs (`aicat_list_for_you_1..3`) out of Nuvio Collection folders onto the loose Home screen so they refresh automatically every 24h without running `sw push`
-- [x] Fix missing folder cover images on **Nuvio Mac Desktop** (replace broken `.webp` hashes and plain-black v1 covers in `configs/nuvio_collections.json` with verified `ImKaptain/nuvio-assets` hashes and `v2` cover artwork)
+- [x] Fix missing folder cover images on **Nuvio Mac Desktop** (standardize all 24 `coverImageUrl`s and 5 `backdropImageUrl`s in `configs/nuvio_collections.json` to genuine `.webp` assets on `https://imkaptain.github.io/nuvio-assets/assets/images/<hash>.webp`, replacing `raw.githubusercontent.com` `.png` files that had mismatched JPEG magic bytes)
 
 ---
 

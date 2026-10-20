@@ -4,7 +4,7 @@
     {
       "id": "col-for-you-discovery",
       "title": "For You & Discovery",
-      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/v2/for-you-backdrop.jpg",
+      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -13,7 +13,7 @@
         {
           "id": "fld-ai-picks",
           "title": "AI Picks For You",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/v2/for-you-cover.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/d8b14f4f.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/v2/for-you-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -56,7 +56,7 @@
         {
           "id": "fld-because-you-watched",
           "title": "Because You Watched",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/v2/top-streaming-movies-cover.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/v2/top-streaming-movies-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -83,7 +83,7 @@
         {
           "id": "fld-trending-popular",
           "title": "Trending & Popular",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/trending-movies/v2/trending-movies-cover.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/v2/top-streaming-movies-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -126,7 +126,7 @@
         {
           "id": "fld-top-rated",
           "title": "Top Rated All-Time",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/trending-tv/v2/trending-tv-cover.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1d5e1036.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-series/v2/top-streaming-series-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -153,7 +153,7 @@
         {
           "id": "fld-watchlist-library",
           "title": "Watchlist & Cloud Library",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/new-movies/v2/new-movies-cover.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/49c41ea9.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/adventure/adventure-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -190,7 +190,7 @@
     {
       "id": "col-streaming-services",
       "title": "Streaming Services",
-      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/collection-cards/streaming_services.png",
+      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -417,7 +417,7 @@
     {
       "id": "col-indian-cinema",
       "title": "Indian Cinema & Regional OTT",
-      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-backdrop.jpg",
+      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/681be020.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -426,7 +426,7 @@
         {
           "id": "fld-kannada-cinema",
           "title": "Kannada Cinema",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/International%20Cinema/Indian%20Cinema/Indian%20Cinema_FilmStripHybrid_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/681be020.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -469,7 +469,7 @@
         {
           "id": "fld-hindi-cinema",
           "title": "Hindi Cinema & Series",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Genres/Action/Gallery/The_Odyssey_Action_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/4530e395.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -531,7 +531,7 @@
         {
           "id": "fld-sonyliv",
           "title": "Sony LIV",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Genres/Thriller/Thriller_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/c0217498.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/thriller/thriller-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -558,7 +558,7 @@
         {
           "id": "fld-zee5",
           "title": "ZEE5",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Genres/Drama/Drama_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/006dc836.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -587,7 +587,7 @@
     {
       "id": "col-anime-japanese",
       "title": "Anime & Japanese",
-      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-backdrop.jpg",
+      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/692aa010.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -596,7 +596,7 @@
         {
           "id": "fld-airing-popular-anime",
           "title": "Airing & Popular Anime",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Anime/Discover_Anime/Discover_Anime_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/692aa010.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -623,7 +623,7 @@
         {
           "id": "fld-top-rated-anime",
           "title": "Top Rated Anime",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Anime/Shonen_Action/Shonen_Action_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/7cb9fcdf.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/shonen-and-action-anime/shonen-and-action-anime-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -642,7 +642,7 @@
         {
           "id": "fld-japanese-cinema",
           "title": "Japanese Cinema & Drama",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/International%20Cinema/Japanese%20Cinema/Japanese%20Cinema_FilmStripHybrid_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/b7665988.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/japanese-cinema/japanese-cinema-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -671,7 +671,7 @@
     {
       "id": "col-courses-docs",
       "title": "Courses & Documentaries",
-      "backdropImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/history-war-and-civilizations/history-war-and-civilizations-backdrop.jpg",
+      "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/2653fb30.webp",
       "pinToTop": true,
       "focusGlowEnabled": true,
       "viewMode": "TABBED_GRID",
@@ -680,7 +680,7 @@
         {
           "id": "fld-peterson-academy",
           "title": "Peterson Academy",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Documentaries/History_War/History_War_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/2653fb30.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/history-war-and-civilizations/history-war-and-civilizations-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
@@ -726,7 +726,7 @@
         {
           "id": "fld-docuseries-education",
           "title": "Top Documentaries & Docuseries",
-          "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-assets/main/Documentaries/Science_Cosmos/Science_Cosmos_Base.png",
+          "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/dce3256c.webp",
           "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/science-tech-and-cosmos/science-tech-and-cosmos-hover.gif",
           "focusGifEnabled": true,
           "tileShape": "LANDSCAPE",
