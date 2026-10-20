@@ -1118,7 +1118,7 @@
   "language": "en-US",
   "timezone": "Asia/Kolkata",
   "ageRating": "None",
-  "castCount": 10,
+  "castCount": 15,
   "providers": {
     "anime": "tvdb",
     "movie": "tmdb",
@@ -1161,7 +1161,7 @@
       "poster": "meta",
       "background": "meta"
     },
-    "englishArtOnly": false
+    "englishArtOnly": true
   },
   "includeAdult": false,
   "searchEnabled": true,
@@ -1171,7 +1171,8 @@
   "showRateMeButton": false,
   "anilistWatchTracking": false,
   "mdblistWatchTracking": false,
-  "posterRatingProvider": "rpdb",
+  "posterRatingProvider": "custom",
+  "customPosterUrlPattern": "https://postersplus.slokker.cc/poster?tmdb_id={tmdb_id?}&imdb_id={imdb_id?}&stremio_id={id}&type={type}&shape={shape}&pc=stremio_tv_nuvio&tg=medium&bgr=medium&tvso=true&vpcb=true&vcl=false&fti=true&irs=fallback&trs=fallback&rdm=3&mam=2&mmfsr=0.058&mmfxo=0.065&rtc=FFFFFF&rb=myanimelist:a,anilist:a,imdb,tomatoes:mt,letterboxd:m,trakt:t&rbm=3&mw=lb:0.99,tk:0.01&tw=tk:0.80,rt:0.20&fbs=photoreal&lmhr=0.20&lbr=0.17&lba=true&cg=false&sm=notch&sws=true&sbsw=1.80&sbsh=1.20&sbfr=0.46&nvc=true&sbpo=auto_hug&bdm=7&bms=5&bqs=frosted&bcts=frosted&_sm=notch&_bs=1.20&_ws=true&_pc=true&_rb=true&_bdm=7&_bqs=frosted&_bcts=frosted",
   "showDisabledCatalogs": false,
   "hideUnreleasedDigital": false,
   "hideUnreleasedDigitalSearch": false,

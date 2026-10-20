@@ -15,10 +15,10 @@
         {
           "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
           "transportName": "",
-          "manifestId": "aio-metadata:3.5.1",
+          "manifestId": "aio-metadata:3.6.0",
           "manifest": {
             "id": "aio-metadata",
-            "version": "3.5.1",
+            "version": "3.6.0",
             "name": "AIOMetadata",
             "_deduped": true
           },
@@ -274,7 +274,7 @@
         "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
         "manifest": {
           "id": "aio-metadata",
-          "version": "3.5.1",
+          "version": "3.6.0",
           "logo": "https://aiometadatafortheweebs.midnightignite.me/logo.png",
           "background": "https://aiometadatafortheweebs.midnightignite.me/background.png",
           "name": "AIOMetadata",
@@ -290,7 +290,8 @@
             "anime.series",
             "anime",
             "Trakt",
-            "collection"
+            "collection",
+            "person"
           ],
           "idPrefixes": [
             "tmdb:",
@@ -3514,16 +3515,60 @@
                 "calendarVideosIds"
               ],
               "name": "Calendar videos"
+            },
+            {
+              "id": "aiom.similar",
+              "type": "movie",
+              "name": "More Like This",
+              "extra": [
+                {
+                  "name": "similar",
+                  "isRequired": true
+                }
+              ],
+              "showInHome": false,
+              "idPrefixes": [
+                "mal:",
+                "kitsu:",
+                "anilist:",
+                "anidb:",
+                "tt",
+                "tmdb:",
+                "tvdb:",
+                "tvmaze:"
+              ]
+            },
+            {
+              "id": "aiom.similar",
+              "type": "series",
+              "name": "More Like This",
+              "extra": [
+                {
+                  "name": "similar",
+                  "isRequired": true
+                }
+              ],
+              "showInHome": false,
+              "idPrefixes": [
+                "mal:",
+                "kitsu:",
+                "anilist:",
+                "anidb:",
+                "tt",
+                "tmdb:",
+                "tvdb:",
+                "tvmaze:"
+              ]
             }
           ],
-          "configVersion": 1792393929846,
+          "configVersion": 1792467168972,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792393929846,
-            "timestamp": "2026-10-19T07:12:12.063Z"
+            "configVersion": 1792467168972,
+            "timestamp": "2026-10-20T03:38:17.216Z"
           },
-          "_timestamp": 1792393932063
+          "_timestamp": 1792467497216
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3734,7 +3779,7 @@
             {
               "type": "movie",
               "id": "watchly.item.1",
-              "name": "Because you watched Main Hoon Na",
+              "name": "Because you watched The Godfather",
               "extra": []
             },
             {
@@ -3746,7 +3791,7 @@
             {
               "type": "series",
               "id": "watchly.item.1",
-              "name": "Because you watched Gravity Falls",
+              "name": "Because you watched The Final Problem",
               "extra": []
             },
             {
