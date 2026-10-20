@@ -3,7 +3,7 @@
 import sys
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -20,7 +20,7 @@ from stream_weaver.core.types import (
     ServiceId,
     ServicePushOutcome,
 )
-from stream_weaver.effects.http import HttpxClient
+from stream_weaver.effects.http import HttpClientProtocol, HttpxClient
 from stream_weaver.effects.storage import (
     load_env_file,
     read_json_file,
@@ -31,6 +31,7 @@ from stream_weaver.effects.storage import (
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
 from stream_weaver.providers.services import build_config_services, warm_home_catalogs
+from stream_weaver.providers.services.clients import NuvioClientSync, decompile_nuvio_collections
 
 app = typer.Typer(
     name="sw",
@@ -55,12 +56,84 @@ def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
     cleaned = target.strip().lower()
     if cleaned == "all":
         return ALL_SERVICES
+    if cleaned in ("nuvio_collections", "nuvio"):
+        return ()
     if cleaned in ("aiostreams", "aiometadata", "aiomanager"):
         return (cleaned,)  # type: ignore[return-value]
     err_console.print(
-        f"❌ Unknown service target '{target}'. Choose from: all, aiostreams, aiometadata, aiomanager"
+        f"❌ Unknown service target '{target}'. Choose from: all, aiostreams, aiometadata, aiomanager, nuvio_collections"
     )
     raise typer.Exit(code=1)
+
+
+def _should_include_nuvio_collections(target: str) -> bool:
+    return target.strip().lower() in ("all", "aiomanager", "nuvio_collections", "nuvio")
+
+
+def _pull_remote_nuvio_collections_doc(
+    configs_dir: Path,
+    env: Mapping[str, str],
+    http_client: HttpClientProtocol,
+) -> Result[tuple[JsonDict | None, dict[str, str]]]:
+    """Pulls live Nuvio Home Collections via `NuvioClientSync.pull_collections` and scrubs secrets."""
+    mgr_path = configs_dir / "aiomanager.json"
+    password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
+    anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
+    if not mgr_path.exists() or not password or not anon_key:
+        return Ok((None, dict(env)))
+
+    match read_json_file(mgr_path):
+        case Err() as err:
+            return err
+        case Ok(mgr_scrubbed):
+            pass
+
+    match inject_secrets(mgr_scrubbed, env):
+        case Err() as err:
+            return err
+        case Ok(mgr_injected):
+            pass
+
+    salt_b64 = str(mgr_injected.get("salt") or "")
+    accounts = mgr_injected.get("accounts")
+    nuvio_conn: Mapping[str, Any] | None = None
+    if isinstance(accounts, list):
+        for acc in accounts:
+            if not isinstance(acc, Mapping):
+                continue
+            conns = acc.get("connections")
+            if not isinstance(conns, list):
+                continue
+            for conn in conns:
+                if (
+                    isinstance(conn, Mapping)
+                    and conn.get("enabled", True)
+                    and str(conn.get("platform") or "").lower() == "nuvio"
+                ):
+                    nuvio_conn = conn
+                    break
+            if nuvio_conn is not None:
+                break
+
+    if nuvio_conn is None:
+        return Ok((None, dict(env)))
+
+    nuvio_syncer = NuvioClientSync(http_client)
+    match nuvio_syncer.pull_collections(nuvio_conn, password, salt_b64, env):
+        case Err() as err:
+            return err
+        case Ok((collections_list, refreshed_secrets)):
+            pass
+
+    existing_cols_path = configs_dir / "nuvio_collections.json"
+    version = "1.0.0"
+    if existing_cols_path.exists() and isinstance(existing_res := read_json_file(existing_cols_path), Ok):
+        version = str(existing_res.value.get("version") or "1.0.0")
+
+    merged_env = {**env, **refreshed_secrets}
+    raw_doc: JsonDict = {"version": version, "collections": collections_list}
+    scrubbed_doc, updated_env = harvest_and_scrub("aiomanager", raw_doc, merged_env)
+    return Ok((scrubbed_doc, updated_env))
 
 
 def _persist_scrubbed_config(
@@ -336,6 +409,34 @@ def cmd_config_pull(
                         f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
                     )
 
+        if _should_include_nuvio_collections(target):
+            match _pull_remote_nuvio_collections_doc(configs_dir, working_env, http_client):
+                case Err(err):
+                    if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                        err_console.print(f"❌ {err}")
+                        raise typer.Exit(code=1)
+                    err_console.print(f"⚠️  [nuvio_collections] {err}")
+                case Ok((None, working_env)):
+                    if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                        console.print(
+                            "⏭️  [nuvio_collections] Skipping pull: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
+                        )
+                case Ok((scrubbed_cols_doc, working_env)):
+                    assert scrubbed_cols_doc is not None
+                    if isinstance(env_err := save_env_updates(env_path, working_env), Err):
+                        err_console.print(f"❌ {env_err.error}")
+                        raise typer.Exit(code=1)
+                    cols_target = configs_dir / "nuvio_collections.json"
+                    match write_json_file(cols_target, scrubbed_cols_doc):
+                        case Err(write_err):
+                            err_console.print(f"❌ {write_err}")
+                            raise typer.Exit(code=1)
+                        case Ok(saved_cols_path):
+                            col_cnt = len(scrubbed_cols_doc.get("collections", []))
+                            console.print(
+                                f"✅ [nuvio_collections] Pulled {col_cnt} collections from Nuvio to {saved_cols_path.relative_to(root_dir)}"
+                            )
+
     match _sync_architecture_diagrams(root_dir, configs_dir):
         case Ok():
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
@@ -438,6 +539,34 @@ def cmd_config_diff(
                     if not outcome.in_sync:
                         has_drift = True
 
+        if _should_include_nuvio_collections(target):
+            cols_path = configs_dir / "nuvio_collections.json"
+            if cols_path.exists():
+                match read_json_file(cols_path):
+                    case Err(err):
+                        err_console.print(f"❌ {err}")
+                        raise typer.Exit(code=1)
+                    case Ok(local_cols_doc):
+                        match _pull_remote_nuvio_collections_doc(configs_dir, env, http_client):
+                            case Err(err):
+                                if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                                    err_console.print(f"❌ {err}")
+                                    raise typer.Exit(code=1)
+                            case Ok((remote_cols_doc, _)) if remote_cols_doc is not None:
+                                col_diff = compute_config_diff(
+                                    local_cols_doc,
+                                    remote_cols_doc,
+                                    target="nuvio_collections",
+                                )
+                                _print_diff_outcome(col_diff, stat_only=stat_only)
+                                if not col_diff.in_sync:
+                                    has_drift = True
+                            case Ok():
+                                if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                                    console.print(
+                                        "⏭️  [nuvio_collections] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
+                                    )
+
     if exit_code and has_drift:
         raise typer.Exit(code=1)
 
@@ -469,6 +598,28 @@ def cmd_config_sanitize(
                 )
             case Ok():
                 pass
+
+    cols_path = configs_dir / "nuvio_collections.json"
+    if _should_include_nuvio_collections(target) and cols_path.exists():
+        match read_json_file(cols_path):
+            case Err(err):
+                err_console.print(f"❌ {err}")
+                raise typer.Exit(code=1)
+            case Ok(raw_cols):
+                decompiled_cols = decompile_nuvio_collections(raw_cols)
+                normalized_doc: JsonDict = {
+                    "version": str(raw_cols.get("version") or "1.0.0"),
+                    "collections": decompiled_cols if decompiled_cols else raw_cols.get("collections", []),
+                }
+                scrubbed_cols, working_env = harvest_and_scrub("aiomanager", normalized_doc, working_env)
+                if isinstance(env_err := save_env_updates(env_path, working_env), Err):
+                    err_console.print(f"❌ {env_err.error}")
+                    raise typer.Exit(code=1)
+                if isinstance(write_res := write_json_file(cols_path, scrubbed_cols), Ok):
+                    found_any = True
+                    console.print(
+                        f"🧹 [nuvio_collections] Auto-harvested secrets to .env & scrubbed {write_res.value.relative_to(root_dir)}"
+                    )
 
     if not found_any:
         console.print("ℹ️  No config files found in configs/ to sanitize.")

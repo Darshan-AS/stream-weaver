@@ -12,7 +12,10 @@ from stream_weaver.core.coercions import (
 )
 from stream_weaver.core.result import Ok
 from stream_weaver.providers.services import extract_home_catalog_urls
-from stream_weaver.providers.services.clients import compile_nuvio_collections
+from stream_weaver.providers.services.clients import (
+    compile_nuvio_collections,
+    decompile_nuvio_collections,
+)
 
 
 def test_normalize_aiostreams_unwraps_and_strips_volatile() -> None:
@@ -246,3 +249,42 @@ def test_compute_config_diff_identifies_in_sync_and_drift() -> None:
     assert diff.removed_lines == 1
     assert "-  \"language\": \"ja-JP\"" in diff.unified_diff
     assert "+  \"language\": \"en-US\"" in diff.unified_diff
+
+
+def test_decompile_nuvio_collections_strips_catalog_sources_and_unwraps_rpc() -> None:
+    raw = [
+        {
+            "id": "col-1",
+            "title": "For You",
+            "pinToTop": True,
+            "focusGlowEnabled": True,
+            "viewMode": "TABBED_GRID",
+            "showAllTab": True,
+            "folders": [
+                {
+                    "id": "fld-1",
+                    "title": "Picks",
+                    "tileShape": "LANDSCAPE",
+                    "focusGifEnabled": False,
+                    "hideTitle": False,
+                    "sources": [
+                        {
+                            "provider": "addon",
+                            "addonId": "aio-metadata",
+                            "catalogId": "trakt.trending.movies",
+                            "type": "movie",
+                            "genre": "None",
+                            "title": "Trending Movies",
+                        }
+                    ],
+                }
+            ],
+        }
+    ]
+    compiled = compile_nuvio_collections(raw, addons=[])
+    assert "catalogSources" in compiled[0]["folders"][0]
+
+    # Wrap in Supabase RPC envelope and decompile back to declarative form
+    rpc_payload = [{"collections_json": compiled}]
+    decompiled = decompile_nuvio_collections(rpc_payload)
+    assert decompiled == raw
