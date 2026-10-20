@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
+from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import normalize_service_config
 from stream_weaver.core.crypto import decrypt_envelope
 from stream_weaver.core.errors import StreamWeaverError
@@ -25,8 +26,10 @@ from stream_weaver.effects.http import HttpxClient
 from stream_weaver.effects.storage import (
     load_env_file,
     read_json_file,
+    read_text_file,
     save_env_updates,
     write_json_file,
+    write_text_file,
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
 from stream_weaver.providers.services import build_config_services, warm_home_catalogs
@@ -210,8 +213,58 @@ def _sanitize_service(
             )
 
 
+def _load_optional_json(path: Path) -> JsonDict:
+    if not path.exists():
+        return {}
+    match read_json_file(path):
+        case Ok(data):
+            return data
+        case Err():
+            return {}
+
+
+def _sync_architecture_diagrams(
+    root_dir: Path,
+    configs_dir: Path,
+    *,
+    check_only: bool = False,
+) -> Result[tuple[Path, ...], StreamWeaverError]:
+    """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from `configs/*.json`."""
+    bundle = compile_architecture_bundle(
+        aiomanager=_load_optional_json(configs_dir / "aiomanager.json"),
+        aiostreams=_load_optional_json(configs_dir / "aiostreams.json"),
+        aiometadata=_load_optional_json(configs_dir / "aiometadata.json"),
+        nuvio_collections=_load_optional_json(configs_dir / "nuvio_collections.json"),
+    )
+    arch_dir = root_dir / "architecture"
+    targets: tuple[tuple[Path, str], ...] = (
+        (arch_dir / "topology.c4", bundle.likec4_dsl),
+        (arch_dir / "likec4.config.json", bundle.likec4_config_json),
+        (root_dir / "ARCHITECTURE.md", bundle.architecture_markdown),
+    )
+
+    if check_only:
+        stale: list[Path] = []
+        for path, expected in targets:
+            match read_text_file(path):
+                case Ok(actual) if actual == expected:
+                    pass
+                case _:
+                    stale.append(path)
+        return Ok(tuple(stale))
+
+    written: list[Path] = []
+    for path, content in targets:
+        match write_text_file(path, content):
+            case Err() as err:
+                return err
+            case Ok(saved):
+                written.append(saved)
+    return Ok(tuple(written))
+
+
 # ============================================================================
-# CLI Commands (`sw pull`, `sw push`, `sw sanitize`)
+# CLI Commands (`sw pull`, `sw push`, `sw sanitize`, `sw diagram`)
 # ============================================================================
 
 
@@ -244,6 +297,12 @@ def cmd_config_pull(
                     f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
                 )
 
+    match _sync_architecture_diagrams(root_dir, configs_dir):
+        case Ok():
+            console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
+        case Err(diag_err):
+            err_console.print(f"⚠️  [diagram] {diag_err}")
+
 
 @config_app.command("push")
 @app.command("push")
@@ -258,7 +317,7 @@ def cmd_config_push(
     ] = False,
 ) -> None:
     """Inject secrets from .env and push local configs/ to remote servers."""
-    _, env_path, configs_dir, env = _resolve_paths()
+    root_dir, env_path, configs_dir, env = _resolve_paths()
     services = build_config_services(HttpxClient())
     working_env = dict(env)
 
@@ -286,6 +345,12 @@ def cmd_config_push(
                     console.print(f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place")
                 for client_msg in outcome.synced_clients:
                     console.print(f"✅ {client_msg}")
+
+    match _sync_architecture_diagrams(root_dir, configs_dir):
+        case Ok():
+            console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
+        case Err(diag_err):
+            err_console.print(f"⚠️  [diagram] {diag_err}")
 
 
 @config_app.command("sanitize")
@@ -318,6 +383,38 @@ def cmd_config_sanitize(
 
     if not found_any:
         console.print("ℹ️  No config files found in configs/ to sanitize.")
+    else:
+        match _sync_architecture_diagrams(root_dir, configs_dir):
+            case Ok():
+                console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
+            case Err(diag_err):
+                err_console.print(f"⚠️  [diagram] {diag_err}")
+
+
+@config_app.command("diagram")
+@app.command("diagram")
+def cmd_config_diagram(
+    check: Annotated[
+        bool,
+        typer.Option("--check", help="Verify that architecture diagrams are up-to-date without writing"),
+    ] = False,
+) -> None:
+    """Compile LikeC4 (architecture/topology.c4) & ARCHITECTURE.md from configs/*.json."""
+    root_dir, _, configs_dir, _ = _resolve_paths()
+    match _sync_architecture_diagrams(root_dir, configs_dir, check_only=check):
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
+        case Ok(paths):
+            if check:
+                if paths:
+                    rel_paths = ", ".join(str(p.relative_to(root_dir)) for p in paths)
+                    err_console.print(f"❌ [diagram] Out of sync with configs/*.json: {rel_paths}")
+                    raise typer.Exit(code=1)
+                console.print("✅ [diagram] LikeC4 topology & ARCHITECTURE.md are in sync with configs/*.json")
+            else:
+                rel_paths = ", ".join(str(p.relative_to(root_dir)) for p in paths)
+                console.print(f"🗺️  [diagram] Compiled LikeC4 model & docs: {rel_paths}")
 
 
 @config_app.command("warm")

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Auto-updates LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` whenever `configs/*.json` changes.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if git diff --cached --name-only | grep -qE '^(configs/.*\.json|src/stream_weaver/core/architecture\.py)$'; then
+    echo "🗺️  [pre-commit] Regenerating LikeC4 architecture topology from configs/*.json..."
+    uv run sw diagram
+    git add architecture/topology.c4 architecture/likec4.config.json ARCHITECTURE.md
+fi
