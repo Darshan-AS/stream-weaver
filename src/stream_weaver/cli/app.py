@@ -1,12 +1,15 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
+import concurrent.futures
 import sys
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from rich import box
 from rich.console import Console
+from rich.table import Table
 
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
@@ -207,6 +210,34 @@ def _diff_service(
             return Ok(compute_config_diff(local_scrubbed, remote_scrubbed, target=service_id))
 
 
+def _render_diff_summary_table(outcomes: Sequence[ConfigDiffOutcome]) -> None:
+    """Renders a compact Rich summary table when diffing multiple targets."""
+    if len(outcomes) <= 1:
+        return
+    table = Table(
+        title="Stream Weaver Drift Summary",
+        box=box.ROUNDED,
+        show_edge=True,
+        header_style="bold",
+    )
+    table.add_column("Target")
+    table.add_column("Status")
+    table.add_column("+Lines", justify="right")
+    table.add_column("-Lines", justify="right")
+    table.add_column("Changed Keys")
+    for out in outcomes:
+        status = "✅ In Sync" if out.in_sync else "⚠️  Drift"
+        keys = ", ".join(out.changed_keys) if out.changed_keys else "—"
+        table.add_row(
+            out.target,
+            status,
+            f"+{out.added_lines}",
+            f"-{out.removed_lines}",
+            keys,
+        )
+    console.print(table)
+
+
 def _print_diff_outcome(outcome: ConfigDiffOutcome, *, stat_only: bool = False) -> None:
     if outcome.in_sync:
         console.print(f"✅ [{outcome.target}] In sync with remote")
@@ -390,27 +421,61 @@ def cmd_config_pull(
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
     root_dir, env_path, configs_dir, env = _resolve_paths()
     working_env = dict(env)
+    svc_targets = _resolve_service_targets(target)
+    include_nuvio = _should_include_nuvio_collections(target)
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
-        for svc_id in _resolve_service_targets(target):
-            match _pull_service(
-                svc_id, working_env, env_path=env_path, configs_dir=configs_dir, services=services
+        configured_svcs: list[ServiceId] = []
+        skipped_svcs: list[ServiceId] = []
+        for svc_id in svc_targets:
+            svc = services.get(svc_id)
+            if svc is None or not svc.is_configured_for_pull(working_env):
+                skipped_svcs.append(svc_id)
+            else:
+                configured_svcs.append(svc_id)
+
+        for svc_id in skipped_svcs:
+            console.print(f"⏭️  [{svc_id}] Skipping pull: missing URL, UUID, or password in .env")
+
+        pulled_raw: dict[ServiceId, Result[JsonDict]] = {}
+        if configured_svcs:
+            def _fetch_remote_svc(sid: ServiceId) -> tuple[ServiceId, Result[JsonDict]]:
+                return sid, services[sid].pull_remote(working_env)
+
+            with (
+                console.status(f"⏳ Pulling {', '.join(configured_svcs)} in parallel..."),
+                concurrent.futures.ThreadPoolExecutor(max_workers=len(configured_svcs)) as pool,
             ):
+                for sid, res in pool.map(_fetch_remote_svc, configured_svcs):
+                    pulled_raw[sid] = res
+
+        for svc_id in configured_svcs:
+            match pulled_raw[svc_id]:
                 case Err(err):
                     err_console.print(f"❌ {err}")
                     raise typer.Exit(code=1)
-                case Ok((None, working_env)):
-                    console.print(f"⏭️  [{svc_id}] Skipping pull: missing URL, UUID, or password in .env")
-                case Ok((saved_path, working_env)):
-                    assert saved_path is not None
-                    uid = working_env.get(f"{svc_id.upper()}_UUID", "")
-                    console.print(
-                        f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
-                    )
+                case Ok(normalized_cfg):
+                    match _persist_scrubbed_config(
+                        svc_id,
+                        normalized_cfg,
+                        working_env,
+                        env_path=env_path,
+                        configs_dir=configs_dir,
+                    ):
+                        case Err(p_err):
+                            err_console.print(f"❌ {p_err}")
+                            raise typer.Exit(code=1)
+                        case Ok((saved_path, working_env)):
+                            uid = working_env.get(f"{svc_id.upper()}_UUID", "")
+                            console.print(
+                                f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
+                            )
 
-        if _should_include_nuvio_collections(target):
-            match _pull_remote_nuvio_collections_doc(configs_dir, working_env, http_client):
+        if include_nuvio:
+            with console.status("⏳ Pulling Nuvio Home Collections..."):
+                nuvio_res = _pull_remote_nuvio_collections_doc(configs_dir, working_env, http_client)
+            match nuvio_res:
                 case Err(err):
                     if target.strip().lower() in ("nuvio_collections", "nuvio"):
                         err_console.print(f"❌ {err}")
@@ -467,33 +532,76 @@ def cmd_config_push(
 
     root_dir, env_path, configs_dir, env = _resolve_paths()
     working_env = dict(env)
+    svc_targets = _resolve_service_targets(target)
+
+    # Phase 1: upstream addon services (`aiostreams`, `aiometadata`) run concurrently.
+    # Phase 2: `aiomanager` runs after Phase 1 so it refreshes the newly updated upstream manifests.
+    phase1_targets = tuple(s for s in svc_targets if s != "aiomanager")
+    phase2_targets = tuple(s for s in svc_targets if s == "aiomanager")
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
-        for svc_id in _resolve_service_targets(target):
-            match _push_service(
-                svc_id,
-                working_env,
-                env_path=env_path,
-                configs_dir=configs_dir,
-                services=services,
-                create=create,
-            ):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok((None, working_env)):
-                    console.print(f"⏭️  [{svc_id}] Skipping push: missing config file or credentials in .env")
-                case Ok((outcome, working_env)):
-                    assert outcome is not None
-                    if outcome.created:
-                        console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
-                        if outcome.install_url:
-                            console.print(f"🔗 [{svc_id}] Install URL: {outcome.install_url}")
-                    else:
-                        console.print(f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place")
-                    for client_msg in outcome.synced_clients:
-                        console.print(f"✅ {client_msg}")
+        for phase in (phase1_targets, phase2_targets):
+            if not phase:
+                continue
+            if len(phase) > 1:
+                def _run_push(
+                    sid: ServiceId,
+                ) -> tuple[ServiceId, Result[tuple[ServicePushOutcome | None, dict[str, str]]]]:
+                    return (
+                        sid,
+                        _push_service(
+                            sid,
+                            dict(working_env),
+                            env_path=env_path,
+                            configs_dir=configs_dir,
+                            services=services,
+                            create=create,
+                        ),
+                    )
+
+                with (
+                    console.status(f"🚀 Pushing {', '.join(phase)} in parallel..."),
+                    concurrent.futures.ThreadPoolExecutor(max_workers=len(phase)) as pool,
+                ):
+                    phase_results = dict(pool.map(_run_push, phase))
+            else:
+                only_sid = phase[0]
+                with console.status(f"🚀 Pushing {only_sid}..."):
+                    phase_results = {
+                        only_sid: _push_service(
+                            only_sid,
+                            working_env,
+                            env_path=env_path,
+                            configs_dir=configs_dir,
+                            services=services,
+                            create=create,
+                        )
+                    }
+
+            for svc_id in phase:
+                match phase_results[svc_id]:
+                    case Err(err):
+                        err_console.print(f"❌ {err}")
+                        raise typer.Exit(code=1)
+                    case Ok((None, new_env)):
+                        working_env.update(new_env)
+                        console.print(
+                            f"⏭️  [{svc_id}] Skipping push: missing config file or credentials in .env"
+                        )
+                    case Ok((outcome, new_env)):
+                        working_env.update(new_env)
+                        assert outcome is not None
+                        if outcome.created:
+                            console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
+                            if outcome.install_url:
+                                console.print(f"🔗 [{svc_id}] Install URL: {outcome.install_url}")
+                        else:
+                            console.print(
+                                f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place"
+                            )
+                        for client_msg in outcome.synced_clients:
+                            console.print(f"✅ {client_msg}")
 
     match _sync_architecture_diagrams(root_dir, configs_dir):
         case Ok():
@@ -521,51 +629,84 @@ def cmd_config_diff(
     """Compare local configs/*.json against live remote instances without modifying any files."""
     _, _, configs_dir, env = _resolve_paths()
     has_drift = False
+    svc_targets = _resolve_service_targets(target)
+    include_nuvio = _should_include_nuvio_collections(target)
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
-        for svc_id in _resolve_service_targets(target):
-            match _diff_service(svc_id, env, configs_dir=configs_dir, services=services):
+
+        def _diff_one(sid: ServiceId) -> tuple[ServiceId, Result[ConfigDiffOutcome | None]]:
+            return sid, _diff_service(sid, env, configs_dir=configs_dir, services=services)
+
+        svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}
+        nuvio_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
+            None
+        )
+        cols_path = configs_dir / "nuvio_collections.json"
+
+        max_workers = max(1, len(svc_targets) + (1 if include_nuvio else 0))
+        with (
+            console.status("🔍 Comparing local configs against live remote instances in parallel..."),
+            concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool,
+        ):
+            futures = [pool.submit(_diff_one, sid) for sid in svc_targets]
+            if include_nuvio and cols_path.exists():
+                nuvio_future = pool.submit(
+                    _pull_remote_nuvio_collections_doc, configs_dir, env, http_client
+                )
+            for fut in futures:
+                sid, res = fut.result()
+                svc_diff_results[sid] = res
+
+        collected_outcomes: list[ConfigDiffOutcome] = []
+        skipped_msgs: list[str] = []
+
+        for svc_id in svc_targets:
+            match svc_diff_results[svc_id]:
                 case Err(err):
                     err_console.print(f"❌ {err}")
                     raise typer.Exit(code=1)
                 case Ok(None):
-                    console.print(
+                    skipped_msgs.append(
                         f"⏭️  [{svc_id}] Skipping diff: missing local config or credentials in .env"
                     )
                 case Ok(outcome):
                     assert outcome is not None
-                    _print_diff_outcome(outcome, stat_only=stat_only)
+                    collected_outcomes.append(outcome)
                     if not outcome.in_sync:
                         has_drift = True
 
-        if _should_include_nuvio_collections(target):
-            cols_path = configs_dir / "nuvio_collections.json"
-            if cols_path.exists():
-                match read_json_file(cols_path):
-                    case Err(err):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    case Ok(local_cols_doc):
-                        match _pull_remote_nuvio_collections_doc(configs_dir, env, http_client):
-                            case Err(err):
-                                if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                                    err_console.print(f"❌ {err}")
-                                    raise typer.Exit(code=1)
-                            case Ok((remote_cols_doc, _)) if remote_cols_doc is not None:
-                                col_diff = compute_config_diff(
-                                    local_cols_doc,
-                                    remote_cols_doc,
-                                    target="nuvio_collections",
+        if nuvio_future is not None:
+            match read_json_file(cols_path):
+                case Err(err):
+                    err_console.print(f"❌ {err}")
+                    raise typer.Exit(code=1)
+                case Ok(local_cols_doc):
+                    match nuvio_future.result():
+                        case Err(err):
+                            if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                                err_console.print(f"❌ {err}")
+                                raise typer.Exit(code=1)
+                        case Ok((remote_cols_doc, _)) if remote_cols_doc is not None:
+                            col_diff = compute_config_diff(
+                                local_cols_doc,
+                                remote_cols_doc,
+                                target="nuvio_collections",
+                            )
+                            collected_outcomes.append(col_diff)
+                            if not col_diff.in_sync:
+                                has_drift = True
+                        case Ok():
+                            if target.strip().lower() in ("nuvio_collections", "nuvio"):
+                                skipped_msgs.append(
+                                    "⏭️  [nuvio_collections] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
                                 )
-                                _print_diff_outcome(col_diff, stat_only=stat_only)
-                                if not col_diff.in_sync:
-                                    has_drift = True
-                            case Ok():
-                                if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                                    console.print(
-                                        "⏭️  [nuvio_collections] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                                    )
+
+        for msg in skipped_msgs:
+            console.print(msg)
+        _render_diff_summary_table(collected_outcomes)
+        for outcome in collected_outcomes:
+            _print_diff_outcome(outcome, stat_only=stat_only)
 
     if exit_code and has_drift:
         raise typer.Exit(code=1)
@@ -686,7 +827,10 @@ def cmd_config_warm(
         case Ok(injected_cfg):
             pass
 
-    with HttpxClient() as http_client:
+    with (
+        HttpxClient() as http_client,
+        console.status(f"🔥 Pre-warming Home catalog rows ({workers} workers)..."),
+    ):
         warmed, total = warm_home_catalogs(injected_cfg, http_client, max_workers=workers)
     console.print(f"🔥 [warm] Pre-warmed {warmed}/{total} Home catalog rows")
 
