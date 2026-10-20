@@ -1,7 +1,5 @@
 """AIO GitOps service providers (AIOStreams, AIOMetadata, AIOManager)."""
 
-from __future__ import annotations
-
 import base64
 import concurrent.futures
 import copy
@@ -22,7 +20,7 @@ from stream_weaver.core.crypto import (
     derive_sync_token,
     encrypt_envelope,
 )
-from stream_weaver.core.errors import NetworkError, StreamWeaverError
+from stream_weaver.core.errors import NetworkError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId, ServicePushOutcome
 from stream_weaver.effects.http import HttpClientProtocol
@@ -72,7 +70,7 @@ class AIOStreamsService:
             and (create or env.get("AIOSTREAMS_UUID"))
         )
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict, StreamWeaverError]:
+    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
         base_url = env.get("AIOSTREAMS_URL", "").rstrip("/")
         token = base64.b64encode(
             f"{env.get('AIOSTREAMS_UUID', '')}:{env.get('AIOSTREAMS_PASSWORD', '')}".encode()
@@ -93,7 +91,7 @@ class AIOStreamsService:
         env: EnvMap,
         *,
         create: bool = False,
-    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         base_url = env.get("AIOSTREAMS_URL", "").rstrip("/")
         uuid = env.get("AIOSTREAMS_UUID", "")
         password = env.get("AIOSTREAMS_PASSWORD", "")
@@ -182,7 +180,7 @@ class AIOMetadataService:
             and (create or env.get("AIOMETADATA_UUID"))
         )
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict, StreamWeaverError]:
+    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
         base_url = env.get("AIOMETADATA_URL", "").rstrip("/")
         uuid = env.get("AIOMETADATA_UUID", "")
         url = f"{base_url}/api/config/load/{uuid}"
@@ -204,7 +202,7 @@ class AIOMetadataService:
         env: EnvMap,
         *,
         create: bool = False,
-    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         base_url = env.get("AIOMETADATA_URL", "").rstrip("/")
         uuid = env.get("AIOMETADATA_UUID", "")
 
@@ -290,7 +288,7 @@ class AIOManagerService:
         _ = create
         return self.is_configured_for_pull(env)
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict, StreamWeaverError]:
+    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
         base_url = env.get("AIOMANAGER_URL", "").rstrip("/")
         uuid = env.get("AIOMANAGER_UUID", "")
         password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
@@ -379,7 +377,7 @@ class AIOManagerService:
         env: EnvMap,
         *,
         create: bool = False,
-    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         _ = create
         base_url = env.get("AIOMANAGER_URL", "").rstrip("/")
         uuid = env.get("AIOMANAGER_UUID", "")

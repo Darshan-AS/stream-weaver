@@ -1,7 +1,5 @@
 """Pure cryptographic primitives for AIOManager Cloud Sync (PBKDF2-HMAC-SHA256 + AES-256-GCM + deflate)."""
 
-from __future__ import annotations
-
 import base64
 import hashlib
 import json

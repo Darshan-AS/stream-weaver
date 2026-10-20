@@ -1,7 +1,5 @@
 """Pure functional LikeC4 (`.c4`) and Markdown (`ARCHITECTURE.md`) topology compiler."""
 
-from __future__ import annotations
-
 import json
 import re
 from collections.abc import Mapping, Sequence
@@ -257,7 +255,7 @@ def _build_likec4_dsl(
             "  controlPlane stream_weaver 'Stream Weaver (sw CLI)' {",
             "    #enabled",
             "    description 'Pure Functional GitOps Control Plane (sw pull / push / sanitize / warm / diagram)'",
-            "    technology 'Python 3.12+ / uv / AES-256-GCM'",
+            "    technology 'Python 3.14+ / uv / AES-256-GCM'",
             "    link https://github.com/Darshan-AS/stream-weaver 'GitHub Repository'",
             "    metadata {",
             "      architecture 'Functional Core, Imperative Shell'",
@@ -402,7 +400,7 @@ def _build_likec4_dsl(
             "    subsystem cb_cli 'Contraband CLI (cb)' {",
             "      #enabled",
             "      description 'Imperative Shell CLI: cb add | cb sync | cb watch | cb list | cb publish'",
-            "      technology 'Python 3.12+ / uv'",
+            "      technology 'Python 3.14+ / uv'",
             "    }",
             "    subsystem torbox_ingestor 'TorBox Magnet Queue & Slot Promoter' {",
             "      #enabled #debrid",

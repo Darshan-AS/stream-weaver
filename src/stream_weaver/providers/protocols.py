@@ -1,11 +1,8 @@
 """Structural `typing.Protocol` interfaces for Stream Weaver GitOps providers."""
 
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import Any, Protocol
 
-from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.result import Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId, ServicePushOutcome
 
@@ -23,7 +20,7 @@ class ClientSyncProtocol(Protocol):
         master_password: str,
         salt_b64: str,
         env: EnvMap,
-    ) -> Result[tuple[str, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[str, dict[str, str]]]:
         """
         Pushes the account's addon list to the client platform.
         Returns `Ok((summary_message, newly_refreshed_secrets))`.
@@ -41,7 +38,7 @@ class ConfigServiceProtocol(Protocol):
 
     def is_configured_for_push(self, env: EnvMap, *, create: bool = False) -> bool: ...
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict, StreamWeaverError]: ...
+    def pull_remote(self, env: EnvMap) -> Result[JsonDict]: ...
 
     def push_remote(
         self,
@@ -49,7 +46,7 @@ class ConfigServiceProtocol(Protocol):
         env: EnvMap,
         *,
         create: bool = False,
-    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         """
         Pushes `config` to the remote server.
         Returns `Ok((outcome, updated_config_to_persist, newly_discovered_secrets))`.

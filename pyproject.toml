@@ -7,7 +7,7 @@ name = "stream-weaver"
 version = "2.0.0"
 description = "Pure functional GitOps control plane and static Stremio addon compiler for AIOStreams, AIOMetadata, AIOManager, Nuvio, Stremio, and Contraband."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 license = { text = "MIT" }
 authors = [{ name = "Darshan AS" }]
 dependencies = [
@@ -33,7 +33,7 @@ stream-weaver = "stream_weaver.cli.app:main"
 packages = ["src/stream_weaver"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py314"
 line-length = 100
 src = ["src", "tests"]
 
@@ -42,7 +42,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RET", "C4", "PIE", "PT"]
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

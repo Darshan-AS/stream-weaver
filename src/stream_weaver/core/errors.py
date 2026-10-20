@@ -1,7 +1,5 @@
 """Immutable domain error types for Stream Weaver GitOps."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 

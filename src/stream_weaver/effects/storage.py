@@ -1,7 +1,5 @@
 """Filesystem and `.env` side-effect adapters for Stream Weaver GitOps."""
 
-from __future__ import annotations
-
 import json
 import os
 from collections.abc import Mapping
@@ -11,7 +9,7 @@ from typing import Any
 from stream_weaver.core.errors import StorageError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.secrets import merge_env_text, parse_env_text
-from stream_weaver.core.types import JsonDict
+from stream_weaver.core.types import JsonDict, is_json_dict
 
 
 def load_env_file(env_path: Path) -> dict[str, str]:
@@ -48,7 +46,7 @@ def read_json_file(path: Path) -> Result[JsonDict, StorageError]:
     except (OSError, json.JSONDecodeError) as exc:
         return Err(StorageError(message=f"Failed to read JSON from {path}: {exc}", path=str(path)))
 
-    if not isinstance(parsed, dict):
+    if not is_json_dict(parsed):
         return Err(StorageError(message=f"Expected JSON object in {path}", path=str(path)))
     return Ok(parsed)
 

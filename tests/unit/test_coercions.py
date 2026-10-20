@@ -1,7 +1,5 @@
 """Unit tests for config normalizers and AIOManager dehydration/rehydration."""
 
-from __future__ import annotations
-
 from typing import Any
 
 from stream_weaver.core.coercions import (
