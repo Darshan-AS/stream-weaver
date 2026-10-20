@@ -58,6 +58,58 @@ class ArchitectureBundle:
     architecture_markdown: str
 
 
+@dataclass(frozen=True, slots=True)
+class CollectionSnapshot:
+    """Normalized Nuvio Home Collection metadata shared by LikeC4 and Markdown compilers."""
+
+    raw_id: str
+    c4_id: str
+    title: str
+    view_mode: str
+    folder_titles: tuple[str, ...]
+    feeding_addon_ids: tuple[str, ...]
+    feeding_addon_names: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class TopologySnapshot:
+    """Single-pass normalized snapshot of all declarative AIO configs for architecture compilation."""
+
+    aiomanager: Mapping[str, Any]
+    aiostreams: Mapping[str, Any]
+    aiometadata: Mapping[str, Any]
+    collections: tuple[CollectionSnapshot, ...]
+    total_collection_folders: int
+    as_enabled_services: tuple[Mapping[str, Any], ...]
+    as_all_presets: tuple[Mapping[str, Any], ...]
+    as_enabled_presets: tuple[Mapping[str, Any], ...]
+    group1_ids: frozenset[str]
+    group2_ids: frozenset[str]
+    group2_cond: str
+    g1_presets: tuple[Mapping[str, Any], ...]
+    g2_presets: tuple[Mapping[str, Any], ...]
+    sub_presets: tuple[Mapping[str, Any], ...]
+    am_enabled_catalogs: tuple[Mapping[str, Any], ...]
+    am_home_catalogs: tuple[Mapping[str, Any], ...]
+    am_cats_by_source: Mapping[str, tuple[Mapping[str, Any], ...]]
+    am_movie_provider: str
+    am_series_provider: str
+    am_anime_provider: str
+    am_anime_id_provider: str
+    am_active_engines: tuple[str, ...]
+    am_gemini_search_on: bool
+    am_poster_provider: str
+    am_custom_poster_url: str
+    all_secrets: tuple[str, ...]
+
+
+_ADDON_DISPLAY_NAMES: Mapping[str, str] = {
+    "bingecat": "BingeCat",
+    "aiometadata": "AIOMetadata",
+    "aiostreams": "AIOStreams",
+}
+
+
 def _safe_id(prefix: str, raw: str) -> str:
     cleaned = _IDENT_CLEAN_RE.sub("_", raw.strip()).strip("_").lower()
     if not cleaned:
@@ -126,6 +178,172 @@ def compile_likec4_config() -> str:
     return json.dumps(cfg, indent=2, ensure_ascii=False) + "\n"
 
 
+def build_topology_snapshot(
+    *,
+    aiomanager: Mapping[str, Any],
+    aiostreams: Mapping[str, Any],
+    aiometadata: Mapping[str, Any],
+    nuvio_collections: Mapping[str, Any] | None = None,
+) -> TopologySnapshot:
+    """Pure single-pass normalizer extracting shared topology state from raw service configs."""
+    raw_cols = (
+        nuvio_collections.get("collections", [])
+        if isinstance(nuvio_collections, Mapping)
+        else []
+    )
+    collections: list[CollectionSnapshot] = []
+    total_folders = 0
+    if isinstance(raw_cols, Sequence):
+        for col in raw_cols:
+            if not isinstance(col, Mapping):
+                continue
+            raw_col_id = str(col.get("id") or col.get("title") or "col")
+            col_c4_id = _safe_id("", raw_col_id)
+            col_title = str(col.get("title") or raw_col_id)
+            folders = col.get("folders", [])
+            folder_seq = folders if isinstance(folders, Sequence) else ()
+            total_folders += len(folder_seq)
+            folder_titles = tuple(
+                str(f.get("title") or f.get("id"))
+                for f in folder_seq
+                if isinstance(f, Mapping)
+            )
+            feeding_ids: set[str] = set()
+            for f in folder_seq:
+                if not isinstance(f, Mapping):
+                    continue
+                if f.get("dynamicBingecatLists"):
+                    feeding_ids.add("bingecat")
+                for src in f.get("sources", []):
+                    if not isinstance(src, Mapping):
+                        continue
+                    aid = str(src.get("addonId") or "").lower()
+                    if "aicat" in aid or "bingecat" in aid:
+                        feeding_ids.add("bingecat")
+                    elif "aio-metadata" in aid or "aiometadata" in aid:
+                        feeding_ids.add("aiometadata")
+                    elif "aiostreams" in aid:
+                        feeding_ids.add("aiostreams")
+
+            sorted_ids = tuple(sorted(feeding_ids))
+            sorted_names = tuple(
+                sorted(_ADDON_DISPLAY_NAMES.get(fid, fid) for fid in sorted_ids)
+            )
+            collections.append(
+                CollectionSnapshot(
+                    raw_id=raw_col_id,
+                    c4_id=col_c4_id,
+                    title=col_title,
+                    view_mode=str(col.get("viewMode", "TABBED_GRID")),
+                    folder_titles=folder_titles,
+                    feeding_addon_ids=sorted_ids,
+                    feeding_addon_names=sorted_names,
+                )
+            )
+
+    raw_services = aiostreams.get("services", [])
+    as_enabled_services = tuple(
+        s
+        for s in (raw_services if isinstance(raw_services, Sequence) else ())
+        if isinstance(s, Mapping) and s.get("enabled", True)
+    )
+    raw_presets = aiostreams.get("presets", [])
+    as_all_presets = tuple(
+        p
+        for p in (raw_presets if isinstance(raw_presets, Sequence) else ())
+        if isinstance(p, Mapping)
+    )
+    as_enabled_presets = tuple(p for p in as_all_presets if p.get("enabled", True))
+
+    as_groups = aiostreams.get("groups", {})
+    groupings = as_groups.get("groupings", []) if isinstance(as_groups, Mapping) else []
+    g1_ids: set[str] = set()
+    g2_ids: set[str] = set()
+    group2_cond = "count(cached(totalStreams)) < 3"
+    if isinstance(groupings, Sequence):
+        if len(groupings) >= 1 and isinstance(groupings[0], Mapping):
+            g1_ids = {str(x) for x in groupings[0].get("addons", [])}
+        if len(groupings) >= 2 and isinstance(groupings[1], Mapping):
+            g2_ids = {str(x) for x in groupings[1].get("addons", [])}
+            group2_cond = str(groupings[1].get("condition") or group2_cond)
+
+    g1_presets: list[Mapping[str, Any]] = []
+    g2_presets: list[Mapping[str, Any]] = []
+    sub_presets: list[Mapping[str, Any]] = []
+    for preset in as_all_presets:
+        inst_id = str(preset.get("instanceId") or preset.get("type") or "plugin")
+        if inst_id in g1_ids:
+            g1_presets.append(preset)
+        elif inst_id in g2_ids:
+            g2_presets.append(preset)
+        else:
+            sub_presets.append(preset)
+
+    raw_am_cats = aiometadata.get("catalogs", [])
+    am_enabled_catalogs = tuple(
+        c
+        for c in (raw_am_cats if isinstance(raw_am_cats, Sequence) else ())
+        if isinstance(c, Mapping) and c.get("enabled", True)
+    )
+    am_home_catalogs = tuple(c for c in am_enabled_catalogs if c.get("showInHome", False))
+
+    cats_by_source_mut: dict[str, list[Mapping[str, Any]]] = {}
+    for c in am_enabled_catalogs:
+        src_key = str(c.get("source") or "other")
+        cats_by_source_mut.setdefault(src_key, []).append(c)
+    am_cats_by_source = {k: tuple(v) for k, v in cats_by_source_mut.items()}
+
+    am_providers = aiometadata.get("providers", {})
+    prov_map = am_providers if isinstance(am_providers, Mapping) else {}
+    am_search = aiometadata.get("search", {})
+    engine_enabled = (
+        am_search.get("engineEnabled", {}) if isinstance(am_search, Mapping) else {}
+    )
+    eng_map = engine_enabled if isinstance(engine_enabled, Mapping) else {}
+    active_engines = tuple(str(k) for k, v in eng_map.items() if v)
+    gemini_search_on = bool(eng_map.get("gemini.search", False))
+
+    all_secrets = tuple(
+        sorted(
+            {
+                *_extract_secret_names(aiomanager),
+                *_extract_secret_names(aiostreams),
+                *_extract_secret_names(aiometadata),
+                *(_extract_secret_names(nuvio_collections) if nuvio_collections else ()),
+            }
+        )
+    )
+
+    return TopologySnapshot(
+        aiomanager=aiomanager,
+        aiostreams=aiostreams,
+        aiometadata=aiometadata,
+        collections=tuple(collections),
+        total_collection_folders=total_folders,
+        as_enabled_services=as_enabled_services,
+        as_all_presets=as_all_presets,
+        as_enabled_presets=as_enabled_presets,
+        group1_ids=frozenset(g1_ids),
+        group2_ids=frozenset(g2_ids),
+        group2_cond=group2_cond,
+        g1_presets=tuple(g1_presets),
+        g2_presets=tuple(g2_presets),
+        sub_presets=tuple(sub_presets),
+        am_enabled_catalogs=am_enabled_catalogs,
+        am_home_catalogs=am_home_catalogs,
+        am_cats_by_source=am_cats_by_source,
+        am_movie_provider=str(prov_map.get("movie", "tmdb")),
+        am_series_provider=str(prov_map.get("series", "tmdb")),
+        am_anime_provider=str(prov_map.get("anime", "tvdb")),
+        am_anime_id_provider=str(prov_map.get("anime_id_provider", "kitsu")),
+        am_active_engines=active_engines,
+        am_gemini_search_on=gemini_search_on,
+        am_poster_provider=str(aiometadata.get("posterRatingProvider") or "rpdb"),
+        am_custom_poster_url=str(aiometadata.get("customPosterUrlPattern") or ""),
+        all_secrets=all_secrets,
+    )
+
+
 def compile_architecture_bundle(
     *,
     aiomanager: Mapping[str, Any],
@@ -139,32 +357,23 @@ def compile_architecture_bundle(
     2. `architecture/likec4.config.json`
     3. `ARCHITECTURE.md` (GitHub-native Mermaid summary + inventory tables)
     """
-    dsl = _build_likec4_dsl(
-        aiomanager=aiomanager,
-        aiostreams=aiostreams,
-        aiometadata=aiometadata,
-        nuvio_collections=nuvio_collections,
-    )
-    md = _build_architecture_markdown(
+    snapshot = build_topology_snapshot(
         aiomanager=aiomanager,
         aiostreams=aiostreams,
         aiometadata=aiometadata,
         nuvio_collections=nuvio_collections,
     )
     return ArchitectureBundle(
-        likec4_dsl=dsl,
+        likec4_dsl=_build_likec4_dsl(snapshot),
         likec4_config_json=compile_likec4_config(),
-        architecture_markdown=md,
+        architecture_markdown=_build_architecture_markdown(snapshot),
     )
 
 
-def _build_likec4_dsl(
-    *,
-    aiomanager: Mapping[str, Any],
-    aiostreams: Mapping[str, Any],
-    aiometadata: Mapping[str, Any],
-    nuvio_collections: Mapping[str, Any] | None,
-) -> str:
+def _build_likec4_dsl(snap: TopologySnapshot) -> str:
+    aiomanager = snap.aiomanager
+    aiostreams = snap.aiostreams
+    aiometadata = snap.aiometadata
     lines: list[str] = []
     relationships: list[str] = []
 
@@ -448,11 +657,6 @@ def _build_likec4_dsl(
     mgr_accounts = aiomanager.get("accounts")
     mgr_vault = aiomanager.get("vault")
     mgr_failover = aiomanager.get("failover")
-    cols_list = (
-        nuvio_collections.get("collections", [])
-        if isinstance(nuvio_collections, Mapping)
-        else []
-    )
 
     lines.extend(
         [
@@ -532,11 +736,9 @@ def _build_likec4_dsl(
                 elif "cinemeta" in lower_name:
                     add_rel(f"aiomanager.{acc_id}", "cinemeta", "Applies Cinemeta catalog/search overrides")
 
-    if isinstance(cols_list, Sequence) and cols_list:
-        col_count = len(cols_list)
-        folder_count = sum(
-            len(c.get("folders", [])) for c in cols_list if isinstance(c, Mapping)
-        )
+    if snap.collections:
+        col_count = len(snap.collections)
+        folder_count = snap.total_collection_folders
         lines.extend(
             [
                 "    subsystem nuvio_collections 'Nuvio Home Collections Compiler' {",
@@ -545,60 +747,35 @@ def _build_likec4_dsl(
                 "      technology 'configs/nuvio_collections.json'",
             ]
         )
-        for col in cols_list:
-            if not isinstance(col, Mapping):
-                continue
-            raw_col_id = str(col.get("id") or col.get("title") or "col")
-            col_c4_id = _safe_id("", raw_col_id)
-            col_title = str(col.get("title") or raw_col_id)
-            folders = col.get("folders", [])
-            folder_titles = [
-                str(f.get("title") or f.get("id"))
-                for f in (folders if isinstance(folders, Sequence) else ())
-                if isinstance(f, Mapping)
-            ]
-            # Discover which addons feed this collection
-            feeding_addons: set[str] = set()
-            for f in (folders if isinstance(folders, Sequence) else ()):
-                if not isinstance(f, Mapping):
-                    continue
-                if f.get("dynamicBingecatLists"):
-                    feeding_addons.add("bingecat")
-                for src in f.get("sources", []):
-                    if not isinstance(src, Mapping):
-                        continue
-                    aid = str(src.get("addonId") or "").lower()
-                    if "aicat" in aid or "bingecat" in aid:
-                        feeding_addons.add("bingecat")
-                    elif "aio-metadata" in aid or "aiometadata" in aid:
-                        feeding_addons.add("aiometadata")
-                    elif "aiostreams" in aid:
-                        feeding_addons.add("aiostreams")
-
+        for col in snap.collections:
             lines.extend(
                 [
-                    f"      plugin {col_c4_id} '{_escape_c4_str(col_title)} ({len(folder_titles)} folders)' {{",
+                    f"      plugin {col.c4_id} '{_escape_c4_str(col.title)} ({len(col.folder_titles)} folders)' {{",
                     "        #enabled #catalog",
-                    f"        description 'Folders: {_escape_c4_str(', '.join(folder_titles))}'",
-                    f"        technology 'View: {_escape_c4_str(str(col.get('viewMode', 'TABBED_GRID')))}'",
+                    f"        description 'Folders: {_escape_c4_str(', '.join(col.folder_titles))}'",
+                    f"        technology 'View: {_escape_c4_str(col.view_mode)}'",
                     *_emit_metadata_block(
                         "        ",
                         {
-                            "collection_id": raw_col_id,
-                            "folder_count": str(len(folder_titles)),
-                            "folders": ", ".join(folder_titles),
-                            "upstream_addons": ", ".join(sorted(feeding_addons)),
+                            "collection_id": col.raw_id,
+                            "folder_count": str(len(col.folder_titles)),
+                            "folders": ", ".join(col.folder_titles),
+                            "upstream_addons": ", ".join(col.feeding_addon_ids),
                         },
                     ),
                     "      }",
                 ]
             )
-            add_rel(f"aiomanager.nuvio_collections.{col_c4_id}", "nuvio", f"Renders {len(folder_titles)} tabbed folders")
-            for target_addon in sorted(feeding_addons):
+            add_rel(
+                f"aiomanager.nuvio_collections.{col.c4_id}",
+                "nuvio",
+                f"Renders {len(col.folder_titles)} tabbed folders",
+            )
+            for target_addon in col.feeding_addon_ids:
                 add_rel(
-                    f"aiomanager.nuvio_collections.{col_c4_id}",
+                    f"aiomanager.nuvio_collections.{col.c4_id}",
                     target_addon,
-                    f"Pulls catalog rows for {col_title}",
+                    f"Pulls catalog rows for {col.title}",
                     tag="catalog",
                 )
 
@@ -637,20 +814,11 @@ def _build_likec4_dsl(
     # -------------------------------------------------------------------------
     # 5. AIOStreams Container & Nested Scraper Groups
     # -------------------------------------------------------------------------
-    as_services = aiostreams.get("services", [])
-    as_presets = aiostreams.get("presets", [])
-    as_groups = aiostreams.get("groups", {})
-    groupings = as_groups.get("groupings", []) if isinstance(as_groups, Mapping) else []
-
-    group1_ids: set[str] = set()
-    group2_ids: set[str] = set()
-    group2_cond = "count(cached(totalStreams)) < 3"
-    if isinstance(groupings, Sequence):
-        if len(groupings) >= 1 and isinstance(groupings[0], Mapping):
-            group1_ids = {str(x) for x in groupings[0].get("addons", [])}
-        if len(groupings) >= 2 and isinstance(groupings[1], Mapping):
-            group2_ids = {str(x) for x in groupings[1].get("addons", [])}
-            group2_cond = str(groupings[1].get("condition") or group2_cond)
+    group1_ids = snap.group1_ids
+    group2_cond = snap.group2_cond
+    g1_presets = snap.g1_presets
+    g2_presets = snap.g2_presets
+    sub_presets = snap.sub_presets
 
     pref_res = ", ".join(str(x) for x in aiostreams.get("preferredResolutions", [])[:5])
     req_langs = ", ".join(str(x) for x in aiostreams.get("requiredLanguages", []))
@@ -702,47 +870,27 @@ def _build_likec4_dsl(
         add_rel("aiostreams.sel_engine", "rpdb_srv", "Rewrites catalog posters with rating badges", tech="SECRET_RPDB_API_KEY")
 
     active_debrid_ids: list[str] = []
-    if isinstance(as_services, Sequence):
-        for svc in as_services:
-            if not isinstance(svc, Mapping) or not svc.get("enabled", True):
-                continue
-            svc_raw_id = str(svc.get("id") or "debrid")
-            svc_c4_id = _safe_id("svc", svc_raw_id)
-            active_debrid_ids.append(svc_c4_id)
-            lines.extend(
-                [
-                    f"    subsystem {svc_c4_id} 'Debrid Service: {_escape_c4_str(svc_raw_id.capitalize())}' {{",
-                    "      #enabled #debrid",
-                    "      description 'Instant cache verification, magnet/usenet resolution & Precache Next Episode'",
-                    f"      technology '{_escape_c4_str(svc_raw_id)}'",
-                    "    }",
-                ]
+    for svc in snap.as_enabled_services:
+        svc_raw_id = str(svc.get("id") or "debrid")
+        svc_c4_id = _safe_id("svc", svc_raw_id)
+        active_debrid_ids.append(svc_c4_id)
+        lines.extend(
+            [
+                f"    subsystem {svc_c4_id} 'Debrid Service: {_escape_c4_str(svc_raw_id.capitalize())}' {{",
+                "      #enabled #debrid",
+                "      description 'Instant cache verification, magnet/usenet resolution & Precache Next Episode'",
+                f"      technology '{_escape_c4_str(svc_raw_id)}'",
+                "    }",
+            ]
+        )
+        if svc_raw_id.lower() == "torbox":
+            add_rel(
+                f"aiostreams.{svc_c4_id}",
+                "torbox_srv",
+                "Checks instant cache & resolves debrid/usenet playback links",
+                tech="SECRET_TORBOX_API_KEY",
+                tag="debrid",
             )
-            if svc_raw_id.lower() == "torbox":
-                add_rel(
-                    f"aiostreams.{svc_c4_id}",
-                    "torbox_srv",
-                    "Checks instant cache & resolves debrid/usenet playback links",
-                    tech="SECRET_TORBOX_API_KEY",
-                    tag="debrid",
-                )
-
-    # Partition presets into their nested containers: group1_primary, group2_fallback, subtitle_addons
-    g1_presets: list[Mapping[str, Any]] = []
-    g2_presets: list[Mapping[str, Any]] = []
-    sub_presets: list[Mapping[str, Any]] = []
-
-    if isinstance(as_presets, Sequence):
-        for preset in as_presets:
-            if not isinstance(preset, Mapping):
-                continue
-            inst_id = str(preset.get("instanceId") or preset.get("type") or "plugin")
-            if inst_id in group1_ids:
-                g1_presets.append(preset)
-            elif inst_id in group2_ids:
-                g2_presets.append(preset)
-            else:
-                sub_presets.append(preset)
 
     def _emit_nested_preset(parent_fqn: str, preset: Mapping[str, Any], group_desc: str) -> None:
         enabled = bool(preset.get("enabled", True))
@@ -856,40 +1004,17 @@ def _build_likec4_dsl(
     # -------------------------------------------------------------------------
     # 6. AIOMetadata Container & Internal Engines/Catalogs/Search
     # -------------------------------------------------------------------------
-    am_providers = aiometadata.get("providers", {})
-    am_search = aiometadata.get("search", {})
-    am_catalogs = aiometadata.get("catalogs", [])
-    am_poster_provider = str(aiometadata.get("posterRatingProvider") or "rpdb")
-    am_custom_poster_url = str(aiometadata.get("customPosterUrlPattern") or "")
-
-    enabled_catalogs = [
-        c for c in am_catalogs if isinstance(c, Mapping) and c.get("enabled", True)
-    ]
-    home_catalogs = [c for c in enabled_catalogs if c.get("showInHome", False)]
-
-    cats_by_source: dict[str, list[Mapping[str, Any]]] = {}
-    for c in enabled_catalogs:
-        src = str(c.get("source") or "other")
-        cats_by_source.setdefault(src, []).append(c)
-
-    movie_prov = str(am_providers.get("movie", "tmdb")) if isinstance(am_providers, Mapping) else "tmdb"
-    series_prov = str(am_providers.get("series", "tmdb")) if isinstance(am_providers, Mapping) else "tmdb"
-    anime_prov = str(am_providers.get("anime", "tvdb")) if isinstance(am_providers, Mapping) else "tvdb"
-    anime_id_prov = (
-        str(am_providers.get("anime_id_provider", "kitsu"))
-        if isinstance(am_providers, Mapping)
-        else "kitsu"
-    )
-
-    engine_enabled = (
-        am_search.get("engineEnabled", {}) if isinstance(am_search, Mapping) else {}
-    )
-    active_engines = [
-        str(k) for k, v in (engine_enabled.items() if isinstance(engine_enabled, Mapping) else ()) if v
-    ]
-    gemini_search_on = bool(
-        isinstance(engine_enabled, Mapping) and engine_enabled.get("gemini.search", False)
-    )
+    enabled_catalogs = snap.am_enabled_catalogs
+    home_catalogs = snap.am_home_catalogs
+    cats_by_source = snap.am_cats_by_source
+    movie_prov = snap.am_movie_provider
+    series_prov = snap.am_series_provider
+    anime_prov = snap.am_anime_provider
+    anime_id_prov = snap.am_anime_id_provider
+    active_engines = snap.am_active_engines
+    gemini_search_on = snap.am_gemini_search_on
+    am_poster_provider = snap.am_poster_provider
+    am_custom_poster_url = snap.am_custom_poster_url
     gemini_tag = "enabled" if gemini_search_on else "disabled"
 
     lines.extend(
@@ -1038,14 +1163,7 @@ def _build_likec4_dsl(
     # -------------------------------------------------------------------------
     # 7. Secret Keys (.env & Vault Credential Blast Radius)
     # -------------------------------------------------------------------------
-    all_secrets = sorted(
-        {
-            *_extract_secret_names(aiomanager),
-            *_extract_secret_names(aiostreams),
-            *_extract_secret_names(aiometadata),
-            *(_extract_secret_names(nuvio_collections) if nuvio_collections else ()),
-        }
-    )
+    all_secrets = snap.all_secrets
 
     lines.extend(
         [
@@ -1331,51 +1449,16 @@ def _build_likec4_dsl(
     return "\n".join(lines)
 
 
-def _build_architecture_markdown(
-    *,
-    aiomanager: Mapping[str, Any],
-    aiostreams: Mapping[str, Any],
-    aiometadata: Mapping[str, Any],
-    nuvio_collections: Mapping[str, Any] | None,
-) -> str:
+def _build_architecture_markdown(snap: TopologySnapshot) -> str:
     """Builds a GitHub-native Markdown architecture overview synchronized with `architecture/topology.c4`."""
-    as_presets = [
-        p for p in aiostreams.get("presets", []) if isinstance(p, Mapping) and p.get("enabled", True)
-    ]
-    as_services = [
-        s for s in aiostreams.get("services", []) if isinstance(s, Mapping) and s.get("enabled", True)
-    ]
-    as_groups = aiostreams.get("groups", {})
-    groupings = as_groups.get("groupings", []) if isinstance(as_groups, Mapping) else []
-    group1_ids = (
-        {str(x) for x in groupings[0].get("addons", [])}
-        if isinstance(groupings, Sequence) and len(groupings) >= 1 and isinstance(groupings[0], Mapping)
-        else set()
-    )
-    group2_ids = (
-        {str(x) for x in groupings[1].get("addons", [])}
-        if isinstance(groupings, Sequence) and len(groupings) >= 2 and isinstance(groupings[1], Mapping)
-        else set()
-    )
-    group2_cond = (
-        str(groupings[1].get("condition", "count(cached(totalStreams)) < 3"))
-        if isinstance(groupings, Sequence) and len(groupings) >= 2 and isinstance(groupings[1], Mapping)
-        else "count(cached(totalStreams)) < 3"
-    )
-
-    am_catalogs = [
-        c for c in aiometadata.get("catalogs", []) if isinstance(c, Mapping) and c.get("enabled", True)
-    ]
-    am_home_catalogs = [c for c in am_catalogs if c.get("showInHome", False)]
-    am_search = aiometadata.get("search", {})
-    engine_enabled = (
-        am_search.get("engineEnabled", {}) if isinstance(am_search, Mapping) else {}
-    )
-    cols_list = (
-        nuvio_collections.get("collections", [])
-        if isinstance(nuvio_collections, Mapping)
-        else []
-    )
+    as_presets = snap.as_enabled_presets
+    as_services = snap.as_enabled_services
+    group1_ids = snap.group1_ids
+    group2_ids = snap.group2_ids
+    group2_cond = snap.group2_cond
+    am_catalogs = snap.am_enabled_catalogs
+    am_home_catalogs = snap.am_home_catalogs
+    cols_list = snap.collections
 
     md_lines: list[str] = [
         "# Stream Weaver — Live System Architecture & Topology",
@@ -1559,17 +1642,12 @@ def _build_architecture_markdown(
     # -------------------------------------------------------------------------
     # 3. AIOMetadata Internal Providers & External APIs
     # -------------------------------------------------------------------------
-    cats_by_src: dict[str, int] = {}
-    home_by_src: dict[str, int] = {}
-    for c in am_catalogs:
-        s = str(c.get("source") or "other")
-        cats_by_src[s] = cats_by_src.get(s, 0) + 1
-        if c.get("showInHome", False):
-            home_by_src[s] = home_by_src.get(s, 0) + 1
-
-    active_search_engines = [
-        k for k, v in (engine_enabled.items() if isinstance(engine_enabled, Mapping) else ()) if v
-    ]
+    cats_by_src = {k: len(v) for k, v in snap.am_cats_by_source.items()}
+    home_by_src = {
+        k: sum(1 for c in v if c.get("showInHome", False))
+        for k, v in snap.am_cats_by_source.items()
+    }
+    active_search_engines = snap.am_active_engines
 
     md_lines.extend(
         [
@@ -1617,34 +1695,8 @@ def _build_architecture_markdown(
     )
 
     for col in cols_list:
-        if not isinstance(col, Mapping):
-            continue
-        cid = str(col.get("id") or "")
-        ctitle = str(col.get("title") or cid)
-        folders = col.get("folders", [])
-        f_names = [
-            str(f.get("title") or f.get("id"))
-            for f in (folders if isinstance(folders, Sequence) else ())
-            if isinstance(f, Mapping)
-        ]
-        feeding: set[str] = set()
-        for f in (folders if isinstance(folders, Sequence) else ()):
-            if not isinstance(f, Mapping):
-                continue
-            if f.get("dynamicBingecatLists"):
-                feeding.add("BingeCat")
-            for src in f.get("sources", []):
-                if not isinstance(src, Mapping):
-                    continue
-                aid = str(src.get("addonId") or "").lower()
-                if "aicat" in aid or "bingecat" in aid:
-                    feeding.add("BingeCat")
-                elif "aio-metadata" in aid or "aiometadata" in aid:
-                    feeding.add("AIOMetadata")
-                elif "aiostreams" in aid:
-                    feeding.add("AIOStreams")
         md_lines.append(
-            f"| `{cid}` | **{ctitle}** ({len(f_names)}) | {', '.join(f_names)} | {', '.join(sorted(feeding))} |"
+            f"| `{col.raw_id}` | **{col.title}** ({len(col.folder_titles)}) | {', '.join(col.folder_titles)} | {', '.join(col.feeding_addon_names)} |"
         )
 
     md_lines.append("")

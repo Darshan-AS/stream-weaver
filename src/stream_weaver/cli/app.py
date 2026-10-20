@@ -275,24 +275,25 @@ def cmd_config_pull(
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
     root_dir, env_path, configs_dir, env = _resolve_paths()
-    services = build_config_services(HttpxClient())
     working_env = dict(env)
 
-    for svc_id in _resolve_service_targets(target):
-        match _pull_service(
-            svc_id, working_env, env_path=env_path, configs_dir=configs_dir, services=services
-        ):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok((None, working_env)):
-                console.print(f"⏭️  [{svc_id}] Skipping pull: missing URL, UUID, or password in .env")
-            case Ok((saved_path, working_env)):
-                assert saved_path is not None
-                uid = working_env.get(f"{svc_id.upper()}_UUID", "")
-                console.print(
-                    f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
-                )
+    with HttpxClient() as http_client:
+        services = build_config_services(http_client)
+        for svc_id in _resolve_service_targets(target):
+            match _pull_service(
+                svc_id, working_env, env_path=env_path, configs_dir=configs_dir, services=services
+            ):
+                case Err(err):
+                    err_console.print(f"❌ {err}")
+                    raise typer.Exit(code=1)
+                case Ok((None, working_env)):
+                    console.print(f"⏭️  [{svc_id}] Skipping pull: missing URL, UUID, or password in .env")
+                case Ok((saved_path, working_env)):
+                    assert saved_path is not None
+                    uid = working_env.get(f"{svc_id.upper()}_UUID", "")
+                    console.print(
+                        f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
+                    )
 
     match _sync_architecture_diagrams(root_dir, configs_dir):
         case Ok():
@@ -315,33 +316,34 @@ def cmd_config_push(
 ) -> None:
     """Inject secrets from .env and push local configs/ to remote servers."""
     root_dir, env_path, configs_dir, env = _resolve_paths()
-    services = build_config_services(HttpxClient())
     working_env = dict(env)
 
-    for svc_id in _resolve_service_targets(target):
-        match _push_service(
-            svc_id,
-            working_env,
-            env_path=env_path,
-            configs_dir=configs_dir,
-            services=services,
-            create=create,
-        ):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok((None, working_env)):
-                console.print(f"⏭️  [{svc_id}] Skipping push: missing config file or credentials in .env")
-            case Ok((outcome, working_env)):
-                assert outcome is not None
-                if outcome.created:
-                    console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
-                    if outcome.install_url:
-                        console.print(f"🔗 [{svc_id}] Install URL: {outcome.install_url}")
-                else:
-                    console.print(f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place")
-                for client_msg in outcome.synced_clients:
-                    console.print(f"✅ {client_msg}")
+    with HttpxClient() as http_client:
+        services = build_config_services(http_client)
+        for svc_id in _resolve_service_targets(target):
+            match _push_service(
+                svc_id,
+                working_env,
+                env_path=env_path,
+                configs_dir=configs_dir,
+                services=services,
+                create=create,
+            ):
+                case Err(err):
+                    err_console.print(f"❌ {err}")
+                    raise typer.Exit(code=1)
+                case Ok((None, working_env)):
+                    console.print(f"⏭️  [{svc_id}] Skipping push: missing config file or credentials in .env")
+                case Ok((outcome, working_env)):
+                    assert outcome is not None
+                    if outcome.created:
+                        console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
+                        if outcome.install_url:
+                            console.print(f"🔗 [{svc_id}] Install URL: {outcome.install_url}")
+                    else:
+                        console.print(f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place")
+                    for client_msg in outcome.synced_clients:
+                        console.print(f"✅ {client_msg}")
 
     match _sync_architecture_diagrams(root_dir, configs_dir):
         case Ok():
@@ -443,7 +445,8 @@ def cmd_config_warm(
         case Ok(injected_cfg):
             pass
 
-    warmed, total = warm_home_catalogs(injected_cfg, HttpxClient(), max_workers=workers)
+    with HttpxClient() as http_client:
+        warmed, total = warm_home_catalogs(injected_cfg, http_client, max_workers=workers)
     console.print(f"🔥 [warm] Pre-warmed {warmed}/{total} Home catalog rows")
 
 
