@@ -318,11 +318,15 @@ class AIOManagerService:
                 return dehydrate_aiomanager(decrypted_state)
 
     def _refresh_manifests(self, state: JsonDict) -> JsonDict:
-        """Fetches fresh `manifest.json` for AIOMetadata, AIOStreams, and Watchly."""
+        """Concurrently fetches fresh `manifest.json` for AIOMetadata, AIOStreams, BingeCat, Contraband, and Watchly."""
         updated = copy.deepcopy(state)
         accounts = updated.get("accounts")
         if not isinstance(accounts, list):
             return updated
+
+        refresh_targets: list[tuple[dict[str, Any], str, str]] = []
+        unique_urls: list[str] = []
+        seen_urls: set[str] = set()
 
         for acc in accounts:
             if not isinstance(acc, dict) or not isinstance(acc.get("addons"), list):
@@ -336,39 +340,61 @@ class AIOManagerService:
                 t_url = str(a.get("transportUrl", "")).rstrip("/")
                 if not t_url:
                     continue
-                if mid in ("aio-metadata", "com.elfhosted.watchly") or mid.startswith(
-                    ("aiostreams", "com.aicat.", "addon.aiometadata")
-                ):
+                if mid in (
+                    "aio-metadata",
+                    "com.elfhosted.watchly",
+                    "dev.darshanas.contraband",
+                ) or mid.startswith(("aiostreams", "com.aicat.", "addon.aiometadata")):
                     m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
-                    match self._http.request_json("GET", m_url, timeout=15.0):
-                        case Ok(resp) if (
-                            resp.status_code == 200
-                            and isinstance(resp.data, dict)
-                            and resp.data.get("id")
-                        ):
-                            mf = sanitize_manifest_home_catalogs(dict(resp.data))
-                            if mid == "com.linvo.cinemeta":
-                                mf["catalogs"] = []
-                            a["manifest"] = mf
-                            ver = str(mf.get("version", "1.0.0"))
-                            manifest_id = f"{mf['id']}:{ver}"
-                            a["manifestId"] = manifest_id
-                            manifests_dict = updated.setdefault("manifests", {})
-                            if isinstance(manifests_dict, dict):
-                                manifests_dict[manifest_id] = mf
-                            addons_sec = updated.get("addons")
-                            if isinstance(addons_sec, dict) and isinstance(
-                                addons_sec.get("savedAddons"), list
-                            ):
-                                for sa in addons_sec["savedAddons"]:
-                                    if (
-                                        isinstance(sa, dict)
-                                        and isinstance(sa.get("manifest"), dict)
-                                        and sa["manifest"].get("id") == mf["id"]
-                                    ):
-                                        sa["manifest"] = copy.deepcopy(mf)
-                        case _:
-                            continue
+                    refresh_targets.append((a, mid, m_url))
+                    if m_url not in seen_urls:
+                        seen_urls.add(m_url)
+                        unique_urls.append(m_url)
+
+        if not unique_urls:
+            return updated
+
+        def _fetch_manifest(url: str) -> tuple[str, dict[str, Any] | None]:
+            match self._http.request_json("GET", url, timeout=15.0):
+                case Ok(resp) if (
+                    resp.status_code == 200
+                    and isinstance(resp.data, dict)
+                    and resp.data.get("id")
+                ):
+                    return url, dict(resp.data)
+                case _:
+                    return url, None
+
+        fetched_by_url: dict[str, dict[str, Any]] = {}
+        max_workers = min(6, len(unique_urls))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+            for url, mf_data in pool.map(_fetch_manifest, unique_urls):
+                if mf_data is not None:
+                    fetched_by_url[url] = mf_data
+
+        for a, mid, m_url in refresh_targets:
+            raw_fetched = fetched_by_url.get(m_url)
+            if raw_fetched is None:
+                continue
+            mf = sanitize_manifest_home_catalogs(copy.deepcopy(raw_fetched))
+            if mid == "com.linvo.cinemeta":
+                mf["catalogs"] = []
+            a["manifest"] = mf
+            ver = str(mf.get("version", "1.0.0"))
+            manifest_id = f"{mf['id']}:{ver}"
+            a["manifestId"] = manifest_id
+            manifests_dict = updated.setdefault("manifests", {})
+            if isinstance(manifests_dict, dict):
+                manifests_dict[manifest_id] = mf
+            addons_sec = updated.get("addons")
+            if isinstance(addons_sec, dict) and isinstance(addons_sec.get("savedAddons"), list):
+                for sa in addons_sec["savedAddons"]:
+                    if (
+                        isinstance(sa, dict)
+                        and isinstance(sa.get("manifest"), dict)
+                        and sa["manifest"].get("id") == mf["id"]
+                    ):
+                        sa["manifest"] = copy.deepcopy(mf)
         return updated
 
     def push_remote(
@@ -414,6 +440,7 @@ class AIOManagerService:
         synced_summaries: list[str] = []
         discovered_secrets: dict[str, str] = {}
 
+        sync_tasks: list[tuple[ClientSyncProtocol, dict[str, Any], dict[str, Any]]] = []
         accounts = refreshed.get("accounts")
         if isinstance(accounts, list):
             for acc in accounts:
@@ -425,12 +452,21 @@ class AIOManagerService:
                     plat = str(conn.get("platform") or "").lower()
                     syncer = self._client_syncers.get(plat)
                     if syncer is not None:
-                        match syncer.sync_account(acc, conn, password, salt_b64, env):
-                            case Ok((msg, new_secrets)):
-                                synced_summaries.append(msg)
-                                discovered_secrets.update(new_secrets)
-                            case Err():
-                                continue
+                        sync_tasks.append((syncer, acc, conn))
+
+        if sync_tasks:
+            def _run_client_sync(
+                task: tuple[ClientSyncProtocol, dict[str, Any], dict[str, Any]],
+            ) -> Result[tuple[str, dict[str, str]]]:
+                syncer_item, acc_item, conn_item = task
+                return syncer_item.sync_account(acc_item, conn_item, password, salt_b64, env)
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sync_tasks)) as pool:
+                for sync_res in pool.map(_run_client_sync, sync_tasks):
+                    if isinstance(sync_res, Ok):
+                        msg, new_secrets = sync_res.value
+                        synced_summaries.append(msg)
+                        discovered_secrets.update(new_secrets)
 
         warmed, total = warm_home_catalogs(refreshed, self._http)
         if total > 0:
