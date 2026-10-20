@@ -22,13 +22,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: Verify architecture topology is in sync with configs/*.json
+        env:
+          PYTHONPATH: src
         run: |
-          uv sync --no-lock --default-index https://pypi.org/simple
-          uv run --no-lock sw diagram --check
+          python3 -c '
+          import json
+          from pathlib import Path
+          from stream_weaver.core.architecture import compile_architecture_bundle
+          bundle = compile_architecture_bundle(
+              aiomanager=json.loads(Path("configs/aiomanager.json").read_text(encoding="utf-8")),
+              aiostreams=json.loads(Path("configs/aiostreams.json").read_text(encoding="utf-8")),
+              aiometadata=json.loads(Path("configs/aiometadata.json").read_text(encoding="utf-8")),
+              nuvio_collections=json.loads(Path("configs/nuvio_collections.json").read_text(encoding="utf-8")),
+          )
+          assert Path("architecture/topology.c4").read_text(encoding="utf-8") == bundle.likec4_dsl, "topology.c4 is out of sync"
+          assert Path("ARCHITECTURE.md").read_text(encoding="utf-8") == bundle.architecture_markdown, "ARCHITECTURE.md is out of sync"
+          print("✅ LikeC4 topology & ARCHITECTURE.md are in sync with configs/*.json")
+          '
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
