@@ -27,8 +27,8 @@ jobs:
 
       - name: Verify architecture topology is in sync with configs/*.json
         run: |
-          uv sync --frozen
-          uv run sw diagram --check
+          uv sync --no-lock --default-index https://pypi.org/simple
+          uv run --no-lock sw diagram --check
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
