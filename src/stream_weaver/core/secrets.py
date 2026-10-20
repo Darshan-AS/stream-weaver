@@ -1,7 +1,5 @@
 """Declarative JSON-path secret lenses and pure `.env` transformations."""
 
-from __future__ import annotations
-
 import copy
 import re
 from collections.abc import Callable, Mapping

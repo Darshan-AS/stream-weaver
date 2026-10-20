@@ -1,7 +1,5 @@
 """Unit and Hypothesis property-based tests for declarative secret lenses and `.env` parsing."""
 
-from __future__ import annotations
-
 from typing import Any
 
 from hypothesis import given

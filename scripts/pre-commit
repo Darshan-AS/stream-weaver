@@ -7,6 +7,10 @@ cd "$REPO_ROOT"
 
 if git diff --cached --name-only | grep -qE '^(configs/.*\.json|src/stream_weaver/core/architecture\.py)$'; then
     echo "🗺️  [pre-commit] Regenerating LikeC4 architecture topology from configs/*.json..."
-    uv run sw diagram
+    if [[ -x ".venv/bin/sw" ]]; then
+        .venv/bin/sw diagram
+    else
+        uv run sw diagram
+    fi
     git add architecture/topology.c4 architecture/likec4.config.json ARCHITECTURE.md
 fi

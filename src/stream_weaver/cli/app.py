@@ -1,7 +1,5 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
-from __future__ import annotations
-
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -13,7 +11,6 @@ from rich.console import Console
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import normalize_service_config
 from stream_weaver.core.crypto import decrypt_envelope
-from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
 from stream_weaver.core.types import (
@@ -72,7 +69,7 @@ def _persist_scrubbed_config(
     *,
     env_path: Path,
     configs_dir: Path,
-) -> Result[tuple[Path, dict[str, str]], StreamWeaverError]:
+) -> Result[tuple[Path, dict[str, str]]]:
     scrubbed_cfg, updated_env = harvest_and_scrub(service, raw_config, env)
     match save_env_updates(env_path, updated_env):
         case Err() as err:
@@ -95,7 +92,7 @@ def _pull_service(
     env_path: Path,
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
-) -> Result[tuple[Path | None, dict[str, str]], StreamWeaverError]:
+) -> Result[tuple[Path | None, dict[str, str]]]:
     svc = services.get(service_id)
     if svc is None or not svc.is_configured_for_pull(env):
         return Ok((None, env))
@@ -117,7 +114,7 @@ def _push_service(
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
     create: bool = False,
-) -> Result[tuple[ServicePushOutcome | None, dict[str, str]], StreamWeaverError]:
+) -> Result[tuple[ServicePushOutcome | None, dict[str, str]]]:
     cfg_path = configs_dir / f"{service_id}.json"
     svc = services.get(service_id)
     if not cfg_path.exists() or svc is None or not svc.is_configured_for_push(env, create=create):
@@ -181,7 +178,7 @@ def _sanitize_service(
     *,
     env_path: Path,
     configs_dir: Path,
-) -> Result[tuple[Path | None, dict[str, str]], StreamWeaverError]:
+) -> Result[tuple[Path | None, dict[str, str]]]:
     cfg_path = configs_dir / f"{service_id}.json"
     if not cfg_path.exists():
         return Ok((None, env))
@@ -228,7 +225,7 @@ def _sync_architecture_diagrams(
     configs_dir: Path,
     *,
     check_only: bool = False,
-) -> Result[tuple[Path, ...], StreamWeaverError]:
+) -> Result[tuple[Path, ...]]:
     """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from `configs/*.json`."""
     bundle = compile_architecture_bundle(
         aiomanager=_load_optional_json(configs_dir / "aiomanager.json"),

@@ -1,7 +1,5 @@
 """Client sync providers (`NuvioClientSync`, `StremioClientSync`) implementing `ClientSyncProtocol`."""
 
-from __future__ import annotations
-
 import copy
 from collections.abc import Mapping
 from typing import Any
@@ -193,7 +191,7 @@ class NuvioClientSync:
         master_password: str,
         salt_b64: str,
         env: EnvMap,
-    ) -> Result[tuple[str, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[str, dict[str, str]]]:
         creds = connection.get("credentials")
         if not isinstance(creds, Mapping) or not creds.get("accessToken"):
             return Err(StreamWeaverError("Nuvio connection has no accessToken."))
@@ -349,7 +347,7 @@ class StremioClientSync:
         master_password: str,
         salt_b64: str,
         env: EnvMap,
-    ) -> Result[tuple[str, dict[str, str]], StreamWeaverError]:
+    ) -> Result[tuple[str, dict[str, str]]]:
         _ = env
         creds = connection.get("credentials")
         if not isinstance(creds, Mapping) or not creds.get("authKey") or not salt_b64:

@@ -1,7 +1,5 @@
 """Unit tests for the pure LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` compiler."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any
 

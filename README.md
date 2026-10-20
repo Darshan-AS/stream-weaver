@@ -13,7 +13,7 @@ It manages:
 
 ## Architecture: Functional Core, Imperative Shell
 
-`stream-weaver` is structured as a lean, strictly typed Python 3.12+ package (`src/stream_weaver/`) managed by `uv`:
+`stream-weaver` is structured as a lean, strictly typed Python 3.14+ package (`src/stream_weaver/`) managed by `uv`:
 
 ```mermaid
 flowchart LR
