@@ -222,6 +222,16 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
         derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
         regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
     ),
+    SecretLens(
+        path=("collections", "*", "folders", "*", "sources", "*", "addonId"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("accounts", "*", "nuvioCollections", "*", "folders", "*", "sources", "*", "addonId"),
+        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
+        regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
 )
 
 SERVICE_LENSES: Mapping[ServiceId, tuple[SecretLens, ...]] = {
