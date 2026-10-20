@@ -1,12 +1,15 @@
 """Pure normalization, dehydration, and rehydration functions for AIO service configs."""
 
 import copy
+import difflib
+import json
 from collections.abc import Mapping
 from typing import Any
 
 from stream_weaver.core.errors import ConfigValidationError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import (
+    ConfigDiffOutcome,
     JsonDict,
     ServiceId,
     is_json_dict,
@@ -239,3 +242,51 @@ def normalize_service_config(
             return normalize_aiometadata(data)
         case "aiomanager":
             return dehydrate_aiomanager(data)
+
+
+def compute_config_diff(
+    local_cfg: Mapping[str, Any],
+    remote_cfg: Mapping[str, Any],
+    *,
+    target: str,
+    context_lines: int = 3,
+) -> ConfigDiffOutcome:
+    """
+    Pure function: compares local and remote scrubbed JSON objects, returning
+    changed top-level keys, added/removed line counts, and a unified diff.
+    """
+    local_dict = dict(local_cfg)
+    remote_dict = dict(remote_cfg)
+    if local_dict == remote_dict:
+        return ConfigDiffOutcome(target=target, in_sync=True)
+
+    all_keys = list(dict.fromkeys([*local_dict.keys(), *remote_dict.keys()]))
+    changed_keys = tuple(k for k in all_keys if local_dict.get(k) != remote_dict.get(k))
+
+    local_lines = (json.dumps(local_dict, indent=2, ensure_ascii=False) + "\n").splitlines(
+        keepends=True
+    )
+    remote_lines = (json.dumps(remote_dict, indent=2, ensure_ascii=False) + "\n").splitlines(
+        keepends=True
+    )
+
+    diff_lines = list(
+        difflib.unified_diff(
+            remote_lines,
+            local_lines,
+            fromfile=f"remote/{target}.json",
+            tofile=f"configs/{target}.json",
+            n=context_lines,
+        )
+    )
+    added = sum(1 for line in diff_lines if line.startswith("+") and not line.startswith("+++"))
+    removed = sum(1 for line in diff_lines if line.startswith("-") and not line.startswith("---"))
+
+    return ConfigDiffOutcome(
+        target=target,
+        in_sync=False,
+        changed_keys=changed_keys,
+        added_lines=added,
+        removed_lines=removed,
+        unified_diff="".join(diff_lines),
+    )

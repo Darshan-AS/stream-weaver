@@ -9,12 +9,13 @@ import typer
 from rich.console import Console
 
 from stream_weaver.core.architecture import compile_architecture_bundle
-from stream_weaver.core.coercions import normalize_service_config
+from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
 from stream_weaver.core.crypto import decrypt_envelope
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
 from stream_weaver.core.types import (
     ALL_SERVICES,
+    ConfigDiffOutcome,
     JsonDict,
     ServiceId,
     ServicePushOutcome,
@@ -104,6 +105,46 @@ def _pull_service(
             return _persist_scrubbed_config(
                 service_id, normalized_cfg, env, env_path=env_path, configs_dir=configs_dir
             )
+
+
+def _diff_service(
+    service_id: ServiceId,
+    env: Mapping[str, str],
+    *,
+    configs_dir: Path,
+    services: Mapping[ServiceId, ConfigServiceProtocol],
+) -> Result[ConfigDiffOutcome | None]:
+    """Pulls remote service config in memory, scrubs secrets, and diffs against `configs/{service_id}.json`."""
+    cfg_path = configs_dir / f"{service_id}.json"
+    svc = services.get(service_id)
+    if not cfg_path.exists() or svc is None or not svc.is_configured_for_pull(env):
+        return Ok(None)
+
+    match read_json_file(cfg_path):
+        case Err() as err:
+            return err
+        case Ok(local_scrubbed):
+            pass
+
+    match svc.pull_remote(env):
+        case Err() as err:
+            return err
+        case Ok(remote_normalized):
+            remote_scrubbed, _ = harvest_and_scrub(service_id, remote_normalized, env)
+            return Ok(compute_config_diff(local_scrubbed, remote_scrubbed, target=service_id))
+
+
+def _print_diff_outcome(outcome: ConfigDiffOutcome, *, stat_only: bool = False) -> None:
+    if outcome.in_sync:
+        console.print(f"✅ [{outcome.target}] In sync with remote")
+        return
+    keys_str = ", ".join(outcome.changed_keys) or "root"
+    console.print(
+        f"⚠️  [{outcome.target}] Drift detected: +{outcome.added_lines} / -{outcome.removed_lines} lines "
+        f"(changed keys: {keys_str})"
+    )
+    if not stat_only and outcome.unified_diff:
+        console.print(outcome.unified_diff.rstrip("\n"))
 
 
 def _push_service(
@@ -313,8 +354,16 @@ def cmd_config_push(
         bool,
         typer.Option("--create", help="Create a brand-new UUID on the target server"),
     ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
+    ] = False,
 ) -> None:
     """Inject secrets from .env and push local configs/ to remote servers."""
+    if dry_run:
+        cmd_config_diff(target=target, stat_only=False, exit_code=False)
+        return
+
     root_dir, env_path, configs_dir, env = _resolve_paths()
     working_env = dict(env)
 
@@ -350,6 +399,47 @@ def cmd_config_push(
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
         case Err(diag_err):
             err_console.print(f"⚠️  [diagram] {diag_err}")
+
+
+@config_app.command("diff")
+@app.command("diff")
+def cmd_config_diff(
+    target: Annotated[
+        str,
+        typer.Argument(help="Service to diff: all, aiostreams, aiometadata, or aiomanager"),
+    ] = "all",
+    stat_only: Annotated[
+        bool,
+        typer.Option("--stat", help="Show only changed keys and line counts without full unified diff"),
+    ] = False,
+    exit_code: Annotated[
+        bool,
+        typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
+    ] = False,
+) -> None:
+    """Compare local configs/*.json against live remote instances without modifying any files."""
+    _, _, configs_dir, env = _resolve_paths()
+    has_drift = False
+
+    with HttpxClient() as http_client:
+        services = build_config_services(http_client)
+        for svc_id in _resolve_service_targets(target):
+            match _diff_service(svc_id, env, configs_dir=configs_dir, services=services):
+                case Err(err):
+                    err_console.print(f"❌ {err}")
+                    raise typer.Exit(code=1)
+                case Ok(None):
+                    console.print(
+                        f"⏭️  [{svc_id}] Skipping diff: missing local config or credentials in .env"
+                    )
+                case Ok(outcome):
+                    assert outcome is not None
+                    _print_diff_outcome(outcome, stat_only=stat_only)
+                    if not outcome.in_sync:
+                        has_drift = True
+
+    if exit_code and has_drift:
+        raise typer.Exit(code=1)
 
 
 @config_app.command("sanitize")
