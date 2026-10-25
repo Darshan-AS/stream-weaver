@@ -14,7 +14,8 @@ docker/data/
 
 # OS / Editor / Python build & cache files
 .DS_Store
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 .history/
 __pycache__/
