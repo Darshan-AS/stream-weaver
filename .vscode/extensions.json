@@ -4,7 +4,6 @@
     "ms-python.vscode-pylance",
     "charliermarsh.ruff",
     "tamasfe.even-better-toml",
-    "mikestead.dotenv",
     "ms-azuretools.vscode-containers"
   ]
 }
