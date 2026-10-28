@@ -132,7 +132,8 @@ def _extract_secret_names(value: Any) -> tuple[str, ...]:
 
     def _walk(node: Any) -> None:
         if isinstance(node, Mapping):
-            for v in node.values():
+            for k, v in node.items():
+                _walk(k)
                 _walk(v)
         elif isinstance(node, Sequence) and not isinstance(node, (str, bytes)):
             for item in node:

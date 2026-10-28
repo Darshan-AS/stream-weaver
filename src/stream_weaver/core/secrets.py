@@ -11,12 +11,21 @@ from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId
 
 SECRET_PLACEHOLDER_RE = re.compile(r"\{\{(SECRET_[A-Z0-9_]+)\}\}")
-WATCHLY_URL_RE = re.compile(r"(watchly\.[^/]+/)([^/{}]+)(/manifest\.json)")
+WATCHLY_URL_RE = re.compile(
+    r"(watchly\.[^/]+/)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
+)
 BINGECAT_URL_RE = re.compile(
     r"(bingecat\.[^/]+/(?:stremio/)?)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/nuvio)?(?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
 )
 BINGECAT_ID_RE = re.compile(r"^(com\.aicat\.)([^.:/{}]+)((?:\.[^:]+)?(?::.+)?)$")
+AIOSTREAMS_ENCRYPTED_URL_RE = re.compile(
+    r"(/stremio/[0-9a-fA-F-]{36}/)((?!manifest\.json\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
+)
+AIOMETADATA_UUID_URL_RE = re.compile(
+    r"(/stremio/)([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
+)
 MIN_SECRET_LEN = 4
+MIN_GLOBAL_SCRUB_LEN = 12
 
 ENV_OVERRIDE_PREFIXES: tuple[str, ...] = (
     "AIOSTREAMS_",
@@ -38,6 +47,7 @@ class SecretLens:
     path: tuple[str, ...]
     derive_key: Callable[[tuple[str, ...], Mapping[str, Any]], str | None]
     regex_sub: tuple[re.Pattern[str], str] | None = None
+    match_dict_key: bool = False
 
 
 def _sanitize_token(raw: str) -> str:
@@ -128,7 +138,7 @@ AIOMETADATA_LENSES: tuple[SecretLens, ...] = (
 )
 
 _CREDENTIAL_FIELDS: frozenset[str] = frozenset(
-    {"authKey", "accessToken", "refreshToken", "apiKey", "token", "password"}
+    {"authKey", "accessToken", "refreshToken", "apiKey", "token", "password", "email"}
 )
 
 
@@ -163,6 +173,24 @@ def _aiomanager_vault_key(path: tuple[str, ...], parent: Mapping[str, Any]) -> s
     return f"SECRET_VAULT_{prov}_{short_id}"
 
 
+_AIOMANAGER_URL_VALUE_PATHS: tuple[tuple[str, ...], ...] = (
+    ("addons", "savedAddons", "*", "installUrl"),
+    ("accounts", "*", "addons", "*", "transportUrl"),
+    ("accountStates", "*", "installedAddons", "*", "installUrl"),
+)
+
+_AIOMANAGER_URL_KEY_PATHS: tuple[tuple[str, ...], ...] = (
+    ("accounts", "*", "deletedAddons", "*"),
+)
+
+_AIOMANAGER_URL_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("SECRET_WATCHLY_TOKEN", WATCHLY_URL_RE),
+    ("SECRET_BINGECAT_TOKEN", BINGECAT_URL_RE),
+    ("SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD", AIOSTREAMS_ENCRYPTED_URL_RE),
+    ("SECRET_AIOMETADATA_TOKEN", AIOMETADATA_UUID_URL_RE),
+)
+
+
 AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
     SecretLens(path=("apiKeys", "*"), derive_key=_aiomanager_top_apikey),
     SecretLens(path=("accounts", "*", "authKey"), derive_key=_aiomanager_account_auth_key),
@@ -172,35 +200,24 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
         derive_key=_aiomanager_conn_cred,
     ),
     SecretLens(path=("vault", "*", "value"), derive_key=_aiomanager_vault_key),
-    SecretLens(
-        path=("addons", "savedAddons", "*", "installUrl"),
-        derive_key=lambda _, __: "SECRET_WATCHLY_TOKEN",
-        regex_sub=(WATCHLY_URL_RE, r"\1{{SECRET_WATCHLY_TOKEN}}\3"),
+    *(
+        SecretLens(
+            path=url_path,
+            derive_key=_const_key(env_key),
+            regex_sub=(url_re, rf"\1{{{{{env_key}}}}}\3"),
+        )
+        for env_key, url_re in _AIOMANAGER_URL_PATTERNS
+        for url_path in _AIOMANAGER_URL_VALUE_PATHS
     ),
-    SecretLens(
-        path=("accounts", "*", "addons", "*", "transportUrl"),
-        derive_key=lambda _, __: "SECRET_WATCHLY_TOKEN",
-        regex_sub=(WATCHLY_URL_RE, r"\1{{SECRET_WATCHLY_TOKEN}}\3"),
-    ),
-    SecretLens(
-        path=("accountStates", "*", "installedAddons", "*", "installUrl"),
-        derive_key=lambda _, __: "SECRET_WATCHLY_TOKEN",
-        regex_sub=(WATCHLY_URL_RE, r"\1{{SECRET_WATCHLY_TOKEN}}\3"),
-    ),
-    SecretLens(
-        path=("addons", "savedAddons", "*", "installUrl"),
-        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
-        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
-    ),
-    SecretLens(
-        path=("accounts", "*", "addons", "*", "transportUrl"),
-        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
-        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
-    ),
-    SecretLens(
-        path=("accountStates", "*", "installedAddons", "*", "installUrl"),
-        derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
-        regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    *(
+        SecretLens(
+            path=key_path,
+            derive_key=_const_key(env_key),
+            regex_sub=(url_re, rf"\1{{{{{env_key}}}}}\3"),
+            match_dict_key=True,
+        )
+        for env_key, url_re in _AIOMANAGER_URL_PATTERNS
+        for key_path in _AIOMANAGER_URL_KEY_PATHS
     ),
     SecretLens(
         path=("addons", "savedAddons", "*", "manifest", "id"),
@@ -325,13 +342,48 @@ def harvest_and_scrub(
     """
     lenses = SERVICE_LENSES.get(service, ())
     working_env: dict[str, str] = dict(env)
+    harvested_in_pass: dict[str, str] = {}
 
     def _record_secret(proposed_key: str, raw_val: str) -> str:
         existing_key = _find_existing_secret_key(working_env, raw_val)
         if existing_key:
             return existing_key
-        working_env[proposed_key] = raw_val
-        return proposed_key
+        candidate = proposed_key
+        suffix = 2
+        while candidate in harvested_in_pass and harvested_in_pass[candidate] != raw_val:
+            candidate = f"{proposed_key}_{suffix}"
+            suffix += 1
+        working_env[candidate] = raw_val
+        harvested_in_pass[candidate] = raw_val
+        return candidate
+
+    def _scrub_string(
+        text: str,
+        path: tuple[str, ...],
+        context_entity: Mapping[str, Any],
+        *,
+        is_dict_key: bool = False,
+    ) -> str:
+        if not text or "{{" in text:
+            return text
+        for lens in lenses:
+            if lens.match_dict_key != is_dict_key or not _path_matches(lens.path, path):
+                continue
+            derived_key = lens.derive_key(path, context_entity)
+            if not derived_key:
+                continue
+            if lens.regex_sub is not None:
+                regex, _ = lens.regex_sub
+                match = regex.search(text)
+                if match:
+                    token_val = match.group(2)
+                    if len(token_val) >= MIN_SECRET_LEN and not token_val.startswith("{{SECRET_"):
+                        actual_key = _record_secret(derived_key, token_val)
+                        return regex.sub(rf"\1{{{{{actual_key}}}}}\3", text)
+            elif len(text) >= MIN_SECRET_LEN:
+                actual_key = _record_secret(derived_key, text)
+                return f"{{{{{actual_key}}}}}"
+        return text
 
     def _walk(
         node: Any,
@@ -345,7 +397,11 @@ def harvest_and_scrub(
                 else context_entity
             )
             return {
-                k: _walk(v, (*path, str(k)), next_context)
+                (
+                    _scrub_string(k, (*path, str(k)), next_context, is_dict_key=True)
+                    if isinstance(k, str)
+                    else k
+                ): _walk(v, (*path, str(k)), next_context)
                 for k, v in node.items()
             }
         if isinstance(node, list):
@@ -353,34 +409,21 @@ def harvest_and_scrub(
                 _walk(item, (*path, str(idx)), context_entity)
                 for idx, item in enumerate(node)
             ]
-        if isinstance(node, str) and node and not node.startswith("{{SECRET_"):
-            for lens in lenses:
-                if not _path_matches(lens.path, path):
-                    continue
-                derived_key = lens.derive_key(path, context_entity)
-                if not derived_key:
-                    continue
-                if lens.regex_sub is not None:
-                    regex, _ = lens.regex_sub
-                    match = regex.search(node)
-                    if match:
-                        token_val = match.group(2)
-                        if len(token_val) >= MIN_SECRET_LEN and not token_val.startswith("{{SECRET_"):
-                            actual_key = _record_secret(derived_key, token_val)
-                            return regex.sub(rf"\1{{{{{actual_key}}}}}\3", node)
-                elif len(node) >= MIN_SECRET_LEN:
-                    actual_key = _record_secret(derived_key, node)
-                    return f"{{{{{actual_key}}}}}"
+        if isinstance(node, str):
+            return _scrub_string(node, path, context_entity)
         return node
 
     scrubbed_tree = _walk(copy.deepcopy(dict(config)), (), config)
 
-    # Second pass: scrub any remaining string leaves that contain known SECRET_* values
+    # Second pass: scrub any remaining string leaves/keys that contain high-entropy SECRET_* values.
+    # Require MIN_GLOBAL_SCRUB_LEN (>= 12) so short pins/tokens only scrub at their explicit SecretLens path.
     known_secrets = sorted(
         (
             (k, v)
             for k, v in working_env.items()
-            if k.startswith("SECRET_") and len(v) >= MIN_SECRET_LEN and not v.startswith("{{SECRET_")
+            if k.startswith("SECRET_")
+            and len(v) >= MIN_GLOBAL_SCRUB_LEN
+            and not v.startswith("{{SECRET_")
         ),
         key=lambda item: len(item[1]),
         reverse=True,
@@ -388,13 +431,16 @@ def harvest_and_scrub(
 
     def _scrub_known_leaves(node: Any) -> Any:
         if isinstance(node, dict):
-            return {k: _scrub_known_leaves(v) for k, v in node.items()}
+            return {
+                (_scrub_known_leaves(k) if isinstance(k, str) and "://" in k else k): _scrub_known_leaves(v)
+                for k, v in node.items()
+            }
         if isinstance(node, list):
             return [_scrub_known_leaves(item) for item in node]
         if isinstance(node, str) and node:
             out = node
             for s_key, s_val in known_secrets:
-                if s_val in out:
+                if s_val in out and f"{{{{{s_key}}}}}" not in out:
                     out = out.replace(s_val, f"{{{{{s_key}}}}}")
             return out
         return node
@@ -409,7 +455,8 @@ def inject_secrets(
 ) -> Result[JsonDict, SecretError]:
     """
     Pure function: recursively substitutes all `{{SECRET_*}}` placeholders in `config`
-    using values from `env`. Returns `Err(SecretError)` if any placeholders are missing or empty.
+    (both string values and dictionary keys) using values from `env`.
+    Returns `Err(SecretError)` if any placeholders are missing or empty.
     """
     missing: set[str] = set()
 
@@ -426,7 +473,7 @@ def inject_secrets(
 
     def _walk(node: Any) -> Any:
         if isinstance(node, dict):
-            return {k: _walk(v) for k, v in node.items()}
+            return {_walk(k): _walk(v) for k, v in node.items()}
         if isinstance(node, list):
             return [_walk(item) for item in node]
         if isinstance(node, str):
