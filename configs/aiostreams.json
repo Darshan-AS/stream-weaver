@@ -167,8 +167,6 @@
   },
   "groups": {
     "enabled": true,
-    "behaviour": "sequential",
-    "onConditionFailure": "stop",
     "groupings": [
       {
         "addons": [
@@ -194,7 +192,9 @@
         ],
         "condition": "count(cached(totalStreams)) < 3"
       }
-    ]
+    ],
+    "behaviour": "sequential",
+    "onConditionFailure": "stop"
   },
   "sortCriteria": {
     "global": [
@@ -654,17 +654,17 @@
       "id": "swce3b0.peterson_academy",
       "type": "series",
       "name": "Peterson Academy",
-      "enabled": true,
       "showOnHome": true,
-      "disableSearch": false
+      "disableSearch": false,
+      "enabled": true
     },
     {
       "id": "lib791b.aiostreams::library.torbox",
       "type": "library",
       "name": "TorBox Cloud Library",
-      "enabled": true,
       "showOnHome": true,
       "disableSearch": false,
+      "enabled": true,
       "overrideType": "movie"
     }
   ],

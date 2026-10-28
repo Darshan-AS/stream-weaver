@@ -170,10 +170,15 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
     return Ok(cfg)
 
 
-def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
+def rehydrate_aiomanager(
+    data: Mapping[str, Any],
+    *,
+    remote_telemetry: Mapping[str, Any] | None = None,
+) -> JsonDict:
     """
     Purely reconstructs the full AIOManager state object (rehydrating deduplicated manifests,
-    the top-level `manifests` lookup map, and default empty telemetry collections) prior to push.
+    the top-level `manifests` lookup map, and preserving remote runtime telemetry when provided
+    or falling back to default empty telemetry collections) prior to push.
     """
     state: JsonDict = copy.deepcopy(dict(data))
 
@@ -219,14 +224,30 @@ def rehydrate_aiomanager(data: Mapping[str, Any]) -> JsonDict:
                     manifests_map[mid] = copy.deepcopy(mf)
 
     state["manifests"] = manifests_map
-    state.setdefault("changelog", [])
-    state.setdefault("vaultTombstones", [])
     state.setdefault("notes", [])
-    state.setdefault("notesTrash", [])
-    state.setdefault("watchEvents", [])
-    state.setdefault("watchSnapshot", {})
-    state.setdefault("watchEventRollups", {})
-    state.setdefault("deletedWatchEvents", {})
+
+    list_telemetry_keys: tuple[str, ...] = (
+        "changelog",
+        "vaultTombstones",
+        "notesTrash",
+        "watchEvents",
+    )
+    dict_telemetry_keys: tuple[str, ...] = (
+        "watchSnapshot",
+        "watchEventRollups",
+        "deletedWatchEvents",
+    )
+
+    for l_key in list_telemetry_keys:
+        if l_key not in state:
+            rem_list = remote_telemetry.get(l_key) if remote_telemetry is not None else None
+            state[l_key] = copy.deepcopy(rem_list) if isinstance(rem_list, list) else []
+
+    for d_key in dict_telemetry_keys:
+        if d_key not in state:
+            rem_dict = remote_telemetry.get(d_key) if remote_telemetry is not None else None
+            state[d_key] = copy.deepcopy(dict(rem_dict)) if isinstance(rem_dict, Mapping) else {}
+
     return state
 
 

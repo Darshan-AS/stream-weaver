@@ -4,10 +4,13 @@
 !.env.example
 !docker/.env.selfhost.example
 
-# Unscrubbed / backup config files
+# Unscrubbed / backup config files & magnet dumps
 *.raw.json
 *.bak
 *.tmp
+*magnets*.md
+*magnets*.txt
+*.torrent
 
 # Self-hosted Docker persistent volumes
 docker/data/

@@ -4,6 +4,7 @@ import base64
 import concurrent.futures
 import copy
 import json
+import threading
 import urllib.parse
 from collections.abc import Mapping
 from typing import Any
@@ -288,7 +289,12 @@ class AIOManagerService:
         _ = create
         return self.is_configured_for_pull(env)
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
+    def _pull_decrypted_remote_state(
+        self,
+        env: EnvMap,
+        *,
+        allow_missing: bool = False,
+    ) -> Result[JsonDict | None]:
         base_url = env.get("AIOMANAGER_URL", "").rstrip("/")
         uuid = env.get("AIOMANAGER_UUID", "")
         password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
@@ -308,6 +314,9 @@ class AIOManagerService:
             case Ok(resp):
                 pass
 
+        if allow_missing and resp.status_code == 404:
+            return Ok(None)
+
         if resp.status_code != 200 or not isinstance(resp.data, Mapping):
             return _http_err("AIOManager", "Pull", resp.status_code, resp.data, url)
 
@@ -315,6 +324,14 @@ class AIOManagerService:
             case Err() as err:
                 return err
             case Ok(decrypted_state):
+                return Ok(decrypted_state)
+
+    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
+        match self._pull_decrypted_remote_state(env):
+            case Err() as err:
+                return err
+            case Ok(decrypted_state):
+                assert decrypted_state is not None
                 return dehydrate_aiomanager(decrypted_state)
 
     def _refresh_manifests(self, state: JsonDict) -> JsonDict:
@@ -409,7 +426,13 @@ class AIOManagerService:
         uuid = env.get("AIOMANAGER_UUID", "")
         password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
 
-        rehydrated = rehydrate_aiomanager(config)
+        match self._pull_decrypted_remote_state(env, allow_missing=True):
+            case Err() as err:
+                return err
+            case Ok(live_remote_state):
+                pass
+
+        rehydrated = rehydrate_aiomanager(config, remote_telemetry=live_remote_state)
         refreshed = self._refresh_manifests(rehydrated)
 
         match dehydrate_aiomanager(refreshed):
@@ -559,20 +582,29 @@ def warm_home_catalogs(
     if not urls:
         return 0, 0
 
-    dead_hosts: set[str] = set()
+    failure_counts: dict[str, int] = {}
+    lock = threading.Lock()
+
+    def _record_host_failure(host: str) -> None:
+        with lock:
+            failure_counts[host] = failure_counts.get(host, 0) + 1
+
+    def _is_host_dead(host: str) -> bool:
+        with lock:
+            return failure_counts.get(host, 0) >= 2
 
     def _fetch_one(url: str) -> bool:
         host = urllib.parse.urlsplit(url).netloc
-        if host in dead_hosts:
+        if _is_host_dead(host):
             return False
         match http_client.request_json("GET", url, timeout=8.0):
             case Ok(resp) if resp.status_code == 200 and isinstance(resp.data, dict):
                 return isinstance(resp.data.get("metas"), list)
             case Ok(resp) if resp.status_code >= 520:
-                dead_hosts.add(host)
+                _record_host_failure(host)
                 return False
             case Err():
-                dead_hosts.add(host)
+                _record_host_failure(host)
                 return False
             case _:
                 return False

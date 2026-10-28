@@ -44,9 +44,12 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
                 "id": "7d210008-bcdb-4bc4",
                 "authKey": "stremio_master_auth",
                 "apiKey": "mgr_key_123456",
+                "deletedAddons": {
+                    "https://watchly.elfhosted.com/old_deleted_watchly_tok": 1792092935456
+                },
                 "addons": [
                     {
-                        "transportUrl": "https://watchly.elfhosted.com/my_watchly_tok/manifest.json"
+                        "transportUrl": "https://watchly.elfhosted.com/old_deleted_watchly_tok/manifest.json"
                     },
                     {
                         "transportUrl": "https://bingecat.com/stremio/2ec3e4b9-31e3-48f0-935e-8896b1d8b012/manifest.json",
@@ -57,6 +60,12 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
                             "name": "BingeCat",
                         },
                     },
+                    {
+                        "transportUrl": "https://aiostreams.example.com/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/enc_pw_payload_xyz",
+                    },
+                    {
+                        "transportUrl": "https://aiometadata.example.com/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
+                    },
                 ],
                 "connections": [
                     {
@@ -64,6 +73,7 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
                         "credentials": {
                             "accessToken": "nuvio_acc_tok_123",
                             "refreshToken": "nuvio_ref_tok_456",
+                            "email": "user@example.com",
                         },
                     }
                 ],
@@ -118,14 +128,45 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
         scrubbed["addons"]["savedAddons"][0]["installUrl"]
         == "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json"
     )
-    assert env["SECRET_WATCHLY_TOKEN"] == "my_watchly_tok"
+    assert scrubbed["accounts"][0]["deletedAddons"] == {
+        "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}": 1792092935456
+    }
+    assert (
+        scrubbed["accounts"][0]["addons"][2]["transportUrl"]
+        == "https://aiostreams.example.com/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}"
+    )
+    assert (
+        scrubbed["accounts"][0]["addons"][3]["transportUrl"]
+        == "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}"
+    )
+    assert (
+        scrubbed["accounts"][0]["connections"][0]["credentials"]["email"]
+        == "{{SECRET_NUVIO_EMAIL}}"
+    )
+    assert env["SECRET_WATCHLY_TOKEN"] == "old_deleted_watchly_tok"
     assert env["SECRET_BINGECAT_TOKEN"] == "2ec3e4b9-31e3-48f0-935e-8896b1d8b012"
+    assert env["SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD"] == "enc_pw_payload_xyz"
+    assert env["SECRET_AIOMETADATA_TOKEN"] == "351ba1f7-8129-4fee-a10b-8fa96ac06a15"
     assert env["SECRET_NUVIO_ACCESS_TOKEN"] == "nuvio_acc_tok_123"
+    assert env["SECRET_NUVIO_EMAIL"] == "user@example.com"
     assert env["SECRET_VAULT_AIOSTREAMS_35C658"] == "vault_secret_val_99"
 
     injected = inject_secrets(scrubbed, env)
     assert isinstance(injected, Ok)
     assert injected.value == raw_cfg
+
+
+def test_short_secret_scrubs_at_lens_without_corrupting_unrelated_strings() -> None:
+    raw_cfg: dict[str, Any] = {
+        "apiKeys": {"rpdb": "free"},
+        "catalogs": [{"name": "free movies"}],
+    }
+    scrubbed, env = harvest_and_scrub("aiometadata", raw_cfg, {})
+    assert scrubbed["apiKeys"]["rpdb"] == "{{SECRET_RPDB_API_KEY}}"
+    assert scrubbed["catalogs"][0]["name"] == "free movies"
+    reinjected = inject_secrets(scrubbed, env)
+    assert isinstance(reinjected, Ok)
+    assert reinjected.value == raw_cfg
 
 
 def test_inject_secrets_missing_returns_err() -> None:

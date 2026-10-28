@@ -1,5 +1,6 @@
 """Unit tests for config normalizers and AIOManager dehydration/rehydration."""
 
+from collections.abc import Mapping
 from typing import Any
 
 from stream_weaver.core.coercions import (
@@ -10,8 +11,11 @@ from stream_weaver.core.coercions import (
     rehydrate_aiomanager,
     sanitize_manifest_home_catalogs,
 )
-from stream_weaver.core.result import Ok
-from stream_weaver.providers.services import extract_home_catalog_urls
+from stream_weaver.core.crypto import decrypt_envelope, encrypt_envelope
+from stream_weaver.core.errors import NetworkError
+from stream_weaver.core.result import Ok, Result
+from stream_weaver.effects.http import HttpResponse
+from stream_weaver.providers.services import AIOManagerService, extract_home_catalog_urls
 from stream_weaver.providers.services.clients import (
     compile_nuvio_collections,
     decompile_nuvio_collections,
@@ -120,6 +124,19 @@ def test_aiomanager_dehydrate_and_rehydrate_roundtrip() -> None:
     assert rehydrated["accounts"][0]["addons"][1]["manifest"] == cinemeta_account_mf
     assert rehydrated["manifests"]["aio-metadata:3.5.1"] == huge_manifest
     assert rehydrated["watchEvents"] == []
+
+    # Rehydrating with live remote telemetry preserves remote watch history & changelog
+    rehydrated_with_remote = rehydrate_aiomanager(
+        dehydrated,
+        remote_telemetry={
+            "watchEvents": [{"id": "evt1"}, {"id": "evt2"}],
+            "changelog": [{"action": "sync"}],
+            "watchSnapshot": {"tt123": 42},
+        },
+    )
+    assert rehydrated_with_remote["watchEvents"] == [{"id": "evt1"}, {"id": "evt2"}]
+    assert rehydrated_with_remote["changelog"] == [{"action": "sync"}]
+    assert rehydrated_with_remote["watchSnapshot"] == {"tt123": 42}
 
 
 def test_sanitize_manifest_home_catalogs_and_extract_urls() -> None:
@@ -288,3 +305,63 @@ def test_decompile_nuvio_collections_strips_catalog_sources_and_unwraps_rpc() ->
     rpc_payload = [{"collections_json": compiled}]
     decompiled = decompile_nuvio_collections(rpc_payload)
     assert decompiled == raw
+
+
+def test_aiomanager_push_remote_preserves_encrypted_telemetry() -> None:
+    password = "test-sync-password-123"
+    live_remote_state: dict[str, Any] = {
+        "version": "2.0.0",
+        "accounts": [],
+        "watchEvents": [{"id": "we-99", "imdbId": "tt0111161"}],
+        "changelog": [{"id": "cl-1", "action": "addon_update"}],
+        "watchSnapshot": {"tt0111161": 1800},
+    }
+    enc_res = encrypt_envelope(live_remote_state, password)
+    assert isinstance(enc_res, Ok)
+    remote_envelope = enc_res.value
+
+    pushed_bodies: list[Any] = []
+
+    class FakeHttpClient:
+        def request_json(
+            self,
+            method: str,
+            url: str,
+            *,
+            headers: Mapping[str, str] | None = None,
+            json_body: Any | None = None,
+            raw_body: bytes | None = None,
+            timeout: float = 30.0,
+        ) -> Result[HttpResponse, NetworkError]:
+            _ = url, headers, raw_body, timeout
+            if method == "GET":
+                return Ok(HttpResponse(status_code=200, data=remote_envelope, text="{}"))
+            pushed_bodies.append(json_body)
+            return Ok(HttpResponse(status_code=200, data={"ok": True}, text='{"ok": true}'))
+
+    svc = AIOManagerService(FakeHttpClient())
+    local_dehydrated: dict[str, Any] = {
+        "version": "2.0.0",
+        "accounts": [{"id": "acc-1", "name": "Test", "addons": []}],
+    }
+    env = {
+        "AIOMANAGER_URL": "https://aiomanager.example.com",
+        "AIOMANAGER_UUID": "u-test-1",
+        "AIOMANAGER_SYNC_PASSWORD": password,
+    }
+    push_res = svc.push_remote(local_dehydrated, env)
+    assert isinstance(push_res, Ok)
+    _, dehydrated_for_disk, _ = push_res.value
+
+    # Disk copy stays compact and stripped of volatile telemetry
+    assert "watchEvents" not in dehydrated_for_disk
+    assert "changelog" not in dehydrated_for_disk
+
+    # Encrypted cloud envelope retains remote watchEvents, changelog, and watchSnapshot
+    assert len(pushed_bodies) == 1
+    dec_pushed = decrypt_envelope(pushed_bodies[0], password)
+    assert isinstance(dec_pushed, Ok)
+    assert dec_pushed.value["watchEvents"] == [{"id": "we-99", "imdbId": "tt0111161"}]
+    assert dec_pushed.value["changelog"] == [{"id": "cl-1", "action": "addon_update"}]
+    assert dec_pushed.value["watchSnapshot"] == {"tt0111161": 1800}
+    assert dec_pushed.value["accounts"][0]["id"] == "acc-1"

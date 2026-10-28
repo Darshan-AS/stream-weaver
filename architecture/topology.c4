@@ -661,6 +661,16 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
+  secretKey sec_secret_aiometadata_token 'SECRET_AIOMETADATA_TOKEN' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_secret_aiostreams_encrypted_password 'SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_secret_bingecat_token 'SECRET_BINGECAT_TOKEN' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
@@ -672,6 +682,11 @@ model {
     technology 'Environment Variable'
   }
   secretKey sec_secret_nuvio_access_token 'SECRET_NUVIO_ACCESS_TOKEN' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_secret_nuvio_email 'SECRET_NUVIO_EMAIL' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
@@ -717,6 +732,11 @@ model {
     technology 'Environment Variable'
   }
   secretKey sec_secret_vault_aiostreams_35c658 'SECRET_VAULT_AIOSTREAMS_35C658' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_secret_watchly_token 'SECRET_WATCHLY_TOKEN' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'

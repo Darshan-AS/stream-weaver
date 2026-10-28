@@ -9,11 +9,11 @@
       "emoji": "💀",
       "profiles": [],
       "deletedAddons": {
-        "https://watchly.elfhosted.com/5d07d5d43ca5c778232ab6a1": 1792092935456
+        "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}": 1792092935456
       },
       "addons": [
         {
-          "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
+          "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
           "transportName": "",
           "manifestId": "aio-metadata:3.6.0",
           "manifest": {
@@ -32,7 +32,7 @@
           }
         },
         {
-          "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/eyJpIjoiOXduNkdTN2V0cFJiam5BT21TN2RkUT09IiwiZSI6IjF0OTdZd24ydlZydWNmd3dmZ1ZLdFhjd0JtY2JhY2ZXZ0d2dUV0NHpvOStIMGdCWWMrY0RmOXR1a3BhWjFtU0YiLCJ0IjoiYSJ9",
+          "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "transportName": "",
           "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.36.0",
           "manifest": {
@@ -178,7 +178,7 @@
             "expiresAt": "1792693268000",
             "profileId": "6139337e-1fcb-4a9b-8ab1-6e4affcd0ccb",
             "profileIndex": "",
-            "email": "itisdarshan@gmail.com"
+            "email": "{{SECRET_NUVIO_EMAIL}}"
           },
           "capabilities": [
             "addons",
@@ -193,7 +193,7 @@
           "enabled": true,
           "credentials": {
             "authKey": "{{SECRET_STREMIO_AUTH_KEY}}",
-            "email": "itisdarshan@gmail.com"
+            "email": "{{SECRET_NUVIO_EMAIL}}"
           },
           "capabilities": [
             "addons"
@@ -215,7 +215,7 @@
         {
           "savedAddonId": "191e2dc6-ab8c-4116-b63e-b7cbd06431eb",
           "addonId": "aio-metadata",
-          "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
+          "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
           "installedAt": "2026-10-15T18:21:40.385Z",
           "installedVia": "manual",
           "flags": {
@@ -227,7 +227,7 @@
         {
           "savedAddonId": "4d3d3bf5-ccc9-4f2a-a902-079215e6a18d",
           "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-          "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/eyJpIjoiOXduNkdTN2V0cFJiam5BT21TN2RkUT09IiwiZSI6IjF0OTdZd24ydlZydWNmd3dmZ1ZLdFhjd0JtY2JhY2ZXZ0d2dUV0NHpvOStIMGdCWWMrY0RmOXR1a3BhWjFtU0YiLCJ0IjoiYSJ9",
+          "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "installedAt": "2026-10-15T18:21:40.385Z",
           "installedVia": "manual",
           "flags": {
@@ -657,7 +657,7 @@
       {
         "id": "191e2dc6-ab8c-4116-b63e-b7cbd06431eb",
         "name": "AIOMetadata",
-        "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
+        "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
         "manifest": {
           "id": "aio-metadata",
           "version": "3.6.0",
@@ -3848,7 +3848,7 @@
       {
         "id": "4d3d3bf5-ccc9-4f2a-a902-079215e6a18d",
         "name": "AIOStreams",
-        "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/eyJpIjoiOXduNkdTN2V0cFJiam5BT21TN2RkUT09IiwiZSI6IjF0OTdZd24ydlZydWNmd3dmZ1ZLdFhjd0JtY2JhY2ZXZ0d2dUV0NHpvOStIMGdCWWMrY0RmOXR1a3BhWjFtU0YiLCJ0IjoiYSJ9",
+        "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
         "manifest": {
           "name": "AIOStreams",
           "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
