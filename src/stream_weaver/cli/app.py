@@ -1,6 +1,7 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
 import concurrent.futures
+import os
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -47,9 +48,119 @@ app.add_typer(config_app, name="config")
 console = Console(markup=False, highlight=False)
 err_console = Console(stderr=True, markup=False, highlight=False)
 
+_CLI_WORKSPACE_DIR: Path | None = None
 
-def _resolve_paths() -> tuple[Path, Path, Path, dict[str, str]]:
-    root_dir = Path(__file__).resolve().parents[3]
+WorkspaceDirOption = Annotated[
+    Path | None,
+    typer.Option(
+        "--dir",
+        "-C",
+        help="Workspace directory containing .env and configs/ (defaults to CWD if initialized, else repo root)",
+    ),
+]
+
+_INIT_ENV_TEMPLATE = """\
+# ==============================================================================
+# 1. INSTANCE URLS (No trailing slashes)
+# ==============================================================================
+AIOSTREAMS_URL=https://aiostreams.elfhosted.com
+AIOMETADATA_URL=https://aiometadata.elfhosted.com
+AIOMANAGER_URL=https://aiomanager.elfhosted.com
+
+# ==============================================================================
+# 2. INSTANCE CREDENTIALS (UUID + Password for each service)
+# ==============================================================================
+AIOSTREAMS_UUID=
+AIOSTREAMS_PASSWORD=
+AIOSTREAMS_ADDON_PASSWORD=
+
+AIOMETADATA_UUID=
+AIOMETADATA_PASSWORD=
+AIOMETADATA_ADDON_PASSWORD=
+
+AIOMANAGER_UUID=
+AIOMANAGER_SYNC_PASSWORD=
+
+# ==============================================================================
+# 3. SECRETS FOR GIT SCRUBBING (Prefix with SECRET_)
+# ==============================================================================
+SECRET_RD_API_KEY=
+SECRET_TORBOX_API_KEY=
+SECRET_ALLDEBRID_API_KEY=
+SECRET_PREMIUMIZE_API_KEY=
+SECRET_TMDB_API_KEY=
+SECRET_TMDB_ACCESS_TOKEN=
+SECRET_TVDB_API_KEY=
+SECRET_RPDB_API_KEY=
+SECRET_TRAKT_TOKEN_ID=
+SECRET_GEMINI_API_KEY=
+SECRET_BINGECAT_TOKEN=
+SECRET_WATCHLY_TOKEN=
+SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD=
+SECRET_AIOMETADATA_TOKEN=
+
+NUVIO_SUPABASE_ANON_KEY=
+"""
+
+_INIT_GITIGNORE_TEMPLATE = """\
+# Environment & Secrets (NEVER commit these)
+.env
+.env.*
+!.env.example
+
+# Unscrubbed / backup config files & magnet dumps
+*.raw.json
+*.bak
+*.tmp
+*magnets*.md
+*magnets*.txt
+*.torrent
+
+.DS_Store
+"""
+
+
+@app.callback()
+def _main_callback(
+    workspace_dir: WorkspaceDirOption = None,
+) -> None:
+    """Global options for the Stream Weaver CLI."""
+    global _CLI_WORKSPACE_DIR
+    _CLI_WORKSPACE_DIR = workspace_dir
+
+
+def resolve_workspace_root(
+    explicit_dir: Path | None = None,
+    *,
+    cwd: Path | None = None,
+    env_override: str | None = None,
+) -> Path:
+    """
+    Resolves the active Stream Weaver state directory using priority:
+    1. Explicit `--dir` / `-C` CLI option (either on subcommand or global callback)
+    2. `STREAM_WEAVER_DIR` environment variable
+    3. Current working directory if it contains `configs/` or `.stream-weaver`
+    4. Package repository root fallback (for in-repo personal GitOps)
+    """
+    chosen = explicit_dir or _CLI_WORKSPACE_DIR
+    if chosen is not None:
+        return chosen.expanduser().resolve()
+
+    raw_env_dir = env_override if env_override is not None else os.environ.get("STREAM_WEAVER_DIR", "")
+    if raw_env_dir.strip():
+        return Path(raw_env_dir.strip()).expanduser().resolve()
+
+    effective_cwd = (cwd or Path.cwd()).resolve()
+    if (effective_cwd / "configs").is_dir() or (effective_cwd / ".stream-weaver").exists():
+        return effective_cwd
+
+    return Path(__file__).resolve().parents[3]
+
+
+def _resolve_paths(
+    workspace_dir: Path | None = None,
+) -> tuple[Path, Path, Path, dict[str, str]]:
+    root_dir = resolve_workspace_root(workspace_dir)
     env_path = root_dir / ".env"
     configs_dir = root_dir / "configs"
     return root_dir, env_path, configs_dir, load_env_file(env_path)
@@ -410,6 +521,53 @@ def _sync_architecture_diagrams(
 # ============================================================================
 
 
+@config_app.command("init")
+@app.command("init")
+def cmd_config_init(
+    directory: Annotated[
+        Path | None,
+        typer.Argument(help="Target directory to initialize as a Stream Weaver state repo"),
+    ] = None,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Overwrite .env.example and .gitignore templates if present"),
+    ] = False,
+    workspace_dir: WorkspaceDirOption = None,
+) -> None:
+    """Scaffold a new Stream Weaver GitOps state directory (configs/, .env, .gitignore)."""
+    target_dir = (directory or workspace_dir or _CLI_WORKSPACE_DIR or Path.cwd()).expanduser().resolve()
+    configs_dir = target_dir / "configs"
+    arch_dir = target_dir / "architecture"
+    configs_dir.mkdir(parents=True, exist_ok=True)
+    arch_dir.mkdir(parents=True, exist_ok=True)
+
+    created: list[str] = []
+    preserved: list[str] = []
+
+    for rel_name, template_text, allow_force in (
+        (".gitignore", _INIT_GITIGNORE_TEMPLATE, force),
+        (".env.example", _INIT_ENV_TEMPLATE, force),
+        (".env", _INIT_ENV_TEMPLATE, False),
+    ):
+        dest = target_dir / rel_name
+        if dest.exists() and not allow_force:
+            preserved.append(rel_name)
+            continue
+        match write_text_file(dest, template_text):
+            case Err(err):
+                err_console.print(f"❌ {err}")
+                raise typer.Exit(code=1)
+            case Ok():
+                created.append(rel_name)
+
+    console.print(f"🧶 Initialized Stream Weaver workspace at {target_dir}")
+    if created:
+        console.print(f"   ✅ Created:   {', '.join(created)}, configs/, architecture/")
+    if preserved:
+        console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
+    console.print("   💡 Next: Fill in your instance URLs & credentials in .env, then run `sw pull`.")
+
+
 @config_app.command("pull")
 @app.command("pull")
 def cmd_config_pull(
@@ -417,9 +575,10 @@ def cmd_config_pull(
         str,
         typer.Argument(help="Service to pull: all, aiostreams, aiometadata, or aiomanager"),
     ] = "all",
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
-    root_dir, env_path, configs_dir, env = _resolve_paths()
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -524,13 +683,14 @@ def cmd_config_push(
         bool,
         typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
     ] = False,
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Inject secrets from .env and push local configs/ to remote servers."""
     if dry_run:
-        cmd_config_diff(target=target, stat_only=False, exit_code=False)
+        cmd_config_diff(target=target, stat_only=False, exit_code=False, workspace_dir=workspace_dir)
         return
 
-    root_dir, env_path, configs_dir, env = _resolve_paths()
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
 
@@ -625,9 +785,10 @@ def cmd_config_diff(
         bool,
         typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
     ] = False,
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Compare local configs/*.json against live remote instances without modifying any files."""
-    _, _, configs_dir, env = _resolve_paths()
+    _, _, configs_dir, env = _resolve_paths(workspace_dir)
     has_drift = False
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -719,9 +880,10 @@ def cmd_config_sanitize(
         str,
         typer.Argument(help="Service file to sanitize: all, aiostreams, aiometadata, or aiomanager"),
     ] = "all",
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Normalize, dehydrate, and scrub secrets from local JSON files in configs/."""
-    root_dir, env_path, configs_dir, env = _resolve_paths()
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
     working_env = dict(env)
     found_any = False
 
@@ -779,9 +941,10 @@ def cmd_config_diagram(
         bool,
         typer.Option("--check", help="Verify that architecture diagrams are up-to-date without writing"),
     ] = False,
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Compile LikeC4 (architecture/topology.c4) & ARCHITECTURE.md from configs/*.json."""
-    root_dir, _, configs_dir, _ = _resolve_paths()
+    root_dir, _, configs_dir, _ = _resolve_paths(workspace_dir)
     match _sync_architecture_diagrams(root_dir, configs_dir, check_only=check):
         case Err(err):
             err_console.print(f"❌ {err}")
@@ -805,9 +968,10 @@ def cmd_config_warm(
         int,
         typer.Option("--workers", "-w", help="Number of concurrent requests to warm Home catalogs"),
     ] = 8,
+    workspace_dir: WorkspaceDirOption = None,
 ) -> None:
     """Concurrently pre-warm all Home catalog endpoints across enabled addons."""
-    _, _, configs_dir, env = _resolve_paths()
+    _, _, configs_dir, env = _resolve_paths(workspace_dir)
     cfg_path = configs_dir / "aiomanager.json"
     if not cfg_path.exists():
         err_console.print("❌ Missing configs/aiomanager.json")
