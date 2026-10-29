@@ -111,7 +111,39 @@ uv run sw push
 uv run sw push aiostreams
 uv run sw push aiometadata
 uv run sw push aiomanager
+
+# Or push only the Nuvio client-side profile settings (no AIOManager round-trip):
+uv run sw push nuvio              # addons + collections + badges + meta enrichment
+uv run sw push nuvio_collections  # Home screen folders only
+uv run sw push nuvio_badges       # stream badge packs only
+uv run sw push nuvio_meta         # details-page enrichment only (see below)
 ```
+
+### Nuvio Stream Badges (`configs/nuvio_badges.json`)
+`configs/nuvio_badges.json` declaratively syncs regex-matched technology logo packs (such as
+[Elite-Badges](https://github.com/leonevz/Elite-Badges)) into `stream_badge_settings` across `tv`,
+`desktop`, and `mobile` via `sync_push_profile_settings_blob`—configuring stream-card badge
+placement (`BOTTOM` / `TOP`), player seek-bar badges (`showInPlayer`), addon logos, and file-size
+chips while preserving unrelated profile preferences.
+
+### Nuvio Details-Page Enrichment (`configs/nuvio_meta.json`)
+The Stremio addon protocol only carries a single `imdbRating`; the multi-source ratings strip,
+Trakt reviews, and TMDB extras on a Nuvio details page are **client-side integrations** that
+Nuvio stores per profile in its cloud sync (`sync_push_profile_settings_blob` +
+`sync_push_provider_credentials`). `configs/nuvio_meta.json` drives all of them declaratively
+across `tv`, `desktop`, and `mobile` so nothing has to be toggled in the app UI:
+
+| Block | What it switches on | Nuvio feature it writes |
+| :--- | :--- | :--- |
+| `ratings` | MDBList ratings row: IMDb, TMDB, Rotten Tomatoes critics (`tomatoes`) + audience, Metacritic, Trakt, Letterboxd, MAL | `mdblist_settings` (+ `mdblist` provider credential) |
+| `tmdbEnrichment` | Trailers, logos/artwork, credits → tappable people, networks, production companies, release dates, season posters, collections, More Like This | `tmdb_settings` (+ `tmdb` provider credential) |
+| `traktComments` | Trakt reviews section on movie/series pages | `trakt_comments_settings` (desktop/mobile), `trakt_settings.show_meta_comments` (TV) |
+| `metaScreen` | Section visibility/order (`COMMENTS`, `PRODUCTION`, `DETAILS`, …), background mode, hero trailer autoplay, tab layout, episode card style | `meta_screen_settings_payload` (desktop/mobile; set to `null` to leave devices untouched) |
+
+Required `.env` keys: `SECRET_MDBLIST_API_KEY` (free, https://mdblist.com/preferences → API Access)
+and `SECRET_TMDB_API_KEY` (already used by AIOMetadata). Merges are read-modify-write per platform:
+unrelated preferences (theme, player, Trakt watch-progress source, …) are preserved, and
+never-initialised desktop/mobile profiles are skipped rather than seeded with partial defaults.
 
 ### Pulling Changes Made in the Web UI
 If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web UI:
