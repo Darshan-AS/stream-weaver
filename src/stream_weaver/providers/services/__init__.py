@@ -335,7 +335,7 @@ class AIOManagerService:
                 return dehydrate_aiomanager(decrypted_state)
 
     def _refresh_manifests(self, state: JsonDict) -> JsonDict:
-        """Concurrently fetches fresh `manifest.json` for AIOMetadata, AIOStreams, BingeCat, Contraband, and Watchly."""
+        """Concurrently fetches fresh `manifest.json` for all enabled HTTP(S) addons in AIOManager."""
         updated = copy.deepcopy(state)
         accounts = updated.get("accounts")
         if not isinstance(accounts, list):
@@ -351,22 +351,22 @@ class AIOManagerService:
             for a in acc["addons"]:
                 if not isinstance(a, dict):
                     continue
+                flags = a.get("flags")
+                if isinstance(flags, dict) and not flags.get("enabled", True):
+                    continue
                 raw_mf = a.get("manifest")
                 mf_existing: dict[str, Any] = raw_mf if isinstance(raw_mf, dict) else {}
                 mid = str(mf_existing.get("id", ""))
-                t_url = str(a.get("transportUrl", "")).rstrip("/")
-                if not t_url:
+                if mid == "com.linvo.cinemeta":
                     continue
-                if mid in (
-                    "aio-metadata",
-                    "com.elfhosted.watchly",
-                    "dev.darshanas.contraband",
-                ) or mid.startswith(("aiostreams", "com.aicat.", "addon.aiometadata")):
-                    m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
-                    refresh_targets.append((a, mid, m_url))
-                    if m_url not in seen_urls:
-                        seen_urls.add(m_url)
-                        unique_urls.append(m_url)
+                t_url = str(a.get("transportUrl", "")).strip().rstrip("/")
+                if not t_url.startswith(("http://", "https://")):
+                    continue
+                m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
+                refresh_targets.append((a, mid, m_url))
+                if m_url not in seen_urls:
+                    seen_urls.add(m_url)
+                    unique_urls.append(m_url)
 
         if not unique_urls:
             return updated
