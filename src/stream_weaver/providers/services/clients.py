@@ -6,6 +6,25 @@ from typing import Any
 
 from stream_weaver.core.crypto import decrypt_field
 from stream_weaver.core.errors import NetworkError, StreamWeaverError
+from stream_weaver.core.nuvio_badges import (
+    STREAM_WEAVER_ORIGIN_CLIENT_ID,
+    VALID_NUVIO_BADGE_PLATFORMS,
+    build_platform_stream_badge_settings,
+    compile_nuvio_badge_import,
+    compile_nuvio_badge_rules_json,
+    decompile_nuvio_badges,
+    merge_profile_settings_blob_badges,
+    normalize_nuvio_badges_doc,
+)
+from stream_weaver.core.nuvio_meta import (
+    VALID_NUVIO_META_PLATFORMS,
+    build_platform_meta_features,
+    build_provider_credentials,
+    decompile_nuvio_meta,
+    merge_profile_settings_blob_meta,
+    merge_provider_credential_rows,
+    normalize_nuvio_meta_doc,
+)
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict
 from stream_weaver.effects.http import HttpClientProtocol
@@ -378,6 +397,412 @@ class NuvioClientSync:
                     )
                 return Ok((decompile_nuvio_collections(resp.data), updated_secrets))
 
+    def _pull_platform_settings_blob(
+        self,
+        headers: Mapping[str, str],
+        profile_idx: int,
+        platform: str,
+    ) -> Result[JsonDict | None]:
+        res = self._http.request_json(
+            "POST",
+            "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profile_settings_blob",
+            headers=headers,
+            json_body={"p_profile_id": profile_idx, "p_platform": platform},
+        )
+        match res:
+            case Err() as err:
+                return err
+            case Ok(resp):
+                if resp.status_code != 200:
+                    return Err(
+                        NetworkError(
+                            message=(
+                                f"Nuvio {platform} profile settings pull returned HTTP {resp.status_code}"
+                            ),
+                            status_code=resp.status_code,
+                        )
+                    )
+                if isinstance(resp.data, list) and resp.data and isinstance(resp.data[0], Mapping):
+                    sjson = resp.data[0].get("settings_json")
+                    if isinstance(sjson, Mapping):
+                        return Ok(dict(sjson))
+                return Ok(None)
+
+    def pull_badges(
+        self,
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+        *,
+        version: str = "1.0.0",
+    ) -> Result[tuple[JsonDict, dict[str, str]]]:
+        """
+        Pulls live `stream_badge_settings` across Nuvio platforms (`tv`, `desktop`, `mobile`)
+        and decompiles them into the declarative `configs/nuvio_badges.json` format.
+        """
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        platform_blobs: dict[str, Mapping[str, Any] | None] = {}
+        for plat in VALID_NUVIO_BADGE_PLATFORMS:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(blob):
+                    platform_blobs[plat] = blob
+
+        return Ok((decompile_nuvio_badges(platform_blobs, version=version), updated_secrets))
+
+    def _sync_badges_with_headers(
+        self,
+        raw_badge_doc: Mapping[str, Any],
+        headers: Mapping[str, str],
+        profile_idx: int,
+    ) -> Result[str]:
+        match normalize_nuvio_badges_doc(raw_badge_doc):
+            case Err() as err:
+                return err
+            case Ok(norm_doc):
+                pass
+
+        platforms = [str(p) for p in norm_doc.get("platforms", [])]
+        if not platforms:
+            return Ok("")
+
+        compiled_imports: list[JsonDict] = []
+        active_filter_count = 0
+        for imp in norm_doc.get("imports", []):
+            if not isinstance(imp, Mapping):
+                continue
+            src_url = str(imp.get("sourceUrl") or "")
+            is_active = bool(imp.get("isActive", True))
+            fetch_res = self._http.request_json("GET", src_url, timeout=15.0)
+            match fetch_res:
+                case Err() as err:
+                    return err
+                case Ok(f_resp):
+                    if f_resp.status_code != 200:
+                        return Err(
+                            NetworkError(
+                                message=f"Fetching badge pack {src_url} returned HTTP {f_resp.status_code}",
+                                status_code=f_resp.status_code,
+                                url=src_url,
+                            )
+                        )
+                    if len(f_resp.text) > 2_000_000:
+                        return Err(
+                            StreamWeaverError(
+                                f"Badge pack {src_url} exceeds 2 MB maximum payload size."
+                            )
+                        )
+                    match compile_nuvio_badge_import(src_url, f_resp.data, is_active=is_active):
+                        case Err() as err:
+                            return err
+                        case Ok(compiled_imp):
+                            if is_active:
+                                active_filter_count = sum(
+                                    1
+                                    for flt in compiled_imp.get("filters", [])
+                                    if isinstance(flt, Mapping) and flt.get("isEnabled", True)
+                                )
+                            compiled_imports.append(compiled_imp)
+
+        rules_json = compile_nuvio_badge_rules_json(compiled_imports)
+        pushed_platforms: list[str] = []
+
+        for plat in platforms:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(remote_blob):
+                    pass
+
+            plat_badge_settings = build_platform_stream_badge_settings(
+                norm_doc,
+                rules_json,
+                platform=plat,
+            )
+            merged_blob = merge_profile_settings_blob_badges(
+                remote_blob,
+                plat_badge_settings,
+                platform=plat,
+            )
+            if merged_blob is None:
+                continue
+
+            push_res = self._http.request_json(
+                "POST",
+                "https://api.nuvio.tv/rest/v1/rpc/sync_push_profile_settings_blob",
+                headers=headers,
+                json_body={
+                    "p_profile_id": profile_idx,
+                    "p_platform": plat,
+                    "p_settings_json": merged_blob,
+                    "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
+                },
+            )
+            match push_res:
+                case Err() as err:
+                    return err
+                case Ok(p_resp):
+                    if p_resp.status_code not in (200, 204):
+                        return Err(
+                            NetworkError(
+                                message=(
+                                    f"Nuvio {plat} profile settings push returned HTTP {p_resp.status_code}"
+                                ),
+                                status_code=p_resp.status_code,
+                            )
+                        )
+                    pushed_platforms.append(plat)
+
+        if not pushed_platforms:
+            return Ok("")
+        plat_label = ", ".join(pushed_platforms)
+        return Ok(f"stream badges ({active_filter_count} filters across {plat_label})")
+
+    def push_badges(
+        self,
+        raw_badge_doc: Mapping[str, Any],
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+    ) -> Result[tuple[str, dict[str, str]]]:
+        """Directly compiles and pushes `configs/nuvio_badges.json` to Nuvio profile settings blobs."""
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        match self._sync_badges_with_headers(raw_badge_doc, headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(summary):
+                msg = (
+                    f"Pushed {summary} to Nuvio profile #{profile_idx}"
+                    if summary
+                    else f"No target Nuvio platforms configured for profile #{profile_idx}"
+                )
+                return Ok((msg, updated_secrets))
+
+    # ------------------------------------------------------------------
+    # Meta / details-page enrichment (MDBList ratings, TMDB, Trakt comments)
+    # ------------------------------------------------------------------
+
+    def _pull_provider_credentials(
+        self,
+        headers: Mapping[str, str],
+        profile_idx: int,
+    ) -> Result[list[JsonDict]]:
+        res = self._http.request_json(
+            "POST",
+            "https://api.nuvio.tv/rest/v1/rpc/sync_pull_provider_credentials",
+            headers=headers,
+            json_body={"p_profile_id": profile_idx},
+        )
+        match res:
+            case Err() as err:
+                return err
+            case Ok(resp):
+                if resp.status_code == 404:
+                    return Ok([])
+                if resp.status_code != 200:
+                    return Err(
+                        NetworkError(
+                            message=f"Nuvio provider credentials pull returned HTTP {resp.status_code}",
+                            status_code=resp.status_code,
+                        )
+                    )
+                rows = resp.data if isinstance(resp.data, list) else []
+                return Ok([dict(r) for r in rows if isinstance(r, Mapping)])
+
+    def _push_provider_credentials(
+        self,
+        headers: Mapping[str, str],
+        profile_idx: int,
+        desired_rows: list[JsonDict],
+    ) -> Result[int]:
+        """Seeds missing providers then upserts the merged credential set. Returns providers written."""
+        if not desired_rows:
+            return Ok(0)
+        match self._pull_provider_credentials(headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(remote_rows):
+                pass
+
+        merged_rows, rows_to_seed = merge_provider_credential_rows(remote_rows, desired_rows)
+        for rpc_name, rows in (
+            ("sync_seed_provider_credentials", rows_to_seed),
+            ("sync_push_provider_credentials", merged_rows),
+        ):
+            if not rows:
+                continue
+            res = self._http.request_json(
+                "POST",
+                f"https://api.nuvio.tv/rest/v1/rpc/{rpc_name}",
+                headers=headers,
+                json_body={
+                    "p_profile_id": profile_idx,
+                    "p_credentials": rows,
+                    "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
+                },
+            )
+            match res:
+                case Err() as err:
+                    return err
+                case Ok(resp):
+                    if resp.status_code not in (200, 204):
+                        return Err(
+                            NetworkError(
+                                message=f"Nuvio {rpc_name} returned HTTP {resp.status_code}",
+                                status_code=resp.status_code,
+                            )
+                        )
+        return Ok(len(desired_rows))
+
+    def _sync_meta_with_headers(
+        self,
+        raw_meta_doc: Mapping[str, Any],
+        headers: Mapping[str, str],
+        profile_idx: int,
+    ) -> Result[str]:
+        match normalize_nuvio_meta_doc(raw_meta_doc):
+            case Err() as err:
+                return err
+            case Ok(norm_doc):
+                pass
+
+        platforms = [str(p) for p in norm_doc.get("platforms", [])]
+        if not platforms:
+            return Ok("")
+
+        pushed_platforms: list[str] = []
+        for plat in platforms:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(remote_blob):
+                    pass
+
+            plat_features = build_platform_meta_features(norm_doc, platform=plat)
+            merged_blob = merge_profile_settings_blob_meta(remote_blob, plat_features, platform=plat)
+            if merged_blob is None:
+                continue
+
+            push_res = self._http.request_json(
+                "POST",
+                "https://api.nuvio.tv/rest/v1/rpc/sync_push_profile_settings_blob",
+                headers=headers,
+                json_body={
+                    "p_profile_id": profile_idx,
+                    "p_platform": plat,
+                    "p_settings_json": merged_blob,
+                    "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
+                },
+            )
+            match push_res:
+                case Err() as err:
+                    return err
+                case Ok(p_resp):
+                    if p_resp.status_code not in (200, 204):
+                        return Err(
+                            NetworkError(
+                                message=(
+                                    f"Nuvio {plat} profile settings push returned HTTP {p_resp.status_code}"
+                                ),
+                                status_code=p_resp.status_code,
+                            )
+                        )
+                    pushed_platforms.append(plat)
+
+        match self._push_provider_credentials(headers, profile_idx, build_provider_credentials(norm_doc)):
+            case Err() as err:
+                return err
+            case Ok(cred_count):
+                pass
+
+        if not pushed_platforms and cred_count == 0:
+            return Ok("")
+        ratings = norm_doc.get("ratings", {})
+        active_providers = sum(1 for v in ratings.get("providers", {}).values() if v)
+        parts = [
+            f"meta enrichment ({active_providers} rating providers"
+            + (", TMDB" if norm_doc.get("tmdbEnrichment", {}).get("enabled") else "")
+            + (", Trakt comments" if norm_doc.get("traktComments") else "")
+            + f" across {', '.join(pushed_platforms) or 'no platforms'})"
+        ]
+        if cred_count:
+            parts.append(f"{cred_count} provider credential(s)")
+        return Ok(" and ".join(parts))
+
+    def pull_meta(
+        self,
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+        *,
+        version: str = "1.0.0",
+    ) -> Result[tuple[JsonDict, dict[str, str]]]:
+        """
+        Pulls live MDBList / TMDB / Trakt-comments / Meta-screen settings across Nuvio platforms
+        (plus provider credentials) and decompiles them into `configs/nuvio_meta.json` format.
+        """
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        platform_blobs: dict[str, Mapping[str, Any] | None] = {}
+        for plat in VALID_NUVIO_META_PLATFORMS:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(blob):
+                    platform_blobs[plat] = blob
+
+        match self._pull_provider_credentials(headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(cred_rows):
+                pass
+
+        return Ok((decompile_nuvio_meta(platform_blobs, cred_rows, version=version), updated_secrets))
+
+    def push_meta(
+        self,
+        raw_meta_doc: Mapping[str, Any],
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+    ) -> Result[tuple[str, dict[str, str]]]:
+        """Directly compiles and pushes `configs/nuvio_meta.json` to Nuvio profile settings + credentials."""
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        match self._sync_meta_with_headers(raw_meta_doc, headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(summary):
+                msg = (
+                    f"Pushed {summary} to Nuvio profile #{profile_idx}"
+                    if summary
+                    else f"No target Nuvio platforms configured for profile #{profile_idx}"
+                )
+                return Ok((msg, updated_secrets))
+
     def sync_account(
         self,
         account: Mapping[str, Any],
@@ -414,6 +839,8 @@ class NuvioClientSync:
                         )
                     )
 
+        parts: list[str] = [f"{len(p_addons)} addons"]
+
         raw_collections = account.get("nuvioCollections")
         if isinstance(raw_collections, list) and raw_collections:
             compiled_cols = compile_nuvio_collections(raw_collections, addons_list)
@@ -442,19 +869,34 @@ class NuvioClientSync:
                         for c in compiled_cols
                         if isinstance(c.get("folders"), list)
                     )
-                    return Ok(
-                        (
-                            f"Pushed {len(p_addons)} addons and {len(compiled_cols)} collections ({total_folders} folders) to Nuvio profile #{profile_idx}",
-                            updated_secrets,
-                        )
-                    )
+                    parts.append(f"{len(compiled_cols)} collections ({total_folders} folders)")
 
-        return Ok(
-            (
-                f"Pushed {len(p_addons)} addons directly to Nuvio profile #{profile_idx}",
-                updated_secrets,
-            )
-        )
+        raw_badges = account.get("nuvioBadges")
+        if isinstance(raw_badges, Mapping) and raw_badges:
+            match self._sync_badges_with_headers(raw_badges, headers, profile_idx):
+                case Err() as err:
+                    return err
+                case Ok(badge_summary):
+                    if badge_summary:
+                        parts.append(badge_summary)
+
+        raw_meta = account.get("nuvioMeta")
+        if isinstance(raw_meta, Mapping) and raw_meta:
+            match self._sync_meta_with_headers(raw_meta, headers, profile_idx):
+                case Err() as err:
+                    return err
+                case Ok(meta_summary):
+                    if meta_summary:
+                        parts.append(meta_summary)
+
+        if len(parts) == 1:
+            joined = f"{parts[0]} directly"
+        elif len(parts) == 2:
+            joined = f"{parts[0]} and {parts[1]}"
+        else:
+            joined = f"{', '.join(parts[:-1])}, and {parts[-1]}"
+
+        return Ok((f"Pushed {joined} to Nuvio profile #{profile_idx}", updated_secrets))
 
 
 class StremioClientSync:

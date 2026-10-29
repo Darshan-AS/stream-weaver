@@ -177,6 +177,10 @@ class TopologySnapshot:
     contraband_catalogs: tuple[str, ...]
     contraband_preset_fqn: str
     subtitle_languages: tuple[str, ...]
+    badge_imports: tuple[str, ...] = ()
+    badge_platforms: tuple[str, ...] = ()
+    badge_placement: str = "BOTTOM"
+    badge_show_in_player: bool = False
 
 
 _ADDON_DISPLAY_NAMES: Mapping[str, str] = {
@@ -289,6 +293,8 @@ def build_topology_snapshot(
     aiostreams: Mapping[str, Any],
     aiometadata: Mapping[str, Any],
     nuvio_collections: Mapping[str, Any] | None = None,
+    nuvio_badges: Mapping[str, Any] | None = None,
+    nuvio_meta: Mapping[str, Any] | None = None,
 ) -> TopologySnapshot:
     """Pure single-pass normalizer extracting shared topology state from raw service configs."""
     raw_cols = (
@@ -415,6 +421,8 @@ def build_topology_snapshot(
                 *_extract_secret_names(aiostreams),
                 *_extract_secret_names(aiometadata),
                 *(_extract_secret_names(nuvio_collections) if nuvio_collections else ()),
+                *(_extract_secret_names(nuvio_badges) if nuvio_badges else ()),
+                *(_extract_secret_names(nuvio_meta) if nuvio_meta else ()),
             }
         )
     )
@@ -543,6 +551,24 @@ def build_topology_snapshot(
             if s_lg and s_lg not in sub_langs:
                 sub_langs.append(s_lg)
 
+    badge_imports_list: list[str] = []
+    badge_platforms_list: list[str] = []
+    badge_placement = "BOTTOM"
+    badge_show_in_player = False
+    if isinstance(nuvio_badges, Mapping):
+        badge_placement = str(nuvio_badges.get("badgePlacement") or "BOTTOM").upper()
+        badge_show_in_player = bool(nuvio_badges.get("showInPlayer", False))
+        raw_b_plats = nuvio_badges.get("platforms", [])
+        if isinstance(raw_b_plats, Sequence) and not isinstance(raw_b_plats, (str, bytes)):
+            badge_platforms_list = [str(p) for p in raw_b_plats if str(p).strip()]
+        raw_b_imps = nuvio_badges.get("imports", [])
+        if isinstance(raw_b_imps, Sequence) and not isinstance(raw_b_imps, (str, bytes)):
+            for imp in raw_b_imps:
+                if isinstance(imp, str) and imp.strip():
+                    badge_imports_list.append(imp.strip())
+                elif isinstance(imp, Mapping) and imp.get("sourceUrl"):
+                    badge_imports_list.append(str(imp["sourceUrl"]).strip())
+
     return TopologySnapshot(
         aiomanager=aiomanager,
         aiostreams=aiostreams,
@@ -580,6 +606,10 @@ def build_topology_snapshot(
         contraband_catalogs=tuple(contraband_catalogs),
         contraband_preset_fqn=contraband_preset_fqn,
         subtitle_languages=tuple(sub_langs),
+        badge_imports=tuple(badge_imports_list),
+        badge_platforms=tuple(badge_platforms_list),
+        badge_placement=badge_placement,
+        badge_show_in_player=badge_show_in_player,
     )
 
 
@@ -589,6 +619,8 @@ def compile_architecture_bundle(
     aiostreams: Mapping[str, Any],
     aiometadata: Mapping[str, Any],
     nuvio_collections: Mapping[str, Any] | None = None,
+    nuvio_badges: Mapping[str, Any] | None = None,
+    nuvio_meta: Mapping[str, Any] | None = None,
 ) -> ArchitectureBundle:
     """
     Pure function: compiles the declarative JSON configs into:
@@ -601,6 +633,8 @@ def compile_architecture_bundle(
         aiostreams=aiostreams,
         aiometadata=aiometadata,
         nuvio_collections=nuvio_collections,
+        nuvio_badges=nuvio_badges,
+        nuvio_meta=nuvio_meta,
     )
     return ArchitectureBundle(
         likec4_dsl=_build_likec4_dsl(snapshot),
@@ -1082,6 +1116,33 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                 )
 
         lines.append("    }")
+
+    if snap.badge_imports:
+        plat_csv = ", ".join(snap.badge_platforms) or "tv, desktop, mobile"
+        lines.extend(
+            [
+                "    subsystem nuvio_badges 'Nuvio Stream Badges Compiler' {",
+                "      #enabled",
+                f"      description 'Compiles & syncs {len(snap.badge_imports)} badge pack(s) across {plat_csv} (placement: {snap.badge_placement}, player: {snap.badge_show_in_player})'",
+                "      technology 'configs/nuvio_badges.json'",
+                *_emit_metadata_block(
+                    "      ",
+                    {
+                        "platforms": plat_csv,
+                        "badge_placement": snap.badge_placement,
+                        "show_in_player": str(snap.badge_show_in_player).lower(),
+                        "imports": ", ".join(snap.badge_imports),
+                    },
+                ),
+                "    }",
+            ]
+        )
+        add_rel(
+            "aiomanager.nuvio_badges",
+            "nuvio",
+            f"Syncs Stream & Player Badges ({plat_csv})",
+            tech="Supabase Profile Settings RPC",
+        )
 
     if isinstance(mgr_vault, Sequence) and mgr_vault:
         vault_names = [
@@ -2117,6 +2178,21 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
     for col in cols_list:
         md_lines.append(
             f"| `{col.raw_id}` | **{col.title}** ({len(col.folder_titles)}) | {', '.join(col.folder_titles)} | {', '.join(col.feeding_addon_names)} |"
+        )
+
+    if snap.badge_imports:
+        plat_csv = ", ".join(f"`{p}`" for p in snap.badge_platforms) or "`tv`, `desktop`, `mobile`"
+        md_lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "## 5. Nuvio Stream & Player Badges (`configs/nuvio_badges.json`)",
+                "",
+                "| Platforms | Placement | Paused Player Logos | Active Badge Pack URLs |",
+                "| :--- | :--- | :--- | :--- |",
+                f"| {plat_csv} | `{snap.badge_placement}` | `{'enabled' if snap.badge_show_in_player else 'disabled'}` | {', '.join(f'`{u}`' for u in snap.badge_imports)} |",
+            ]
         )
 
     md_lines.append("")

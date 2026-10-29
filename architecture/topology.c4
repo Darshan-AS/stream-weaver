@@ -302,6 +302,17 @@ model {
         }
       }
     }
+    subsystem nuvio_badges 'Nuvio Stream Badges Compiler' {
+      #enabled
+      description 'Compiles & syncs 1 badge pack(s) across tv, desktop, mobile (placement: BOTTOM, player: True)'
+      technology 'configs/nuvio_badges.json'
+      metadata {
+        platforms 'tv, desktop, mobile'
+        badge_placement 'BOTTOM'
+        show_in_player 'true'
+        imports 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges.json'
+      }
+    }
     subsystem key_vault 'Encrypted API Key Vault' {
       #enabled #secret
       description 'Stores 5 tracked provider keys: AIOStreams · aiostreamsfortheweebsstable.midnightignite.me · 6d639290, TVDB, TMDB, RPDB, Gemini AI'
@@ -434,7 +445,7 @@ model {
         }
       }
       plugin preset_tdb_torrentsdb 'TorrentsDB [tdb]' {
-        #enabled
+        #disabled
         description 'Group 1 Primary — Resources: stream'
         technology 'Preset: torrents-db'
         metadata {
@@ -679,6 +690,11 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
+  secretKey sec_secret_mdblist_api_key 'SECRET_MDBLIST_API_KEY' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_secret_nuvio_access_token 'SECRET_NUVIO_ACCESS_TOKEN' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
@@ -832,6 +848,9 @@ model {
   }
   aiomanager.nuvio_collections.col_courses_docs -> aiostreams 'Pulls catalog rows for Courses & Documentaries' {
     #catalog
+  }
+  aiomanager.nuvio_badges -> nuvio 'Syncs Stream & Player Badges (tv, desktop, mobile)' {
+    technology 'Supabase Profile Settings RPC'
   }
   aiostreams.sel_engine -> tamtaro_srv 'Syncs PSE / ESE / ISE & Excluded Regex rules' {
     technology 'HTTPS JSON'

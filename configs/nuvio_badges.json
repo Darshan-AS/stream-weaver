@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "platforms": [
+    "tv",
+    "desktop",
+    "mobile"
+  ],
+  "badgePlacement": "BOTTOM",
+  "showFileSizeBadges": false,
+  "showAddonLogo": true,
+  "showInPlayer": true,
+  "playerBadgeSource": "",
+  "imports": [
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges.json",
+      "isActive": true
+    }
+  ]
+}

@@ -16,6 +16,18 @@
 - [x] Move the 3 rotating BingeCat daily micro-genre catalogs (`aicat_list_for_you_1..3`) out of Nuvio Collection folders onto the loose Home screen so they refresh automatically every 24h without running `sw push`
 - [x] Fix missing folder cover images on **Nuvio Mac Desktop** (standardize all 24 `coverImageUrl`s and 5 `backdropImageUrl`s in `configs/nuvio_collections.json` to genuine `.webp` assets on `https://imkaptain.github.io/nuvio-assets/assets/images/<hash>.webp`, replacing `raw.githubusercontent.com` `.png` files that had mismatched JPEG magic bytes)
 
+### Nuvio Stream Badges (`nuvio_badges`)
+- [x] Add `configs/nuvio_badges.json` declaring **Elite-Badges** (`leonevz/Elite-Badges`) across `tv`, `desktop`, and `mobile` with stream-list and video-player (`showInPlayer`) logo badges
+- [x] Implement pure compiler/decompiler `src/stream_weaver/core/nuvio_badges.py`, `NuvioClientSync.push_badges` / `pull_badges`, and `sw push` / `sw pull` / `sw diff` `nuvio_badges` support
+- [x] Strip redundant text badges (`4K`, `REMUX`, `HEVC`, `HDR`/`DV`, `Atmos`, `7.1`) from `configs/aiostreams.json` custom formatter (keeping `AV1` fallback and filename)
+
+### Nuvio Details-Page Enrichment (`nuvio_meta`)
+- [x] Add `configs/nuvio_meta.json` declaring MDBList ratings providers (IMDb/TMDB/RT/Audience/Metacritic/Trakt/Letterboxd/MAL), TMDB enrichment modules, Trakt comments, and Meta Screen layout
+- [x] Implement pure compiler `src/stream_weaver/core/nuvio_meta.py` (per-platform `mdblist_settings` / `tmdb_settings` / `trakt_*` / `meta_screen_settings_payload` fragments, read-modify-write blob overlay, provider-credential merge, decompiler for `sw diff`)
+- [x] Implement `NuvioClientSync.push_meta` / `pull_meta` (profile settings blobs for `tv`/`desktop`/`mobile` + `sync_seed/push/pull_provider_credentials` RPCs for the MDBList/TMDB keys) and wire `nuvioMeta` through `sync_account`
+- [x] Wire `nuvio_meta` into `sw push` / `sw pull` / `sw diff` / `sw sanitize` (implicit via `all`/`aiomanager`/`nuvio`, explicit via `nuvio_meta`) with `SECRET_MDBLIST_API_KEY` / `SECRET_TMDB_API_KEY` lenses
+- [ ] **Set `SECRET_MDBLIST_API_KEY` in `.env`** (free key from https://mdblist.com/preferences) and run `uv run sw push nuvio_meta`; until then `sw push all` skips the meta sync with a warning
+
 ---
 
 ## Pending / Backlog

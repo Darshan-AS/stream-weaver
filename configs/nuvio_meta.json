@@ -1,0 +1,102 @@
+{
+  "version": "1.0.0",
+  "platforms": [
+    "tv",
+    "desktop",
+    "mobile"
+  ],
+  "ratings": {
+    "enabled": true,
+    "apiKey": "{{SECRET_MDBLIST_API_KEY}}",
+    "providers": {
+      "imdb": true,
+      "tmdb": true,
+      "tomatoes": true,
+      "audience": true,
+      "metacritic": true,
+      "trakt": true,
+      "letterboxd": true,
+      "mal": true
+    }
+  },
+  "tmdbEnrichment": {
+    "enabled": true,
+    "apiKey": "{{SECRET_TMDB_API_KEY}}",
+    "language": "en-US",
+    "modules": {
+      "trailers": true,
+      "artwork": true,
+      "basicInfo": true,
+      "details": true,
+      "releaseDates": true,
+      "credits": true,
+      "productionCompanies": true,
+      "networks": true,
+      "episodes": true,
+      "seasonPosters": true,
+      "moreLikeThis": true,
+      "collections": true
+    }
+  },
+  "traktComments": true,
+  "episodeRatings": "show",
+  "metaScreen": {
+    "backgroundMode": "normal",
+    "heroTrailerPlayback": false,
+    "tabLayout": false,
+    "episodeCardStyle": "horizontal",
+    "blurUnwatchedEpisodes": false,
+    "sections": [
+      {
+        "key": "ACTIONS",
+        "enabled": true,
+        "order": 0
+      },
+      {
+        "key": "OVERVIEW",
+        "enabled": true,
+        "order": 1
+      },
+      {
+        "key": "PRODUCTION",
+        "enabled": true,
+        "order": 2
+      },
+      {
+        "key": "CAST",
+        "enabled": true,
+        "order": 3
+      },
+      {
+        "key": "COMMENTS",
+        "enabled": true,
+        "order": 4
+      },
+      {
+        "key": "TRAILERS",
+        "enabled": true,
+        "order": 5
+      },
+      {
+        "key": "EPISODES",
+        "enabled": true,
+        "order": 6
+      },
+      {
+        "key": "DETAILS",
+        "enabled": true,
+        "order": 7
+      },
+      {
+        "key": "COLLECTION",
+        "enabled": true,
+        "order": 8
+      },
+      {
+        "key": "MORE_LIKE_THIS",
+        "enabled": true,
+        "order": 9
+      }
+    ]
+  }
+}

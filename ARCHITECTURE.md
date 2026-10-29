@@ -41,7 +41,7 @@ flowchart LR
     end
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
-        AS["AIOStreams\n(16 Active Plugins)"]
+        AS["AIOStreams\n(15 Active Plugins)"]
         AM["AIOMetadata\n(64 Active Catalogs, 48 Home)"]
         BC["BingeCat AI Assistant"]
         CB["Contraband Static Addon\n(Peterson Academy)"]
@@ -83,7 +83,6 @@ flowchart LR
             P_com["Comet (com)"]
             P_stz["StremThru Torz (stz)"]
             P_mdf["MediaFusion (mdf)"]
-            P_tdb["TorrentsDB (tdb)"]
             P_kna["Knaben (kna)"]
             P_sdx["SeaDex (sdx)"]
             P_atn["AnimeTosho (atn)"]
@@ -122,7 +121,6 @@ flowchart LR
 | `com` | **Comet** | `comet` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `stz` | **StremThru Torz** | `stremthruTorz` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `mdf` | **MediaFusion** | `mediafusion` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
-| `tdb` | **TorrentsDB** | `torrents-db` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `kna` | **Knaben** | `knaben` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `sdx` | **SeaDex** | `seadex` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `atn` | **AnimeTosho** | `animetosho` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
@@ -176,3 +174,11 @@ flowchart LR
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |
 | `col-courses-docs` | **Courses & Documentaries** (3) | Peterson Academy, Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata, AIOStreams |
+
+---
+
+## 5. Nuvio Stream & Player Badges (`configs/nuvio_badges.json`)
+
+| Platforms | Placement | Paused Player Logos | Active Badge Pack URLs |
+| :--- | :--- | :--- | :--- |
+| `tv`, `desktop`, `mobile` | `BOTTOM` | `enabled` | `https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges.json` |
