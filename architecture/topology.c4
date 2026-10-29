@@ -67,19 +67,18 @@ model {
   // ==========================================================================
   controlPlane stream_weaver 'Stream Weaver (sw CLI)' {
     #enabled
-    description 'Pure Functional GitOps Control Plane (sw pull / push / sanitize / warm / diagram)'
-    technology 'Python 3.14+ / uv / AES-256-GCM'
-    link https://github.com/Darshan-AS/stream-weaver 'GitHub Repository'
+    description 'Pure Functional GitOps Control Plane (sw init / pull / push / diff / sanitize / warm / diagram)'
+    technology 'Python 3.13+ / uv / AES-256-GCM'
     metadata {
       architecture 'Functional Core, Imperative Shell'
-      commands 'sw pull | sw push | sw sanitize | sw warm | sw diagram'
+      commands 'sw init | sw pull | sw push | sw diff | sw sanitize | sw warm | sw diagram'
       crypto 'PBKDF2-HMAC-SHA256 + AES-256-GCM'
     }
   }
 
   client nuvio 'Nuvio Client' {
     #enabled
-    description 'Primary Streaming App with Tabbed Home Collections, AI Picks & Native Sync'
+    description 'Primary Streaming App with Tabbed Home Collections & Native Sync'
     technology 'Nuvio App (Supabase Sync)'
   }
 
@@ -97,11 +96,11 @@ model {
     #debrid
     description 'Cached Debrid Streams, Usenet/Torrent Offloading & Personal Cloud Library'
     technology 'api.torbox.app'
-    link https://torbox.app/settings 'TorBox Dashboard'
+    link https://torbox.app/settings 'Provider Portal'
   }
   externalServer tmdb_srv 'TMDB API (The Movie Database)' {
     #metadata
-    description 'Primary Movie/Series Metadata, Regional Discover (HI/KN/JA), People & Search'
+    description 'Primary Movie/Series Metadata, Regional Discover, People & Search'
     technology 'api.themoviedb.org'
     link https://www.themoviedb.org/settings/api 'TMDB API Settings'
   }
@@ -152,9 +151,9 @@ model {
   }
   externalServer github_srv 'GitHub Raw CDN' {
     #catalog
-    description 'Hosts static Contraband Addon manifests & Vidhin05 SEL/Regex release rules'
+    description 'Hosts static Stremio addon manifests & synced SEL/Regex release rules'
     technology 'raw.githubusercontent.com'
-    link https://github.com/Darshan-AS/aio_contraband 'aio_contraband Repo'
+    link https://github.com/luckynumb3rs/stremio-perfect-setup 'Static Addon Repo'
   }
   externalServer tamtaro_srv 'Tamtaro SEL Rule Server' {
     #metadata
@@ -168,7 +167,7 @@ model {
   }
 
   // ==========================================================================
-  // 3. Companion Stremio/Nuvio Addons (including Contraband Internal Pipeline)
+  // 3. Companion Stremio/Nuvio Addons
   // ==========================================================================
   addon bingecat 'BingeCat AI Assistant' {
     #enabled #ai #catalog
@@ -177,42 +176,42 @@ model {
     link https://bingecat.com 'BingeCat'
   }
 
-  addon contraband 'Contraband (aio_contraband)' {
+  addon contraband 'Contraband Static Addon' {
     #enabled #catalog
-    description 'Curated Static Stremio Addon & TorBox Ingestor for Niche Courses & Lectures (Peterson Academy)'
-    technology 'dev.darshanas.contraband'
-    link https://github.com/Darshan-AS/aio_contraband 'GitHub Repository'
+    description 'Curated Static Stremio Addon & Cloud Ingestor(Peterson Academy)'
+    technology 'static.contraband'
+    link https://github.com/luckynumb3rs/stremio-perfect-setup 'GitHub Repository'
     metadata {
-      addon_id 'dev.darshanas.contraband'
-      id_prefixes 'sw_, pa_, aiostreams::library.torbox.torrent.'
+      addon_id 'static.contraband'
+      id_prefixes 'sw_, pa_'
       resources 'catalog, meta, stream'
     }
 
     subsystem cb_cli 'Contraband CLI (cb)' {
       #enabled
-      description 'Imperative Shell CLI: cb add | cb sync | cb watch | cb list | cb publish'
-      technology 'Python 3.14+ / uv'
+      description 'Imperative Shell CLI: cb init | cb add | cb sync | cb watch | cb serve | cb publish'
+      technology 'Python 3.13+ / uv'
     }
-    subsystem torbox_ingestor 'TorBox Magnet Queue & Slot Promoter' {
+    subsystem debrid_ingestor 'Debrid Queue & Slot Promoter' {
       #enabled #debrid
-      description 'Queues course magnets, maintains 3 parallel downloads & resolves file IDs'
-      technology 'TorBox REST Adapter'
+      description 'Queues magnets, maintains parallel downloads & resolves cloud file indices'
+      technology 'DebridProviderProtocol'
     }
     subsystem static_compiler 'Static Manifest, Catalog & Stream Compiler' {
       #enabled #catalog
       description 'Compiles deterministic Stremio JSON files (manifest.json, catalog/, meta/, stream/)'
       technology 'Pure Functional Core'
     }
-    plugin peterson_catalog 'Peterson Academy Catalog' {
+    plugin catalog_peterson_academy 'Peterson Academy Catalog' {
       #enabled #catalog
-      description 'Curated university-style lectures across 8 humanities & science genres'
-      technology 'series / peterson_academy'
+      description 'Static Stremio catalog row: Peterson Academy'
+      technology 'catalog / meta / stream'
     }
   }
 
   addon cinemeta 'Cinemeta (Official)' {
     #enabled #metadata
-    description 'Canonical IMDb (tt) Metadata Fallback (Standard Catalogs & Search Disabled)'
+    description 'Canonical IMDb (tt) Metadata Fallback'
     technology 'v3-cinemeta.strem.io'
   }
 
@@ -222,8 +221,7 @@ model {
   controlPlane aiomanager 'AIOManager' {
     #enabled
     description 'Central Addon Library, Account Profiles, Key Vault, Autopilot Failover & Client Sync'
-    technology 'AIOManager v2.0 (aiomanagerfortheweebs.midnightignite.me)'
-    link https://aiomanagerfortheweebs.midnightignite.me 'Live AIOManager Instance'
+    technology 'AIOManager v2.0 (Encrypted Cloud Sync)'
 
     subsystem acc_don 'Account Profile: Don' {
       #enabled
@@ -321,8 +319,8 @@ model {
   // ==========================================================================
   aggregator aiostreams 'AIOStreams' {
     #enabled
-    description 'Aggregates scrapers in sequential groups, checks TorBox cache, filters via SEL/Regex & formats streams'
-    technology 'AIOStreams v2.36 (aiostreamsfortheweebsstable.midnightignite.me)'
+    description 'Aggregates scrapers in sequential groups, checks Torbox cache, filters via SEL/Regex & formats streams'
+    technology 'AIOStreams (aiostreamsfortheweebsstable.midnightignite.me)'
     link https://aiostreamsfortheweebsstable.midnightignite.me 'Live AIOStreams Instance'
     metadata {
       preferred_resolutions '2160p, 1440p, 1080p, 720p, 576p'
@@ -334,7 +332,7 @@ model {
 
     subsystem sel_engine 'SEL Filter, Deduplicator & Custom Formatter' {
       #enabled
-      description 'Applies synced Tamtaro/Vidhin05 Stream Expressions, Title/Year/Episode matching & custom prism formatting'
+      description 'Applies synced Stream Expressions, Title/Year/Episode matching & custom stream formatting'
       technology 'Stream Expression Language (SEL)'
       metadata {
         title_matching_mode 'exact'
@@ -349,7 +347,7 @@ model {
     }
     subsystem group1_primary 'Group 1: Primary Sequential Scrapers (Always Run)' {
       #enabled #primary
-      description 'Executes 11 primary scrapers in parallel (Contraband, Library, Torrent/Debrid & Anime)'
+      description 'Executes 11 primary scrapers in parallel (Contraband, Library, Torrentio, Meteor, Comet)'
       technology 'Sequential Group 1 (condition: true)'
       plugin preset_swc_contraband 'Contraband [swc]' {
         #enabled
@@ -528,7 +526,7 @@ model {
     }
     subsystem subtitle_addons 'Subtitle Providers' {
       #enabled
-      description '2 multi-language & AI-translated subtitle addons (EN, KN)'
+      description '2 subtitle addon(s) (en, kn)'
       technology 'OpenSubtitles V3'
       plugin preset_osb_opensubtitles_v3_pro 'OpenSubtitles V3 Pro [osb]' {
         #enabled
@@ -564,7 +562,7 @@ model {
   aggregator aiometadata 'AIOMetadata' {
     #enabled #metadata
     description 'Serves 64 active catalogs (48 on Home), canonical metadata, search & rating posters'
-    technology 'AIOMetadata v3.6 (aiometadatafortheweebs.midnightignite.me)'
+    technology 'AIOMetadata (aiometadatafortheweebs.midnightignite.me)'
     link https://aiometadatafortheweebs.midnightignite.me 'Live AIOMetadata Instance'
     metadata {
       active_catalogs '64'
@@ -608,7 +606,7 @@ model {
     }
     plugin cat_src_mal 'MyAnimeList (MAL) Anime Catalogs (7)' {
       #enabled #catalog
-      description '7 active (3 Home): Airing Now, Popular, Top Rated, Schedule, Genres & Top Movies/Series'
+      description '7 active (3 Home): Anime Airing Now, Popular Anime, Top Rated Anime, MAL Airing Schedule, MAL Genres, MAL Top Movies'
       technology 'Source: mal'
       metadata {
         active_count '7'
@@ -616,9 +614,9 @@ model {
         sample_catalogs 'Anime Airing Now (anime), Popular Anime (anime), Top Rated Anime (anime), MAL Airing Schedule (anime), MAL Genres (anime), MAL Top Movies (anime), MAL Top Series (anime)'
       }
     }
-    plugin cat_src_streaming 'Streaming Platform Catalogs (14 Services) (24)' {
+    plugin cat_src_streaming 'Streaming Platform Catalogs (24)' {
       #enabled #catalog
-      description '24 active (24 Home): Netflix, Prime, JioHotstar, HBO Max, Apple TV+, Disney+, Sony LIV, Zee5, Curiosity, Hulu'
+      description '24 active (24 Home): Netflix, Netflix, Prime Video, Prime Video, JioHotstar, JioHotstar'
       technology 'Source: streaming'
       metadata {
         active_count '24'
@@ -626,9 +624,9 @@ model {
         sample_catalogs 'Netflix (movie), Netflix (series), Prime Video (movie), Prime Video (series), JioHotstar (movie), JioHotstar (series), HBO Max (movie), HBO Max (series)'
       }
     }
-    plugin cat_src_tmdb 'TMDB & Regional Discover Catalogs (22)' {
+    plugin cat_src_tmdb 'TMDB Discover Catalogs (22)' {
       #enabled #catalog
-      description '22 active (16 Home): Popular, Top Rated, Hindi, Kannada, Japanese & Documentary Discover (SECRET_TMDB_API_KEY)'
+      description '22 active (16 Home): TMDB Popular, TMDB Popular, TMDB Top Rated, TMDB Top Rated, Hindi Movies, New Hindi Releases'
       technology 'Source: tmdb'
       metadata {
         active_count '22'
@@ -638,7 +636,7 @@ model {
     }
     plugin cat_src_trakt 'Trakt.tv Catalogs & Watch Tracking (11)' {
       #enabled #catalog
-      description '11 active (5 Home): Up Next, Watchlist, Trending, Popular, Calendar & Scrobbling (SECRET_TRAKT_TOKEN_ID)'
+      description '11 active (5 Home): Trakt Up Next, Trakt Watchlist, Trakt Watchlist, Trakt Trending, Trakt Trending, Trakt Popular'
       technology 'Source: trakt'
       metadata {
         active_count '11'
@@ -760,21 +758,21 @@ model {
   stream_weaver -> stremio 'Directly reconciles addon collection' {
     technology 'api.strem.io'
   }
-  contraband.cb_cli -> contraband.torbox_ingestor 'Queues magnets & polls active slots (cb add / watch)'
-  contraband.torbox_ingestor -> torbox_srv 'Ingests magnets & queries cloud file list' {
-    #debrid
-    technology 'SECRET_TORBOX_API_KEY'
-  }
-  contraband.cb_cli -> contraband.static_compiler 'Weaves course metadata & episode streams'
-  contraband.static_compiler -> contraband.peterson_catalog 'Emits static catalog/meta/stream JSON'
-  contraband.static_compiler -> github_srv 'Publishes static addon tree to main branch (cb publish)' {
-    technology 'Git Push'
-  }
   nuvio -> bingecat 'Fetches AI Picks & Because You Watched rows' {
     technology 'Stremio Protocol'
   }
   stremio -> bingecat 'Fetches AI recommendation catalogs' {
     technology 'Stremio Protocol'
+  }
+  contraband.static_compiler -> contraband.catalog_peterson_academy 'Emits static catalog/meta/stream JSON'
+  contraband.cb_cli -> contraband.debrid_ingestor 'Queues magnets & polls active slots (cb add / watch)'
+  contraband.debrid_ingestor -> torbox_srv 'Ingests magnets & queries cloud file list' {
+    #debrid
+    technology 'SECRET_TORBOX_API_KEY'
+  }
+  contraband.cb_cli -> contraband.static_compiler 'Weaves media metadata & episode streams'
+  contraband.static_compiler -> github_srv 'Publishes static addon tree (cb publish)' {
+    technology 'Git Push'
   }
   nuvio -> cinemeta 'Fetches base IMDb (tt) metadata' {
     technology 'Stremio Protocol'
@@ -838,7 +836,7 @@ model {
   aiostreams.sel_engine -> tamtaro_srv 'Syncs PSE / ESE / ISE & Excluded Regex rules' {
     technology 'HTTPS JSON'
   }
-  aiostreams.sel_engine -> github_srv 'Syncs Vidhin05 English ranked Regex & SEL expressions' {
+  aiostreams.sel_engine -> github_srv 'Syncs ranked Regex & SEL expressions' {
     technology 'HTTPS JSON'
   }
   aiostreams.sel_engine -> tmdb_srv 'Validates exact title/year/episode matching' {
@@ -854,10 +852,10 @@ model {
     #debrid
     technology 'SECRET_TORBOX_API_KEY'
   }
-  aiostreams.group1_primary.preset_swc_contraband -> contraband 'Wraps Peterson Academy catalog, meta & streams' {
-    technology 'GitHub Raw Manifest'
+  aiostreams.group1_primary.preset_swc_contraband -> contraband 'Wraps static addon catalog, meta & streams' {
+    technology 'Static Addon Manifest'
   }
-  aiostreams.group1_primary.preset_lib_library -> torbox_srv 'Exposes personal TorBox Cloud Library catalog & direct streams' {
+  aiostreams.group1_primary.preset_lib_library -> torbox_srv 'Exposes personal Torbox Cloud Library catalog & direct streams' {
     technology 'SECRET_TORBOX_API_KEY'
   }
   aiostreams.group1_primary.preset_tio_torrentio -> aiostreams.svc_torbox 'Resolves infoHashes via Debrid cache' {
@@ -887,8 +885,8 @@ model {
   aiostreams.group1_primary.preset_atn_animetosho -> aiostreams.svc_torbox 'Resolves infoHashes via Debrid cache' {
     #debrid
   }
-  aiostreams.subtitle_addons.preset_osb_opensubtitles_v3_pro -> opensubtitles_srv 'Fetches EN/KN subtitles'
-  aiostreams.subtitle_addons.preset_osv_opensubtitles_v3_fallback -> opensubtitles_srv 'Fetches EN/KN subtitles'
+  aiostreams.subtitle_addons.preset_osb_opensubtitles_v3_pro -> opensubtitles_srv 'Fetches en, kn subtitles'
+  aiostreams.subtitle_addons.preset_osv_opensubtitles_v3_fallback -> opensubtitles_srv 'Fetches en, kn subtitles'
   aiostreams.sel_engine -> aiostreams.group1_primary '1. Queries primary scrapers'
   aiostreams.group1_primary -> aiostreams.group2_fallback '2. Fallback if count(cached(totalStreams)) < 3' {
     #fallback
@@ -984,7 +982,7 @@ model {
   sec_secret_tmdb_access_token -> tmdb_srv 'v4 Read Access Token' {
     #secret
   }
-  sec_secret_tmdb_api_key -> aiometadata 'Authenticates TMDB metadata, search & regional catalogs' {
+  sec_secret_tmdb_api_key -> aiometadata 'Authenticates TMDB metadata, search & catalogs' {
     #secret
   }
   sec_secret_tmdb_api_key -> aiostreams 'Authenticates title/year matching' {
@@ -1088,7 +1086,7 @@ views {
   // 4. AIOStreams Drill-Down View (Nested Scraper Groups)
   view aiostreams_view of aiostreams {
     title '4. AIOStreams — Sequential Scraper Groups, Debrid & SEL Engine'
-    description 'Drill-down into AIOStreams showing nested Group 1 primary scrapers, Group 2 HTTP fallback, Subtitles, TorBox cache & rule servers'
+    description 'Drill-down into AIOStreams showing nested Group 1 primary scrapers, Group 2 HTTP fallback, Subtitles, Torbox cache & rule servers'
     include
       *,
       aiostreams.*,
@@ -1129,16 +1127,16 @@ views {
     autoLayout LeftRight
   }
 
-  // 6. Contraband (aio_contraband) Drill-Down View
+  // 6. Contraband Static Addon Drill-Down View
   view contraband_view of contraband {
-    title '6. Contraband (aio_contraband) — cb CLI, TorBox Queue & Static Compiler'
-    description 'Drill-down into the Contraband static addon compiler and TorBox magnet queue pipeline'
+    title '6. Contraband — cb CLI, Debrid Queue & Static Compiler'
+    description 'Drill-down into the Contraband static addon compiler and cloud magnet queue pipeline'
     include
       *,
       contraband.*,
       torbox_srv,
-      github_srv,
-      aiostreams.group1_primary.preset_swc_contraband
+      aiostreams.group1_primary.preset_swc_contraband,
+      github_srv
     autoLayout LeftRight
   }
 
@@ -1171,15 +1169,15 @@ views {
   // 8. Dynamic Flow 1: Catalog Browse, Metadata & Sequential Stream Resolution
   dynamic view stream_resolution_flow {
     title '8. Dynamic Flow: Catalog Browse, Metadata & Sequential Stream Resolution'
-    description 'Step-by-step runtime flow when browsing in Nuvio/Stremio and playing a stream via AIOStreams & TorBox'
+    description 'Step-by-step runtime flow when browsing in Nuvio/Stremio and playing a stream via AIOStreams & Torbox'
 
-    nuvio -> aiometadata '1. Requests Home catalog rows (Trakt, TMDB Regional, MAL, Streaming)'
+    nuvio -> aiometadata '1. Requests Home catalog rows'
     aiometadata -> tmdb_srv '2. Fetches catalog items & metadata'
-    aiometadata -> postersplus_srv '3. Attaches frosted multi-source rating posters'
+    aiometadata -> aiometadata.poster_engine '3. Attaches rating badge posters'
     nuvio -> aiostreams '4. User clicks Play -> requests streams for IMDb/TMDB ID'
-    aiostreams.sel_engine -> aiostreams.group1_primary '5. Triggers Group 1 Primary Scrapers (Contraband, Torrentio, Comet, StremThru, MediaFusion, SeaDex)'
+    aiostreams.sel_engine -> aiostreams.group1_primary '5. Triggers Group 1 Primary Scrapers'
     aiostreams.svc_torbox -> torbox_srv '6. Verifies instant cache & resolves debrid playback links'
-    aiostreams.group1_primary -> aiostreams.group2_fallback '7. Conditionally triggers Group 2 HTTP Scrapers (HD Hub, Sootio, WebStreamr) only if cached < 3'
+    aiostreams.group1_primary -> aiostreams.group2_fallback '7. Conditionally triggers Group 2 HTTP Scrapers when cache threshold is unmet'
     aiostreams.sel_engine -> nuvio '8. Deduplicates, sorts by SEL score/resolution & returns formatted streams'
 
     autoLayout TopBottom
@@ -1195,7 +1193,7 @@ views {
     stream_weaver -> aiomanager '3. Rehydrates manifests, compiles Nuvio collections & pushes AES-256-GCM envelope'
     stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 5 tabbed Home Collections'
     stream_weaver -> stremio '5. Directly reconciles Stremio addon collection via AuthKey'
-    stream_weaver -> aiometadata '6. Concurrently pre-warms all 48+ Home catalog endpoints (sw warm)'
+    stream_weaver -> aiometadata '6. Concurrently pre-warms 48+ Home catalog endpoints (sw warm)'
 
     autoLayout TopBottom
   }
@@ -1211,7 +1209,7 @@ views {
     aiometadata.search_router -> kitsu_srv '4. Queries Anime Movie & Series search (kitsu.search)'
     aiometadata.search_router -> aiometadata.gemini_search '5. Dispatches natural-language query to Gemini search plugin'
     aiometadata.gemini_search -> gemini_srv '6. Resolves semantic recommendations via Google AI Studio'
-    aiometadata.poster_engine -> postersplus_srv '7. Decorates search results with frosted rating posters'
+    aiometadata.poster_engine -> rpdb_srv '7. Decorates search results with rating posters'
 
     autoLayout TopBottom
   }

@@ -4,7 +4,7 @@
 
 ## Interactive Drill-Down Explorer (LikeC4 — 10 Views)
 
-For the interactive, Google-Maps-style zoomable graph with **10 perspectives** (`index`, `aiomanager_view`, `nuvio_collections_view`, `aiostreams_view`, `aiometadata_view`, `contraband_view`, `secrets_view`, `stream_resolution_flow`, `gitops_sync_flow`, and `ai_search_flow`):
+For the interactive, Google-Maps-style zoomable graph with **10 perspectives** (`index`, `aiomanager_view`, `nuvio_collections_view`, `aiostreams_view`, `aiometadata_view`, `contraband_view`, `secrets_view`, `stream_resolution_flow`, `gitops_sync_flow`, `ai_search_flow`):
 
 ```bash
 # Regenerate topology from configs/*.json at any time:
@@ -26,7 +26,7 @@ npx likec4 build architecture -o dist/architecture
 ```mermaid
 flowchart LR
     subgraph GitOps["🧶 Local GitOps (stream-weaver)"]
-        SW["sw CLI\npull | push | sanitize | warm | diagram"]
+        SW["sw CLI\ninit | pull | push | diff | sanitize | warm | diagram"]
         ENV[".env\n{{SECRET_*}} Vault"]
         SW --- ENV
     end
@@ -44,26 +44,26 @@ flowchart LR
         AS["AIOStreams\n(16 Active Plugins)"]
         AM["AIOMetadata\n(64 Active Catalogs, 48 Home)"]
         BC["BingeCat AI Assistant"]
-        CB["Contraband (aio_contraband)\nPeterson Academy"]
+        CB["Contraband Static Addon\n(Peterson Academy)"]
         CM["Cinemeta (IMDb Fallback)"]
     end
 
     subgraph Upstream["☁️ External Upstream Servers & APIs"]
-        TB[("TorBox API\nDebrid & Cloud")]
+        DEB[("TorBox Cloud & Debrid API")]
         TMDB[("TMDB API\nMeta, Search & Discover")]
         TVDB[("TheTVDB API v4\nSeries & Anime")]
         GEM[("Google AI Studio\nGemini Search")]
         TRAKT[("Trakt.tv API\nWatchlist & Up Next")]
         MAL[("MyAnimeList / Kitsu\nAnime Catalogs & IDs")]
-        POSTER[("PostersPlus & RPDB\nRating Posters")]
+        POSTER[("Rating Posters\nRPDB / Custom")]
         GH[("GitHub Raw & Tamtaro\nManifests & SEL Rules")]
     end
 
     SW ==> MGR & AS & AM
     MGR == "Native Sync" ==> Nuvio & Stremio
     Nuvio & Stremio --> AS & AM & BC & CM
-    AS --> CB & TB & TMDB & TVDB & POSTER & GH
-    CB --> GH & TB
+    AS --> CB & DEB & TMDB & TVDB & POSTER & GH
+    CB --> GH & DEB
     AM --> TMDB & TVDB & GEM & TRAKT & MAL & POSTER
 ```
 
@@ -99,14 +99,14 @@ flowchart LR
         end
     end
 
-    TB_EXT[("TorBox Debrid API\n(SECRET_TORBOX_API_KEY)")]
-    CB_EXT[("Contraband GitHub Raw")]
-    RULES_EXT[("Tamtaro & Vidhin05\nSEL / Regex Rules")]
+    DEB_EXT[("TorBox Cloud & Debrid API\n(SECRET_TORBOX_API_KEY)")]
+    CB_EXT[("Static Addon Manifest\n(GitHub Raw)")]
+    RULES_EXT[("Tamtaro & Ranked\nSEL / Regex Rules")]
     META_EXT[("TMDB / TVDB / RPDB")]
 
     SEL --> G1
-    G1 -. "If cached < 3" .-> G2
-    G1 ==> TB_EXT
+    G1 -. "If count(cached(totalStreams)) < 3" .-> G2
+    G1 ==> DEB_EXT
     P_swc --> CB_EXT
     SEL --> RULES_EXT & META_EXT
 ```
@@ -115,8 +115,8 @@ flowchart LR
 
 | ID | Plugin Name | Preset Type | Execution Group | Resources | Upstream Dependency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `swc` | **Contraband** | `custom` | Group 1 (Primary) | `catalog, meta, stream` | GitHub Raw (`aio_contraband`) + TorBox |
-| `lib` | **Library** | `library` | Group 1 (Primary) | `stream, catalog, meta` | TorBox Cloud Library (`SECRET_TORBOX_API_KEY`) |
+| `swc` | **Contraband** | `custom` | Group 1 (Primary) | `catalog, meta, stream` | Static Manifest + Torbox |
+| `lib` | **Library** | `library` | Group 1 (Primary) | `stream, catalog, meta` | Torbox Cloud Library (`SECRET_TORBOX_API_KEY`) |
 | `tio` | **Torrentio** | `torrentio` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `met` | **Meteor** | `meteor` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `com` | **Comet** | `comet` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
@@ -139,13 +139,13 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph AIOMetadata["AIOMetadata Internal Engines"]
-        MR["Metadata Router\nMovie/Series: TMDB | Anime: TVDB + Kitsu"]
-        SR["Search Engine\n(8 Active Engines + Gemini AI)"]
+        MR["Metadata Router\nMovie/Series: TMDB | Anime: TVDB + KITSU"]
+        SR["Search Engine\n(8 Active Engines)"]
         CAT_TRAKT["Trakt Catalogs\n(11 active, 5 Home)"]
-        CAT_TMDB["TMDB & Regional Discover\n(22 active, 16 Home)"]
+        CAT_TMDB["TMDB Discover\n(22 active, 16 Home)"]
         CAT_MAL["MAL Anime Catalogs\n(7 active, 3 Home)"]
         CAT_STR["Streaming Platforms\n(24 active, 24 Home)"]
-        ART["Poster Engine\nPostersPlus + RPDB"]
+        ART["Poster Engine\npostersplus.slokker.cc + RPDB"]
     end
 
     TMDB_API[("TMDB API\n(SECRET_TMDB_API_KEY)")]
@@ -154,7 +154,7 @@ flowchart LR
     GEMINI_API[("Google AI Studio\n(SECRET_GEMINI_API_KEY)")]
     TRAKT_API[("Trakt.tv API\n(SECRET_TRAKT_TOKEN_ID)")]
     MAL_API[("MyAnimeList API")]
-    POSTER_API[("PostersPlus & RPDB\n(SECRET_RPDB_API_KEY)")]
+    POSTER_API[("Rating Poster APIs\n(SECRET_RPDB_API_KEY)")]
 
     MR --> TMDB_API & TVDB_API & KITSU_API
     SR --> TMDB_API & TVDB_API & KITSU_API & GEMINI_API

@@ -72,6 +72,72 @@ class CollectionSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class DebridServerSpec:
+    """Metadata for an external Debrid/Usenet provider server node."""
+
+    service_key: str
+    c4_id: str
+    title: str
+    description: str
+    domain: str
+    portal_url: str
+    secret_env_key: str
+
+
+_DEBRID_SERVERS: Mapping[str, DebridServerSpec] = {
+    "torbox": DebridServerSpec(
+        service_key="torbox",
+        c4_id="torbox_srv",
+        title="TorBox Cloud & Debrid API",
+        description="Cached Debrid Streams, Usenet/Torrent Offloading & Personal Cloud Library",
+        domain="api.torbox.app",
+        portal_url="https://torbox.app/settings",
+        secret_env_key="SECRET_TORBOX_API_KEY",
+    ),
+    "realdebrid": DebridServerSpec(
+        service_key="realdebrid",
+        c4_id="realdebrid_srv",
+        title="Real-Debrid API",
+        description="Cached Debrid Torrent & Hoster Stream Resolution",
+        domain="api.real-debrid.com",
+        portal_url="https://real-debrid.com/apitoken",
+        secret_env_key="SECRET_RD_API_KEY",
+    ),
+    "alldebrid": DebridServerSpec(
+        service_key="alldebrid",
+        c4_id="alldebrid_srv",
+        title="AllDebrid API",
+        description="Cached Multi-Hoster & Magnet Stream Resolution",
+        domain="api.alldebrid.com",
+        portal_url="https://alldebrid.com/apikeys/",
+        secret_env_key="SECRET_ALLDEBRID_API_KEY",
+    ),
+    "premiumize": DebridServerSpec(
+        service_key="premiumize",
+        c4_id="premiumize_srv",
+        title="Premiumize.me API",
+        description="Cloud Torrent, Usenet & Debrid Stream Resolution",
+        domain="premiumize.me/api",
+        portal_url="https://www.premiumize.me/account",
+        secret_env_key="SECRET_PREMIUMIZE_API_KEY",
+    ),
+    "easynews": DebridServerSpec(
+        service_key="easynews",
+        c4_id="easynews_srv",
+        title="Easynews Usenet HTTP",
+        description="Direct Usenet NZB & Video Stream Backbone",
+        domain="members.easynews.com",
+        portal_url="https://account.easynews.com",
+        secret_env_key="SECRET_EASYNEWS_PASSWORD",
+    ),
+}
+
+_GITHUB_RAW_REPO_RE = re.compile(
+    r"https?://raw\.githubusercontent\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/"
+)
+
+
+@dataclass(frozen=True, slots=True)
 class TopologySnapshot:
     """Single-pass normalized snapshot of all declarative AIO configs for architecture compilation."""
 
@@ -81,6 +147,7 @@ class TopologySnapshot:
     collections: tuple[CollectionSnapshot, ...]
     total_collection_folders: int
     as_enabled_services: tuple[Mapping[str, Any], ...]
+    active_debrid_specs: tuple[DebridServerSpec, ...]
     as_all_presets: tuple[Mapping[str, Any], ...]
     as_enabled_presets: tuple[Mapping[str, Any], ...]
     group1_ids: frozenset[str]
@@ -101,6 +168,15 @@ class TopologySnapshot:
     am_poster_provider: str
     am_custom_poster_url: str
     all_secrets: tuple[str, ...]
+    aiostreams_url: str
+    aiometadata_url: str
+    has_bingecat: bool
+    has_contraband: bool
+    contraband_addon_id: str
+    contraband_repo_url: str
+    contraband_catalogs: tuple[str, ...]
+    contraband_preset_fqn: str
+    subtitle_languages: tuple[str, ...]
 
 
 _ADDON_DISPLAY_NAMES: Mapping[str, str] = {
@@ -146,15 +222,43 @@ def _extract_secret_names(value: Any) -> tuple[str, ...]:
     return tuple(sorted(found))
 
 
-def _safe_hostname(url: str) -> str:
+def _safe_origin(url: str) -> str:
     if not url:
-        return "configured-endpoint"
+        return ""
     scrubbed = SECRET_PLACEHOLDER_RE.sub("secret", url)
     try:
         parsed = urlparse(scrubbed)
-        return parsed.netloc or "configured-endpoint"
+        if parsed.scheme in ("http", "https") and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
     except ValueError:
+        pass
+    return ""
+
+
+def _discover_github_repo_url(node: Any) -> str:
+    """Finds the first `https://github.com/<owner>/<repo>` referenced via `raw.githubusercontent.com`."""
+    if isinstance(node, Mapping):
+        for v in node.values():
+            if found := _discover_github_repo_url(v):
+                return found
+    elif isinstance(node, Sequence) and not isinstance(node, (str, bytes)):
+        for item in node:
+            if found := _discover_github_repo_url(item):
+                return found
+    elif isinstance(node, str):
+        m = _GITHUB_RAW_REPO_RE.search(node)
+        if m:
+            owner, repo = m.group(1), m.group(2)
+            if owner.lower() != "vidhin05":
+                return f"https://github.com/{owner}/{repo}"
+    return ""
+
+
+def _safe_hostname(url: str) -> str:
+    origin = _safe_origin(url)
+    if not origin:
         return "configured-endpoint"
+    return origin.split("://", 1)[-1]
 
 
 def _emit_metadata_block(indent: str, meta: Mapping[str, str]) -> list[str]:
@@ -315,6 +419,130 @@ def build_topology_snapshot(
         )
     )
 
+    # Discover active Debrid / Usenet backends dynamically from services & secrets
+    debrid_keys: list[str] = []
+    for svc in as_enabled_services:
+        sid = str(svc.get("id") or "").lower()
+        if sid in _DEBRID_SERVERS and sid not in debrid_keys:
+            debrid_keys.append(sid)
+    for spec in _DEBRID_SERVERS.values():
+        if spec.secret_env_key in all_secrets and spec.service_key not in debrid_keys:
+            debrid_keys.append(spec.service_key)
+    if any(str(p.get("type") or "") == "library" for p in as_all_presets) and not debrid_keys:
+        debrid_keys.append("torbox")
+    active_debrid_specs = tuple(_DEBRID_SERVERS[k] for k in debrid_keys)
+
+    # Inspect AIOManager addons & AIOStreams presets to discover live URLs & companion addons
+    aiostreams_url = ""
+    aiometadata_url = ""
+    has_bingecat = "SECRET_BINGECAT_TOKEN" in all_secrets or any(
+        "bingecat" in c.feeding_addon_ids for c in collections
+    )
+    has_contraband = False
+    contraband_addon_id = "static.contraband"
+    contraband_catalogs: list[str] = []
+
+    def _inspect_addon_entry(entry: Mapping[str, Any]) -> None:
+        nonlocal aiostreams_url, aiometadata_url, has_bingecat, has_contraband, contraband_addon_id
+        raw_mf = entry.get("manifest")
+        mf = raw_mf if isinstance(raw_mf, Mapping) else {}
+        mid = str(mf.get("id") or entry.get("addonId") or "")
+        mname = str(
+            (entry.get("metadata", {}) if isinstance(entry.get("metadata"), Mapping) else {}).get(
+                "customName"
+            )
+            or entry.get("name")
+            or mf.get("name")
+            or ""
+        )
+        raw_url = str(entry.get("installUrl") or entry.get("transportUrl") or "")
+        origin = _safe_origin(raw_url)
+
+        lower_name = mname.lower()
+        lower_id = mid.lower()
+        if ("aiostreams" in lower_id or lower_name == "aiostreams") and origin and not aiostreams_url:
+            aiostreams_url = origin
+        elif (
+            lower_id == "aio-metadata"
+            or lower_id.startswith("addon.aiometadata")
+            or lower_name == "aiometadata"
+        ) and origin and not aiometadata_url:
+            aiometadata_url = origin
+
+        if "aicat" in lower_id or "bingecat" in lower_name:
+            has_bingecat = True
+        if "contraband" in lower_id or "contraband" in lower_name:
+            has_contraband = True
+            if mid:
+                contraband_addon_id = mid
+            cats = mf.get("catalogs")
+            if isinstance(cats, Sequence):
+                for c in cats:
+                    if isinstance(c, Mapping) and c.get("name"):
+                        cname = str(c["name"])
+                        if cname not in contraband_catalogs:
+                            contraband_catalogs.append(cname)
+
+    addons_sec = aiomanager.get("addons")
+    if isinstance(addons_sec, Mapping) and isinstance(addons_sec.get("savedAddons"), Sequence):
+        for sa in addons_sec["savedAddons"]:
+            if isinstance(sa, Mapping):
+                _inspect_addon_entry(sa)
+    mgr_accs = aiomanager.get("accounts")
+    if isinstance(mgr_accs, Sequence):
+        for acc in mgr_accs:
+            if isinstance(acc, Mapping) and isinstance(acc.get("addons"), Sequence):
+                for ad in acc["addons"]:
+                    if isinstance(ad, Mapping):
+                        _inspect_addon_entry(ad)
+
+    contraband_preset_fqn = ""
+    for grp_fqn, plist in (
+        ("aiostreams.group1_primary", g1_presets),
+        ("aiostreams.group2_fallback", g2_presets),
+        ("aiostreams.subtitle_addons", sub_presets),
+    ):
+        for p in plist:
+            p_type = str(p.get("type") or "")
+            inst_id = str(p.get("instanceId") or p_type or "plugin")
+            opts = p.get("options", {}) if isinstance(p.get("options"), Mapping) else {}
+            p_name = str(opts.get("name") or p_type)
+            if p_type == "custom" and "contraband" in p_name.lower():
+                has_contraband = True
+                p_c4_id = _safe_id("preset", f"{inst_id}_{p_name}")
+                contraband_preset_fqn = f"{grp_fqn}.{p_c4_id}"
+
+    cat_mods = aiostreams.get("catalogModifications")
+    if has_contraband and not contraband_catalogs and isinstance(cat_mods, Sequence):
+        for cm in cat_mods:
+            if isinstance(cm, Mapping) and str(cm.get("id") or "").startswith("swc"):
+                cname = str(cm.get("name") or "")
+                if cname and cname not in contraband_catalogs:
+                    contraband_catalogs.append(cname)
+
+    contraband_repo_url = (
+        _discover_github_repo_url(aiostreams) or _discover_github_repo_url(aiomanager)
+        if has_contraband
+        else ""
+    )
+
+    sub_langs: list[str] = []
+    for p in sub_presets:
+        opts = p.get("options", {}) if isinstance(p.get("options"), Mapping) else {}
+        for lg in opts.get("language", []) if isinstance(opts.get("language"), Sequence) else ():
+            s_lg = str(lg)
+            if s_lg and s_lg not in sub_langs:
+                sub_langs.append(s_lg)
+    if not sub_langs:
+        for lg in (
+            aiostreams.get("requiredLanguages", [])
+            if isinstance(aiostreams.get("requiredLanguages"), Sequence)
+            else ()
+        ):
+            s_lg = str(lg)
+            if s_lg and s_lg not in sub_langs:
+                sub_langs.append(s_lg)
+
     return TopologySnapshot(
         aiomanager=aiomanager,
         aiostreams=aiostreams,
@@ -322,6 +550,7 @@ def build_topology_snapshot(
         collections=tuple(collections),
         total_collection_folders=total_folders,
         as_enabled_services=as_enabled_services,
+        active_debrid_specs=active_debrid_specs,
         as_all_presets=as_all_presets,
         as_enabled_presets=as_enabled_presets,
         group1_ids=frozenset(g1_ids),
@@ -342,6 +571,15 @@ def build_topology_snapshot(
         am_poster_provider=str(aiometadata.get("posterRatingProvider") or "rpdb"),
         am_custom_poster_url=str(aiometadata.get("customPosterUrlPattern") or ""),
         all_secrets=all_secrets,
+        aiostreams_url=aiostreams_url,
+        aiometadata_url=aiometadata_url,
+        has_bingecat=has_bingecat,
+        has_contraband=has_contraband,
+        contraband_addon_id=contraband_addon_id,
+        contraband_repo_url=contraband_repo_url,
+        contraband_catalogs=tuple(contraband_catalogs),
+        contraband_preset_fqn=contraband_preset_fqn,
+        subtitle_languages=tuple(sub_langs),
     )
 
 
@@ -464,19 +702,18 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "  // ==========================================================================",
             "  controlPlane stream_weaver 'Stream Weaver (sw CLI)' {",
             "    #enabled",
-            "    description 'Pure Functional GitOps Control Plane (sw pull / push / sanitize / warm / diagram)'",
-            "    technology 'Python 3.14+ / uv / AES-256-GCM'",
-            "    link https://github.com/Darshan-AS/stream-weaver 'GitHub Repository'",
+            "    description 'Pure Functional GitOps Control Plane (sw init / pull / push / diff / sanitize / warm / diagram)'",
+            "    technology 'Python 3.13+ / uv / AES-256-GCM'",
             "    metadata {",
             "      architecture 'Functional Core, Imperative Shell'",
-            "      commands 'sw pull | sw push | sw sanitize | sw warm | sw diagram'",
+            "      commands 'sw init | sw pull | sw push | sw diff | sw sanitize | sw warm | sw diagram'",
             "      crypto 'PBKDF2-HMAC-SHA256 + AES-256-GCM'",
             "    }",
             "  }",
             "",
             "  client nuvio 'Nuvio Client' {",
             "    #enabled",
-            "    description 'Primary Streaming App with Tabbed Home Collections, AI Picks & Native Sync'",
+            "    description 'Primary Streaming App with Tabbed Home Collections & Native Sync'",
             "    technology 'Nuvio App (Supabase Sync)'",
             "  }",
             "",
@@ -497,22 +734,43 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     add_rel("stream_weaver", "stremio", "Directly reconciles addon collection", tech="api.strem.io")
 
     # -------------------------------------------------------------------------
-    # 2. External Upstream Servers & Cloud APIs
+    # 2. External Upstream Servers & Cloud APIs (Dynamically Scoped)
     # -------------------------------------------------------------------------
     lines.extend(
         [
             "  // ==========================================================================",
             "  // 2. External Upstream Servers & APIs",
             "  // ==========================================================================",
-            "  externalServer torbox_srv 'TorBox Cloud & Debrid API' {",
-            "    #debrid",
-            "    description 'Cached Debrid Streams, Usenet/Torrent Offloading & Personal Cloud Library'",
-            "    technology 'api.torbox.app'",
-            "    link https://torbox.app/settings 'TorBox Dashboard'",
-            "  }",
+        ]
+    )
+    for dspec in snap.active_debrid_specs:
+        lines.extend(
+            [
+                f"  externalServer {dspec.c4_id} '{_escape_c4_str(dspec.title)}' {{",
+                "    #debrid",
+                f"    description '{_escape_c4_str(dspec.description)}'",
+                f"    technology '{_escape_c4_str(dspec.domain)}'",
+                f"    link {dspec.portal_url} 'Provider Portal'",
+                "  }",
+            ]
+        )
+
+    gh_desc = (
+        "Hosts static Stremio addon manifests & synced SEL/Regex release rules"
+        if snap.has_contraband
+        else "Hosts synced SEL/Regex release rules"
+    )
+    gh_link_line = (
+        [f"    link {snap.contraband_repo_url} 'Static Addon Repo'"]
+        if snap.contraband_repo_url
+        else []
+    )
+
+    lines.extend(
+        [
             "  externalServer tmdb_srv 'TMDB API (The Movie Database)' {",
             "    #metadata",
-            "    description 'Primary Movie/Series Metadata, Regional Discover (HI/KN/JA), People & Search'",
+            "    description 'Primary Movie/Series Metadata, Regional Discover, People & Search'",
             "    technology 'api.themoviedb.org'",
             "    link https://www.themoviedb.org/settings/api 'TMDB API Settings'",
             "  }",
@@ -563,9 +821,9 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "  }",
             "  externalServer github_srv 'GitHub Raw CDN' {",
             "    #catalog",
-            "    description 'Hosts static Contraband Addon manifests & Vidhin05 SEL/Regex release rules'",
+            f"    description '{_escape_c4_str(gh_desc)}'",
             "    technology 'raw.githubusercontent.com'",
-            "    link https://github.com/Darshan-AS/aio_contraband 'aio_contraband Repo'",
+            *gh_link_line,
             "  }",
             "  externalServer tamtaro_srv 'Tamtaro SEL Rule Server' {",
             "    #metadata",
@@ -582,69 +840,111 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     )
 
     # -------------------------------------------------------------------------
-    # 3. Companion Addons (BingeCat, Contraband with Internal Pipeline, Cinemeta)
+    # 3. Companion Addons (Dynamically Emitted from Configs)
     # -------------------------------------------------------------------------
     lines.extend(
         [
             "  // ==========================================================================",
-            "  // 3. Companion Stremio/Nuvio Addons (including Contraband Internal Pipeline)",
+            "  // 3. Companion Stremio/Nuvio Addons",
             "  // ==========================================================================",
-            "  addon bingecat 'BingeCat AI Assistant' {",
-            "    #enabled #ai #catalog",
-            "    description 'Personalized AI Movie & Series Recommendations and Micro-Genre Catalogs'",
-            "    technology 'bingecat.com'",
-            "    link https://bingecat.com 'BingeCat'",
-            "  }",
-            "",
-            "  addon contraband 'Contraband (aio_contraband)' {",
-            "    #enabled #catalog",
-            "    description 'Curated Static Stremio Addon & TorBox Ingestor for Niche Courses & Lectures (Peterson Academy)'",
-            "    technology 'dev.darshanas.contraband'",
-            "    link https://github.com/Darshan-AS/aio_contraband 'GitHub Repository'",
-            "    metadata {",
-            "      addon_id 'dev.darshanas.contraband'",
-            "      id_prefixes 'sw_, pa_, aiostreams::library.torbox.torrent.'",
-            "      resources 'catalog, meta, stream'",
-            "    }",
-            "",
-            "    subsystem cb_cli 'Contraband CLI (cb)' {",
-            "      #enabled",
-            "      description 'Imperative Shell CLI: cb add | cb sync | cb watch | cb list | cb publish'",
-            "      technology 'Python 3.14+ / uv'",
-            "    }",
-            "    subsystem torbox_ingestor 'TorBox Magnet Queue & Slot Promoter' {",
-            "      #enabled #debrid",
-            "      description 'Queues course magnets, maintains 3 parallel downloads & resolves file IDs'",
-            "      technology 'TorBox REST Adapter'",
-            "    }",
-            "    subsystem static_compiler 'Static Manifest, Catalog & Stream Compiler' {",
-            "      #enabled #catalog",
-            "      description 'Compiles deterministic Stremio JSON files (manifest.json, catalog/, meta/, stream/)'",
-            "      technology 'Pure Functional Core'",
-            "    }",
-            "    plugin peterson_catalog 'Peterson Academy Catalog' {",
-            "      #enabled #catalog",
-            "      description 'Curated university-style lectures across 8 humanities & science genres'",
-            "      technology 'series / peterson_academy'",
-            "    }",
-            "  }",
-            "",
+        ]
+    )
+    if snap.has_bingecat:
+        lines.extend(
+            [
+                "  addon bingecat 'BingeCat AI Assistant' {",
+                "    #enabled #ai #catalog",
+                "    description 'Personalized AI Movie & Series Recommendations and Micro-Genre Catalogs'",
+                "    technology 'bingecat.com'",
+                "    link https://bingecat.com 'BingeCat'",
+                "  }",
+                "",
+            ]
+        )
+        add_rel("nuvio", "bingecat", "Fetches AI Picks & Because You Watched rows", tech="Stremio Protocol")
+        add_rel("stremio", "bingecat", "Fetches AI recommendation catalogs", tech="Stremio Protocol")
+
+    primary_debrid = snap.active_debrid_specs[0] if snap.active_debrid_specs else None
+    if snap.has_contraband:
+        cb_cats_desc = (
+            f" ({', '.join(snap.contraband_catalogs)})" if snap.contraband_catalogs else ""
+        )
+        cb_link_line = (
+            [f"    link {snap.contraband_repo_url} 'GitHub Repository'"]
+            if snap.contraband_repo_url
+            else []
+        )
+        lines.extend(
+            [
+                "  addon contraband 'Contraband Static Addon' {",
+                "    #enabled #catalog",
+                f"    description 'Curated Static Stremio Addon & Cloud Ingestor{_escape_c4_str(cb_cats_desc)}'",
+                f"    technology '{_escape_c4_str(snap.contraband_addon_id)}'",
+                *cb_link_line,
+                "    metadata {",
+                f"      addon_id '{_escape_c4_str(snap.contraband_addon_id)}'",
+                "      id_prefixes 'sw_, pa_'",
+                "      resources 'catalog, meta, stream'",
+                "    }",
+                "",
+                "    subsystem cb_cli 'Contraband CLI (cb)' {",
+                "      #enabled",
+                "      description 'Imperative Shell CLI: cb init | cb add | cb sync | cb watch | cb serve | cb publish'",
+                "      technology 'Python 3.13+ / uv'",
+                "    }",
+                "    subsystem debrid_ingestor 'Debrid Queue & Slot Promoter' {",
+                "      #enabled #debrid",
+                "      description 'Queues magnets, maintains parallel downloads & resolves cloud file indices'",
+                "      technology 'DebridProviderProtocol'",
+                "    }",
+                "    subsystem static_compiler 'Static Manifest, Catalog & Stream Compiler' {",
+                "      #enabled #catalog",
+                "      description 'Compiles deterministic Stremio JSON files (manifest.json, catalog/, meta/, stream/)'",
+                "      technology 'Pure Functional Core'",
+                "    }",
+            ]
+        )
+        cat_labels = snap.contraband_catalogs or ("Curated Collections",)
+        first_cat_c4 = ""
+        for cat_lbl in cat_labels:
+            cat_c4 = _safe_id("catalog", cat_lbl)
+            if not first_cat_c4:
+                first_cat_c4 = cat_c4
+            lines.extend(
+                [
+                    f"    plugin {cat_c4} '{_escape_c4_str(cat_lbl)} Catalog' {{",
+                    "      #enabled #catalog",
+                    f"      description 'Static Stremio catalog row: {_escape_c4_str(cat_lbl)}'",
+                    "      technology 'catalog / meta / stream'",
+                    "    }",
+                ]
+            )
+            add_rel("contraband.static_compiler", f"contraband.{cat_c4}", "Emits static catalog/meta/stream JSON")
+        lines.extend(["  }", ""])
+
+        add_rel("contraband.cb_cli", "contraband.debrid_ingestor", "Queues magnets & polls active slots (cb add / watch)")
+        if primary_debrid is not None:
+            add_rel(
+                "contraband.debrid_ingestor",
+                primary_debrid.c4_id,
+                "Ingests magnets & queries cloud file list",
+                tech=primary_debrid.secret_env_key,
+                tag="debrid",
+            )
+        add_rel("contraband.cb_cli", "contraband.static_compiler", "Weaves media metadata & episode streams")
+        add_rel("contraband.static_compiler", "github_srv", "Publishes static addon tree (cb publish)", tech="Git Push")
+
+    lines.extend(
+        [
             "  addon cinemeta 'Cinemeta (Official)' {",
             "    #enabled #metadata",
-            "    description 'Canonical IMDb (tt) Metadata Fallback (Standard Catalogs & Search Disabled)'",
+            "    description 'Canonical IMDb (tt) Metadata Fallback'",
             "    technology 'v3-cinemeta.strem.io'",
             "  }",
             "",
         ]
     )
 
-    add_rel("contraband.cb_cli", "contraband.torbox_ingestor", "Queues magnets & polls active slots (cb add / watch)")
-    add_rel("contraband.torbox_ingestor", "torbox_srv", "Ingests magnets & queries cloud file list", tech="SECRET_TORBOX_API_KEY", tag="debrid")
-    add_rel("contraband.cb_cli", "contraband.static_compiler", "Weaves course metadata & episode streams")
-    add_rel("contraband.static_compiler", "contraband.peterson_catalog", "Emits static catalog/meta/stream JSON")
-    add_rel("contraband.static_compiler", "github_srv", "Publishes static addon tree to main branch (cb publish)", tech="Git Push")
-    add_rel("nuvio", "bingecat", "Fetches AI Picks & Because You Watched rows", tech="Stremio Protocol")
-    add_rel("stremio", "bingecat", "Fetches AI recommendation catalogs", tech="Stremio Protocol")
     add_rel("nuvio", "cinemeta", "Fetches base IMDb (tt) metadata", tech="Stremio Protocol")
     add_rel("stremio", "cinemeta", "Fetches base IMDb (tt) metadata", tech="Stremio Protocol")
     add_rel("nuvio", "aiostreams", "Requests filtered & formatted streams", tech="Stremio Protocol")
@@ -667,8 +967,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "  controlPlane aiomanager 'AIOManager' {",
             "    #enabled",
             "    description 'Central Addon Library, Account Profiles, Key Vault, Autopilot Failover & Client Sync'",
-            "    technology 'AIOManager v2.0 (aiomanagerfortheweebs.midnightignite.me)'",
-            "    link https://aiomanagerfortheweebs.midnightignite.me 'Live AIOManager Instance'",
+            "    technology 'AIOManager v2.0 (Encrypted Cloud Sync)'",
             "",
         ]
     )
@@ -732,7 +1031,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                     add_rel(f"aiomanager.{acc_id}", "aiometadata", "Manages & monitors addon manifest")
                 elif "aiostreams" in lower_name:
                     add_rel(f"aiomanager.{acc_id}", "aiostreams", "Manages & monitors addon manifest")
-                elif "bingecat" in lower_name:
+                elif "bingecat" in lower_name and snap.has_bingecat:
                     add_rel(f"aiomanager.{acc_id}", "bingecat", "Manages & monitors addon manifest")
                 elif "cinemeta" in lower_name:
                     add_rel(f"aiomanager.{acc_id}", "cinemeta", "Applies Cinemeta catalog/search overrides")
@@ -773,6 +1072,8 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                 f"Renders {len(col.folder_titles)} tabbed folders",
             )
             for target_addon in col.feeding_addon_ids:
+                if target_addon == "bingecat" and not snap.has_bingecat:
+                    continue
                 add_rel(
                     f"aiomanager.nuvio_collections.{col.c4_id}",
                     target_addon,
@@ -826,6 +1127,16 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     pref_vis = ", ".join(str(x) for x in aiostreams.get("preferredVisualTags", []))
     dedup_keys = ", ".join(str(x) for x in aiostreams.get("deduplicator", {}).get("keys", []))
 
+    as_host_label = _safe_hostname(snap.aiostreams_url) if snap.aiostreams_url else "Configured Instance"
+    as_link_lines = (
+        [f"    link {snap.aiostreams_url} 'Live AIOStreams Instance'"]
+        if snap.aiostreams_url
+        else []
+    )
+    debrid_summary = (
+        ", ".join(d.service_key.capitalize() for d in snap.active_debrid_specs) or "Debrid"
+    )
+
     lines.extend(
         [
             "  // ==========================================================================",
@@ -833,9 +1144,9 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "  // ==========================================================================",
             "  aggregator aiostreams 'AIOStreams' {",
             "    #enabled",
-            "    description 'Aggregates scrapers in sequential groups, checks TorBox cache, filters via SEL/Regex & formats streams'",
-            "    technology 'AIOStreams v2.36 (aiostreamsfortheweebsstable.midnightignite.me)'",
-            "    link https://aiostreamsfortheweebsstable.midnightignite.me 'Live AIOStreams Instance'",
+            f"    description 'Aggregates scrapers in sequential groups, checks {_escape_c4_str(debrid_summary)} cache, filters via SEL/Regex & formats streams'",
+            f"    technology 'AIOStreams ({_escape_c4_str(as_host_label)})'",
+            *as_link_lines,
             *_emit_metadata_block(
                 "    ",
                 {
@@ -849,7 +1160,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "",
             "    subsystem sel_engine 'SEL Filter, Deduplicator & Custom Formatter' {",
             "      #enabled",
-            "      description 'Applies synced Tamtaro/Vidhin05 Stream Expressions, Title/Year/Episode matching & custom prism formatting'",
+            "      description 'Applies synced Stream Expressions, Title/Year/Episode matching & custom stream formatting'",
             "      technology 'Stream Expression Language (SEL)'",
             *_emit_metadata_block(
                 "      ",
@@ -864,7 +1175,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     )
 
     add_rel("aiostreams.sel_engine", "tamtaro_srv", "Syncs PSE / ESE / ISE & Excluded Regex rules", tech="HTTPS JSON")
-    add_rel("aiostreams.sel_engine", "github_srv", "Syncs Vidhin05 English ranked Regex & SEL expressions", tech="HTTPS JSON")
+    add_rel("aiostreams.sel_engine", "github_srv", "Syncs ranked Regex & SEL expressions", tech="HTTPS JSON")
     add_rel("aiostreams.sel_engine", "tmdb_srv", "Validates exact title/year/episode matching", tech="SECRET_TMDB_API_KEY")
     add_rel("aiostreams.sel_engine", "tvdb_srv", "Validates series/anime episode matching", tech="SECRET_TVDB_API_KEY")
     if aiostreams.get("posterService") == "rpdb":
@@ -884,14 +1195,17 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                 "    }",
             ]
         )
-        if svc_raw_id.lower() == "torbox":
+        matched_spec = _DEBRID_SERVERS.get(svc_raw_id.lower())
+        if matched_spec is not None:
             add_rel(
                 f"aiostreams.{svc_c4_id}",
-                "torbox_srv",
+                matched_spec.c4_id,
                 "Checks instant cache & resolves debrid/usenet playback links",
-                tech="SECRET_TORBOX_API_KEY",
+                tech=matched_spec.secret_env_key,
                 tag="debrid",
             )
+
+    sub_lang_summary = ", ".join(snap.subtitle_languages[:4]) or "Multi-language"
 
     def _emit_nested_preset(parent_fqn: str, preset: Mapping[str, Any], group_desc: str) -> None:
         enabled = bool(preset.get("enabled", True))
@@ -931,22 +1245,22 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             ]
         )
 
-        if p_type == "custom" and "contraband" in p_name.lower():
+        if p_type == "custom" and "contraband" in p_name.lower() and snap.has_contraband:
             add_rel(
                 full_id,
                 "contraband",
-                "Wraps Peterson Academy catalog, meta & streams",
-                tech="GitHub Raw Manifest",
+                "Wraps static addon catalog, meta & streams",
+                tech="Static Addon Manifest",
             )
-        elif p_type == "library":
+        elif p_type == "library" and primary_debrid is not None:
             add_rel(
                 full_id,
-                "torbox_srv",
-                "Exposes personal TorBox Cloud Library catalog & direct streams",
-                tech="SECRET_TORBOX_API_KEY",
+                primary_debrid.c4_id,
+                f"Exposes personal {primary_debrid.service_key.capitalize()} Cloud Library catalog & direct streams",
+                tech=primary_debrid.secret_env_key,
             )
         elif "subtitle" in p_type.lower() or "opensubtitles" in p_type.lower():
-            add_rel(full_id, "opensubtitles_srv", "Fetches EN/KN subtitles")
+            add_rel(full_id, "opensubtitles_srv", f"Fetches {sub_lang_summary} subtitles")
         elif inst_id in group1_ids and active_debrid_ids:
             for deb_id in active_debrid_ids:
                 add_rel(
@@ -956,11 +1270,15 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                     tag="debrid",
                 )
 
+    g1_names = ", ".join(
+        str((p.get("options", {}) if isinstance(p.get("options"), Mapping) else {}).get("name") or p.get("type") or "")
+        for p in g1_presets[:5]
+    ) or "Primary Scrapers"
     lines.extend(
         [
             "    subsystem group1_primary 'Group 1: Primary Sequential Scrapers (Always Run)' {",
             "      #enabled #primary",
-            f"      description 'Executes {len(g1_presets)} primary scrapers in parallel (Contraband, Library, Torrent/Debrid & Anime)'",
+            f"      description 'Executes {len(g1_presets)} primary scrapers in parallel ({_escape_c4_str(g1_names)})'",
             "      technology 'Sequential Group 1 (condition: true)'",
         ]
     )
@@ -984,7 +1302,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
         [
             "    subsystem subtitle_addons 'Subtitle Providers' {",
             "      #enabled",
-            f"      description '{len(sub_presets)} multi-language & AI-translated subtitle addons (EN, KN)'",
+            f"      description '{len(sub_presets)} subtitle addon(s) ({_escape_c4_str(sub_lang_summary)})'",
             "      technology 'OpenSubtitles V3'",
         ]
     )
@@ -1018,6 +1336,13 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     am_custom_poster_url = snap.am_custom_poster_url
     gemini_tag = "enabled" if gemini_search_on else "disabled"
 
+    am_host_label = _safe_hostname(snap.aiometadata_url) if snap.aiometadata_url else "Configured Instance"
+    am_link_lines = (
+        [f"    link {snap.aiometadata_url} 'Live AIOMetadata Instance'"]
+        if snap.aiometadata_url
+        else []
+    )
+
     lines.extend(
         [
             "  // ==========================================================================",
@@ -1026,15 +1351,15 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "  aggregator aiometadata 'AIOMetadata' {",
             "    #enabled #metadata",
             f"    description 'Serves {len(enabled_catalogs)} active catalogs ({len(home_catalogs)} on Home), canonical metadata, search & rating posters'",
-            "    technology 'AIOMetadata v3.6 (aiometadatafortheweebs.midnightignite.me)'",
-            "    link https://aiometadatafortheweebs.midnightignite.me 'Live AIOMetadata Instance'",
+            f"    technology 'AIOMetadata ({_escape_c4_str(am_host_label)})'",
+            *am_link_lines,
             *_emit_metadata_block(
                 "    ",
                 {
                     "active_catalogs": str(len(enabled_catalogs)),
                     "home_catalogs": str(len(home_catalogs)),
                     "language": str(aiometadata.get("language", "en-US")),
-                    "timezone": str(aiometadata.get("timezone", "Asia/Kolkata")),
+                    "timezone": str(aiometadata.get("timezone", "UTC")),
                     "trakt_watch_tracking": str(aiometadata.get("traktWatchTracking", True)),
                 },
             ),
@@ -1105,45 +1430,30 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
         tech="SECRET_RPDB_API_KEY",
     )
 
-    source_meta: Mapping[str, tuple[str, str, str]] = {
-        "trakt": (
-            "Trakt.tv Catalogs & Watch Tracking",
-            "trakt_srv",
-            "Up Next, Watchlist, Trending, Popular, Calendar & Scrobbling (SECRET_TRAKT_TOKEN_ID)",
-        ),
-        "tmdb": (
-            "TMDB & Regional Discover Catalogs",
-            "tmdb_srv",
-            "Popular, Top Rated, Hindi, Kannada, Japanese & Documentary Discover (SECRET_TMDB_API_KEY)",
-        ),
-        "mal": (
-            "MyAnimeList (MAL) Anime Catalogs",
-            "mal_srv",
-            "Airing Now, Popular, Top Rated, Schedule, Genres & Top Movies/Series",
-        ),
-        "streaming": (
-            "Streaming Platform Catalogs (14 Services)",
-            "tmdb_srv",
-            "Netflix, Prime, JioHotstar, HBO Max, Apple TV+, Disney+, Sony LIV, Zee5, Curiosity, Hulu",
-        ),
+    source_titles: Mapping[str, tuple[str, str]] = {
+        "trakt": ("Trakt.tv Catalogs & Watch Tracking", "trakt_srv"),
+        "tmdb": ("TMDB Discover Catalogs", "tmdb_srv"),
+        "mal": ("MyAnimeList (MAL) Anime Catalogs", "mal_srv"),
+        "streaming": ("Streaming Platform Catalogs", "tmdb_srv"),
     }
 
     for src_key, cat_objs in sorted(cats_by_source.items()):
         cat_plugin_id = _safe_id("cat_src", src_key)
-        title_str, target_srv, desc_detail = source_meta.get(
+        title_str, target_srv = source_titles.get(
             src_key,
-            (f"{src_key.upper()} Catalogs", "tmdb_srv", f"{len(cat_objs)} active catalogs"),
+            (f"{src_key.upper()} Catalogs", "tmdb_srv"),
         )
         home_cnt = sum(1 for c in cat_objs if c.get("showInHome", False))
         cat_names = [
             f"{c.get('name', c.get('id'))} ({c.get('type', '')})"
             for c in cat_objs[:8]
         ]
+        sample_labels = ", ".join(str(c.get("name") or c.get("id")) for c in cat_objs[:6])
         lines.extend(
             [
                 f"    plugin {cat_plugin_id} '{_escape_c4_str(title_str)} ({len(cat_objs)})' {{",
                 "      #enabled #catalog",
-                f"      description '{len(cat_objs)} active ({home_cnt} Home): {_escape_c4_str(desc_detail)}'",
+                f"      description '{len(cat_objs)} active ({home_cnt} Home): {_escape_c4_str(sample_labels)}'",
                 f"      technology 'Source: {_escape_c4_str(src_key)}'",
                 *_emit_metadata_block(
                     "      ",
@@ -1165,6 +1475,8 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     # 7. Secret Keys (.env & Vault Credential Blast Radius)
     # -------------------------------------------------------------------------
     all_secrets = snap.all_secrets
+    has_vault = isinstance(mgr_vault, Sequence) and bool(mgr_vault)
+    active_debrid_c4_ids = {d.c4_id for d in snap.active_debrid_specs}
 
     lines.extend(
         [
@@ -1174,16 +1486,44 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
         ]
     )
 
-    secret_targets: Mapping[str, list[tuple[str, str]]] = {
+    secret_targets: dict[str, list[tuple[str, str]]] = {
         "SECRET_TORBOX_API_KEY": [
             ("aiostreams", "Authenticates TorBox Debrid & Cloud Library"),
-            ("contraband", "Authenticates `cb sync` magnet ingestion"),
-            ("torbox_srv", "Bearer API Key"),
+            *([("contraband", "Authenticates `cb sync` magnet ingestion")] if snap.has_contraband else []),
+            *(
+                [("torbox_srv", "Bearer API Key")]
+                if "torbox_srv" in active_debrid_c4_ids
+                else []
+            ),
+        ],
+        "SECRET_RD_API_KEY": [
+            ("aiostreams", "Authenticates Real-Debrid stream resolution"),
+            *(
+                [("realdebrid_srv", "Bearer API Key")]
+                if "realdebrid_srv" in active_debrid_c4_ids
+                else []
+            ),
+        ],
+        "SECRET_ALLDEBRID_API_KEY": [
+            ("aiostreams", "Authenticates AllDebrid stream resolution"),
+            *(
+                [("alldebrid_srv", "Bearer API Key")]
+                if "alldebrid_srv" in active_debrid_c4_ids
+                else []
+            ),
+        ],
+        "SECRET_PREMIUMIZE_API_KEY": [
+            ("aiostreams", "Authenticates Premiumize stream resolution"),
+            *(
+                [("premiumize_srv", "API Key")]
+                if "premiumize_srv" in active_debrid_c4_ids
+                else []
+            ),
         ],
         "SECRET_TMDB_API_KEY": [
-            ("aiometadata", "Authenticates TMDB metadata, search & regional catalogs"),
+            ("aiometadata", "Authenticates TMDB metadata, search & catalogs"),
             ("aiostreams", "Authenticates title/year matching"),
-            ("aiomanager.key_vault", "Stored in AIOManager Key Vault"),
+            *([("aiomanager.key_vault", "Stored in AIOManager Key Vault")] if has_vault else []),
             ("tmdb_srv", "REST API Key"),
         ],
         "SECRET_TMDB_ACCESS_TOKEN": [
@@ -1193,18 +1533,18 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
         "SECRET_TVDB_API_KEY": [
             ("aiometadata", "Authenticates TVDB series/anime metadata & search"),
             ("aiostreams", "Authenticates TVDB episode matching"),
-            ("aiomanager.key_vault", "Stored in AIOManager Key Vault"),
+            *([("aiomanager.key_vault", "Stored in AIOManager Key Vault")] if has_vault else []),
             ("tvdb_srv", "v4 API Key"),
         ],
         "SECRET_GEMINI_API_KEY": [
             ("aiometadata.gemini_search", "Authenticates Gemini AI semantic search"),
-            ("aiomanager.key_vault", "Stored in AIOManager Key Vault"),
+            *([("aiomanager.key_vault", "Stored in AIOManager Key Vault")] if has_vault else []),
             ("gemini_srv", "Google AI Studio Key"),
         ],
         "SECRET_RPDB_API_KEY": [
             ("aiometadata.poster_engine", "Authenticates RPDB poster overlays"),
             ("aiostreams.sel_engine", "Authenticates RPDB poster redirect API"),
-            ("aiomanager.key_vault", "Stored in AIOManager Key Vault"),
+            *([("aiomanager.key_vault", "Stored in AIOManager Key Vault")] if has_vault else []),
             ("rpdb_srv", "RPDB Tier Key"),
         ],
         "SECRET_TRAKT_TOKEN_ID": [
@@ -1213,7 +1553,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
         ],
         "SECRET_BINGECAT_TOKEN": [
             ("aiomanager", "Embeds profile token into BingeCat manifest URLs"),
-            ("bingecat", "Profile UUID Token"),
+            *([("bingecat", "Profile UUID Token")] if snap.has_bingecat else []),
         ],
         "SECRET_NUVIO_ACCESS_TOKEN": [
             ("aiomanager", "Authenticates Nuvio Supabase addon/collection sync"),
@@ -1248,8 +1588,13 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
     lines.append("")
 
     # -------------------------------------------------------------------------
-    # Views (C4 Hierarchy + Nuvio Collections + Contraband + Blast-Radius + 3 Dynamic Flows)
+    # Views (Dynamically Scoped to Active Addons, Collections & Debrid Servers)
     # -------------------------------------------------------------------------
+    debrid_view_includes = [f"      {d.c4_id}," for d in snap.active_debrid_specs]
+    bingecat_inc = ["      bingecat,"] if snap.has_bingecat else []
+    contraband_inc = ["      contraband,"] if snap.has_contraband else []
+    vault_inc = ["      aiomanager.key_vault,"] if has_vault else []
+
     lines.extend(
         [
             "views {",
@@ -1264,10 +1609,10 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "      aiomanager,",
             "      aiostreams,",
             "      aiometadata,",
-            "      bingecat,",
-            "      contraband,",
+            *bingecat_inc,
+            *contraband_inc,
             "      cinemeta,",
-            "      torbox_srv,",
+            *debrid_view_includes,
             "      tmdb_srv,",
             "      tvdb_srv,",
             "      gemini_srv,",
@@ -1293,29 +1638,40 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "      stremio,",
             "      aiostreams,",
             "      aiometadata,",
-            "      bingecat,",
+            *bingecat_inc,
             "      cinemeta",
             "    autoLayout LeftRight",
             "  }",
             "",
-            "  // 3. Nuvio Home Collections Drill-Down View",
-            "  view nuvio_collections_view of aiomanager.nuvio_collections {",
-            "    title '3. Nuvio Home Collections — Curated Categories & Upstream Addon Sources'",
-            "    description 'Drill-down into the 5 Nuvio Home Collections (24 Tabbed Folders) and which addons feed each collection'",
-            "    include",
-            "      *,",
-            "      aiomanager.nuvio_collections.*,",
-            "      nuvio,",
-            "      bingecat,",
-            "      aiometadata,",
-            "      aiostreams",
-            "    autoLayout LeftRight",
-            "  }",
-            "",
+        ]
+    )
+
+    if snap.collections:
+        lines.extend(
+            [
+                "  // 3. Nuvio Home Collections Drill-Down View",
+                "  view nuvio_collections_view of aiomanager.nuvio_collections {",
+                "    title '3. Nuvio Home Collections — Curated Categories & Upstream Addon Sources'",
+                f"    description 'Drill-down into the {len(snap.collections)} Nuvio Home Collections ({snap.total_collection_folders} Tabbed Folders) and which addons feed each collection'",
+                "    include",
+                "      *,",
+                "      aiomanager.nuvio_collections.*,",
+                "      nuvio,",
+                *bingecat_inc,
+                "      aiometadata,",
+                "      aiostreams",
+                "    autoLayout LeftRight",
+                "  }",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
             "  // 4. AIOStreams Drill-Down View (Nested Scraper Groups)",
             "  view aiostreams_view of aiostreams {",
             "    title '4. AIOStreams — Sequential Scraper Groups, Debrid & SEL Engine'",
-            "    description 'Drill-down into AIOStreams showing nested Group 1 primary scrapers, Group 2 HTTP fallback, Subtitles, TorBox cache & rule servers'",
+            f"    description 'Drill-down into AIOStreams showing nested Group 1 primary scrapers, Group 2 HTTP fallback, Subtitles, {_escape_c4_str(debrid_summary)} cache & rule servers'",
             "    include",
             "      *,",
             "      aiostreams.*,",
@@ -1324,8 +1680,8 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "      aiostreams.subtitle_addons.*,",
             "      nuvio,",
             "      stremio,",
-            "      contraband,",
-            "      torbox_srv,",
+            *contraband_inc,
+            *debrid_view_includes,
             "      tmdb_srv,",
             "      tvdb_srv,",
             "      rpdb_srv,",
@@ -1356,19 +1712,33 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "    autoLayout LeftRight",
             "  }",
             "",
-            "  // 6. Contraband (aio_contraband) Drill-Down View",
-            "  view contraband_view of contraband {",
-            "    title '6. Contraband (aio_contraband) — cb CLI, TorBox Queue & Static Compiler'",
-            "    description 'Drill-down into the Contraband static addon compiler and TorBox magnet queue pipeline'",
-            "    include",
-            "      *,",
-            "      contraband.*,",
-            "      torbox_srv,",
-            "      github_srv,",
-            "      aiostreams.group1_primary.preset_swc_contraband",
-            "    autoLayout LeftRight",
-            "  }",
-            "",
+        ]
+    )
+
+    if snap.has_contraband:
+        cb_preset_inc = (
+            [f"      {snap.contraband_preset_fqn},"] if snap.contraband_preset_fqn else []
+        )
+        lines.extend(
+            [
+                "  // 6. Contraband Static Addon Drill-Down View",
+                "  view contraband_view of contraband {",
+                "    title '6. Contraband — cb CLI, Debrid Queue & Static Compiler'",
+                "    description 'Drill-down into the Contraband static addon compiler and cloud magnet queue pipeline'",
+                "    include",
+                "      *,",
+                "      contraband.*,",
+                *debrid_view_includes,
+                *cb_preset_inc,
+                "      github_srv",
+                "    autoLayout LeftRight",
+                "  }",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
             "  // 7. Secrets & API Key Blast-Radius View",
             "  view secrets_view {",
             "    title '7. Secrets & API Key Blast-Radius Map (.env -> Services -> Servers)'",
@@ -1376,17 +1746,17 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "    include",
             "      element.tag = #secret,",
             "      aiomanager,",
-            "      aiomanager.key_vault,",
+            *vault_inc,
             "      aiostreams,",
             "      aiostreams.sel_engine,",
             "      aiometadata,",
             "      aiometadata.gemini_search,",
             "      aiometadata.poster_engine,",
-            "      bingecat,",
-            "      contraband,",
+            *bingecat_inc,
+            *contraband_inc,
             "      nuvio,",
             "      stremio,",
-            "      torbox_srv,",
+            *debrid_view_includes,
             "      tmdb_srv,",
             "      tvdb_srv,",
             "      gemini_srv,",
@@ -1395,18 +1765,29 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "    autoLayout LeftRight",
             "  }",
             "",
+        ]
+    )
+
+    debrid_flow_step = []
+    if active_debrid_ids and primary_debrid is not None:
+        debrid_flow_step = [
+            f"    aiostreams.{active_debrid_ids[0]} -> {primary_debrid.c4_id} '6. Verifies instant cache & resolves debrid playback links'"
+        ]
+
+    lines.extend(
+        [
             "  // 8. Dynamic Flow 1: Catalog Browse, Metadata & Sequential Stream Resolution",
             "  dynamic view stream_resolution_flow {",
             "    title '8. Dynamic Flow: Catalog Browse, Metadata & Sequential Stream Resolution'",
-            "    description 'Step-by-step runtime flow when browsing in Nuvio/Stremio and playing a stream via AIOStreams & TorBox'",
+            f"    description 'Step-by-step runtime flow when browsing in Nuvio/Stremio and playing a stream via AIOStreams & {_escape_c4_str(debrid_summary)}'",
             "",
-            "    nuvio -> aiometadata '1. Requests Home catalog rows (Trakt, TMDB Regional, MAL, Streaming)'",
+            "    nuvio -> aiometadata '1. Requests Home catalog rows'",
             "    aiometadata -> tmdb_srv '2. Fetches catalog items & metadata'",
-            "    aiometadata -> postersplus_srv '3. Attaches frosted multi-source rating posters'",
+            "    aiometadata -> aiometadata.poster_engine '3. Attaches rating badge posters'",
             "    nuvio -> aiostreams '4. User clicks Play -> requests streams for IMDb/TMDB ID'",
-            "    aiostreams.sel_engine -> aiostreams.group1_primary '5. Triggers Group 1 Primary Scrapers (Contraband, Torrentio, Comet, StremThru, MediaFusion, SeaDex)'",
-            "    aiostreams.svc_torbox -> torbox_srv '6. Verifies instant cache & resolves debrid playback links'",
-            "    aiostreams.group1_primary -> aiostreams.group2_fallback '7. Conditionally triggers Group 2 HTTP Scrapers (HD Hub, Sootio, WebStreamr) only if cached < 3'",
+            "    aiostreams.sel_engine -> aiostreams.group1_primary '5. Triggers Group 1 Primary Scrapers'",
+            *debrid_flow_step,
+            "    aiostreams.group1_primary -> aiostreams.group2_fallback '7. Conditionally triggers Group 2 HTTP Scrapers when cache threshold is unmet'",
             "    aiostreams.sel_engine -> nuvio '8. Deduplicates, sorts by SEL score/resolution & returns formatted streams'",
             "",
             "    autoLayout TopBottom",
@@ -1420,9 +1801,9 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "    stream_weaver -> aiostreams '1. Injects {{SECRET_*}} keys & pushes configs/aiostreams.json (PUT /api/v1/user)'",
             "    stream_weaver -> aiometadata '2. Injects {{SECRET_*}} keys & pushes configs/aiometadata.json (PUT /api/config)'",
             "    stream_weaver -> aiomanager '3. Rehydrates manifests, compiles Nuvio collections & pushes AES-256-GCM envelope'",
-            "    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 5 tabbed Home Collections'",
+            f"    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & {len(snap.collections)} tabbed Home Collections'",
             "    stream_weaver -> stremio '5. Directly reconciles Stremio addon collection via AuthKey'",
-            "    stream_weaver -> aiometadata '6. Concurrently pre-warms all 48+ Home catalog endpoints (sw warm)'",
+            f"    stream_weaver -> aiometadata '6. Concurrently pre-warms {len(home_catalogs)}+ Home catalog endpoints (sw warm)'",
             "",
             "    autoLayout TopBottom",
             "  }",
@@ -1438,7 +1819,7 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
             "    aiometadata.search_router -> kitsu_srv '4. Queries Anime Movie & Series search (kitsu.search)'",
             "    aiometadata.search_router -> aiometadata.gemini_search '5. Dispatches natural-language query to Gemini search plugin'",
             "    aiometadata.gemini_search -> gemini_srv '6. Resolves semantic recommendations via Google AI Studio'",
-            "    aiometadata.poster_engine -> postersplus_srv '7. Decorates search results with frosted rating posters'",
+            "    aiometadata.poster_engine -> rpdb_srv '7. Decorates search results with rating posters'",
             "",
             "    autoLayout TopBottom",
             "  }",
@@ -1461,14 +1842,37 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
     am_home_catalogs = snap.am_home_catalogs
     cols_list = snap.collections
 
+    view_names = [
+        "`index`",
+        "`aiomanager_view`",
+        *(["`nuvio_collections_view`"] if cols_list else []),
+        "`aiostreams_view`",
+        "`aiometadata_view`",
+        *(["`contraband_view`"] if snap.has_contraband else []),
+        "`secrets_view`",
+        "`stream_resolution_flow`",
+        "`gitops_sync_flow`",
+        "`ai_search_flow`",
+    ]
+    debrid_label = (
+        " / ".join(d.title for d in snap.active_debrid_specs)
+        if snap.active_debrid_specs
+        else "Debrid Cache API"
+    )
+    debrid_secret = (
+        snap.active_debrid_specs[0].secret_env_key
+        if snap.active_debrid_specs
+        else "SECRET_DEBRID_API_KEY"
+    )
+
     md_lines: list[str] = [
         "# Stream Weaver — Live System Architecture & Topology",
         "",
         "> **Auto-Generated Architecture-as-Code:** This file and [`architecture/topology.c4`](architecture/topology.c4) are deterministically compiled from [`configs/aiomanager.json`](configs/aiomanager.json), [`configs/aiostreams.json`](configs/aiostreams.json), [`configs/aiometadata.json`](configs/aiometadata.json), and [`configs/nuvio_collections.json`](configs/nuvio_collections.json) via `uv run sw diagram` (and automatically updated on `sw pull`, `sw push`, `sw sanitize`, and `git commit`).",
         "",
-        "## Interactive Drill-Down Explorer (LikeC4 — 10 Views)",
+        f"## Interactive Drill-Down Explorer (LikeC4 — {len(view_names)} Views)",
         "",
-        "For the interactive, Google-Maps-style zoomable graph with **10 perspectives** (`index`, `aiomanager_view`, `nuvio_collections_view`, `aiostreams_view`, `aiometadata_view`, `contraband_view`, `secrets_view`, `stream_resolution_flow`, `gitops_sync_flow`, and `ai_search_flow`):",
+        f"For the interactive, Google-Maps-style zoomable graph with **{len(view_names)} perspectives** ({', '.join(view_names)}):",
         "",
         "```bash",
         "# Regenerate topology from configs/*.json at any time:",
@@ -1490,7 +1894,7 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
         "```mermaid",
         "flowchart LR",
         "    subgraph GitOps[\"🧶 Local GitOps (stream-weaver)\"]",
-        "        SW[\"sw CLI\\npull | push | sanitize | warm | diagram\"]",
+        "        SW[\"sw CLI\\ninit | pull | push | diff | sanitize | warm | diagram\"]",
         "        ENV[\".env\\n{{SECRET_*}} Vault\"]",
         "        SW --- ENV",
         "    end",
@@ -1507,27 +1911,33 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
         "    subgraph Aggregators[\"⚡ Core AIO Aggregators\"]",
         f"        AS[\"AIOStreams\\n({len(as_presets)} Active Plugins)\"]",
         f"        AM[\"AIOMetadata\\n({len(am_catalogs)} Active Catalogs, {len(am_home_catalogs)} Home)\"]",
-        "        BC[\"BingeCat AI Assistant\"]",
-        "        CB[\"Contraband (aio_contraband)\\nPeterson Academy\"]",
+        *(["        BC[\"BingeCat AI Assistant\"]"] if snap.has_bingecat else []),
+        *(
+            [
+                f"        CB[\"Contraband Static Addon\\n({', '.join(snap.contraband_catalogs) or 'Curated Catalog'})\"]"
+            ]
+            if snap.has_contraband
+            else []
+        ),
         "        CM[\"Cinemeta (IMDb Fallback)\"]",
         "    end",
         "",
         "    subgraph Upstream[\"☁️ External Upstream Servers & APIs\"]",
-        "        TB[(\"TorBox API\\nDebrid & Cloud\")]",
+        f"        DEB[(\"{_escape_c4_str(debrid_label)}\")]",
         "        TMDB[(\"TMDB API\\nMeta, Search & Discover\")]",
         "        TVDB[(\"TheTVDB API v4\\nSeries & Anime\")]",
         "        GEM[(\"Google AI Studio\\nGemini Search\")]",
         "        TRAKT[(\"Trakt.tv API\\nWatchlist & Up Next\")]",
         "        MAL[(\"MyAnimeList / Kitsu\\nAnime Catalogs & IDs\")]",
-        "        POSTER[(\"PostersPlus & RPDB\\nRating Posters\")]",
+        "        POSTER[(\"Rating Posters\\nRPDB / Custom\")]",
         "        GH[(\"GitHub Raw & Tamtaro\\nManifests & SEL Rules\")]",
         "    end",
         "",
         "    SW ==> MGR & AS & AM",
         "    MGR == \"Native Sync\" ==> Nuvio & Stremio",
-        "    Nuvio & Stremio --> AS & AM & BC & CM",
-        "    AS --> CB & TB & TMDB & TVDB & POSTER & GH",
-        "    CB --> GH & TB",
+        f"    Nuvio & Stremio --> AS & AM{' & BC' if snap.has_bingecat else ''} & CM",
+        f"    AS --> {'CB & ' if snap.has_contraband else ''}DEB & TMDB & TVDB & POSTER & GH",
+        *(["    CB --> GH & DEB"] if snap.has_contraband else []),
         "    AM --> TMDB & TVDB & GEM & TRAKT & MAL & POSTER",
         "```",
         "",
@@ -1542,10 +1952,14 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
         "        subgraph G1[\"Group 1: Primary Sequential (condition: true)\"]",
     ]
 
+    contraband_mermaid_node = ""
     for p in as_presets:
         inst_id = str(p.get("instanceId") or "")
+        p_type = str(p.get("type") or "")
         opts = p.get("options", {})
         p_name = str(opts.get("name") if isinstance(opts, Mapping) else inst_id)
+        if p_type == "custom" and "contraband" in p_name.lower():
+            contraband_mermaid_node = f"P_{inst_id}"
         if inst_id in group1_ids:
             md_lines.append(f"            P_{inst_id}[\"{_escape_c4_str(p_name)} ({inst_id})\"]")
 
@@ -1582,21 +1996,22 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
             "        end",
             "    end",
             "",
-            "    TB_EXT[(\"TorBox Debrid API\\n(SECRET_TORBOX_API_KEY)\")]",
-            "    CB_EXT[(\"Contraband GitHub Raw\")]",
-            "    RULES_EXT[(\"Tamtaro & Vidhin05\\nSEL / Regex Rules\")]",
+            f"    DEB_EXT[(\"{_escape_c4_str(debrid_label)}\\n({debrid_secret})\")]",
+            *(["    CB_EXT[(\"Static Addon Manifest\\n(GitHub Raw)\")]"] if contraband_mermaid_node else []),
+            "    RULES_EXT[(\"Tamtaro & Ranked\\nSEL / Regex Rules\")]",
             "    META_EXT[(\"TMDB / TVDB / RPDB\")]",
             "",
             "    SEL --> G1",
-            "    G1 -. \"If cached < 3\" .-> G2",
-            "    G1 ==> TB_EXT",
-            "    P_swc --> CB_EXT",
+            f"    G1 -. \"If {_escape_c4_str(group2_cond)}\" .-> G2",
+            "    G1 ==> DEB_EXT",
+            *([f"    {contraband_mermaid_node} --> CB_EXT"] if contraband_mermaid_node else []),
             "    SEL --> RULES_EXT & META_EXT",
             "```",
         ]
     )
 
     # Inventory table for AIOStreams presets
+    svcs_str = ", ".join(str(s.get("id", "")).capitalize() for s in as_services) or "Debrid"
     md_lines.extend(
         [
             "",
@@ -1625,15 +2040,14 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
             grp = "Subtitles / Utility"
 
         if p_type == "custom" and "contraband" in p_name.lower():
-            upstream = "GitHub Raw (`aio_contraband`) + TorBox"
+            upstream = f"Static Manifest + {svcs_str}"
         elif p_type == "library":
-            upstream = "TorBox Cloud Library (`SECRET_TORBOX_API_KEY`)"
+            upstream = f"{svcs_str} Cloud Library (`{debrid_secret}`)"
         elif "opensubtitles" in p_type:
             upstream = "OpenSubtitles API"
         elif inst_id in group2_ids:
             upstream = "Direct HTTP Providers"
         else:
-            svcs_str = ", ".join(str(s.get("id", "")).capitalize() for s in as_services) or "Debrid"
             upstream = f"{svcs_str} Cache + Public Indexers"
 
         md_lines.append(
@@ -1649,6 +2063,11 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
         for k, v in snap.am_cats_by_source.items()
     }
     active_search_engines = snap.am_active_engines
+    poster_label = (
+        f"{_safe_hostname(snap.am_custom_poster_url)} + RPDB"
+        if snap.am_poster_provider == "custom" and snap.am_custom_poster_url
+        else snap.am_poster_provider.upper()
+    )
 
     md_lines.extend(
         [
@@ -1660,13 +2079,13 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
             "```mermaid",
             "flowchart LR",
             "    subgraph AIOMetadata[\"AIOMetadata Internal Engines\"]",
-            "        MR[\"Metadata Router\\nMovie/Series: TMDB | Anime: TVDB + Kitsu\"]",
-            f"        SR[\"Search Engine\\n({len(active_search_engines)} Active Engines + Gemini AI)\"]",
+            f"        MR[\"Metadata Router\\nMovie/Series: {snap.am_movie_provider.upper()} | Anime: {snap.am_anime_provider.upper()} + {snap.am_anime_id_provider.upper()}\"]",
+            f"        SR[\"Search Engine\\n({len(active_search_engines)} Active Engines{' + Gemini AI' if snap.am_gemini_search_on else ''})\"]",
             f"        CAT_TRAKT[\"Trakt Catalogs\\n({cats_by_src.get('trakt', 0)} active, {home_by_src.get('trakt', 0)} Home)\"]",
-            f"        CAT_TMDB[\"TMDB & Regional Discover\\n({cats_by_src.get('tmdb', 0)} active, {home_by_src.get('tmdb', 0)} Home)\"]",
+            f"        CAT_TMDB[\"TMDB Discover\\n({cats_by_src.get('tmdb', 0)} active, {home_by_src.get('tmdb', 0)} Home)\"]",
             f"        CAT_MAL[\"MAL Anime Catalogs\\n({cats_by_src.get('mal', 0)} active, {home_by_src.get('mal', 0)} Home)\"]",
             f"        CAT_STR[\"Streaming Platforms\\n({cats_by_src.get('streaming', 0)} active, {home_by_src.get('streaming', 0)} Home)\"]",
-            "        ART[\"Poster Engine\\nPostersPlus + RPDB\"]",
+            f"        ART[\"Poster Engine\\n{_escape_c4_str(poster_label)}\"]",
             "    end",
             "",
             "    TMDB_API[(\"TMDB API\\n(SECRET_TMDB_API_KEY)\")]",
@@ -1675,7 +2094,7 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
             "    GEMINI_API[(\"Google AI Studio\\n(SECRET_GEMINI_API_KEY)\")]",
             "    TRAKT_API[(\"Trakt.tv API\\n(SECRET_TRAKT_TOKEN_ID)\")]",
             "    MAL_API[(\"MyAnimeList API\")]",
-            "    POSTER_API[(\"PostersPlus & RPDB\\n(SECRET_RPDB_API_KEY)\")]",
+            "    POSTER_API[(\"Rating Poster APIs\\n(SECRET_RPDB_API_KEY)\")]",
             "",
             "    MR --> TMDB_API & TVDB_API & KITSU_API",
             "    SR --> TMDB_API & TVDB_API & KITSU_API & GEMINI_API",
