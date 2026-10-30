@@ -41,8 +41,8 @@
   "traktComments": true,
   "episodeRatings": "show",
   "metaScreen": {
-    "backgroundMode": "normal",
-    "heroTrailerPlayback": false,
+    "backgroundMode": "cinematic",
+    "heroTrailerPlayback": true,
     "tabLayout": false,
     "episodeCardStyle": "horizontal",
     "blurUnwatchedEpisodes": false,

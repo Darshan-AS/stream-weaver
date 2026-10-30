@@ -13,6 +13,7 @@ from stream_weaver.core.nuvio_badges import (
     compile_nuvio_badge_import,
     compile_nuvio_badge_rules_json,
     decompile_nuvio_badges,
+    merge_extra_into_badge_import,
     merge_profile_settings_blob_badges,
     normalize_nuvio_badges_doc,
 )
@@ -504,6 +505,13 @@ class NuvioClientSync:
                             return err
                         case Ok(compiled_imp):
                             if is_active:
+                                raw_extra_groups = norm_doc.get("extraGroups", [])
+                                raw_extra_filters = norm_doc.get("extraFilters", [])
+                                compiled_imp = merge_extra_into_badge_import(
+                                    compiled_imp,
+                                    raw_extra_groups if isinstance(raw_extra_groups, list) else [],
+                                    raw_extra_filters if isinstance(raw_extra_filters, list) else [],
+                                )
                                 active_filter_count = sum(
                                     1
                                     for flt in compiled_imp.get("filters", [])

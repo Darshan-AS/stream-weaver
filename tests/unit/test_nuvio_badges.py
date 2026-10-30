@@ -16,6 +16,7 @@ from stream_weaver.core.nuvio_badges import (
     compile_nuvio_badge_import,
     compile_nuvio_badge_rules_json,
     decompile_nuvio_badges,
+    merge_extra_into_badge_import,
     merge_profile_settings_blob_badges,
     normalize_nuvio_badges_doc,
     validate_badge_source_url,
@@ -83,9 +84,40 @@ def test_normalize_nuvio_badges_doc_enforces_invariants() -> None:
     # Exactly one active import (first active wins)
     assert [imp["isActive"] for imp in doc["imports"]] == [True, False, False]
 
-    # Reject unknown platform or placement
+    # Reject unknown platform, placement, background mode, unsafe extra image URL, or bad regex
     assert isinstance(normalize_nuvio_badges_doc({"platforms": ["xbox"]}), Err)
     assert isinstance(normalize_nuvio_badges_doc({"badgePlacement": "SIDE"}), Err)
+    assert isinstance(normalize_nuvio_badges_doc({"streamBackgroundMode": "blur"}), Err)
+    assert isinstance(
+        normalize_nuvio_badges_doc(
+            {
+                "extraFilters": [
+                    {
+                        "id": "bad-http",
+                        "name": "Bad",
+                        "pattern": "av1",
+                        "imageURL": "http://insecure.example.com/av1.png",
+                    }
+                ]
+            }
+        ),
+        Err,
+    )
+    assert isinstance(
+        normalize_nuvio_badges_doc(
+            {
+                "extraFilters": [
+                    {
+                        "id": "bad-regex",
+                        "name": "Bad",
+                        "pattern": "[unclosed",
+                        "imageURL": "https://example.com/av1.png",
+                    }
+                ]
+            }
+        ),
+        Err,
+    )
 
 
 def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> None:
@@ -94,11 +126,29 @@ def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> 
             "version": "1.0.0",
             "platforms": ["tv", "desktop", "mobile"],
             "badgePlacement": "BOTTOM",
-            "showFileSizeBadges": False,
+            "streamBackgroundMode": "cinematic",
+            "showFileSizeBadges": True,
             "showAddonLogo": True,
             "showInPlayer": True,
             "playerBadgeSource": "",
             "imports": [{"sourceUrl": ELITE_SAMPLE_URL, "isActive": True}],
+            "extraGroups": [{"id": "streaming-service", "name": "Streaming Service"}],
+            "extraFilters": [
+                {
+                    "id": "netflix",
+                    "groupId": "streaming-service",
+                    "name": "Netflix",
+                    "pattern": "(?i)\\bnetflix\\b",
+                    "imageURL": "https://raw.githubusercontent.com/theLYPX/Elite-Badge/main/Badges/Netflix-V8.png",
+                },
+                {
+                    "id": "flac",
+                    "groupId": "grp-audio",
+                    "name": "FLAC",
+                    "pattern": "(?i)\\bflac\\b",
+                    "imageURL": "https://raw.githubusercontent.com/danielsdian/ColorfulAndConcise/main/images/FLAC.png",
+                },
+            ],
         }
     )
     assert isinstance(local_res, Ok)
@@ -106,16 +156,27 @@ def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> 
 
     imp_res = compile_nuvio_badge_import(ELITE_SAMPLE_URL, ELITE_SAMPLE_PACK, is_active=True)
     assert isinstance(imp_res, Ok)
-    rules_json = compile_nuvio_badge_rules_json([imp_res.value])
+    merged_imp = merge_extra_into_badge_import(
+        imp_res.value,
+        local_doc["extraGroups"],
+        local_doc["extraFilters"],
+    )
+    # Extra filter in grp-audio splices right after flt-atmos (semantic category order),
+    # while streaming-service extra group comes after upstream groups.
+    assert [f["name"] for f in merged_imp["filters"]] == [
+        "4K UHD",
+        "Dolby Atmos",
+        "FLAC",
+        "Netflix",
+    ]
+    rules_json = compile_nuvio_badge_rules_json([merged_imp])
 
     existing_desktop_blob: dict[str, Any] = {
         "version": 4,
         "features": {
             "theme_settings": {"selected_theme": {"type": "string", "value": "OCEAN"}},
             "player_settings": {"hw_decode": {"type": "boolean", "value": True}},
-            "stream_badge_settings": {
-                "stream_background_mode": {"type": "string", "value": "cinematic"},
-            },
+            "stream_badge_settings": {},
         },
     }
     existing_tv_blob: dict[str, Any] = {
@@ -145,7 +206,7 @@ def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> 
     assert tv_merged is not None
     assert desktop_merged is not None
     assert mobile_merged is not None
-    # Unrelated features, stream_background_mode & blob versions remain completely intact
+    # Unrelated features & blob versions remain completely intact; stream_background_mode synced to desktop/mobile
     assert desktop_merged["version"] == 4
     assert desktop_merged["features"]["theme_settings"] == {
         "selected_theme": {"type": "string", "value": "OCEAN"}
@@ -154,6 +215,7 @@ def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> 
         "type": "string",
         "value": "cinematic",
     }
+    assert "stream_background_mode" not in tv_merged["features"]["stream_badge_settings"]
     assert tv_merged["features"]["tmdb_settings"] == {"lang": {"type": "string", "value": "en"}}
     # Player badge sync keys are emitted across all 3 platforms; show_addon_logo is TV-only
     assert desktop_merged["features"]["stream_badge_settings"]["show_badges_in_player"] == {
@@ -170,7 +232,7 @@ def test_compile_merge_and_decompile_roundtrip_preserves_existing_features() -> 
     # Uninitialized desktop blob returns None to protect first-run local settings
     assert merge_profile_settings_blob_badges(None, {}, platform="desktop") is None
 
-    # Decompiling across all 3 platforms matches local_doc with zero diff
+    # Decompiling across all 3 platforms matches local_doc with zero diff (preserving declared extraFilters order!)
     decompiled = decompile_nuvio_badges(
         {"tv": tv_merged, "desktop": desktop_merged, "mobile": mobile_merged}
     )
@@ -282,17 +344,40 @@ def test_nuvio_client_sync_push_and_pull_badges_e2e() -> None:
         "version": "1.0.0",
         "platforms": ["tv", "desktop", "mobile"],
         "badgePlacement": "BOTTOM",
-        "showFileSizeBadges": False,
+        "streamBackgroundMode": "cinematic",
+        "showFileSizeBadges": True,
         "showAddonLogo": True,
         "showInPlayer": True,
         "playerBadgeSource": "",
         "imports": [{"sourceUrl": ELITE_SAMPLE_URL, "isActive": True}],
+        "extraGroups": [
+            {
+                "id": "service",
+                "name": "Service",
+                "color": "#00000000",
+                "isExpanded": True,
+            }
+        ],
+        "extraFilters": [
+            {
+                "id": "torbox",
+                "groupId": "service",
+                "name": "TorBox",
+                "pattern": "(?i)\\btorbox\\b",
+                "imageURL": "https://raw.githubusercontent.com/N3rdmade/Elite-Badges/main/Badges/torbox.png",
+                "isEnabled": True,
+                "tagColor": "",
+                "tagStyle": "",
+                "textColor": "",
+                "borderColor": "#00000000",
+            }
+        ],
     }
 
     push_res = syncer.push_badges(badge_doc, conn, password, salt_b64, env)
     assert isinstance(push_res, Ok)
     msg, _ = push_res.value
-    assert "2 filters across tv, desktop, mobile" in msg
+    assert "3 filters across tv, desktop, mobile" in msg
     # Existing theme_settings on all 3 platforms remain untouched
     assert remote_blobs["desktop"]["features"]["theme_settings"] == {
         "amoled": {"type": "boolean", "value": False}
@@ -302,3 +387,88 @@ def test_nuvio_client_sync_push_and_pull_badges_e2e() -> None:
     assert isinstance(pull_res, Ok)
     pulled_doc, _ = pull_res.value
     assert pulled_doc == badge_doc
+
+
+def test_merge_extra_into_badge_import_overrides_base_filter_in_place() -> None:
+    compiled_res = compile_nuvio_badge_import(ELITE_SAMPLE_URL, ELITE_SAMPLE_PACK, is_active=True)
+    assert isinstance(compiled_res, Ok)
+    extra_filters = [
+        {
+            "id": "flt-4k",
+            "groupId": "grp-res",
+            "name": "4K UHD",
+            "pattern": "(?i)(?:(?<![a-z0-9])(?:2160p|4k|uhd)(?![a-z0-9])|⁠​​​‌⁠)",
+            "imageURL": "https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges/resolution/4k.png",
+            "isEnabled": True,
+            "tagColor": "",
+            "tagStyle": "",
+            "textColor": "",
+            "borderColor": "#00000000",
+        },
+        {
+            "id": "flt-1080p",
+            "groupId": "grp-res",
+            "name": "1080p",
+            "pattern": "(?i)\\b1080p\\b",
+            "imageURL": "https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges/resolution/1080p.png",
+            "isEnabled": True,
+            "tagColor": "",
+            "tagStyle": "",
+            "textColor": "",
+            "borderColor": "#00000000",
+        },
+    ]
+    merged = merge_extra_into_badge_import(compiled_res.value, [], extra_filters)
+    filter_ids = [f["id"] for f in merged["filters"]]
+    # 'flt-4k' replaced in-place at index 0, 'flt-1080p' spliced right after 'grp-res', 'flt-atmos' kept at end
+    assert filter_ids == ["sw:000:flt-4k", "sw:001:flt-1080p", "flt-atmos"]
+    rules_json = compile_nuvio_badge_rules_json([merged])
+    blob = {
+        "version": 4,
+        "features": {
+            "stream_badge_settings": build_platform_stream_badge_settings(
+                {"badgePlacement": "BOTTOM"},
+                rules_json,
+                platform="desktop",
+            )
+        },
+    }
+    decompiled = decompile_nuvio_badges({"tv": blob, "desktop": blob, "mobile": blob})
+    assert decompiled["extraFilters"] == extra_filters
+
+
+def test_merge_extra_group_start_placement_round_trips() -> None:
+    compiled_res = compile_nuvio_badge_import(ELITE_SAMPLE_URL, ELITE_SAMPLE_PACK, is_active=True)
+    assert isinstance(compiled_res, Ok)
+    header = {
+        "id": "hdr-res",
+        "groupId": "grp-res",
+        "name": "▸ Resolution",
+        "pattern": "(?i)\\b(?:2160p|1080p)\\b",
+        "imageURL": "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f4c0.png",
+        "isEnabled": True,
+        "tagColor": "",
+        "tagStyle": "",
+        "textColor": "",
+        "borderColor": "#00000000",
+        "placement": "group-start",
+    }
+    norm = normalize_nuvio_badges_doc({"imports": [ELITE_SAMPLE_URL], "extraFilters": [header]})
+    assert isinstance(norm, Ok)
+    assert norm.value["extraFilters"][0]["placement"] == "group-start"
+
+    merged = merge_extra_into_badge_import(compiled_res.value, [], norm.value["extraFilters"])
+    assert [f["id"] for f in merged["filters"]] == ["sw:000:^hdr-res", "flt-4k", "flt-atmos"]
+
+    rules_json = compile_nuvio_badge_rules_json([merged])
+    blob = {
+        "version": 4,
+        "features": {
+            "stream_badge_settings": build_platform_stream_badge_settings(
+                {"badgePlacement": "BOTTOM"}, rules_json, platform="desktop"
+            )
+        },
+    }
+    decompiled = decompile_nuvio_badges({"tv": blob, "desktop": blob, "mobile": blob})
+    assert decompiled["extraFilters"] == [header]
+
