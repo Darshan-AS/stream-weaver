@@ -1320,7 +1320,14 @@ def _build_likec4_dsl(snap: TopologySnapshot) -> str:
                 f"Exposes personal {primary_debrid.service_key.capitalize()} Cloud Library catalog & direct streams",
                 tech=primary_debrid.secret_env_key,
             )
-        elif "subtitle" in p_type.lower() or "opensubtitles" in p_type.lower():
+        elif p_type == "custom" and str(opts.get("pinPosition") or "") == "bottom":
+            pass
+        elif (
+            "subtitle" in p_type.lower()
+            or "opensubtitles" in p_type.lower()
+            or p_type.lower() in ("subsource", "subdl", "subhero")
+            or "subtitles" in resources
+        ):
             add_rel(full_id, "opensubtitles_srv", f"Fetches {sub_lang_summary} subtitles")
         elif inst_id in group1_ids and active_debrid_ids:
             for deb_id in active_debrid_ids:
@@ -2104,8 +2111,14 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
             upstream = f"Static Manifest + {svcs_str}"
         elif p_type == "library":
             upstream = f"{svcs_str} Cloud Library (`{debrid_secret}`)"
+        elif p_type == "custom" and isinstance(opts, Mapping) and opts.get("pinPosition") == "bottom":
+            upstream = "Info Card / Release Alert Addon"
         elif "opensubtitles" in p_type:
             upstream = "OpenSubtitles API"
+        elif p_type == "subsource":
+            upstream = "SubSource API (`SECRET_SUBSOURCE_API_KEY`)"
+        elif "strelingo" in p_name.lower():
+            upstream = "Strelingo Dual-Sub Merger (OpenSubtitles + SubSource)"
         elif inst_id in group2_ids:
             upstream = "Direct HTTP Providers"
         else:
