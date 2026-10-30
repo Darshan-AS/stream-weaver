@@ -60,7 +60,7 @@
     "fanart": "",
     "rpdb": "{{SECRET_RPDB_API_KEY}}",
     "topPoster": "",
-    "mdblist": "",
+    "mdblist": "{{SECRET_MDBLIST_API_KEY}}",
     "traktTokenId": "{{SECRET_TRAKT_TOKEN_ID}}",
     "simklTokenId": "",
     "anilistTokenId": ""
@@ -1118,7 +1118,7 @@
   "language": "en-US",
   "timezone": "Asia/Kolkata",
   "ageRating": "None",
-  "castCount": 15,
+  "castCount": 30,
   "providers": {
     "anime": "tvdb",
     "movie": "tmdb",
@@ -1184,7 +1184,7 @@
   "hideWatchedTrakt": true,
   "hideWatchedMdblist": false,
   "catalogModeOnly": false,
-  "configHash": "739d228f6f096ebe",
+  "configHash": "186ef47565206c94",
   "managerAccounts": [
     {
       "id": "ef06f97b-4780-4c5c-85b9-bbb943ea8b21",

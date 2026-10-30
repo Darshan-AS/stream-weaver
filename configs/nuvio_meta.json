@@ -40,6 +40,11 @@
   },
   "traktComments": true,
   "episodeRatings": "show",
+  "tvTrailer": {
+    "mode": "background",
+    "delaySeconds": 7,
+    "pauseOnScroll": true
+  },
   "metaScreen": {
     "backgroundMode": "cinematic",
     "heroTrailerPlayback": true,

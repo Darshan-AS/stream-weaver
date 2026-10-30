@@ -11,6 +11,9 @@ Declaratively drives, per Nuvio profile and across `tv` / `desktop` / `mobile`:
    `features.trakt_settings.show_meta_comments` on TV) — Trakt reviews on the details page.
 3b. **Per-episode IMDb ratings** (`features.layout_settings.detail_imdb_ratings_visibility`, TV
    only — desktop/mobile always show them).
+3c. **TV detail-page trailer autoplay** (`features.trailer_settings`, TV only) — mode
+   (`background` keeps poster/logo/info visible and swaps only the backdrop, `fullscreen`, `off`),
+   start delay, pause-on-scroll. Set `tvTrailer: null` to leave the TV untouched.
 4. **Meta Screen layout** (`features.meta_screen_settings_payload`, desktop/mobile only) —
    section visibility/order, background mode, hero trailer playback, tab layout.
 
@@ -114,6 +117,12 @@ _EPISODE_RATINGS_FROM_TV: Final[Mapping[str, str]] = {
     "HIDE_ALL": "hide",
 }
 
+TRAILER_SETTINGS_FEATURE: Final = "trailer_settings"
+# NuvioTV detail-page trailer autoplay. `trailer_allow_4k` is deliberately NOT here: NuvioTV keeps
+# it device-local (RAM dependent) and strips it from the synced blob.
+TV_TRAILER_MODES: Final[tuple[str, ...]] = ("background", "fullscreen", "off")
+_DEFAULT_TV_TRAILER_DELAY: Final = 7
+
 _DEFAULT_LANGUAGE: Final = "en-US"
 
 
@@ -158,6 +167,43 @@ def _normalize_platforms(raw: Any, field_name: str) -> Result[list[str], ConfigV
             )
         requested.add(item.strip().lower())
     return Ok([p for p in VALID_NUVIO_META_PLATFORMS if p in requested])
+
+
+def _normalize_tv_trailer(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
+    if raw is None or raw is False:
+        return Ok(None)
+    if not isinstance(raw, Mapping):
+        return Err(
+            ConfigValidationError(
+                message="'tvTrailer' in nuvio_meta.json must be an object or null.",
+                service="nuvio_meta",
+            )
+        )
+    mode = str(raw.get("mode") or "fullscreen").strip().lower()
+    if mode not in TV_TRAILER_MODES:
+        return Err(
+            ConfigValidationError(
+                message=(
+                    f"Unsupported tvTrailer.mode '{mode}'. Choose from: {', '.join(TV_TRAILER_MODES)}"
+                ),
+                service="nuvio_meta",
+            )
+        )
+    raw_delay = raw.get("delaySeconds", _DEFAULT_TV_TRAILER_DELAY)
+    if isinstance(raw_delay, bool) or not isinstance(raw_delay, (int, float)) or raw_delay < 0:
+        return Err(
+            ConfigValidationError(
+                message="tvTrailer.delaySeconds must be a non-negative integer.",
+                service="nuvio_meta",
+            )
+        )
+    return Ok(
+        {
+            "mode": mode,
+            "delaySeconds": int(raw_delay),
+            "pauseOnScroll": _as_bool(raw.get("pauseOnScroll"), True),
+        }
+    )
 
 
 def _normalize_ratings(raw: Any) -> JsonDict:
@@ -293,6 +339,12 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
         case Ok(meta_screen):
             pass
 
+    match _normalize_tv_trailer(data.get("tvTrailer")):
+        case Err() as err:
+            return err
+        case Ok(tv_trailer):
+            pass
+
     episode_ratings = str(data.get("episodeRatings") or "show").strip()
     if episode_ratings not in EPISODE_RATINGS_MODES:
         return Err(
@@ -313,6 +365,7 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
             "tmdbEnrichment": _normalize_tmdb(data.get("tmdbEnrichment")),
             "traktComments": _as_bool(data.get("traktComments"), True),
             "episodeRatings": episode_ratings,
+            "tvTrailer": tv_trailer,
             "metaScreen": meta_screen,
         }
     )
@@ -321,6 +374,24 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
 # ============================================================================
 # Compilation (canonical doc -> per-platform Nuvio feature payloads)
 # ============================================================================
+
+
+def _encode_sync_int(value: int) -> JsonDict:
+    return {"type": "int", "value": int(value)}
+
+
+def _decode_sync_int(feature_json: Mapping[str, Any], key: str) -> int | None:
+    entry = feature_json.get(key)
+    if not isinstance(entry, Mapping) or entry.get("type") != "int":
+        return None
+    val = entry.get("value")
+    if isinstance(val, bool):
+        return None
+    if isinstance(val, (int, float)):
+        return int(val)
+    if isinstance(val, str) and val.strip().lstrip("-").isdigit():
+        return int(val.strip())
+    return None
 
 
 def compile_meta_screen_payload(meta_screen: Mapping[str, Any]) -> str:
@@ -442,6 +513,19 @@ def build_platform_meta_features(
         out[LAYOUT_SETTINGS_FEATURE] = {
             "detail_imdb_ratings_visibility": _encode_sync_string(tv_mode),
         }
+        tv_trailer = meta_doc.get("tvTrailer")
+        if isinstance(tv_trailer, Mapping):
+            mode = str(tv_trailer.get("mode") or "fullscreen")
+            out[TRAILER_SETTINGS_FEATURE] = {
+                "trailer_enabled": _encode_sync_bool(mode != "off"),
+                "trailer_play_in_background": _encode_sync_bool(mode == "background"),
+                "trailer_delay_seconds": _encode_sync_int(
+                    int(tv_trailer.get("delaySeconds", _DEFAULT_TV_TRAILER_DELAY))
+                ),
+                "trailer_pause_on_scroll": _encode_sync_bool(
+                    bool(tv_trailer.get("pauseOnScroll", True))
+                ),
+            }
         return out
 
     # desktop / mobile (shared KMP codebase)
@@ -616,6 +700,19 @@ def _decode_platform_view(
         layout_feat: Mapping[str, Any] = layout if isinstance(layout, Mapping) else {}
         raw_vis = _decode_sync_string(layout_feat, "detail_imdb_ratings_visibility")
         episode_ratings: str | None = _EPISODE_RATINGS_FROM_TV.get(raw_vis or "")
+        trailer = feats.get(TRAILER_SETTINGS_FEATURE)
+        trailer_feat: Mapping[str, Any] = trailer if isinstance(trailer, Mapping) else {}
+        tv_trailer: JsonDict | None = None
+        if trailer_feat:
+            enabled = _decode_sync_bool(trailer_feat, "trailer_enabled")
+            in_bg = _decode_sync_bool(trailer_feat, "trailer_play_in_background")
+            delay = _decode_sync_int(trailer_feat, "trailer_delay_seconds")
+            tv_trailer = {
+                "mode": ("off" if enabled is False else ("background" if in_bg else "fullscreen")),
+                "delaySeconds": delay if delay is not None else _DEFAULT_TV_TRAILER_DELAY,
+                "pauseOnScroll": _decode_sync_bool(trailer_feat, "trailer_pause_on_scroll")
+                is not False,
+            }
         meta_screen: JsonDict | None = None
         mdb_key: str | None = None
         tmdb_key: str | None = None
@@ -632,6 +729,7 @@ def _decode_platform_view(
         mdb_key = _decode_sync_string(mdb_feat, "mdblist_api_key")
         tmdb_key = _decode_sync_string(tm_feat, "tmdb_api_key")
         episode_ratings = None
+        tv_trailer = None
 
     if (
         ratings_enabled is None
@@ -667,6 +765,7 @@ def _decode_platform_view(
         },
         "traktComments": True if comments is None else comments,
         "episodeRatings": episode_ratings or "show",
+        "tvTrailer": tv_trailer,
         "metaScreen": meta_screen,
     }
     return view
@@ -697,6 +796,7 @@ def _comparable_platform_view(doc: Mapping[str, Any], *, platform: str) -> JsonD
     }
     if platform == "tv":
         view["episodeRatings"] = str(doc.get("episodeRatings") or "show")
+        view["tvTrailer"] = copy.deepcopy(doc.get("tvTrailer"))
     else:
         view["metaScreen"] = copy.deepcopy(doc.get("metaScreen"))
     return view
@@ -760,6 +860,10 @@ def decompile_nuvio_meta(
     # TV-only consensus lacks release-date/season-poster modules: default them on.
     for name, _ in TMDB_MODULES:
         consensus["tmdbEnrichment"]["modules"].setdefault(name, True)
+    # TV-only fields always come from the TV view (desktop/mobile cannot represent them).
+    tv_view = views.get("tv") or {}
+    consensus["episodeRatings"] = tv_view.get("episodeRatings") or "show"
+    consensus["tvTrailer"] = copy.deepcopy(tv_view.get("tvTrailer"))
     consensus["ratings"]["apiKey"] = mdb_key
     consensus["tmdbEnrichment"]["apiKey"] = tmdb_key
 
@@ -777,7 +881,8 @@ def decompile_nuvio_meta(
         "ratings": consensus["ratings"],
         "tmdbEnrichment": consensus["tmdbEnrichment"],
         "traktComments": consensus["traktComments"],
-        "episodeRatings": (views.get("tv") or {}).get("episodeRatings") or "show",
+        "episodeRatings": consensus["episodeRatings"],
+        "tvTrailer": consensus["tvTrailer"],
         "metaScreen": consensus.get("metaScreen"),
     }
     match normalize_nuvio_meta_doc(doc):
