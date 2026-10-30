@@ -7,7 +7,7 @@
   ],
   "badgePlacement": "BOTTOM",
   "streamBackgroundMode": "cinematic",
-  "showFileSizeBadges": true,
+  "showFileSizeBadges": false,
   "showAddonLogo": true,
   "showInPlayer": true,
   "playerBadgeSource": "",
@@ -32,58 +32,6 @@
     }
   ],
   "extraFilters": [
-    {
-      "id": "hdr-quality",
-      "groupId": "source",
-      "name": "▸ Quality",
-      "pattern": "(?i)(?:⁠​​​​⁠|⁠​​​‌⁠|⁠​​​‍⁠|⁠​​‌​⁠|⁠​​‌‌⁠|⁠​​‌‍⁠|⁠​​‍​⁠|⁠​​‍‌⁠|⁠​​‍‍⁠|⁠​‌​​⁠|⁠​‌​‌⁠|(?<![a-z0-9])(?:remux|blu[\\s._-]?ray|bluray|bd(?:rip|remux)?|web(?:[\\s._-]?(?:dl|rip))?|hdtv|dvd(?:rip)?|cam(?:rip)?|hdts|hdtc|telesync|telecine|2160p|4k|uhd|1080[pi]|fhd|720p|576p|480p)(?![a-z0-9]))",
-      "imageURL": "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f4c0.png",
-      "isEnabled": true,
-      "tagColor": "",
-      "tagStyle": "",
-      "textColor": "",
-      "borderColor": "#00000000",
-      "placement": "group-start"
-    },
-    {
-      "id": "hdr-video",
-      "groupId": "video-tech",
-      "name": "▸ Video",
-      "pattern": "(?i)(?:⁠​‌​‍⁠|⁠​‌‌​⁠|⁠​‌‌‌⁠|⁠​‌‌‍⁠|⁠​‌‍​⁠|⁠​‌‍‌⁠|⁠​‌‍‍⁠|⁠​‍​​⁠|⁠​‍​‌⁠|⁠​‍​‍⁠|⁠​‍‌​⁠|⁠​‍‌‌⁠|⁠​‍‌‍⁠|⁠​‍‍​⁠|(?<![a-z0-9])(?:dv|dovi|dolby[\\s._-]*vision|hdr(?:10\\+?)?|hlg|sdr|imax|hevc|x265|h[\\s._-]?265|avc|x264|h[\\s._-]?264|av1|xvid|divx|(?:10|8)[\\s._-]?bit|hi10p)(?![a-z0-9]))",
-      "imageURL": "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f39e.png",
-      "isEnabled": true,
-      "tagColor": "",
-      "tagStyle": "",
-      "textColor": "",
-      "borderColor": "#00000000",
-      "placement": "group-start"
-    },
-    {
-      "id": "hdr-audio",
-      "groupId": "audio-tech",
-      "name": "▸ Audio",
-      "pattern": "(?i)(?:⁠​‍‍‌⁠|⁠​‍‍‍⁠|⁠‌​​​⁠|⁠‌​​‌⁠|⁠‌​​‍⁠|⁠‌​‌​⁠|⁠‌​‌‌⁠|⁠‌​‌‍⁠|⁠‌​‍​⁠|⁠‌​‍‌⁠|⁠‌​‍‍⁠|⁠‌‌​​⁠|⁠‌‌​‌⁠|⁠‌‌​‍⁠|⁠‌‌‌​⁠|(?<![a-z0-9])(?:atmos|truehd|ddpa?|dd\\+?|e?ac-?3|dts|flac|opus|aac)(?![a-z0-9])|(?<![0-9v])(?:[2567][.-][01]|[2678]ch)(?![0-9]))",
-      "imageURL": "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f50a.png",
-      "isEnabled": true,
-      "tagColor": "",
-      "tagStyle": "",
-      "textColor": "",
-      "borderColor": "#00000000",
-      "placement": "group-start"
-    },
-    {
-      "id": "hdr-provider",
-      "groupId": "streaming-service",
-      "name": "▸ Provider",
-      "pattern": "(?i)(?:⁠‌‌‌‌⁠|⁠‌‌‌‍⁠|⁠‌‌‍​⁠|⁠‌‌‍‌⁠|⁠‌‌‍‍⁠|⁠‌‍​​⁠|⁠‌‍​‌⁠|⁠‌‍​‍⁠|⁠‌‍‌​⁠|⁠‌‍‌‌⁠|⁠‌‍‌‍⁠|⁠‌‍‍​⁠|⁠‌‍‍‌⁠|⁠‌‍‍‍⁠|⁠‍​​​⁠|\\u2061|\\u2062|\\u2063|\\u2064|\\[tb\\]|(?<![a-z0-9])(?:torbox|netflix|amzn|atvp|dsnp|hmax|hulu|pmtp|pcok|crunchyroll|jhs|hotstar|dscp|stz|starz|mgm\\+|iplayer|crav|crave|peacock|paramount\\+|disney\\+|discovery\\+)(?![a-z0-9]))",
-      "imageURL": "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f4e1.png",
-      "isEnabled": true,
-      "tagColor": "",
-      "tagStyle": "",
-      "textColor": "",
-      "borderColor": "#00000000",
-      "placement": "group-start"
-    },
     {
       "id": "remux",
       "groupId": "source",
