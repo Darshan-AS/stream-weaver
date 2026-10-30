@@ -457,9 +457,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/kannada_cinema.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         },
         {
           "id": "fld-hindi-cinema",
@@ -492,9 +491,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/indian-cinema/indian-cinema-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/hindi_cinema.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         },
         {
           "id": "fld-jiohotstar",
@@ -519,9 +517,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/disney-plus/disney-plus-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/jiohotstar.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         },
         {
           "id": "fld-sonyliv",
@@ -546,9 +543,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/thriller/thriller-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/sonyliv.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         },
         {
           "id": "fld-zee5",
@@ -573,9 +569,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/drama-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/zee5.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         }
       ],
       "pinToTop": true,
@@ -687,9 +682,8 @@
           ],
           "hideTitle": false,
           "tileShape": "LANDSCAPE",
-          "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/history-war-and-civilizations/history-war-and-civilizations-hover.gif",
           "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/peterson_academy.webp",
-          "focusGifEnabled": true
+          "focusGifEnabled": false
         },
         {
           "id": "fld-curiosity-stream",

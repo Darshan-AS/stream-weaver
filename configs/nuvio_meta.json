@@ -110,5 +110,33 @@
         "order": 9
       }
     ]
+  },
+  "posterCardStyle": {
+    "widthDp": 126,
+    "heightDp": 189,
+    "cornerRadiusDp": 16,
+    "landscapeMode": false,
+    "hideLabels": false
+  },
+  "cardDepth": {
+    "enabled": true,
+    "edgeStrength": 28,
+    "sheenStrength": 10,
+    "edgeCoverage": 0,
+    "posters": true,
+    "continueWatching": true,
+    "episodeCards": true,
+    "cast": true,
+    "trailers": true
+  },
+  "continueWatching": {
+    "visible": true,
+    "style": "card",
+    "upNextFromFurthestEpisode": true,
+    "episodeThumbnails": true,
+    "showUnairedNextUp": true,
+    "blurNextUp": false,
+    "resumePromptOnLaunch": true,
+    "sortMode": "streaming"
   }
 }

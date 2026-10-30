@@ -20,6 +20,11 @@ Declaratively drives, per Nuvio profile and across `tv` / `desktop` / `mobile`:
    start delay, pause-on-scroll. Set `tvTrailer: null` to leave the TV untouched.
 4. **Meta Screen layout** (`features.meta_screen_settings_payload`, desktop/mobile only) —
    section visibility/order, background mode, hero trailer playback, tab layout.
+5. **Poster Card Style, Card Depth & Continue Watching**
+   (`poster_card_style_settings_payload`, `card_depth_style_settings_payload`,
+   `continue_watching_settings_payload`, desktop/mobile only) — shared card dimensions/radius,
+   3D edge/sheen strengths, and Continue Watching row presentation, while preserving Desktop-only
+   `hoverPreview*` fields and device-local `dismissedNextUpKeys`.
 
 Secrets (MDBList / TMDB API keys) travel through Nuvio's dedicated
 `sync_*_provider_credentials` RPCs (the only path honoured by NuvioTV and newer
@@ -56,6 +61,13 @@ TRAKT_SETTINGS_FEATURE: Final = "trakt_settings"
 TRAKT_COMMENTS_SETTINGS_FEATURE: Final = "trakt_comments_settings"
 META_SCREEN_PAYLOAD_FEATURE: Final = "meta_screen_settings_payload"
 TRAKT_SETTINGS_PAYLOAD_FEATURE: Final = "trakt_settings_payload"
+POSTER_CARD_STYLE_PAYLOAD_FEATURE: Final = "poster_card_style_settings_payload"
+CARD_DEPTH_STYLE_PAYLOAD_FEATURE: Final = "card_depth_style_settings_payload"
+CONTINUE_WATCHING_PAYLOAD_FEATURE: Final = "continue_watching_settings_payload"
+_JSON_OBJECT_OVERLAY_FEATURES: Final[frozenset[str]] = frozenset(
+    {POSTER_CARD_STYLE_PAYLOAD_FEATURE}
+)
+_CONTINUE_WATCHING_PRESERVED_KEYS: Final[tuple[str, ...]] = ("dismissedNextUpKeys",)
 
 PROVIDER_CREDENTIAL_MDBLIST: Final = "mdblist"
 PROVIDER_CREDENTIAL_TMDB: Final = "tmdb"
@@ -147,6 +159,15 @@ TRACKING_SIMKL_ANIME_IDS: Final[Mapping[str, str]] = {
     "kitsu": "KITSU",
 }
 _DEFAULT_CONTINUE_WATCHING_DAYS: Final = 60
+
+CONTINUE_WATCHING_STYLES: Final[Mapping[str, str]] = {
+    "card": "Card",
+    "poster": "Poster",
+}
+CONTINUE_WATCHING_SORT_MODES: Final[Mapping[str, str]] = {
+    "streaming": "STREAMING_STYLE",
+    "default": "DEFAULT",
+}
 
 _DEFAULT_LANGUAGE: Final = "en-US"
 
@@ -267,6 +288,153 @@ def _normalize_tracking(raw: Any) -> Result[JsonDict | None, ConfigValidationErr
         )
     out["continueWatchingDays"] = int(raw_days)
     return Ok(out)
+
+
+def _require_bounded_int(
+    raw: Any,
+    *,
+    default: int,
+    lo: int,
+    hi: int,
+    label: str,
+) -> Result[int, ConfigValidationError]:
+    val = default if raw is None else raw
+    if isinstance(val, bool) or not isinstance(val, (int, float)) or int(val) < lo or int(val) > hi:
+        return Err(
+            ConfigValidationError(
+                message=f"{label} must be an integer between {lo} and {hi}.",
+                service="nuvio_meta",
+            )
+        )
+    return Ok(int(val))
+
+
+def _normalize_poster_card_style(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
+    if raw is None or raw is False:
+        return Ok(None)
+    if not isinstance(raw, Mapping):
+        return Err(
+            ConfigValidationError(
+                message="'posterCardStyle' in nuvio_meta.json must be an object or null.",
+                service="nuvio_meta",
+            )
+        )
+    match _require_bounded_int(
+        raw.get("widthDp"), default=126, lo=60, hi=400, label="posterCardStyle.widthDp"
+    ):
+        case Err() as err:
+            return err
+        case Ok(width_dp):
+            pass
+    match _require_bounded_int(
+        raw.get("heightDp"),
+        default=(width_dp * 3) // 2,
+        lo=90,
+        hi=600,
+        label="posterCardStyle.heightDp",
+    ):
+        case Err() as err:
+            return err
+        case Ok(height_dp):
+            pass
+    match _require_bounded_int(
+        raw.get("cornerRadiusDp"),
+        default=12,
+        lo=0,
+        hi=48,
+        label="posterCardStyle.cornerRadiusDp",
+    ):
+        case Err() as err:
+            return err
+        case Ok(radius_dp):
+            pass
+    return Ok(
+        {
+            "widthDp": width_dp,
+            "heightDp": height_dp,
+            "cornerRadiusDp": radius_dp,
+            "landscapeMode": _as_bool(raw.get("landscapeMode"), False),
+            "hideLabels": _as_bool(raw.get("hideLabels"), False),
+        }
+    )
+
+
+def _normalize_card_depth(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
+    if raw is None or raw is False:
+        return Ok(None)
+    if not isinstance(raw, Mapping):
+        return Err(
+            ConfigValidationError(
+                message="'cardDepth' in nuvio_meta.json must be an object or null.",
+                service="nuvio_meta",
+            )
+        )
+    strengths: dict[str, int] = {}
+    for key, default in (("edgeStrength", 28), ("sheenStrength", 10), ("edgeCoverage", 0)):
+        match _require_bounded_int(
+            raw.get(key), default=default, lo=0, hi=100, label=f"cardDepth.{key}"
+        ):
+            case Err() as err:
+                return err
+            case Ok(val):
+                strengths[key] = val
+    return Ok(
+        {
+            "enabled": _as_bool(raw.get("enabled"), True),
+            **strengths,
+            "posters": _as_bool(raw.get("posters"), True),
+            "continueWatching": _as_bool(raw.get("continueWatching"), True),
+            "episodeCards": _as_bool(raw.get("episodeCards"), True),
+            "cast": _as_bool(raw.get("cast"), True),
+            "trailers": _as_bool(raw.get("trailers"), True),
+        }
+    )
+
+
+def _normalize_continue_watching(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
+    if raw is None or raw is False:
+        return Ok(None)
+    if not isinstance(raw, Mapping):
+        return Err(
+            ConfigValidationError(
+                message="'continueWatching' in nuvio_meta.json must be an object or null.",
+                service="nuvio_meta",
+            )
+        )
+    style = str(raw.get("style") or "card").strip().lower()
+    if style not in CONTINUE_WATCHING_STYLES:
+        return Err(
+            ConfigValidationError(
+                message=(
+                    f"Unsupported continueWatching.style '{style}'. "
+                    f"Choose from: {', '.join(CONTINUE_WATCHING_STYLES)}"
+                ),
+                service="nuvio_meta",
+            )
+        )
+    sort_mode = str(raw.get("sortMode") or "streaming").strip().lower()
+    if sort_mode not in CONTINUE_WATCHING_SORT_MODES:
+        return Err(
+            ConfigValidationError(
+                message=(
+                    f"Unsupported continueWatching.sortMode '{sort_mode}'. "
+                    f"Choose from: {', '.join(CONTINUE_WATCHING_SORT_MODES)}"
+                ),
+                service="nuvio_meta",
+            )
+        )
+    return Ok(
+        {
+            "visible": _as_bool(raw.get("visible"), True),
+            "style": style,
+            "upNextFromFurthestEpisode": _as_bool(raw.get("upNextFromFurthestEpisode"), True),
+            "episodeThumbnails": _as_bool(raw.get("episodeThumbnails"), True),
+            "showUnairedNextUp": _as_bool(raw.get("showUnairedNextUp"), True),
+            "blurNextUp": _as_bool(raw.get("blurNextUp"), False),
+            "resumePromptOnLaunch": _as_bool(raw.get("resumePromptOnLaunch"), True),
+            "sortMode": sort_mode,
+        }
+    )
 
 
 def _normalize_ratings(raw: Any) -> JsonDict:
@@ -414,6 +582,24 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
         case Ok(tracking):
             pass
 
+    match _normalize_poster_card_style(data.get("posterCardStyle")):
+        case Err() as err:
+            return err
+        case Ok(poster_card_style):
+            pass
+
+    match _normalize_card_depth(data.get("cardDepth")):
+        case Err() as err:
+            return err
+        case Ok(card_depth):
+            pass
+
+    match _normalize_continue_watching(data.get("continueWatching")):
+        case Err() as err:
+            return err
+        case Ok(continue_watching):
+            pass
+
     episode_ratings = str(data.get("episodeRatings") or "show").strip()
     if episode_ratings not in EPISODE_RATINGS_MODES:
         return Err(
@@ -426,19 +612,24 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
             )
         )
 
-    return Ok(
-        {
-            "version": str(data.get("version") or "1.0.0").strip() or "1.0.0",
-            "platforms": platforms,
-            "ratings": _normalize_ratings(data.get("ratings")),
-            "tmdbEnrichment": _normalize_tmdb(data.get("tmdbEnrichment")),
-            "traktComments": _as_bool(data.get("traktComments"), True),
-            "episodeRatings": episode_ratings,
-            "tracking": tracking,
-            "tvTrailer": tv_trailer,
-            "metaScreen": meta_screen,
-        }
-    )
+    out_doc: JsonDict = {
+        "version": str(data.get("version") or "1.0.0").strip() or "1.0.0",
+        "platforms": platforms,
+        "ratings": _normalize_ratings(data.get("ratings")),
+        "tmdbEnrichment": _normalize_tmdb(data.get("tmdbEnrichment")),
+        "traktComments": _as_bool(data.get("traktComments"), True),
+        "episodeRatings": episode_ratings,
+        "tracking": tracking,
+        "tvTrailer": tv_trailer,
+        "metaScreen": meta_screen,
+    }
+    if poster_card_style is not None:
+        out_doc["posterCardStyle"] = poster_card_style
+    if card_depth is not None:
+        out_doc["cardDepth"] = card_depth
+    if continue_watching is not None:
+        out_doc["continueWatching"] = continue_watching
+    return Ok(out_doc)
 
 
 # ============================================================================
@@ -613,6 +804,131 @@ def decompile_meta_screen_payload(raw_payload: str | None) -> JsonDict | None:
             return None
 
 
+def compile_poster_card_style_payload(poster_card_style: Mapping[str, Any]) -> str:
+    """Serializes shared poster card dimensions/flags to Nuvio's `poster_card_style_settings_payload`."""
+    payload: JsonDict = {
+        "widthDp": int(poster_card_style["widthDp"]),
+        "heightDp": int(poster_card_style["heightDp"]),
+        "cornerRadiusDp": int(poster_card_style["cornerRadiusDp"]),
+        "catalogLandscapeModeEnabled": bool(poster_card_style.get("landscapeMode", False)),
+        "hideLabelsEnabled": bool(poster_card_style.get("hideLabels", False)),
+    }
+    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
+
+def decompile_poster_card_style_payload(raw_payload: str | None) -> JsonDict | None:
+    """Parses Nuvio's `poster_card_style_settings_payload` into the declarative `posterCardStyle` object."""
+    if not raw_payload or not raw_payload.strip():
+        return None
+    try:
+        parsed = json.loads(raw_payload)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, Mapping):
+        return None
+    declarative: JsonDict = {
+        "widthDp": parsed.get("widthDp"),
+        "heightDp": parsed.get("heightDp"),
+        "cornerRadiusDp": parsed.get("cornerRadiusDp"),
+        "landscapeMode": bool(parsed.get("catalogLandscapeModeEnabled", False)),
+        "hideLabels": bool(parsed.get("hideLabelsEnabled", False)),
+    }
+    match _normalize_poster_card_style(declarative):
+        case Ok(norm):
+            return norm
+        case Err():
+            return None
+
+
+def compile_card_depth_payload(card_depth: Mapping[str, Any]) -> str:
+    """Serializes card 3D depth/sheen settings to Nuvio's `card_depth_style_settings_payload`."""
+    payload: JsonDict = {
+        "enabled": bool(card_depth.get("enabled", True)),
+        "edgeStrength": int(card_depth["edgeStrength"]),
+        "sheenStrength": int(card_depth["sheenStrength"]),
+        "edgeCoverage": int(card_depth["edgeCoverage"]),
+        "postersEnabled": bool(card_depth.get("posters", True)),
+        "continueWatchingEnabled": bool(card_depth.get("continueWatching", True)),
+        "episodeCardsEnabled": bool(card_depth.get("episodeCards", True)),
+        "castEnabled": bool(card_depth.get("cast", True)),
+        "trailersEnabled": bool(card_depth.get("trailers", True)),
+    }
+    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
+
+def decompile_card_depth_payload(raw_payload: str | None) -> JsonDict | None:
+    """Parses Nuvio's `card_depth_style_settings_payload` into the declarative `cardDepth` object."""
+    if not raw_payload or not raw_payload.strip():
+        return None
+    try:
+        parsed = json.loads(raw_payload)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, Mapping):
+        return None
+    declarative: JsonDict = {
+        "enabled": bool(parsed.get("enabled", True)),
+        "edgeStrength": parsed.get("edgeStrength"),
+        "sheenStrength": parsed.get("sheenStrength"),
+        "edgeCoverage": parsed.get("edgeCoverage"),
+        "posters": bool(parsed.get("postersEnabled", True)),
+        "continueWatching": bool(parsed.get("continueWatchingEnabled", True)),
+        "episodeCards": bool(parsed.get("episodeCardsEnabled", True)),
+        "cast": bool(parsed.get("castEnabled", True)),
+        "trailers": bool(parsed.get("trailersEnabled", True)),
+    }
+    match _normalize_card_depth(declarative):
+        case Ok(norm):
+            return norm
+        case Err():
+            return None
+
+
+def compile_continue_watching_payload(continue_watching: Mapping[str, Any]) -> str:
+    """Serializes Continue Watching row settings to Nuvio's `continue_watching_settings_payload`."""
+    payload: JsonDict = {
+        "isVisible": bool(continue_watching.get("visible", True)),
+        "style": CONTINUE_WATCHING_STYLES[str(continue_watching["style"])],
+        "upNextFromFurthestEpisode": bool(continue_watching.get("upNextFromFurthestEpisode", True)),
+        "use_episode_thumbnails_in_cw": bool(continue_watching.get("episodeThumbnails", True)),
+        "show_unaired_next_up": bool(continue_watching.get("showUnairedNextUp", True)),
+        "blur_continue_watching_next_up": bool(continue_watching.get("blurNextUp", False)),
+        "dismissedNextUpKeys": [],
+        "showResumePromptOnLaunch": bool(continue_watching.get("resumePromptOnLaunch", True)),
+        "sort_mode": CONTINUE_WATCHING_SORT_MODES[str(continue_watching["sortMode"])],
+    }
+    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
+
+def decompile_continue_watching_payload(raw_payload: str | None) -> JsonDict | None:
+    """Parses Nuvio's `continue_watching_settings_payload` into the declarative `continueWatching` object."""
+    if not raw_payload or not raw_payload.strip():
+        return None
+    try:
+        parsed = json.loads(raw_payload)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, Mapping):
+        return None
+    raw_style = str(parsed.get("style") or "")
+    raw_sort = str(parsed.get("sort_mode") or "")
+    declarative: JsonDict = {
+        "visible": bool(parsed.get("isVisible", True)),
+        "style": _invert(CONTINUE_WATCHING_STYLES).get(raw_style, "card"),
+        "upNextFromFurthestEpisode": bool(parsed.get("upNextFromFurthestEpisode", True)),
+        "episodeThumbnails": bool(parsed.get("use_episode_thumbnails_in_cw", True)),
+        "showUnairedNextUp": bool(parsed.get("show_unaired_next_up", True)),
+        "blurNextUp": bool(parsed.get("blur_continue_watching_next_up", False)),
+        "resumePromptOnLaunch": bool(parsed.get("showResumePromptOnLaunch", True)),
+        "sortMode": _invert(CONTINUE_WATCHING_SORT_MODES).get(raw_sort, "streaming"),
+    }
+    match _normalize_continue_watching(declarative):
+        case Ok(norm):
+            return norm
+        case Err():
+            return None
+
+
 def build_platform_meta_features(
     meta_doc: Mapping[str, Any],
     *,
@@ -721,7 +1037,47 @@ def build_platform_meta_features(
     if isinstance(tracking, Mapping):
         out[TRAKT_SETTINGS_PAYLOAD_FEATURE] = compile_tracking_payload(tracking)
 
+    poster_card_style = meta_doc.get("posterCardStyle")
+    if isinstance(poster_card_style, Mapping):
+        out[POSTER_CARD_STYLE_PAYLOAD_FEATURE] = compile_poster_card_style_payload(
+            poster_card_style
+        )
+
+    card_depth = meta_doc.get("cardDepth")
+    if isinstance(card_depth, Mapping):
+        out[CARD_DEPTH_STYLE_PAYLOAD_FEATURE] = compile_card_depth_payload(card_depth)
+
+    continue_watching = meta_doc.get("continueWatching")
+    if isinstance(continue_watching, Mapping):
+        out[CONTINUE_WATCHING_PAYLOAD_FEATURE] = compile_continue_watching_payload(
+            continue_watching
+        )
+
     return out
+
+
+def _overlay_json_payload_string(
+    existing_raw: Any,
+    fragment_raw: str,
+    *,
+    preserved_list_keys: Sequence[str] = (),
+) -> str:
+    """Overlays `fragment_raw` JSON keys onto `existing_raw` while preserving listed array fields."""
+    if not isinstance(existing_raw, str) or not existing_raw.strip():
+        return fragment_raw
+    try:
+        existing_obj = json.loads(existing_raw)
+        fragment_obj = json.loads(fragment_raw)
+    except json.JSONDecodeError:
+        return fragment_raw
+    if not isinstance(existing_obj, Mapping) or not isinstance(fragment_obj, Mapping):
+        return fragment_raw
+    merged_obj: JsonDict = {**dict(existing_obj), **dict(fragment_obj)}
+    for key in preserved_list_keys:
+        prev_val = existing_obj.get(key)
+        if isinstance(prev_val, Sequence) and not isinstance(prev_val, (str, bytes)):
+            merged_obj[key] = [str(item) for item in prev_val if isinstance(item, str)]
+    return json.dumps(merged_obj, separators=(",", ":"), ensure_ascii=False)
 
 
 def merge_profile_settings_blob_meta(
@@ -758,6 +1114,17 @@ def merge_profile_settings_blob_meta(
             base: JsonDict = copy.deepcopy(dict(existing)) if isinstance(existing, Mapping) else {}
             base.update(copy.deepcopy(dict(fragment)))
             features[feature_name] = base
+        elif isinstance(fragment, str) and feature_name in _JSON_OBJECT_OVERLAY_FEATURES:
+            features[feature_name] = _overlay_json_payload_string(
+                features.get(feature_name),
+                fragment,
+            )
+        elif isinstance(fragment, str) and feature_name == CONTINUE_WATCHING_PAYLOAD_FEATURE:
+            features[feature_name] = _overlay_json_payload_string(
+                features.get(feature_name),
+                fragment,
+                preserved_list_keys=_CONTINUE_WATCHING_PRESERVED_KEYS,
+            )
         else:
             features[feature_name] = fragment
 
@@ -884,6 +1251,9 @@ def _decode_platform_view(
                 is not False,
             }
         meta_screen: JsonDict | None = None
+        poster_card_style: JsonDict | None = None
+        card_depth: JsonDict | None = None
+        continue_watching: JsonDict | None = None
         mdb_key: str | None = None
         tmdb_key: str | None = None
     else:
@@ -895,6 +1265,16 @@ def _decode_platform_view(
         raw_payload = feats.get(META_SCREEN_PAYLOAD_FEATURE)
         meta_screen = decompile_meta_screen_payload(
             raw_payload if isinstance(raw_payload, str) else None
+        )
+        raw_poster = feats.get(POSTER_CARD_STYLE_PAYLOAD_FEATURE)
+        poster_card_style = decompile_poster_card_style_payload(
+            raw_poster if isinstance(raw_poster, str) else None
+        )
+        raw_depth = feats.get(CARD_DEPTH_STYLE_PAYLOAD_FEATURE)
+        card_depth = decompile_card_depth_payload(raw_depth if isinstance(raw_depth, str) else None)
+        raw_cw = feats.get(CONTINUE_WATCHING_PAYLOAD_FEATURE)
+        continue_watching = decompile_continue_watching_payload(
+            raw_cw if isinstance(raw_cw, str) else None
         )
         mdb_key = _decode_sync_string(mdb_feat, "mdblist_api_key")
         tmdb_key = _decode_sync_string(tm_feat, "tmdb_api_key")
@@ -910,6 +1290,9 @@ def _decode_platform_view(
         and tmdb_enabled is None
         and comments is None
         and meta_screen is None
+        and poster_card_style is None
+        and card_depth is None
+        and continue_watching is None
     ):
         return None
 
@@ -943,6 +1326,12 @@ def _decode_platform_view(
         "tvTrailer": tv_trailer,
         "metaScreen": meta_screen,
     }
+    if poster_card_style is not None:
+        view["posterCardStyle"] = poster_card_style
+    if card_depth is not None:
+        view["cardDepth"] = card_depth
+    if continue_watching is not None:
+        view["continueWatching"] = continue_watching
     return view
 
 
@@ -975,6 +1364,9 @@ def _comparable_platform_view(doc: Mapping[str, Any], *, platform: str) -> JsonD
         view["tvTrailer"] = copy.deepcopy(doc.get("tvTrailer"))
     else:
         view["metaScreen"] = copy.deepcopy(doc.get("metaScreen"))
+        view["posterCardStyle"] = copy.deepcopy(doc.get("posterCardStyle"))
+        view["cardDepth"] = copy.deepcopy(doc.get("cardDepth"))
+        view["continueWatching"] = copy.deepcopy(doc.get("continueWatching"))
     return view
 
 
@@ -1061,6 +1453,9 @@ def decompile_nuvio_meta(
         "tracking": consensus.get("tracking"),
         "tvTrailer": consensus["tvTrailer"],
         "metaScreen": consensus.get("metaScreen"),
+        "posterCardStyle": consensus.get("posterCardStyle"),
+        "cardDepth": consensus.get("cardDepth"),
+        "continueWatching": consensus.get("continueWatching"),
     }
     match normalize_nuvio_meta_doc(doc):
         case Ok(norm):

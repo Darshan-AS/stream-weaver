@@ -510,7 +510,9 @@ class NuvioClientSync:
                                 compiled_imp = merge_extra_into_badge_import(
                                     compiled_imp,
                                     raw_extra_groups if isinstance(raw_extra_groups, list) else [],
-                                    raw_extra_filters if isinstance(raw_extra_filters, list) else [],
+                                    raw_extra_filters
+                                    if isinstance(raw_extra_filters, list)
+                                    else [],
                                 )
                                 active_filter_count = sum(
                                     1
@@ -700,7 +702,9 @@ class NuvioClientSync:
                     pass
 
             plat_features = build_platform_meta_features(norm_doc, platform=plat)
-            merged_blob = merge_profile_settings_blob_meta(remote_blob, plat_features, platform=plat)
+            merged_blob = merge_profile_settings_blob_meta(
+                remote_blob, plat_features, platform=plat
+            )
             if merged_blob is None:
                 continue
 
@@ -730,7 +734,9 @@ class NuvioClientSync:
                         )
                     pushed_platforms.append(plat)
 
-        match self._push_provider_credentials(headers, profile_idx, build_provider_credentials(norm_doc)):
+        match self._push_provider_credentials(
+            headers, profile_idx, build_provider_credentials(norm_doc)
+        ):
             case Err() as err:
                 return err
             case Ok(cred_count):
@@ -783,7 +789,9 @@ class NuvioClientSync:
             case Ok(cred_rows):
                 pass
 
-        return Ok((decompile_nuvio_meta(platform_blobs, cred_rows, version=version), updated_secrets))
+        return Ok(
+            (decompile_nuvio_meta(platform_blobs, cred_rows, version=version), updated_secrets)
+        )
 
     def push_meta(
         self,
@@ -833,7 +841,11 @@ class NuvioClientSync:
             "POST",
             "https://api.nuvio.tv/rest/v1/rpc/sync_push_addons",
             headers=headers,
-            json_body={"p_profile_id": profile_idx, "p_addons": p_addons},
+            json_body={
+                "p_profile_id": profile_idx,
+                "p_addons": p_addons,
+                "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
+            },
         )
         match push_res:
             case Err() as err:
@@ -859,6 +871,7 @@ class NuvioClientSync:
                 json_body={
                     "p_profile_id": profile_idx,
                     "p_collections_json": compiled_cols,
+                    "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
                 },
             )
             match col_res:
