@@ -45,6 +45,7 @@ FULL_DOC: dict[str, Any] = {
     },
     "traktComments": True,
     "episodeRatings": "show",
+    "tvTrailer": {"mode": "background", "delaySeconds": 7, "pauseOnScroll": True},
     "metaScreen": {
         "backgroundMode": "cinematic",
         "heroTrailerPlayback": False,
@@ -82,6 +83,14 @@ def test_normalize_fills_defaults_and_validates() -> None:
     assert minimal["traktComments"] is True
     assert minimal["episodeRatings"] == "show"
     assert minimal["metaScreen"] is None
+    assert minimal["tvTrailer"] is None
+    assert isinstance(normalize_nuvio_meta_doc({"tvTrailer": {"mode": "pip"}}), Err)
+    assert isinstance(normalize_nuvio_meta_doc({"tvTrailer": {"delaySeconds": -1}}), Err)
+    assert _normalized({"tvTrailer": {}})["tvTrailer"] == {
+        "mode": "fullscreen",
+        "delaySeconds": 7,
+        "pauseOnScroll": True,
+    }
     assert isinstance(normalize_nuvio_meta_doc({"episodeRatings": "sometimes"}), Err)
 
     assert isinstance(normalize_nuvio_meta_doc({"platforms": ["roku"]}), Err)
@@ -117,7 +126,29 @@ def test_platform_feature_fragments_use_platform_specific_keys() -> None:
     norm = _normalized(FULL_DOC)
 
     tv = build_platform_meta_features(norm, platform="tv")
-    assert set(tv) == {"mdblist_settings", "tmdb_settings", "trakt_settings", "layout_settings"}
+    assert set(tv) == {
+        "mdblist_settings",
+        "tmdb_settings",
+        "trakt_settings",
+        "layout_settings",
+        "trailer_settings",
+    }
+    assert tv["trailer_settings"] == {
+        "trailer_enabled": {"type": "boolean", "value": True},
+        "trailer_play_in_background": {"type": "boolean", "value": True},
+        "trailer_delay_seconds": {"type": "int", "value": 7},
+        "trailer_pause_on_scroll": {"type": "boolean", "value": True},
+    }
+    off = build_platform_meta_features(
+        _normalized({**FULL_DOC, "tvTrailer": {"mode": "off", "delaySeconds": 15}}), platform="tv"
+    )
+    assert off["trailer_settings"]["trailer_enabled"]["value"] is False
+    assert off["trailer_settings"]["trailer_play_in_background"]["value"] is False
+    assert off["trailer_settings"]["trailer_delay_seconds"]["value"] == 15
+    untouched = build_platform_meta_features(
+        _normalized({**FULL_DOC, "tvTrailer": None}), platform="tv"
+    )
+    assert "trailer_settings" not in untouched
     assert tv["layout_settings"] == {
         "detail_imdb_ratings_visibility": {"type": "string", "value": "SHOW_ALL"}
     }
@@ -310,6 +341,10 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
                     "discover_location": {"type": "string", "value": "HOME"},
                     "detail_imdb_ratings_visibility": {"type": "string", "value": "HIDE_EPISODES"},
                 },
+                "trailer_settings": {
+                    "trailer_allow_4k": {"type": "boolean", "value": True},
+                    "trailer_delay_seconds": {"type": "int", "value": 30},
+                },
             },
         },
         "desktop": {
@@ -380,6 +415,9 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
     assert "mdblist_api_key" not in tv_feats["mdblist_settings"]
     assert tv_feats["layout_settings"]["discover_location"]["value"] == "HOME"
     assert tv_feats["layout_settings"]["detail_imdb_ratings_visibility"]["value"] == "SHOW_ALL"
+    assert tv_feats["trailer_settings"]["trailer_allow_4k"]["value"] is True
+    assert tv_feats["trailer_settings"]["trailer_delay_seconds"]["value"] == 7
+    assert tv_feats["trailer_settings"]["trailer_play_in_background"]["value"] is True
     # Desktop kept theme settings and got the meta-screen payload
     desk_feats = (remote_blobs["desktop"] or {})["features"]
     assert desk_feats["theme_settings"] == {"amoled": {"type": "boolean", "value": False}}
