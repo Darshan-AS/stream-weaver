@@ -71,8 +71,8 @@
       "name": "Trakt Up Next",
       "type": "series",
       "source": "trakt",
-      "enabled": true,
-      "showInHome": true,
+      "enabled": false,
+      "showInHome": false,
       "cacheTTL": 300,
       "metadata": {
         "useShowPosterForUpNext": true,
@@ -84,8 +84,8 @@
       "name": "Trakt Watchlist",
       "type": "movie",
       "source": "trakt",
-      "enabled": true,
-      "showInHome": true,
+      "enabled": false,
+      "showInHome": false,
       "cacheTTL": 7200
     },
     {
@@ -93,8 +93,8 @@
       "name": "Trakt Watchlist",
       "type": "series",
       "source": "trakt",
-      "enabled": true,
-      "showInHome": true,
+      "enabled": false,
+      "showInHome": false,
       "cacheTTL": 7200
     },
     {
@@ -1180,11 +1180,11 @@
   "enableRatingPostersForLibrary": true,
   "catalogSetupComplete": true,
   "simklWatchTracking": false,
-  "traktWatchTracking": true,
-  "hideWatchedTrakt": true,
+  "traktWatchTracking": false,
+  "hideWatchedTrakt": false,
   "hideWatchedMdblist": false,
   "catalogModeOnly": false,
-  "configHash": "186ef47565206c94",
+  "configHash": "5a4f02d2b6da2beb",
   "managerAccounts": [
     {
       "id": "ef06f97b-4780-4c5c-85b9-bbb943ea8b21",

@@ -42,7 +42,7 @@ flowchart LR
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
         AS["AIOStreams\n(15 Active Plugins)"]
-        AM["AIOMetadata\n(64 Active Catalogs, 48 Home)"]
+        AM["AIOMetadata\n(61 Active Catalogs, 45 Home)"]
         BC["BingeCat AI Assistant"]
         CB["Contraband Static Addon\n(Peterson Academy)"]
         CM["Cinemeta (IMDb Fallback)"]
@@ -139,7 +139,7 @@ flowchart LR
     subgraph AIOMetadata["AIOMetadata Internal Engines"]
         MR["Metadata Router\nMovie/Series: TMDB | Anime: TVDB + KITSU"]
         SR["Search Engine\n(8 Active Engines)"]
-        CAT_TRAKT["Trakt Catalogs\n(11 active, 5 Home)"]
+        CAT_TRAKT["Trakt Catalogs\n(8 active, 2 Home)"]
         CAT_TMDB["TMDB Discover\n(22 active, 16 Home)"]
         CAT_MAL["MAL Anime Catalogs\n(7 active, 3 Home)"]
         CAT_STR["Streaming Platforms\n(24 active, 24 Home)"]

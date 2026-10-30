@@ -15,10 +15,10 @@
         {
           "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
           "transportName": "",
-          "manifestId": "aio-metadata:3.6.0",
+          "manifestId": "aio-metadata:3.8.3",
           "manifest": {
             "id": "aio-metadata",
-            "version": "3.6.0",
+            "version": "3.8.3",
             "name": "AIOMetadata",
             "_deduped": true
           },
@@ -34,10 +34,10 @@
         {
           "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "transportName": "",
-          "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.36.0",
+          "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.37.0",
           "manifest": {
             "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-            "version": "2.36.0",
+            "version": "2.37.0",
             "name": "AIOStreams",
             "_deduped": true
           },
@@ -660,7 +660,7 @@
         "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
         "manifest": {
           "id": "aio-metadata",
-          "version": "3.6.0",
+          "version": "3.8.3",
           "logo": "https://aiometadatafortheweebs.midnightignite.me/logo.png",
           "background": "https://aiometadatafortheweebs.midnightignite.me/background.png",
           "name": "AIOMetadata",
@@ -707,161 +707,6 @@
             "newEpisodeNotifications": true
           },
           "catalogs": [
-            {
-              "id": "trakt.upnext",
-              "type": "series",
-              "name": "Trakt Up Next",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Biography",
-                    "Children",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "Game Show",
-                    "History",
-                    "Holiday",
-                    "Home And Garden",
-                    "Horror",
-                    "Mini Series",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "News",
-                    "None",
-                    "Reality",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Soap",
-                    "Special Interest",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Talk Show",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "trakt.watchlist.movies",
-              "type": "movie",
-              "name": "Trakt Watchlist",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Holiday",
-                    "Horror",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "None",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "trakt.watchlist.series",
-              "type": "series",
-              "name": "Trakt Watchlist",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Biography",
-                    "Children",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "Game Show",
-                    "History",
-                    "Holiday",
-                    "Home And Garden",
-                    "Horror",
-                    "Mini Series",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "News",
-                    "None",
-                    "Reality",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Soap",
-                    "Special Interest",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Talk Show",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
             {
               "id": "trakt.trending.movies",
               "type": "movie",
@@ -3821,14 +3666,14 @@
               ]
             }
           ],
-          "configVersion": 1792480453275,
+          "configVersion": 1793339905111,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1792480453275,
-            "timestamp": "2026-10-20T13:45:54.815Z"
+            "configVersion": 1793339905111,
+            "timestamp": "2026-10-30T05:58:50.736Z"
           },
-          "_timestamp": 1792503954815
+          "_timestamp": 1793339930736
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3852,7 +3697,7 @@
         "manifest": {
           "name": "AIOStreams",
           "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-          "version": "2.36.0",
+          "version": "2.37.0",
           "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
           "catalogs": [
             {
@@ -3918,7 +3763,6 @@
               "idPrefixes": [
                 "sw_",
                 "pa_",
-                "aiostreams::library.torbox.torrent.",
                 "aiostreams::library.torbox",
                 "aiostreamserror"
               ]
@@ -3927,8 +3771,8 @@
               "name": "stream",
               "types": [
                 "series",
-                "library",
                 "movie",
+                "library",
                 "other",
                 "anime",
                 "tv",
@@ -3938,7 +3782,6 @@
               "idPrefixes": [
                 "sw_",
                 "pa_",
-                "aiostreams::library.torbox.torrent.",
                 "tt",
                 "imdb",
                 "mal",
@@ -4019,16 +3862,16 @@
                   "name": "genre",
                   "options": [
                     "Drama",
-                    "Comedy",
                     "Adventure",
+                    "Comedy",
                     "Thriller",
+                    "Biography",
                     "History",
                     "Action",
-                    "Biography",
                     "Fantasy",
+                    "Romance",
                     "War",
                     "Animation",
-                    "Romance",
                     "Documentary",
                     "Family",
                     "Horror",
@@ -4058,18 +3901,18 @@
                   "options": [
                     "Drama",
                     "Thriller",
-                    "Crime",
                     "Action",
-                    "Mystery",
+                    "Crime",
                     "Comedy",
-                    "Sci-Fi",
+                    "Mystery",
                     "Animation",
+                    "Sci-Fi",
                     "Horror",
                     "Adventure",
                     "Fantasy",
                     "Sport",
-                    "Documentary",
                     "Romance",
+                    "Documentary",
                     "Game-Show",
                     "History",
                     "Western"
@@ -4093,19 +3936,18 @@
                   "isRequired": false,
                   "name": "genre",
                   "options": [
-                    "Drama",
-                    "Crime",
-                    "Thriller",
-                    "Biography",
-                    "Romance",
-                    "Mystery",
-                    "History",
+                    "Sci-Fi",
                     "Action",
-                    "Film-Noir",
-                    "Comedy",
+                    "Thriller",
+                    "Drama",
+                    "Mystery",
+                    "Adventure",
+                    "Crime",
+                    "Fantasy",
                     "Horror",
-                    "War",
-                    "Western"
+                    "Animation",
+                    "Romance",
+                    "Comedy"
                   ],
                   "optionsLimit": 1
                 },
@@ -4126,21 +3968,17 @@
                   "isRequired": false,
                   "name": "genre",
                   "options": [
+                    "Comedy",
                     "Animation",
+                    "Romance",
                     "Drama",
                     "Fantasy",
                     "Action",
                     "Adventure",
-                    "Romance",
-                    "Comedy",
-                    "Mystery",
                     "Sci-Fi",
                     "Thriller",
-                    "History",
-                    "Horror",
-                    "Crime",
-                    "War",
-                    "Western"
+                    "Mystery",
+                    "Horror"
                   ],
                   "optionsLimit": 1
                 },
@@ -4163,21 +4001,20 @@
                   "options": [
                     "Action",
                     "Sci-Fi",
-                    "Drama",
                     "Adventure",
+                    "Drama",
                     "Thriller",
                     "Fantasy",
-                    "Crime",
                     "Animation",
                     "Comedy",
-                    "Horror",
+                    "Crime",
                     "Mystery",
                     "History",
+                    "Horror",
                     "Romance",
                     "War",
-                    "Western",
                     "Biography",
-                    "Sport"
+                    "Family"
                   ],
                   "optionsLimit": 1
                 },
@@ -4201,17 +4038,17 @@
                     "Drama",
                     "Adventure",
                     "Fantasy",
+                    "Animation",
+                    "Mystery",
                     "Sci-Fi",
                     "Action",
-                    "Animation",
                     "Comedy",
                     "Thriller",
-                    "Mystery",
-                    "Horror",
                     "Crime",
+                    "Horror",
                     "Family",
-                    "Romance",
-                    "War"
+                    "History",
+                    "Romance"
                   ],
                   "optionsLimit": 1
                 },
@@ -4229,19 +4066,6 @@
             {
               "extra": [
                 {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_238746",
-              "name": "When Hearts Meet",
-              "pageSize": 50,
-              "showInHome": true,
-              "type": "movie"
-            },
-            {
-              "extra": [
-                {
                   "default": "None",
                   "isRequired": true,
                   "name": "genre",
@@ -4255,8 +4079,8 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_238747",
-              "name": "Mystery Thrillers",
+              "id": "aicat_list_for_you_299554",
+              "name": "Japanese Drama",
               "pageSize": 50,
               "showInHome": false,
               "type": "series"
@@ -4268,8 +4092,43 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_238748",
-              "name": "Japanese Drama",
+              "id": "aicat_list_for_you_299559",
+              "name": "Mystery Thrillers",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_299555",
+              "name": "Hindi Comedies",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_299556",
+              "name": "Hindi Crime & Thrillers",
               "pageSize": 50,
               "showInHome": true,
               "type": "movie"
@@ -4281,8 +4140,8 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_238749",
-              "name": "Fantasy Anime",
+              "id": "aicat_list_for_you_299557",
+              "name": "Hindi Dramas",
               "pageSize": 50,
               "showInHome": true,
               "type": "movie"
@@ -4303,7 +4162,7 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_238750",
+              "id": "aicat_list_for_you_299558",
               "name": "Machines, AI & Cyberpunk",
               "pageSize": 50,
               "showInHome": false,
@@ -4325,52 +4184,30 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_238751",
+              "id": "aicat_list_for_you_299560",
+              "name": "Fantasy Anime",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_299561",
               "name": "Manga Adaptations",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_238752",
-              "name": "Animated Comedies",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_238753",
-              "name": "Case Closed",
               "pageSize": 50,
               "showInHome": false,
               "type": "series"

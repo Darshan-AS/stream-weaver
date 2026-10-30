@@ -572,15 +572,15 @@ model {
   // ==========================================================================
   aggregator aiometadata 'AIOMetadata' {
     #enabled #metadata
-    description 'Serves 64 active catalogs (48 on Home), canonical metadata, search & rating posters'
+    description 'Serves 61 active catalogs (45 on Home), canonical metadata, search & rating posters'
     technology 'AIOMetadata (aiometadatafortheweebs.midnightignite.me)'
     link https://aiometadatafortheweebs.midnightignite.me 'Live AIOMetadata Instance'
     metadata {
-      active_catalogs '64'
-      home_catalogs '48'
+      active_catalogs '61'
+      home_catalogs '45'
       language 'en-US'
       timezone 'Asia/Kolkata'
-      trakt_watch_tracking 'True'
+      trakt_watch_tracking 'False'
     }
 
     subsystem meta_router 'Core Metadata & ID Router' {
@@ -645,14 +645,14 @@ model {
         sample_catalogs 'TMDB Popular (movie), TMDB Popular (series), TMDB Top Rated (movie), TMDB Top Rated (series), Hindi Movies (movie), New Hindi Releases (movie), Hindi Series (series), Kannada Movies (movie)'
       }
     }
-    plugin cat_src_trakt 'Trakt.tv Catalogs & Watch Tracking (11)' {
+    plugin cat_src_trakt 'Trakt.tv Catalogs & Watch Tracking (8)' {
       #enabled #catalog
-      description '11 active (5 Home): Trakt Up Next, Trakt Watchlist, Trakt Watchlist, Trakt Trending, Trakt Trending, Trakt Popular'
+      description '8 active (2 Home): Trakt Trending, Trakt Trending, Trakt Popular, Trakt Popular, Trakt Most Watched (Weekly), Trakt Most Watched (Weekly)'
       technology 'Source: trakt'
       metadata {
-        active_count '11'
-        home_count '5'
-        sample_catalogs 'Trakt Up Next (series), Trakt Watchlist (movie), Trakt Watchlist (series), Trakt Trending (movie), Trakt Trending (series), Trakt Popular (movie), Trakt Popular (series), Trakt Most Watched (Weekly) (movie)'
+        active_count '8'
+        home_count '2'
+        sample_catalogs 'Trakt Trending (movie), Trakt Trending (series), Trakt Popular (movie), Trakt Popular (series), Trakt Most Watched (Weekly) (movie), Trakt Most Watched (Weekly) (series), My Recently Aired (series), Airing Soon (series)'
       }
     }
   }
@@ -952,7 +952,7 @@ model {
     #catalog
   }
   aiometadata.cat_src_tmdb -> aiometadata.poster_engine 'Decorates catalog items with rating posters'
-  aiometadata.cat_src_trakt -> trakt_srv 'Fetches 11 trakt catalogs' {
+  aiometadata.cat_src_trakt -> trakt_srv 'Fetches 8 trakt catalogs' {
     #catalog
   }
   aiometadata.cat_src_trakt -> aiometadata.poster_engine 'Decorates catalog items with rating posters'
@@ -1212,7 +1212,7 @@ views {
     stream_weaver -> aiomanager '3. Rehydrates manifests, compiles Nuvio collections & pushes AES-256-GCM envelope'
     stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 5 tabbed Home Collections'
     stream_weaver -> stremio '5. Directly reconciles Stremio addon collection via AuthKey'
-    stream_weaver -> aiometadata '6. Concurrently pre-warms 48+ Home catalog endpoints (sw warm)'
+    stream_weaver -> aiometadata '6. Concurrently pre-warms 45+ Home catalog endpoints (sw warm)'
 
     autoLayout TopBottom
   }
