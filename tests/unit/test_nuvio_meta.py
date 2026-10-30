@@ -475,3 +475,137 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
     expected["platforms"] = ["tv", "desktop"]  # mobile skipped above
     assert pulled_doc == expected
     assert compute_config_diff(expected, pulled_doc, target="nuvio_meta").in_sync is True
+
+
+def test_card_and_continue_watching_sync_preserves_desktop_hover_and_dismissed_keys() -> None:
+    doc_with_cards = {
+        **FULL_DOC,
+        "posterCardStyle": {
+            "widthDp": 126,
+            "heightDp": 189,
+            "cornerRadiusDp": 16,
+            "landscapeMode": False,
+            "hideLabels": False,
+        },
+        "cardDepth": {
+            "enabled": True,
+            "edgeStrength": 28,
+            "sheenStrength": 10,
+            "edgeCoverage": 0,
+            "posters": True,
+            "continueWatching": True,
+            "episodeCards": True,
+            "cast": True,
+            "trailers": True,
+        },
+        "continueWatching": {
+            "visible": True,
+            "style": "card",
+            "upNextFromFurthestEpisode": True,
+            "episodeThumbnails": True,
+            "showUnairedNextUp": True,
+            "blurNextUp": False,
+            "resumePromptOnLaunch": True,
+            "sortMode": "streaming",
+        },
+    }
+    assert isinstance(normalize_nuvio_meta_doc({"posterCardStyle": {"widthDp": 10}}), Err)
+    assert isinstance(normalize_nuvio_meta_doc({"cardDepth": {"edgeStrength": 150}}), Err)
+    assert isinstance(normalize_nuvio_meta_doc({"continueWatching": {"style": "grid"}}), Err)
+    assert isinstance(normalize_nuvio_meta_doc({"continueWatching": {"sortMode": "random"}}), Err)
+
+    norm = _normalized(doc_with_cards)
+    tv_feats = build_platform_meta_features(norm, platform="tv")
+    assert "poster_card_style_settings_payload" not in tv_feats
+    assert "card_depth_style_settings_payload" not in tv_feats
+    assert "continue_watching_settings_payload" not in tv_feats
+
+    existing_desktop: dict[str, Any] = {
+        "version": 4,
+        "features": {
+            "poster_card_style_settings_payload": json.dumps(
+                {
+                    "widthDp": 110,
+                    "heightDp": 165,
+                    "cornerRadiusDp": 12,
+                    "catalogLandscapeModeEnabled": False,
+                    "hideLabelsEnabled": False,
+                    "hoverPreviewEnabled": True,
+                    "hoverPreviewOpenDelayMillis": 2000,
+                    "hoverPreviewTrailerEnabled": True,
+                    "hoverPreviewTrailerSoundEnabled": False,
+                    "hoverPreviewTrailerStartSeconds": 0,
+                    "alwaysShowLandscapeClearlogo": False,
+                },
+                separators=(",", ":"),
+            ),
+            "continue_watching_settings_payload": json.dumps(
+                {
+                    "isVisible": True,
+                    "style": "Poster",
+                    "dismissedNextUpKeys": ["tt0903747:1:2", "tt0944947:3:9"],
+                },
+                separators=(",", ":"),
+            ),
+        },
+    }
+    existing_mobile: dict[str, Any] = {"version": 4, "features": {"theme_settings": {}}}
+
+    merged_tv = merge_profile_settings_blob_meta(
+        {"version": 1, "features": {}}, tv_feats, platform="tv"
+    )
+    merged_desktop = merge_profile_settings_blob_meta(
+        existing_desktop,
+        build_platform_meta_features(norm, platform="desktop"),
+        platform="desktop",
+    )
+    merged_mobile = merge_profile_settings_blob_meta(
+        existing_mobile,
+        build_platform_meta_features(norm, platform="mobile"),
+        platform="mobile",
+    )
+    assert merged_desktop is not None
+    assert merged_mobile is not None
+
+    # Desktop-only hoverPreview* keys and dismissedNextUpKeys survive the overlay.
+    desk_poster = json.loads(merged_desktop["features"]["poster_card_style_settings_payload"])
+    assert desk_poster["cornerRadiusDp"] == 16
+    assert desk_poster["hoverPreviewEnabled"] is True
+    assert desk_poster["hoverPreviewTrailerEnabled"] is True
+    assert desk_poster["hoverPreviewOpenDelayMillis"] == 2000
+    assert desk_poster["alwaysShowLandscapeClearlogo"] is False
+
+    desk_cw = json.loads(merged_desktop["features"]["continue_watching_settings_payload"])
+    assert desk_cw["style"] == "Card"
+    assert desk_cw["sort_mode"] == "STREAMING_STYLE"
+    assert desk_cw["dismissedNextUpKeys"] == ["tt0903747:1:2", "tt0944947:3:9"]
+
+    # Mobile gets clean payloads without Desktop-only keys.
+    mob_poster = json.loads(merged_mobile["features"]["poster_card_style_settings_payload"])
+    assert mob_poster == {
+        "widthDp": 126,
+        "heightDp": 189,
+        "cornerRadiusDp": 16,
+        "catalogLandscapeModeEnabled": False,
+        "hideLabelsEnabled": False,
+    }
+    mob_cw = json.loads(merged_mobile["features"]["continue_watching_settings_payload"])
+    assert mob_cw["dismissedNextUpKeys"] == []
+
+    # Round-trip decompile across tv + desktop + mobile matches norm cleanly.
+    decompiled = decompile_nuvio_meta(
+        {"tv": merged_tv, "desktop": merged_desktop, "mobile": merged_mobile}, []
+    )
+    assert decompiled == norm
+    assert compute_config_diff(norm, decompiled, target="nuvio_meta").in_sync is True
+
+    # If mobile lacks poster_card_style_settings_payload, drift is detected.
+    unpushed_mobile = merge_profile_settings_blob_meta(
+        existing_mobile,
+        build_platform_meta_features(_normalized(FULL_DOC), platform="mobile"),
+        platform="mobile",
+    )
+    drifted = decompile_nuvio_meta(
+        {"tv": merged_tv, "desktop": merged_desktop, "mobile": unpushed_mobile}, []
+    )
+    assert compute_config_diff(norm, drifted, target="nuvio_meta").in_sync is False
