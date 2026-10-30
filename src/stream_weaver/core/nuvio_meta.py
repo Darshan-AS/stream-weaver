@@ -11,6 +11,10 @@ Declaratively drives, per Nuvio profile and across `tv` / `desktop` / `mobile`:
    `features.trakt_settings.show_meta_comments` on TV) — Trakt reviews on the details page.
 3b. **Per-episode IMDb ratings** (`features.layout_settings.detail_imdb_ratings_visibility`, TV
    only — desktop/mobile always show them).
+3d. **Tracking source pins** (`trakt_settings_payload` on desktop/mobile, `trakt_settings.*` on TV)
+   — which connected tracker drives resume/Up Next (`watchProgressSource`), the Library
+   (`librarySource`), More Like This, the Simkl anime id scheme, and the Continue Watching window.
+   Trakt/Simkl OAuth itself is device-local in Nuvio and cannot be synced.
 3c. **TV detail-page trailer autoplay** (`features.trailer_settings`, TV only) — mode
    (`background` keeps poster/logo/info visible and swaps only the backdrop, `fullscreen`, `off`),
    start delay, pause-on-scroll. Set `tvTrailer: null` to leave the TV untouched.
@@ -51,6 +55,7 @@ TMDB_SETTINGS_FEATURE: Final = "tmdb_settings"
 TRAKT_SETTINGS_FEATURE: Final = "trakt_settings"
 TRAKT_COMMENTS_SETTINGS_FEATURE: Final = "trakt_comments_settings"
 META_SCREEN_PAYLOAD_FEATURE: Final = "meta_screen_settings_payload"
+TRAKT_SETTINGS_PAYLOAD_FEATURE: Final = "trakt_settings_payload"
 
 PROVIDER_CREDENTIAL_MDBLIST: Final = "mdblist"
 PROVIDER_CREDENTIAL_TMDB: Final = "tmdb"
@@ -122,6 +127,26 @@ TRAILER_SETTINGS_FEATURE: Final = "trailer_settings"
 # it device-local (RAM dependent) and strips it from the synced blob.
 TV_TRAILER_MODES: Final[tuple[str, ...]] = ("background", "fullscreen", "off")
 _DEFAULT_TV_TRAILER_DELAY: Final = 7
+
+# Tracking source pins. Declarative value -> Nuvio enum name. Desktop/Mobile persist these in the
+# `trakt_settings_payload` JSON string; TV persists them as `trakt_settings` preferences.
+TRACKING_PROGRESS_SOURCES: Final[Mapping[str, str]] = {
+    "trakt": "TRAKT",
+    "simkl": "SIMKL",
+    "nuvio": "NUVIO_SYNC",
+}
+TRACKING_LIBRARY_SOURCES: Final[Mapping[str, str]] = {
+    "trakt": "TRAKT",
+    "simkl": "SIMKL",
+    "local": "LOCAL",
+}
+TRACKING_MORE_LIKE_THIS_SOURCES: Final[Mapping[str, str]] = {"trakt": "TRAKT", "tmdb": "TMDB"}
+TRACKING_SIMKL_ANIME_IDS: Final[Mapping[str, str]] = {
+    "imdb": "IMDB",
+    "mal": "MAL",
+    "kitsu": "KITSU",
+}
+_DEFAULT_CONTINUE_WATCHING_DAYS: Final = 60
 
 _DEFAULT_LANGUAGE: Final = "en-US"
 
@@ -204,6 +229,44 @@ def _normalize_tv_trailer(raw: Any) -> Result[JsonDict | None, ConfigValidationE
             "pauseOnScroll": _as_bool(raw.get("pauseOnScroll"), True),
         }
     )
+
+
+def _normalize_tracking(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
+    if raw is None or raw is False:
+        return Ok(None)
+    if not isinstance(raw, Mapping):
+        return Err(
+            ConfigValidationError(
+                message="'tracking' in nuvio_meta.json must be an object or null.",
+                service="nuvio_meta",
+            )
+        )
+    out: JsonDict = {}
+    for field, table, default in (
+        ("watchProgressSource", TRACKING_PROGRESS_SOURCES, "trakt"),
+        ("librarySource", TRACKING_LIBRARY_SOURCES, "trakt"),
+        ("moreLikeThisSource", TRACKING_MORE_LIKE_THIS_SOURCES, "trakt"),
+        ("simklAnimeId", TRACKING_SIMKL_ANIME_IDS, "imdb"),
+    ):
+        value = str(raw.get(field) or default).strip().lower()
+        if value not in table:
+            return Err(
+                ConfigValidationError(
+                    message=f"Unsupported tracking.{field} '{value}'. Choose from: {', '.join(table)}",
+                    service="nuvio_meta",
+                )
+            )
+        out[field] = value
+    raw_days = raw.get("continueWatchingDays", _DEFAULT_CONTINUE_WATCHING_DAYS)
+    if isinstance(raw_days, bool) or not isinstance(raw_days, (int, float)) or raw_days < 0:
+        return Err(
+            ConfigValidationError(
+                message="tracking.continueWatchingDays must be a non-negative integer (0 = all).",
+                service="nuvio_meta",
+            )
+        )
+    out["continueWatchingDays"] = int(raw_days)
+    return Ok(out)
 
 
 def _normalize_ratings(raw: Any) -> JsonDict:
@@ -345,6 +408,12 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
         case Ok(tv_trailer):
             pass
 
+    match _normalize_tracking(data.get("tracking")):
+        case Err() as err:
+            return err
+        case Ok(tracking):
+            pass
+
     episode_ratings = str(data.get("episodeRatings") or "show").strip()
     if episode_ratings not in EPISODE_RATINGS_MODES:
         return Err(
@@ -365,6 +434,7 @@ def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationErro
             "tmdbEnrichment": _normalize_tmdb(data.get("tmdbEnrichment")),
             "traktComments": _as_bool(data.get("traktComments"), True),
             "episodeRatings": episode_ratings,
+            "tracking": tracking,
             "tvTrailer": tv_trailer,
             "metaScreen": meta_screen,
         }
@@ -392,6 +462,77 @@ def _decode_sync_int(feature_json: Mapping[str, Any], key: str) -> int | None:
     if isinstance(val, str) and val.strip().lstrip("-").isdigit():
         return int(val.strip())
     return None
+
+
+def compile_tracking_payload(tracking: Mapping[str, Any]) -> str:
+    """Serializes tracking pins to Nuvio desktop/mobile `StoredTraktSettings` JSON string."""
+    payload: JsonDict = {
+        "watchProgressSource": TRACKING_PROGRESS_SOURCES[str(tracking["watchProgressSource"])],
+        "continueWatchingDaysCap": int(tracking["continueWatchingDays"]),
+        "librarySourceMode": TRACKING_LIBRARY_SOURCES[str(tracking["librarySource"])],
+        "moreLikeThisSource": TRACKING_MORE_LIKE_THIS_SOURCES[str(tracking["moreLikeThisSource"])],
+        "simklAnimeIdPreference": TRACKING_SIMKL_ANIME_IDS[str(tracking["simklAnimeId"])],
+    }
+    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
+
+def _invert(table: Mapping[str, str]) -> dict[str, str]:
+    return {v: k for k, v in table.items()}
+
+
+def decompile_tracking_payload(raw_payload: str | None) -> JsonDict | None:
+    """Parses Nuvio's `trakt_settings_payload` string back into the declarative `tracking` object."""
+    if not raw_payload or not raw_payload.strip():
+        return None
+    try:
+        parsed = json.loads(raw_payload)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, Mapping):
+        return None
+    return _tracking_from_enum_values(
+        progress=parsed.get("watchProgressSource"),
+        library=parsed.get("librarySourceMode"),
+        more_like_this=parsed.get("moreLikeThisSource"),
+        simkl_anime=parsed.get("simklAnimeIdPreference"),
+        days=parsed.get("continueWatchingDaysCap"),
+    )
+
+
+def _tracking_from_enum_values(
+    *,
+    progress: Any,
+    library: Any,
+    more_like_this: Any,
+    simkl_anime: Any,
+    days: Any,
+) -> JsonDict | None:
+    if (
+        progress is None
+        and library is None
+        and more_like_this is None
+        and simkl_anime is None
+        and days is None
+    ):
+        return None
+    declarative: JsonDict = {
+        "watchProgressSource": _invert(TRACKING_PROGRESS_SOURCES).get(str(progress or ""), "trakt"),
+        "librarySource": _invert(TRACKING_LIBRARY_SOURCES).get(str(library or ""), "trakt"),
+        "moreLikeThisSource": _invert(TRACKING_MORE_LIKE_THIS_SOURCES).get(
+            str(more_like_this or ""), "trakt"
+        ),
+        "simklAnimeId": _invert(TRACKING_SIMKL_ANIME_IDS).get(str(simkl_anime or ""), "imdb"),
+        "continueWatchingDays": (
+            int(days)
+            if isinstance(days, (int, float)) and not isinstance(days, bool)
+            else _DEFAULT_CONTINUE_WATCHING_DAYS
+        ),
+    }
+    match _normalize_tracking(declarative):
+        case Ok(norm):
+            return norm
+        case Err():
+            return None
 
 
 def compile_meta_screen_payload(meta_screen: Mapping[str, Any]) -> str:
@@ -508,7 +649,25 @@ def build_platform_meta_features(
             tm[f"tmdb_use_{suffix}"] = _encode_sync_bool(bool(modules.get(name, True)))
         out[TMDB_SETTINGS_FEATURE] = tm
 
-        out[TRAKT_SETTINGS_FEATURE] = {"show_meta_comments": _encode_sync_bool(trakt_comments)}
+        trakt_feat: JsonDict = {"show_meta_comments": _encode_sync_bool(trakt_comments)}
+        tracking = meta_doc.get("tracking")
+        if isinstance(tracking, Mapping):
+            trakt_feat["watch_progress_source"] = _encode_sync_string(
+                TRACKING_PROGRESS_SOURCES[str(tracking["watchProgressSource"])]
+            )
+            trakt_feat["library_source_mode"] = _encode_sync_string(
+                TRACKING_LIBRARY_SOURCES[str(tracking["librarySource"])]
+            )
+            trakt_feat["more_like_this_source"] = _encode_sync_string(
+                TRACKING_MORE_LIKE_THIS_SOURCES[str(tracking["moreLikeThisSource"])]
+            )
+            trakt_feat["simkl_anime_id_preference"] = _encode_sync_string(
+                TRACKING_SIMKL_ANIME_IDS[str(tracking["simklAnimeId"])]
+            )
+            trakt_feat["continue_watching_days_cap"] = _encode_sync_int(
+                int(tracking["continueWatchingDays"])
+            )
+        out[TRAKT_SETTINGS_FEATURE] = trakt_feat
         tv_mode = EPISODE_RATINGS_MODES[str(meta_doc.get("episodeRatings") or "show")]
         out[LAYOUT_SETTINGS_FEATURE] = {
             "detail_imdb_ratings_visibility": _encode_sync_string(tv_mode),
@@ -557,6 +716,10 @@ def build_platform_meta_features(
     meta_screen = meta_doc.get("metaScreen")
     if isinstance(meta_screen, Mapping):
         out[META_SCREEN_PAYLOAD_FEATURE] = compile_meta_screen_payload(meta_screen)
+
+    tracking = meta_doc.get("tracking")
+    if isinstance(tracking, Mapping):
+        out[TRAKT_SETTINGS_PAYLOAD_FEATURE] = compile_tracking_payload(tracking)
 
     return out
 
@@ -702,6 +865,13 @@ def _decode_platform_view(
         episode_ratings: str | None = _EPISODE_RATINGS_FROM_TV.get(raw_vis or "")
         trailer = feats.get(TRAILER_SETTINGS_FEATURE)
         trailer_feat: Mapping[str, Any] = trailer if isinstance(trailer, Mapping) else {}
+        tracking_view: JsonDict | None = _tracking_from_enum_values(
+            progress=_decode_sync_string(trakt_feat, "watch_progress_source"),
+            library=_decode_sync_string(trakt_feat, "library_source_mode"),
+            more_like_this=_decode_sync_string(trakt_feat, "more_like_this_source"),
+            simkl_anime=_decode_sync_string(trakt_feat, "simkl_anime_id_preference"),
+            days=_decode_sync_int(trakt_feat, "continue_watching_days_cap"),
+        )
         tv_trailer: JsonDict | None = None
         if trailer_feat:
             enabled = _decode_sync_bool(trailer_feat, "trailer_enabled")
@@ -730,6 +900,10 @@ def _decode_platform_view(
         tmdb_key = _decode_sync_string(tm_feat, "tmdb_api_key")
         episode_ratings = None
         tv_trailer = None
+        raw_tracking = feats.get(TRAKT_SETTINGS_PAYLOAD_FEATURE)
+        tracking_view = decompile_tracking_payload(
+            raw_tracking if isinstance(raw_tracking, str) else None
+        )
 
     if (
         ratings_enabled is None
@@ -765,6 +939,7 @@ def _decode_platform_view(
         },
         "traktComments": True if comments is None else comments,
         "episodeRatings": episode_ratings or "show",
+        "tracking": tracking_view,
         "tvTrailer": tv_trailer,
         "metaScreen": meta_screen,
     }
@@ -793,6 +968,7 @@ def _comparable_platform_view(doc: Mapping[str, Any], *, platform: str) -> JsonD
             "modules": modules,
         },
         "traktComments": bool(doc.get("traktComments", True)),
+        "tracking": copy.deepcopy(doc.get("tracking")),
     }
     if platform == "tv":
         view["episodeRatings"] = str(doc.get("episodeRatings") or "show")
@@ -882,6 +1058,7 @@ def decompile_nuvio_meta(
         "tmdbEnrichment": consensus["tmdbEnrichment"],
         "traktComments": consensus["traktComments"],
         "episodeRatings": consensus["episodeRatings"],
+        "tracking": consensus.get("tracking"),
         "tvTrailer": consensus["tvTrailer"],
         "metaScreen": consensus.get("metaScreen"),
     }

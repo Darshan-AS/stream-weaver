@@ -40,6 +40,13 @@
   },
   "traktComments": true,
   "episodeRatings": "show",
+  "tracking": {
+    "watchProgressSource": "trakt",
+    "librarySource": "trakt",
+    "moreLikeThisSource": "trakt",
+    "simklAnimeId": "imdb",
+    "continueWatchingDays": 60
+  },
   "tvTrailer": {
     "mode": "background",
     "delaySeconds": 7,

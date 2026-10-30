@@ -45,6 +45,13 @@ FULL_DOC: dict[str, Any] = {
     },
     "traktComments": True,
     "episodeRatings": "show",
+    "tracking": {
+        "watchProgressSource": "trakt",
+        "librarySource": "trakt",
+        "moreLikeThisSource": "trakt",
+        "simklAnimeId": "imdb",
+        "continueWatchingDays": 60,
+    },
     "tvTrailer": {"mode": "background", "delaySeconds": 7, "pauseOnScroll": True},
     "metaScreen": {
         "backgroundMode": "cinematic",
@@ -84,6 +91,16 @@ def test_normalize_fills_defaults_and_validates() -> None:
     assert minimal["episodeRatings"] == "show"
     assert minimal["metaScreen"] is None
     assert minimal["tvTrailer"] is None
+    assert minimal["tracking"] is None
+    assert isinstance(normalize_nuvio_meta_doc({"tracking": {"watchProgressSource": "plex"}}), Err)
+    assert isinstance(normalize_nuvio_meta_doc({"tracking": {"continueWatchingDays": -5}}), Err)
+    assert _normalized({"tracking": {"simklAnimeId": "MAL"}})["tracking"] == {
+        "watchProgressSource": "trakt",
+        "librarySource": "trakt",
+        "moreLikeThisSource": "trakt",
+        "simklAnimeId": "mal",
+        "continueWatchingDays": 60,
+    }
     assert isinstance(normalize_nuvio_meta_doc({"tvTrailer": {"mode": "pip"}}), Err)
     assert isinstance(normalize_nuvio_meta_doc({"tvTrailer": {"delaySeconds": -1}}), Err)
     assert _normalized({"tvTrailer": {}})["tvTrailer"] == {
@@ -133,6 +150,11 @@ def test_platform_feature_fragments_use_platform_specific_keys() -> None:
         "layout_settings",
         "trailer_settings",
     }
+    assert tv["trakt_settings"]["watch_progress_source"] == {"type": "string", "value": "TRAKT"}
+    assert tv["trakt_settings"]["library_source_mode"] == {"type": "string", "value": "TRAKT"}
+    assert tv["trakt_settings"]["simkl_anime_id_preference"] == {"type": "string", "value": "IMDB"}
+    assert tv["trakt_settings"]["continue_watching_days_cap"] == {"type": "int", "value": 60}
+    assert tv["trakt_settings"]["show_meta_comments"] == {"type": "boolean", "value": True}
     assert tv["trailer_settings"] == {
         "trailer_enabled": {"type": "boolean", "value": True},
         "trailer_play_in_background": {"type": "boolean", "value": True},
@@ -164,7 +186,7 @@ def test_platform_feature_fragments_use_platform_specific_keys() -> None:
     assert "tmdb_api_key" not in tv["tmdb_settings"]
     assert "tmdb_use_release_dates" not in tv["tmdb_settings"]
     assert "tmdb_use_season_posters" not in tv["tmdb_settings"]
-    assert tv["trakt_settings"] == {"show_meta_comments": {"type": "boolean", "value": True}}
+    assert len(tv["trakt_settings"]) == 6  # comments flag + 5 tracking pins
 
     mobile = build_platform_meta_features(norm, platform="mobile")
     assert set(mobile) == {
@@ -172,7 +194,19 @@ def test_platform_feature_fragments_use_platform_specific_keys() -> None:
         "tmdb_settings",
         "trakt_comments_settings",
         "meta_screen_settings_payload",
+        "trakt_settings_payload",
     }
+    assert json.loads(mobile["trakt_settings_payload"]) == {
+        "watchProgressSource": "TRAKT",
+        "continueWatchingDaysCap": 60,
+        "librarySourceMode": "TRAKT",
+        "moreLikeThisSource": "TRAKT",
+        "simklAnimeIdPreference": "IMDB",
+    }
+    no_tracking = build_platform_meta_features(
+        _normalized({**FULL_DOC, "tracking": None}), platform="mobile"
+    )
+    assert "trakt_settings_payload" not in no_tracking
     assert mobile["mdblist_settings"]["mdblist_api_key"] == {
         "type": "string",
         "value": "mdb-key-0123456789",
@@ -336,7 +370,10 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
         "tv": {
             "version": 1,
             "features": {
-                "trakt_settings": {"watch_progress_source": {"type": "string", "value": "TRAKT"}},
+                "trakt_settings": {
+                    "watch_progress_source": {"type": "string", "value": "SIMKL"},
+                    "dismissed_next_up_keys": {"type": "string_set", "value": ["tt1:1:1"]},
+                },
                 "layout_settings": {
                     "discover_location": {"type": "string", "value": "HOME"},
                     "detail_imdb_ratings_visibility": {"type": "string", "value": "HIDE_EPISODES"},
@@ -411,6 +448,7 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
     # TV kept its Trakt watch-progress source alongside the new comments flag
     tv_feats = (remote_blobs["tv"] or {})["features"]
     assert tv_feats["trakt_settings"]["watch_progress_source"]["value"] == "TRAKT"
+    assert tv_feats["trakt_settings"]["dismissed_next_up_keys"]["value"] == ["tt1:1:1"]
     assert tv_feats["trakt_settings"]["show_meta_comments"]["value"] is True
     assert "mdblist_api_key" not in tv_feats["mdblist_settings"]
     assert tv_feats["layout_settings"]["discover_location"]["value"] == "HOME"
@@ -422,6 +460,7 @@ def test_nuvio_client_sync_push_and_pull_meta_e2e() -> None:
     desk_feats = (remote_blobs["desktop"] or {})["features"]
     assert desk_feats["theme_settings"] == {"amoled": {"type": "boolean", "value": False}}
     assert json.loads(desk_feats["meta_screen_settings_payload"])["background_mode"] == "cinematic"
+    assert json.loads(desk_feats["trakt_settings_payload"])["librarySourceMode"] == "TRAKT"
     # Credentials: debrid preserved, mdblist+tmdb seeded then upserted
     assert set(remote_creds) == {"debrid:torbox", "mdblist", "tmdb"}
     assert remote_creds["mdblist"]["credential_json"] == {"api_key": "mdb-key-0123456789"}
