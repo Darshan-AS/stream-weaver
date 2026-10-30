@@ -248,12 +248,12 @@ model {
       technology 'configs/nuvio_collections.json'
       plugin col_for_you_discovery 'For You & Discovery (5 folders)' {
         #enabled #catalog
-        description 'Folders: AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Watchlist & Cloud Library'
+        description 'Folders: AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
         technology 'View: TABBED_GRID'
         metadata {
           collection_id 'col-for-you-discovery'
           folder_count '5'
-          folders 'AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Watchlist & Cloud Library'
+          folders 'AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
           upstream_addons 'aiometadata, aiostreams, bingecat'
         }
       }
@@ -358,7 +358,7 @@ model {
     }
     subsystem group1_primary 'Group 1: Primary Sequential Scrapers (Always Run)' {
       #enabled #primary
-      description 'Executes 11 primary scrapers in parallel (Contraband, Library, Torrentio, Meteor, Comet)'
+      description 'Executes 14 primary scrapers in parallel (Contraband, Library, Torrentio, Meteor, Comet)'
       technology 'Sequential Group 1 (condition: true)'
       plugin preset_swc_contraband 'Contraband [swc]' {
         #enabled
@@ -492,10 +492,46 @@ model {
           media_types 'anime'
         }
       }
+      plugin preset_ssp_stinger_pro 'Stinger Pro [ssp]' {
+        #enabled
+        description 'Group 1 Primary — Resources: stream'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'ssp'
+          preset_type 'custom'
+          resources 'stream'
+          timeout_ms '4000'
+          media_types 'movie, series'
+        }
+      }
+      plugin preset_ito_itsout 'ItsOut! [ito]' {
+        #enabled
+        description 'Group 1 Primary — Resources: stream, catalog'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'ito'
+          preset_type 'custom'
+          resources 'stream, catalog'
+          timeout_ms '4000'
+          media_types 'movie, series'
+        }
+      }
+      plugin preset_bso_basedon 'BasedOn [bso]' {
+        #enabled
+        description 'Group 1 Primary — Resources: stream'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'bso'
+          preset_type 'custom'
+          resources 'stream'
+          timeout_ms '4000'
+          media_types 'movie, series'
+        }
+      }
     }
     subsystem group2_fallback 'Group 2: Conditional HTTP Fallback Scrapers' {
       #enabled #fallback
-      description 'Triggered only when count(cached(totalStreams)) < 3 (3 HTTP scrapers)'
+      description 'Triggered only when count(cached(totalStreams)) < 3 (4 HTTP scrapers)'
       technology 'Sequential Group 2 (HTTP Streams)'
       plugin preset_soo_sootio 'Sootio [soo]' {
         #enabled
@@ -534,10 +570,22 @@ model {
           media_types 'all'
         }
       }
+      plugin preset_etv_einthusantv_kannada 'EinthusanTV Kannada [etv]' {
+        #enabled
+        description 'Group 2 Fallback — Resources: stream'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'etv'
+          preset_type 'custom'
+          resources 'stream'
+          timeout_ms '7500'
+          media_types 'movie'
+        }
+      }
     }
     subsystem subtitle_addons 'Subtitle Providers' {
       #enabled
-      description '2 subtitle addon(s) (en, kn)'
+      description '6 subtitle addon(s) (en, kn, English, Kannada)'
       technology 'OpenSubtitles V3'
       plugin preset_osb_opensubtitles_v3_pro 'OpenSubtitles V3 Pro [osb]' {
         #enabled
@@ -561,6 +609,55 @@ model {
           preset_type 'opensubtitles'
           resources 'subtitles'
           timeout_ms '10000'
+          media_types 'all'
+        }
+      }
+      plugin preset_ssc_subsource 'SubSource [ssc]' {
+        #enabled
+        description 'Subtitles — Resources: subtitles'
+        technology 'Preset: subsource'
+        metadata {
+          instance_id 'ssc'
+          preset_type 'subsource'
+          resources 'subtitles'
+          timeout_ms '10000'
+          media_types 'all'
+          languages 'English, Kannada, Hindi, Japanese'
+        }
+      }
+      plugin preset_sl1_strelingo_ja_en 'Strelingo (JA → EN) [sl1]' {
+        #enabled
+        description 'Subtitles — Resources: subtitles'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'sl1'
+          preset_type 'custom'
+          resources 'subtitles'
+          timeout_ms '12000'
+          media_types 'all'
+        }
+      }
+      plugin preset_sl2_strelingo_en_kn 'Strelingo (EN → KN) [sl2]' {
+        #enabled
+        description 'Subtitles — Resources: subtitles'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'sl2'
+          preset_type 'custom'
+          resources 'subtitles'
+          timeout_ms '12000'
+          media_types 'all'
+        }
+      }
+      plugin preset_sl3_strelingo_hi_kn 'Strelingo (HI → KN) [sl3]' {
+        #enabled
+        description 'Subtitles — Resources: subtitles'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'sl3'
+          preset_type 'custom'
+          resources 'subtitles'
+          timeout_ms '12000'
           media_types 'all'
         }
       }
@@ -690,6 +787,11 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
+  secretKey sec_secret_itsout_token 'SECRET_ITSOUT_TOKEN' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_secret_mdblist_api_key 'SECRET_MDBLIST_API_KEY' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
@@ -716,6 +818,11 @@ model {
     technology 'Environment Variable'
   }
   secretKey sec_secret_stremio_auth_key 'SECRET_STREMIO_AUTH_KEY' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_secret_subsource_api_key 'SECRET_SUBSOURCE_API_KEY' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
@@ -904,8 +1011,12 @@ model {
   aiostreams.group1_primary.preset_atn_animetosho -> aiostreams.svc_torbox 'Resolves infoHashes via Debrid cache' {
     #debrid
   }
-  aiostreams.subtitle_addons.preset_osb_opensubtitles_v3_pro -> opensubtitles_srv 'Fetches en, kn subtitles'
-  aiostreams.subtitle_addons.preset_osv_opensubtitles_v3_fallback -> opensubtitles_srv 'Fetches en, kn subtitles'
+  aiostreams.subtitle_addons.preset_osb_opensubtitles_v3_pro -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
+  aiostreams.subtitle_addons.preset_osv_opensubtitles_v3_fallback -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
+  aiostreams.subtitle_addons.preset_ssc_subsource -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
+  aiostreams.subtitle_addons.preset_sl1_strelingo_ja_en -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
+  aiostreams.subtitle_addons.preset_sl2_strelingo_en_kn -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
+  aiostreams.subtitle_addons.preset_sl3_strelingo_hi_kn -> opensubtitles_srv 'Fetches en, kn, English, Kannada subtitles'
   aiostreams.sel_engine -> aiostreams.group1_primary '1. Queries primary scrapers'
   aiostreams.group1_primary -> aiostreams.group2_fallback '2. Fallback if count(cached(totalStreams)) < 3' {
     #fallback

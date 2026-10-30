@@ -17,6 +17,13 @@ WATCHLY_URL_RE = re.compile(
 BINGECAT_URL_RE = re.compile(
     r"(bingecat\.[^/]+/(?:stremio/)?)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/nuvio)?(?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
 )
+ITSOUT_URL_RE = re.compile(
+    r"(itsout\.[^/]+/(?:addons/)?)((?!configure\b|static\b|public\b|api\b|addons\b|manifest\.json\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
+)
+STRELINGO_SUBSOURCE_URL_RE = re.compile(
+    r"(strelingo\.[^/]+/.*?(?:%22|\")subsourceApiKey(?:%22|\")(?:%3A|:)(?:%22|\"))([^\"%{}\s]+)((?:%22|\").*)$",
+    re.IGNORECASE,
+)
 BINGECAT_ID_RE = re.compile(r"^(com\.aicat\.)([^.:/{}]+)((?:\.[^:]+)?(?::.+)?)$")
 AIOSTREAMS_ENCRYPTED_URL_RE = re.compile(
     r"(/stremio/[0-9a-fA-F-]{36}/)((?!manifest\.json\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
@@ -111,6 +118,24 @@ AIOSTREAMS_LENSES: tuple[SecretLens, ...] = (
         path=("presets", "*", "options", "manifestUrl"),
         derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
         regex_sub=(BINGECAT_URL_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "manifestUrl"),
+        derive_key=lambda _, __: "SECRET_ITSOUT_TOKEN",
+        regex_sub=(ITSOUT_URL_RE, r"\1{{SECRET_ITSOUT_TOKEN}}\3"),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "manifestUrl"),
+        derive_key=lambda _, __: "SECRET_SUBSOURCE_API_KEY",
+        regex_sub=(STRELINGO_SUBSOURCE_URL_RE, r"\1{{SECRET_SUBSOURCE_API_KEY}}\3"),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "subSourceApiKey"),
+        derive_key=_const_key("SECRET_SUBSOURCE_API_KEY"),
+    ),
+    SecretLens(
+        path=("presets", "*", "options", "subDlApiKey"),
+        derive_key=_const_key("SECRET_SUBDL_API_KEY"),
     ),
 )
 

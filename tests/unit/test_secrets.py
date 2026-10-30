@@ -36,6 +36,59 @@ def test_harvest_and_inject_aiostreams_roundtrip() -> None:
     assert reinjected.value == raw_cfg
 
 
+def test_harvest_and_inject_aiostreams_itsout_subsource_and_strelingo() -> None:
+    strelingo_url = (
+        "https://strelingo.pronouncetube.com/"
+        "%7B%22mainLang%22%3A%22English%20%5Beng%5D%22%2C"
+        "%22transLang%22%3A%22Kannada%20%5Bkan%5D%22%2C"
+        "%22subsourceApiKey%22%3A%22ss_live_api_key_99887766%22%2C"
+        "%22optionalProviderMode%22%3A%22Fallback%20%28only%20if%20defaults%20empty%29%20%5Bfallback%5D%22%7D"
+        "/manifest.json"
+    )
+    raw_cfg: dict[str, Any] = {
+        "presets": [
+            {
+                "type": "custom",
+                "instanceId": "ito",
+                "options": {
+                    "name": "ItsOut!",
+                    "manifestUrl": "https://itsout.elfhosted.com/addons/it_priv_tok_12345678/manifest.json",
+                },
+            },
+            {
+                "type": "subsource",
+                "instanceId": "ssc",
+                "options": {
+                    "name": "SubSource",
+                    "subSourceApiKey": "ss_live_api_key_99887766",
+                },
+            },
+            {
+                "type": "custom",
+                "instanceId": "sl2",
+                "options": {
+                    "name": "Strelingo (EN -> KN)",
+                    "manifestUrl": strelingo_url,
+                },
+            },
+        ]
+    }
+    scrubbed, new_env = harvest_and_scrub("aiostreams", raw_cfg, {})
+    assert (
+        scrubbed["presets"][0]["options"]["manifestUrl"]
+        == "https://itsout.elfhosted.com/addons/{{SECRET_ITSOUT_TOKEN}}/manifest.json"
+    )
+    assert scrubbed["presets"][1]["options"]["subSourceApiKey"] == "{{SECRET_SUBSOURCE_API_KEY}}"
+    assert "{{SECRET_SUBSOURCE_API_KEY}}" in scrubbed["presets"][2]["options"]["manifestUrl"]
+    assert "ss_live_api_key_99887766" not in scrubbed["presets"][2]["options"]["manifestUrl"]
+    assert new_env["SECRET_ITSOUT_TOKEN"] == "it_priv_tok_12345678"
+    assert new_env["SECRET_SUBSOURCE_API_KEY"] == "ss_live_api_key_99887766"
+
+    reinjected = inject_secrets(scrubbed, new_env)
+    assert isinstance(reinjected, Ok)
+    assert reinjected.value == raw_cfg
+
+
 def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
     raw_cfg: dict[str, Any] = {
         "apiKeys": {"7d210008-bcdb-4bc4": "mgr_key_123456"},

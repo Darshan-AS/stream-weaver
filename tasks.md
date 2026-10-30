@@ -28,9 +28,20 @@
 - [x] Wire `nuvio_meta` into `sw push` / `sw pull` / `sw diff` / `sw sanitize` (implicit via `all`/`aiomanager`/`nuvio`, explicit via `nuvio_meta`) with `SECRET_MDBLIST_API_KEY` / `SECRET_TMDB_API_KEY` lenses
 - [ ] **Set `SECRET_MDBLIST_API_KEY` in `.env`** (free key from https://mdblist.com/preferences) and run `uv run sw push nuvio_meta`; until then `sw push all` skips the meta sync with a warning
 
+### Community Addons & Subtitles Adoption (`aiostreams` + `nuvio_collections`)
+- [x] Add **EinthusanTV Kannada** (`etv`) to AIOStreams Group 2 HTTP fallback (`resources: ["stream"]`, `mediaTypes: ["movie"]`, `titleMatching` enabled)
+- [x] Add **Stinger Pro** (`ssp`), **ItsOut!** (`ito`), and **BasedOn** (`bso`) to AIOStreams Group 1 (`pinPosition: "bottom"`, `resultPassthrough: true`, `formatPassthrough: true`)
+- [x] Add **SubSource** (`ssc`, English/Kannada/Hindi/Japanese) and 3 **Strelingo** dual-subtitle pairs (`JA → EN`, `EN → KN`, `HI → KN`) wired with `SECRET_SUBSOURCE_API_KEY`
+- [x] Update Nuvio Collection folder `fld-watchlist-library` → **Cloud Library & Release Alerts** (TorBox Cloud Library + `itsout.released` Movies & Series, pruning dead `trakt.watchlist.*` entries)
+- [ ] **Set `SECRET_ITSOUT_TOKEN` & `SECRET_SUBSOURCE_API_KEY` in `.env`** and run `uv run sw push`
+
 ---
 
 ## Pending / Backlog
+
+### Deferred Addon / Plugin Candidates (Revisit Only If Needed)
+- [ ] **PenguPlay (`penguplay` preset)**: Revisit as a Group 2 HTTP fallback only if existing Group 2 providers (`hdh`, `soo`, `wst`, `etv`) regularly miss titles (requires personal sign-in at `pengu.uk`)
+- [ ] **Nuvio-native plugin sync (`sync_push_plugins`)**: Revisit adding `configs/nuvio_plugins.json` + `sync_push_plugins` RPC support only if regional titles (`MovieBox` / `Castle`) keep missing from TorBox + EinthusanTV + Sootio + WebStreamr
 
 ### Nuvio Sync & CLI
 - [ ] **Support `sync_pull_collections` in `sw pull`**: Fetch remote Nuvio collections via `POST https://api.nuvio.tv/rest/v1/rpc/sync_pull_collections` during `sw pull` (or `sw diff`) so edits made directly in the Nuvio app UI can be inspected or synced back into `configs/nuvio_collections.json`

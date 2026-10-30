@@ -41,7 +41,7 @@ flowchart LR
     end
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
-        AS["AIOStreams\n(15 Active Plugins)"]
+        AS["AIOStreams\n(23 Active Plugins)"]
         AM["AIOMetadata\n(61 Active Catalogs, 45 Home)"]
         BC["BingeCat AI Assistant"]
         CB["Contraband Static Addon\n(Peterson Academy)"]
@@ -86,15 +86,23 @@ flowchart LR
             P_kna["Knaben (kna)"]
             P_sdx["SeaDex (sdx)"]
             P_atn["AnimeTosho (atn)"]
+            P_ssp["Stinger Pro (ssp)"]
+            P_ito["ItsOut! (ito)"]
+            P_bso["BasedOn (bso)"]
         end
         subgraph G2["Group 2: HTTP Fallback (count(cached(totalStreams)) < 3)"]
             P_soo["Sootio (soo)"]
             P_hdh["HD Hub (hdh)"]
             P_wst["WebStreamr (wst)"]
+            P_etv["EinthusanTV Kannada (etv)"]
         end
         subgraph Subs["Subtitle Addons"]
             P_osb["OpenSubtitles V3 Pro (osb)"]
             P_osv["OpenSubtitles v3 (Fallback) (osv)"]
+            P_ssc["SubSource (ssc)"]
+            P_sl1["Strelingo (JA → EN) (sl1)"]
+            P_sl2["Strelingo (EN → KN) (sl2)"]
+            P_sl3["Strelingo (HI → KN) (sl3)"]
         end
     end
 
@@ -124,11 +132,19 @@ flowchart LR
 | `kna` | **Knaben** | `knaben` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `sdx` | **SeaDex** | `seadex` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `atn` | **AnimeTosho** | `animetosho` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
+| `ssp` | **Stinger Pro** | `custom` | Group 1 (Primary) | `stream` | Info Card / Release Alert Addon |
+| `ito` | **ItsOut!** | `custom` | Group 1 (Primary) | `stream, catalog` | Info Card / Release Alert Addon |
+| `bso` | **BasedOn** | `custom` | Group 1 (Primary) | `stream` | Info Card / Release Alert Addon |
 | `soo` | **Sootio** | `sootio` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `hdh` | **HD Hub** | `hdhub` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `wst` | **WebStreamr** | `webstreamr` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
+| `etv` | **EinthusanTV Kannada** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `osb` | **OpenSubtitles V3 Pro** | `opensubtitles-v3-plus` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
 | `osv` | **OpenSubtitles v3 (Fallback)** | `opensubtitles` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
+| `ssc` | **SubSource** | `subsource` | Subtitles / Utility | `subtitles` | SubSource API (`SECRET_SUBSOURCE_API_KEY`) |
+| `sl1` | **Strelingo (JA → EN)** | `custom` | Subtitles / Utility | `subtitles` | Strelingo Dual-Sub Merger (OpenSubtitles + SubSource) |
+| `sl2` | **Strelingo (EN → KN)** | `custom` | Subtitles / Utility | `subtitles` | Strelingo Dual-Sub Merger (OpenSubtitles + SubSource) |
+| `sl3` | **Strelingo (HI → KN)** | `custom` | Subtitles / Utility | `subtitles` | Strelingo Dual-Sub Merger (OpenSubtitles + SubSource) |
 
 ---
 
@@ -169,7 +185,7 @@ flowchart LR
 
 | Collection ID | Title | Tabbed Folders | Upstream Addons |
 | :--- | :--- | :--- | :--- |
-| `col-for-you-discovery` | **For You & Discovery** (5) | AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Watchlist & Cloud Library | AIOMetadata, AIOStreams, BingeCat |
+| `col-for-you-discovery` | **For You & Discovery** (5) | AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts | AIOMetadata, AIOStreams, BingeCat |
 | `col-streaming-services` | **Streaming Services** (8) | Netflix, Prime Video, Apple TV+, HBO Max, Disney+, Hulu, Paramount+, Peacock | AIOMetadata |
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |

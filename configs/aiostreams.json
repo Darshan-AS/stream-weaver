@@ -180,7 +180,10 @@
           "tdb",
           "kna",
           "sdx",
-          "atn"
+          "atn",
+          "ssp",
+          "ito",
+          "bso"
         ],
         "condition": "true"
       },
@@ -188,7 +191,8 @@
         "addons": [
           "hdh",
           "soo",
-          "wst"
+          "wst",
+          "etv"
         ],
         "condition": "count(cached(totalStreams)) < 3"
       }
@@ -330,7 +334,8 @@
     "addons": [
       "hdh",
       "soo",
-      "wst"
+      "wst",
+      "etv"
     ]
   },
   "seasonEpisodeMatching": {
@@ -550,6 +555,67 @@
       "category": "Anime"
     },
     {
+      "type": "custom",
+      "instanceId": "ssp",
+      "enabled": true,
+      "options": {
+        "name": "Stinger Pro",
+        "manifestUrl": "https://stremio-stinger-pro.up.railway.app/manifest.json",
+        "timeout": 4000,
+        "resources": [
+          "stream"
+        ],
+        "mediaTypes": [
+          "movie",
+          "series"
+        ],
+        "pinPosition": "bottom",
+        "formatPassthrough": true,
+        "resultPassthrough": true
+      }
+    },
+    {
+      "type": "custom",
+      "instanceId": "ito",
+      "enabled": true,
+      "options": {
+        "name": "ItsOut!",
+        "manifestUrl": "https://itsout.elfhosted.com/addons/{{SECRET_ITSOUT_TOKEN}}/manifest.json",
+        "timeout": 4000,
+        "resources": [
+          "stream",
+          "catalog"
+        ],
+        "mediaTypes": [
+          "movie",
+          "series"
+        ],
+        "pinPosition": "bottom",
+        "formatPassthrough": true,
+        "resultPassthrough": true
+      }
+    },
+    {
+      "type": "custom",
+      "instanceId": "bso",
+      "enabled": true,
+      "options": {
+        "name": "BasedOn",
+        "manifestUrl": "https://basedon.media/v4/manifest.json",
+        "timeout": 4000,
+        "resources": [
+          "stream"
+        ],
+        "mediaTypes": [
+          "movie",
+          "series"
+        ],
+        "pinPosition": "bottom",
+        "formatPassthrough": true,
+        "resultPassthrough": true
+      }
+    },
+    {
       "type": "sootio",
       "instanceId": "soo",
       "enabled": true,
@@ -614,6 +680,23 @@
       "category": "HTTP"
     },
     {
+      "type": "custom",
+      "instanceId": "etv",
+      "enabled": true,
+      "options": {
+        "name": "EinthusanTV Kannada",
+        "manifestUrl": "https://einthusan.asaddon.com/kannada/manifest.json",
+        "timeout": 7500,
+        "resources": [
+          "stream"
+        ],
+        "mediaTypes": [
+          "movie"
+        ]
+      },
+      "category": "HTTP"
+    },
+    {
       "type": "opensubtitles-v3-plus",
       "instanceId": "osb",
       "enabled": true,
@@ -643,6 +726,71 @@
           "subtitles"
         ]
       }
+    },
+    {
+      "type": "subsource",
+      "instanceId": "ssc",
+      "enabled": true,
+      "options": {
+        "name": "SubSource",
+        "timeout": 10000,
+        "resources": [
+          "subtitles"
+        ],
+        "subSourceApiKey": "{{SECRET_SUBSOURCE_API_KEY}}",
+        "language": [
+          "English",
+          "Kannada",
+          "Hindi",
+          "Japanese"
+        ],
+        "subtitleTypes": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "hearingImpairment": "hiInclude"
+      }
+    },
+    {
+      "type": "custom",
+      "instanceId": "sl1",
+      "enabled": true,
+      "options": {
+        "name": "Strelingo (JA → EN)",
+        "manifestUrl": "https://strelingo.pronouncetube.com/%7B%22mainLang%22%3A%22Japanese%20%5Bjpn%5D%22%2C%22transLang%22%3A%22English%20%5Beng%5D%22%2C%22subsourceApiKey%22%3A%22{{SECRET_SUBSOURCE_API_KEY}}%22%2C%22optionalProviderMode%22%3A%22Fallback%20%28only%20if%20defaults%20empty%29%20%5Bfallback%5D%22%7D/manifest.json",
+        "timeout": 12000,
+        "resources": [
+          "subtitles"
+        ]
+      }
+    },
+    {
+      "type": "custom",
+      "instanceId": "sl2",
+      "enabled": true,
+      "options": {
+        "name": "Strelingo (EN → KN)",
+        "manifestUrl": "https://strelingo.pronouncetube.com/%7B%22mainLang%22%3A%22English%20%5Beng%5D%22%2C%22transLang%22%3A%22Kannada%20%5Bkan%5D%22%2C%22subsourceApiKey%22%3A%22{{SECRET_SUBSOURCE_API_KEY}}%22%2C%22optionalProviderMode%22%3A%22Fallback%20%28only%20if%20defaults%20empty%29%20%5Bfallback%5D%22%7D/manifest.json",
+        "timeout": 12000,
+        "resources": [
+          "subtitles"
+        ]
+      }
+    },
+    {
+      "type": "custom",
+      "instanceId": "sl3",
+      "enabled": true,
+      "options": {
+        "name": "Strelingo (HI → KN)",
+        "manifestUrl": "https://strelingo.pronouncetube.com/%7B%22mainLang%22%3A%22Hindi%20%5Bhin%5D%22%2C%22transLang%22%3A%22Kannada%20%5Bkan%5D%22%2C%22subsourceApiKey%22%3A%22{{SECRET_SUBSOURCE_API_KEY}}%22%2C%22optionalProviderMode%22%3A%22Fallback%20%28only%20if%20defaults%20empty%29%20%5Bfallback%5D%22%7D/manifest.json",
+        "timeout": 12000,
+        "resources": [
+          "subtitles"
+        ]
+      }
     }
   ],
   "addonCategoryColors": {
@@ -666,6 +814,38 @@
       "disableSearch": false,
       "enabled": true,
       "overrideType": "movie"
+    },
+    {
+      "id": "itoe3b0.itsout.released",
+      "type": "movie",
+      "name": "ItsOut! — Released Movies",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": true
+    },
+    {
+      "id": "itoe3b0.itsout.released",
+      "type": "series",
+      "name": "ItsOut! — Released Series",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": true
+    },
+    {
+      "id": "itoe3b0.itsout.pending",
+      "type": "movie",
+      "name": "ItsOut! — Pending Movies",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": false
+    },
+    {
+      "id": "itoe3b0.itsout.pending",
+      "type": "series",
+      "name": "ItsOut! — Pending Series",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": false
     }
   ],
   "mergedCatalogs": [],

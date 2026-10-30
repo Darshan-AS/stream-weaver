@@ -3666,14 +3666,14 @@
               ]
             }
           ],
-          "configVersion": 1793339905111,
+          "configVersion": 1793346046280,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1793339905111,
-            "timestamp": "2026-10-30T05:58:50.736Z"
+            "configVersion": 1793346046280,
+            "timestamp": "2026-10-30T07:40:47.798Z"
           },
-          "_timestamp": 1793339930736
+          "_timestamp": 1793346047798
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -3744,6 +3744,16 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "movie",
+              "id": "itoe3b0.itsout.released",
+              "name": "ItsOut! — Released Movies"
+            },
+            {
+              "type": "series",
+              "id": "itoe3b0.itsout.released",
+              "name": "ItsOut! — Released Series"
             }
           ],
           "resources": [
@@ -3796,7 +3806,10 @@
                 "tmdb:",
                 "tvdb:",
                 "mf",
-                "dl"
+                "dl",
+                "basedon:item:",
+                "basedon:open:collection:",
+                "einthusan"
               ]
             },
             {
@@ -3804,7 +3817,8 @@
               "types": [
                 "movie",
                 "series",
-                "subtitles"
+                "subtitles",
+                "anime"
               ],
               "idPrefixes": [
                 "tt",
@@ -3864,9 +3878,9 @@
                     "Drama",
                     "Adventure",
                     "Comedy",
+                    "History",
                     "Thriller",
                     "Biography",
-                    "History",
                     "Action",
                     "Fantasy",
                     "Romance",
@@ -3903,19 +3917,18 @@
                     "Thriller",
                     "Action",
                     "Crime",
-                    "Comedy",
                     "Mystery",
-                    "Animation",
+                    "Comedy",
                     "Sci-Fi",
                     "Horror",
                     "Adventure",
+                    "Animation",
                     "Fantasy",
-                    "Sport",
                     "Romance",
+                    "Sport",
                     "Documentary",
                     "Game-Show",
-                    "History",
-                    "Western"
+                    "History"
                   ],
                   "optionsLimit": 1
                 },
@@ -3968,16 +3981,16 @@
                   "isRequired": false,
                   "name": "genre",
                   "options": [
-                    "Comedy",
                     "Animation",
+                    "Comedy",
                     "Romance",
                     "Drama",
                     "Fantasy",
                     "Action",
-                    "Adventure",
                     "Sci-Fi",
-                    "Thriller",
+                    "Adventure",
                     "Mystery",
+                    "Thriller",
                     "Horror"
                   ],
                   "optionsLimit": 1
@@ -4009,12 +4022,11 @@
                     "Comedy",
                     "Crime",
                     "Mystery",
-                    "History",
                     "Horror",
+                    "Family",
                     "Romance",
-                    "War",
-                    "Biography",
-                    "Family"
+                    "Sport",
+                    "Western"
                   ],
                   "optionsLimit": 1
                 },
@@ -4035,20 +4047,20 @@
                   "isRequired": false,
                   "name": "genre",
                   "options": [
-                    "Drama",
                     "Adventure",
-                    "Fantasy",
                     "Animation",
-                    "Mystery",
-                    "Sci-Fi",
+                    "Fantasy",
                     "Action",
+                    "Drama",
+                    "Sci-Fi",
                     "Comedy",
+                    "Family",
                     "Thriller",
+                    "Mystery",
                     "Crime",
                     "Horror",
-                    "Family",
-                    "History",
-                    "Romance"
+                    "Romance",
+                    "History"
                   ],
                   "optionsLimit": 1
                 },
@@ -4066,71 +4078,49 @@
             {
               "extra": [
                 {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
                   "isRequired": false,
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299554",
+              "id": "aicat_list_for_you_319612",
               "name": "Japanese Drama",
               "pageSize": 50,
-              "showInHome": false,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_299559",
-              "name": "Mystery Thrillers",
-              "pageSize": 50,
               "showInHome": true,
               "type": "series"
             },
             {
               "extra": [
                 {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
                   "isRequired": false,
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299555",
+              "id": "aicat_list_for_you_319613",
               "name": "Hindi Comedies",
               "pageSize": 50,
-              "showInHome": false,
+              "showInHome": true,
               "type": "movie"
             },
             {
               "extra": [
                 {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
                   "isRequired": false,
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299556",
+              "id": "aicat_list_for_you_319614",
               "name": "Hindi Crime & Thrillers",
               "pageSize": 50,
-              "showInHome": true,
+              "showInHome": false,
               "type": "movie"
             },
             {
@@ -4140,8 +4130,8 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299557",
-              "name": "Hindi Dramas",
+              "id": "aicat_list_for_you_319616",
+              "name": "When Hearts Meet",
               "pageSize": 50,
               "showInHome": true,
               "type": "movie"
@@ -4162,8 +4152,8 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299558",
-              "name": "Machines, AI & Cyberpunk",
+              "id": "aicat_list_for_you_319615",
+              "name": "Hindi Dramas",
               "pageSize": 50,
               "showInHome": false,
               "type": "movie"
@@ -4184,7 +4174,7 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299560",
+              "id": "aicat_list_for_you_319617",
               "name": "Fantasy Anime",
               "pageSize": 50,
               "showInHome": false,
@@ -4206,7 +4196,29 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_299561",
+              "id": "aicat_list_for_you_319618",
+              "name": "Mystery Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319619",
               "name": "Manga Adaptations",
               "pageSize": 50,
               "showInHome": false,

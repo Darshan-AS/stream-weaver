@@ -147,24 +147,8 @@
         },
         {
           "id": "fld-watchlist-library",
-          "title": "Watchlist & Cloud Library",
+          "title": "Cloud Library & Release Alerts",
           "sources": [
-            {
-              "provider": "addon",
-              "addonId": "aio-metadata",
-              "catalogId": "trakt.watchlist.movies",
-              "type": "movie",
-              "genre": "None",
-              "title": "Trakt Watchlist — Movies"
-            },
-            {
-              "provider": "addon",
-              "addonId": "aio-metadata",
-              "catalogId": "trakt.watchlist.series",
-              "type": "series",
-              "genre": "None",
-              "title": "Trakt Watchlist — Series"
-            },
             {
               "provider": "addon",
               "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
@@ -172,6 +156,22 @@
               "type": "movie",
               "genre": "None",
               "title": "TorBox Cloud Library"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
+              "catalogId": "itoe3b0.itsout.released",
+              "type": "movie",
+              "genre": "None",
+              "title": "ItsOut! — Released Movies"
+            },
+            {
+              "provider": "addon",
+              "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
+              "catalogId": "itoe3b0.itsout.released",
+              "type": "series",
+              "genre": "None",
+              "title": "ItsOut! — Released Series"
             }
           ],
           "hideTitle": false,
