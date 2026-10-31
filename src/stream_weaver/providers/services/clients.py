@@ -26,6 +26,16 @@ from stream_weaver.core.nuvio_meta import (
     merge_provider_credential_rows,
     normalize_nuvio_meta_doc,
 )
+from stream_weaver.core.nuvio_settings import (
+    VALID_NUVIO_SETTINGS_PLATFORMS,
+    active_blocks,
+    build_platform_settings_features,
+    build_settings_provider_credentials,
+    decompile_nuvio_settings,
+    describe_settings_summary,
+    merge_profile_settings_blob_settings,
+    normalize_nuvio_settings_doc,
+)
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict
 from stream_weaver.effects.http import HttpClientProtocol
@@ -819,6 +829,164 @@ class NuvioClientSync:
                 )
                 return Ok((msg, updated_secrets))
 
+    # ------------------------------------------------------------------
+    # App settings (playback, reuse-last-link, subtitles, audio, theme, TV layout, …)
+    # ------------------------------------------------------------------
+
+    def _push_platform_settings_blob(
+        self,
+        headers: Mapping[str, str],
+        profile_idx: int,
+        platform: str,
+        merged_blob: Mapping[str, Any],
+    ) -> Result[None]:
+        res = self._http.request_json(
+            "POST",
+            "https://api.nuvio.tv/rest/v1/rpc/sync_push_profile_settings_blob",
+            headers=headers,
+            json_body={
+                "p_profile_id": profile_idx,
+                "p_platform": platform,
+                "p_settings_json": dict(merged_blob),
+                "p_origin_client_id": STREAM_WEAVER_ORIGIN_CLIENT_ID,
+            },
+        )
+        match res:
+            case Err() as err:
+                return err
+            case Ok(resp):
+                if resp.status_code not in (200, 204):
+                    return Err(
+                        NetworkError(
+                            message=(
+                                f"Nuvio {platform} profile settings push returned HTTP {resp.status_code}"
+                            ),
+                            status_code=resp.status_code,
+                        )
+                    )
+                return Ok(None)
+
+    def _sync_settings_with_headers(
+        self,
+        raw_settings_doc: Mapping[str, Any],
+        headers: Mapping[str, str],
+        profile_idx: int,
+    ) -> Result[str]:
+        match normalize_nuvio_settings_doc(raw_settings_doc):
+            case Err() as err:
+                return err
+            case Ok(norm_doc):
+                pass
+
+        platforms = [str(p) for p in norm_doc.get("platforms", [])]
+        if not platforms or not active_blocks(norm_doc):
+            return Ok("")
+
+        pushed_platforms: list[str] = []
+        for plat in platforms:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(remote_blob):
+                    pass
+
+            plat_features = build_platform_settings_features(norm_doc, platform=plat)
+            merged_blob = merge_profile_settings_blob_settings(
+                remote_blob, plat_features, platform=plat
+            )
+            if merged_blob is None:
+                continue
+            match self._push_platform_settings_blob(headers, profile_idx, plat, merged_blob):
+                case Err() as err:
+                    return err
+                case Ok():
+                    pushed_platforms.append(plat)
+
+        match self._push_provider_credentials(
+            headers, profile_idx, build_settings_provider_credentials(norm_doc)
+        ):
+            case Err() as err:
+                return err
+            case Ok(cred_count):
+                pass
+
+        if not pushed_platforms and cred_count == 0:
+            return Ok("")
+        summary = describe_settings_summary(norm_doc)
+        parts = [f"{summary[:-1]} on {', '.join(pushed_platforms) or 'no platforms'})"]
+        if cred_count:
+            parts.append(f"{cred_count} provider credential(s)")
+        return Ok(" and ".join(parts))
+
+    def pull_settings(
+        self,
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+        *,
+        version: str = "1.0.0",
+        blocks: list[str] | None = None,
+    ) -> Result[tuple[JsonDict, dict[str, str]]]:
+        """
+        Pulls live Nuvio app settings blobs across platforms (plus provider credentials) and
+        decompiles them into `configs/nuvio_settings.json` format, restricted to `blocks`.
+        """
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        platform_blobs: dict[str, Mapping[str, Any] | None] = {}
+        for plat in VALID_NUVIO_SETTINGS_PLATFORMS:
+            match self._pull_platform_settings_blob(headers, profile_idx, plat):
+                case Err() as err:
+                    return err
+                case Ok(blob):
+                    platform_blobs[plat] = blob
+
+        match self._pull_provider_credentials(headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(cred_rows):
+                pass
+
+        return Ok(
+            (
+                decompile_nuvio_settings(
+                    platform_blobs, cred_rows, version=version, blocks=blocks
+                ),
+                updated_secrets,
+            )
+        )
+
+    def push_settings(
+        self,
+        raw_settings_doc: Mapping[str, Any],
+        connection: Mapping[str, Any],
+        master_password: str,
+        salt_b64: str,
+        env: EnvMap,
+    ) -> Result[tuple[str, dict[str, str]]]:
+        """Directly compiles and pushes `configs/nuvio_settings.json` to Nuvio profile settings blobs."""
+        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+            case Err() as err:
+                return err
+            case Ok((headers, profile_idx, updated_secrets)):
+                pass
+
+        match self._sync_settings_with_headers(raw_settings_doc, headers, profile_idx):
+            case Err() as err:
+                return err
+            case Ok(summary):
+                msg = (
+                    f"Pushed {summary} to Nuvio profile #{profile_idx}"
+                    if summary
+                    else f"No target Nuvio platforms configured for profile #{profile_idx}"
+                )
+                return Ok((msg, updated_secrets))
+
     def sync_account(
         self,
         account: Mapping[str, Any],
@@ -909,6 +1077,15 @@ class NuvioClientSync:
                 case Ok(meta_summary):
                     if meta_summary:
                         parts.append(meta_summary)
+
+        raw_settings = account.get("nuvioSettings")
+        if isinstance(raw_settings, Mapping) and raw_settings:
+            match self._sync_settings_with_headers(raw_settings, headers, profile_idx):
+                case Err() as err:
+                    return err
+                case Ok(settings_summary):
+                    if settings_summary:
+                        parts.append(settings_summary)
 
         if len(parts) == 1:
             joined = f"{parts[0]} directly"

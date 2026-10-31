@@ -277,6 +277,15 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
     # `configs/nuvio_meta.json` (Nuvio details-page enrichment) API keys
     SecretLens(path=("ratings", "apiKey"), derive_key=_const_key("SECRET_MDBLIST_API_KEY")),
     SecretLens(path=("tmdbEnrichment", "apiKey"), derive_key=_const_key("SECRET_TMDB_API_KEY")),
+    # `configs/nuvio_settings.json` (Nuvio app settings) skip-provider credentials
+    SecretLens(
+        path=("playback", "skip", "animeSkip", "clientId"),
+        derive_key=_const_key("SECRET_ANIMESKIP_CLIENT_ID"),
+    ),
+    SecretLens(
+        path=("playback", "skip", "introDbApiKey"),
+        derive_key=_const_key("SECRET_INTRODB_API_KEY"),
+    ),
 )
 
 SERVICE_LENSES: Mapping[ServiceId, tuple[SecretLens, ...]] = {

@@ -33,6 +33,7 @@ AIOMANAGER_VOLATILE_KEYS: tuple[str, ...] = (
     "nuvioCollections",
     "nuvioBadges",
     "nuvioMeta",
+    "nuvioSettings",
 )
 
 
@@ -152,6 +153,7 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
             acc.pop("nuvioCollections", None)
             acc.pop("nuvioBadges", None)
             acc.pop("nuvioMeta", None)
+            acc.pop("nuvioSettings", None)
             acc_addons = acc.get("addons")
             if not isinstance(acc_addons, list):
                 continue
@@ -208,6 +210,7 @@ def rehydrate_aiomanager(
     top_collections = state.pop("nuvioCollections", None)
     top_badges = state.pop("nuvioBadges", None)
     top_meta = state.pop("nuvioMeta", None)
+    top_settings = state.pop("nuvioSettings", None)
     accounts = state.get("accounts")
     if isinstance(accounts, list):
         for acc in accounts:
@@ -219,6 +222,8 @@ def rehydrate_aiomanager(
                 acc.setdefault("nuvioBadges", copy.deepcopy(dict(top_badges)))
             if isinstance(top_meta, Mapping) and top_meta:
                 acc.setdefault("nuvioMeta", copy.deepcopy(dict(top_meta)))
+            if isinstance(top_settings, Mapping) and top_settings:
+                acc.setdefault("nuvioSettings", copy.deepcopy(dict(top_settings)))
             acc_addons = acc.get("addons")
             if not isinstance(acc_addons, list):
                 continue

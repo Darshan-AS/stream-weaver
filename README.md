@@ -113,10 +113,11 @@ uv run sw push aiometadata
 uv run sw push aiomanager
 
 # Or push only the Nuvio client-side profile settings (no AIOManager round-trip):
-uv run sw push nuvio              # addons + collections + badges + meta enrichment
+uv run sw push nuvio              # addons + collections + badges + meta enrichment + app settings
 uv run sw push nuvio_collections  # Home screen folders only
 uv run sw push nuvio_badges       # stream badge packs only
 uv run sw push nuvio_meta         # details-page enrichment only (see below)
+uv run sw push nuvio_settings     # playback / subtitles / audio / theme / TV layout (see below)
 ```
 
 ### Nuvio Stream Badges (`configs/nuvio_badges.json`)
@@ -144,6 +145,28 @@ Required `.env` keys: `SECRET_MDBLIST_API_KEY` (free, https://mdblist.com/prefer
 and `SECRET_TMDB_API_KEY` (already used by AIOMetadata). Merges are read-modify-write per platform:
 unrelated preferences (theme, player, Trakt watch-progress source, …) are preserved, and
 never-initialised desktop/mobile profiles are skipped rather than seeded with partial defaults.
+
+### Nuvio App Settings (`configs/nuvio_settings.json`)
+Everything else you would otherwise toggle by hand in each Nuvio client's Settings screens lives
+in `configs/nuvio_settings.json` and is pushed into the same per-platform profile blobs
+(`sync_push_profile_settings_blob`) with read-modify-write merges, so device-local knobs
+(decoders, libmpv/iOS tuning, buffers, per-title track memory) are never touched:
+
+| Block | What it drives | Highlights |
+| :--- | :--- | :--- |
+| `playback` | Player behaviour on `tv` / `desktop` / `mobile` | **`reuseLastLink`** (auto-play the last working stream for the same title while the cache is valid), auto stream selection, next-episode auto-play & binge groups, IntroDB skip + auto-skip segments, AnimeSkip, overlays, external player |
+| `audio` / `subtitles` | Track preferences & subtitle styling | preferred/secondary languages, forced subs, SDH stripping, addon startup mode, colours/outline/size, TV HDR subtitle style |
+| `appearance` | Theme & navigation chrome | theme, AMOLED black, nav bar style, desktop sidebar/top bar, TV font & settings UI style |
+| `tvLayout` | NuvioTV-only Home layout | Modern/Grid/Classic home, hero, sidebar, Discover location, poster card size, focused-poster trailers, card depth, Continue Watching row, detail-page toggles, perf flags |
+| `notifications` / `tvPlugins` | Misc | episode release alerts (mobile/desktop), group plugin streams by repository (TV) |
+
+Each block may be set to `null` (or omitted) to leave that area untouched on every device; any
+leaf key omitted inside a declared block falls back to Nuvio's in-app default. Values are
+platform-neutral — the compiler (`src/stream_weaver/core/nuvio_settings.py`, a single
+table-driven registry) translates key names, enum spellings, colour encodings and per-platform
+capability gaps (e.g. `movie-credits` auto-skip is TV-only, some themes are desktop/TV-only).
+Optional secrets: `SECRET_ANIMESKIP_CLIENT_ID`, `SECRET_INTRODB_API_KEY` (pushed via Nuvio's
+provider-credential RPCs; leave blank to keep whatever each device already has).
 
 ### Pulling Changes Made in the Web UI
 If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web UI:
