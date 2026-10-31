@@ -198,3 +198,11 @@ flowchart LR
 | Platforms | Placement | Paused Player Logos | Active Badge Pack URLs |
 | :--- | :--- | :--- | :--- |
 | `tv`, `desktop`, `mobile` | `BOTTOM` | `enabled` | `https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges.json` |
+
+---
+
+## 6. Nuvio App Settings (`configs/nuvio_settings.json`)
+
+| Platforms | Managed Blocks | Reuse Last Link |
+| :--- | :--- | :--- |
+| `tv`, `desktop`, `mobile` | `appearance`, `playback`, `audio`, `subtitles`, `tvLayout`, `notifications`, `tvPlugins` | `enabled` |

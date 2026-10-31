@@ -181,6 +181,9 @@ class TopologySnapshot:
     badge_platforms: tuple[str, ...] = ()
     badge_placement: str = "BOTTOM"
     badge_show_in_player: bool = False
+    settings_platforms: tuple[str, ...] = ()
+    settings_blocks: tuple[str, ...] = ()
+    settings_reuse_last_link: bool = False
 
 
 _ADDON_DISPLAY_NAMES: Mapping[str, str] = {
@@ -295,6 +298,7 @@ def build_topology_snapshot(
     nuvio_collections: Mapping[str, Any] | None = None,
     nuvio_badges: Mapping[str, Any] | None = None,
     nuvio_meta: Mapping[str, Any] | None = None,
+    nuvio_settings: Mapping[str, Any] | None = None,
 ) -> TopologySnapshot:
     """Pure single-pass normalizer extracting shared topology state from raw service configs."""
     raw_cols = (
@@ -423,6 +427,7 @@ def build_topology_snapshot(
                 *(_extract_secret_names(nuvio_collections) if nuvio_collections else ()),
                 *(_extract_secret_names(nuvio_badges) if nuvio_badges else ()),
                 *(_extract_secret_names(nuvio_meta) if nuvio_meta else ()),
+                *(_extract_secret_names(nuvio_settings) if nuvio_settings else ()),
             }
         )
     )
@@ -569,6 +574,23 @@ def build_topology_snapshot(
                 elif isinstance(imp, Mapping) and imp.get("sourceUrl"):
                     badge_imports_list.append(str(imp["sourceUrl"]).strip())
 
+    settings_platforms_list: list[str] = []
+    settings_blocks_list: list[str] = []
+    settings_reuse_last_link = False
+    if isinstance(nuvio_settings, Mapping):
+        raw_s_plats = nuvio_settings.get("platforms", ["tv", "desktop", "mobile"])
+        if isinstance(raw_s_plats, Sequence) and not isinstance(raw_s_plats, (str, bytes)):
+            settings_platforms_list = [str(p) for p in raw_s_plats if str(p).strip()]
+        settings_blocks_list = [
+            key
+            for key, val in nuvio_settings.items()
+            if key not in ("version", "platforms") and isinstance(val, Mapping)
+        ]
+        playback = nuvio_settings.get("playback")
+        if isinstance(playback, Mapping):
+            reuse = playback.get("reuseLastLink")
+            settings_reuse_last_link = isinstance(reuse, Mapping) and bool(reuse.get("enabled"))
+
     return TopologySnapshot(
         aiomanager=aiomanager,
         aiostreams=aiostreams,
@@ -608,6 +630,9 @@ def build_topology_snapshot(
         subtitle_languages=tuple(sub_langs),
         badge_imports=tuple(badge_imports_list),
         badge_platforms=tuple(badge_platforms_list),
+        settings_platforms=tuple(settings_platforms_list),
+        settings_blocks=tuple(settings_blocks_list),
+        settings_reuse_last_link=settings_reuse_last_link,
         badge_placement=badge_placement,
         badge_show_in_player=badge_show_in_player,
     )
@@ -621,6 +646,7 @@ def compile_architecture_bundle(
     nuvio_collections: Mapping[str, Any] | None = None,
     nuvio_badges: Mapping[str, Any] | None = None,
     nuvio_meta: Mapping[str, Any] | None = None,
+    nuvio_settings: Mapping[str, Any] | None = None,
 ) -> ArchitectureBundle:
     """
     Pure function: compiles the declarative JSON configs into:
@@ -635,6 +661,7 @@ def compile_architecture_bundle(
         nuvio_collections=nuvio_collections,
         nuvio_badges=nuvio_badges,
         nuvio_meta=nuvio_meta,
+        nuvio_settings=nuvio_settings,
     )
     return ArchitectureBundle(
         likec4_dsl=_build_likec4_dsl(snapshot),
@@ -2205,6 +2232,21 @@ def _build_architecture_markdown(snap: TopologySnapshot) -> str:
                 "| Platforms | Placement | Paused Player Logos | Active Badge Pack URLs |",
                 "| :--- | :--- | :--- | :--- |",
                 f"| {plat_csv} | `{snap.badge_placement}` | `{'enabled' if snap.badge_show_in_player else 'disabled'}` | {', '.join(f'`{u}`' for u in snap.badge_imports)} |",
+            ]
+        )
+
+    if snap.settings_blocks:
+        plat_csv = ", ".join(f"`{p}`" for p in snap.settings_platforms) or "`tv`, `desktop`, `mobile`"
+        md_lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "## 6. Nuvio App Settings (`configs/nuvio_settings.json`)",
+                "",
+                "| Platforms | Managed Blocks | Reuse Last Link |",
+                "| :--- | :--- | :--- |",
+                f"| {plat_csv} | {', '.join(f'`{b}`' for b in snap.settings_blocks)} | `{'enabled' if snap.settings_reuse_last_link else 'disabled'}` |",
             ]
         )
 

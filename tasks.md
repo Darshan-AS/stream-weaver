@@ -28,6 +28,12 @@
 - [x] Wire `nuvio_meta` into `sw push` / `sw pull` / `sw diff` / `sw sanitize` (implicit via `all`/`aiomanager`/`nuvio`, explicit via `nuvio_meta`) with `SECRET_MDBLIST_API_KEY` / `SECRET_TMDB_API_KEY` lenses
 - [ ] **Set `SECRET_MDBLIST_API_KEY` in `.env`** (free key from https://mdblist.com/preferences) and run `uv run sw push nuvio_meta`; until then `sw push all` skips the meta sync with a warning
 
+### Nuvio App Settings (`nuvio_settings`)
+- [x] Add `configs/nuvio_settings.json` managing every portable Nuvio preference (playback incl. **Reuse Last Link**, stream auto-play, next-episode/binge groups, skip-intro/auto-skip/AnimeSkip, audio & subtitle preferences/styling, theme, TV Home layout, notifications, TV plugin grouping) with opinionated defaults
+- [x] Implement table-driven compiler `src/stream_weaver/core/nuvio_settings.py` (one `Setting` registry row per preference → per-platform `player_settings` / `theme_settings` / `layout_settings` / `animeskip_settings` / `plugin_settings` / `notifications_settings` fragments; codecs for enum/colour/unit/capability translation; read-modify-write merge with key deletion; expressive-platform consensus decompiler for `sw diff`)
+- [x] Implement `NuvioClientSync.push_settings` / `pull_settings` (+ `animeskip` / `introdb` provider credentials) and wire `nuvioSettings` through `sync_account`, `sw push` / `sw pull` / `sw diff` / `sw sanitize` (implicit via `all`/`aiomanager`/`nuvio`, explicit via `nuvio_settings`) with `SECRET_ANIMESKIP_CLIENT_ID` / `SECRET_INTRODB_API_KEY` lenses
+- [ ] Revisit a `debrid` block only if Nuvio's native TorBox resolver is ever preferred over AIOStreams (deliberately out of scope; keys differ per platform and hold credentials)
+
 ### Community Addons & Subtitles Adoption (`aiostreams` + `nuvio_collections`)
 - [x] Add **EinthusanTV Kannada** (`etv`) to AIOStreams Group 2 HTTP fallback (`resources: ["stream"]`, `mediaTypes: ["movie"]`, `titleMatching` enabled)
 - [x] Add **Stinger Pro** (`ssp`), **ItsOut!** (`ito`), and **BasedOn** (`bso`) to AIOStreams Group 1 (`pinPosition: "bottom"`, `resultPassthrough: true`, `formatPassthrough: true`)
