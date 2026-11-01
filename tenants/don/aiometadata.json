@@ -1190,7 +1190,7 @@
       "id": "ef06f97b-4780-4c5c-85b9-bbb943ea8b21",
       "managerId": "aiomanager",
       "label": "Don's AIOManager",
-      "instanceUrl": "https://aiomanagerfortheweebs.midnightignite.me",
+      "instanceUrl": "{{AIOMANAGER_URL}}",
       "keyId": "b98730fa-cad2-4f25-ae82-16ec6b6456d3",
       "profileTags": [],
       "autoSync": true,

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/profile.v1.json",
+  "version": 1,
+  "name": "don",
+  "displayName": "Don",
+  "instances": {
+    "aiostreams": "default",
+    "aiometadata": "default"
+  },
+  "clients": {
+    "nuvio": {
+      "login": "don",
+      "profile": {
+        "id": "6139337e-1fcb-4a9b-8ab1-6e4affcd0ccb"
+      },
+      "platforms": [
+        "tv",
+        "desktop",
+        "mobile"
+      ]
+    },
+    "stremio": {
+      "login": "don"
+    }
+  },
+  "addons": {
+    "extra": [
+      {
+        "name": "bingecat",
+        "transportUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
+        "customName": "BingeCat"
+      },
+      {
+        "name": "cinemeta",
+        "transportUrl": "https://v3-cinemeta.strem.io",
+        "customName": "Cinemeta",
+        "metadata": {
+          "cinemetaConfig": {
+            "removeSearch": true,
+            "removeStandardCatalogs": true,
+            "removeMeta": false
+          }
+        }
+      }
+    ]
+  },
+  "accountId": "7d210008-bcdb-4bc4-b52e-8c3851275e83",
+  "appearance": {
+    "emoji": "💀",
+    "accentColor": "#3b82f6"
+  }
+}

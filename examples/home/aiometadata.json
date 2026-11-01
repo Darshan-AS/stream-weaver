@@ -1187,11 +1187,11 @@
   "configHash": "18ebafe1bf145ac0",
   "managerAccounts": [
     {
-      "id": "00000000-0000-4000-8000-000000000001",
+      "id": "00000000-0000-4000-8000-000000000004",
       "managerId": "aiomanager",
       "label": "Demo AIOManager",
-      "instanceUrl": "https://aiomanager.example.com",
-      "keyId": "00000000-0000-4000-8000-000000000002",
+      "instanceUrl": "{{AIOMANAGER_URL}}",
+      "keyId": "00000000-0000-4000-8000-000000000005",
       "profileTags": [],
       "autoSync": true,
       "lastSyncedAt": "2026-10-15T19:48:51.535Z"

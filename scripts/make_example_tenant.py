@@ -149,6 +149,14 @@ def main() -> None:
     dst = (ROOT / args.target).resolve()
     dst.mkdir(parents=True, exist_ok=True)
     scrub = Scrubber()
+    # Instance UUIDs usually appear only as {{PREFIX_UUID}} placeholders after sanitising, but their
+    # short prefixes still live inside AIOStreams manifest ids — seed the mapping from `.env` first.
+    env_file = src / ".env"
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            key, _, val = line.partition("=")
+            if key.strip().endswith("_UUID") and UUID_RE.fullmatch(val.strip()):
+                scrub.fake_uuid(val.strip())
     for name in DOC_NAMES:
         src_doc = src / f"{name}.json"
         if src_doc.is_file():

@@ -4,6 +4,7 @@ import concurrent.futures
 import os
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -12,9 +13,15 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from stream_weaver.core.aiomanager_accounts import (
+    ResolvedProfile,
+    apply_managed_accounts,
+    derive_profile_from_account,
+)
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
 from stream_weaver.core.crypto import decrypt_envelope
+from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.instances import (
     DEFAULT_INSTANCE,
     InstanceBinding,
@@ -23,6 +30,7 @@ from stream_weaver.core.instances import (
 )
 from stream_weaver.core.logins import (
     SUPPORTED_PLATFORMS,
+    LoginBinding,
     login_env_key,
     login_env_keys,
     resolve_login_binding,
@@ -30,6 +38,15 @@ from stream_weaver.core.logins import (
 from stream_weaver.core.nuvio_badges import normalize_nuvio_badges_doc
 from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
 from stream_weaver.core.nuvio_settings import active_blocks, normalize_nuvio_settings_doc
+from stream_weaver.core.profiles import (
+    ExtraAddon,
+    NuvioClientSpec,
+    Profile,
+    StremioClientSpec,
+    parse_profile,
+    profile_file,
+    profile_to_doc,
+)
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
 from stream_weaver.core.tenant import (
@@ -224,12 +241,23 @@ def _resolve_paths(
     return paths.root, paths.env_file, paths.docs_dir, load_env_file(paths.env_file)
 
 
+@dataclass(frozen=True, slots=True)
+class _Context:
+    """Everything a tenant-scoped command needs, resolved once."""
+
+    paths: TenantPaths
+    manifest: TenantManifest
+    env: dict[str, str]
+    bindings: dict[ServiceId, InstanceBinding]
+    profiles: list[ResolvedProfile]
+
+
 def _resolve_context(
     workspace_dir: Path | None = None,
     tenant_name: str | None = None,
     instance: str = DEFAULT_INSTANCE,
-) -> tuple[TenantPaths, TenantManifest, dict[str, str], dict[ServiceId, InstanceBinding]]:
-    """Active tenant paths, validated manifest, `.env` map, and per-service bindings for `instance` (where registered)."""
+) -> _Context:
+    """Active tenant paths, validated manifest, `.env`, per-service bindings for `instance`, and resolved profiles."""
     paths = _resolve_tenant(workspace_dir, tenant_name)
     manifest = _load_tenant_manifest(paths)
     env = load_env_file(paths.env_file)
@@ -240,12 +268,101 @@ def _resolve_context(
                 bindings[svc] = binding
             case Err():
                 continue
-    return paths, manifest, env, bindings
+    match _load_profiles(paths, manifest, env):
+        case Err(prof_err):
+            err_console.print(f"❌ {prof_err}")
+            raise typer.Exit(code=1)
+        case Ok(profiles):
+            pass
+    return _Context(paths=paths, manifest=manifest, env=env, bindings=bindings, profiles=profiles)
 
 
 def _service_doc_path(configs_dir: Path, service: ServiceId, instance: str = DEFAULT_INSTANCE) -> Path:
     """`<service>.json` for the default instance, `<service>.<instance>.json` otherwise."""
     return configs_dir / (f"{service}.json" if instance == DEFAULT_INSTANCE else f"{service}.{instance}.json")
+
+
+def _resolve_profile(
+    paths: TenantPaths, manifest: TenantManifest, env: Mapping[str, str], profile: Profile
+) -> Result[ResolvedProfile]:
+    """Binds a parsed profile's instance and login references against the tenant (pure lookups)."""
+    inst_bindings: dict[ServiceId, InstanceBinding] = {}
+    for svc, inst_name in profile.instances.items():
+        match resolve_instance_binding(manifest, env, svc, inst_name):
+            case Err(bind_err):
+                return Err(
+                    StreamWeaverError(f"profile `{profile.name}`: {bind_err}")
+                )
+            case Ok(binding):
+                inst_bindings[svc] = binding
+    login_bindings: dict[str, LoginBinding] = {}
+    for platform, login_name in (
+        ("nuvio", profile.nuvio.login if profile.nuvio else None),
+        ("stremio", profile.stremio.login if profile.stremio else None),
+    ):
+        if not login_name:
+            continue
+        match resolve_login_binding(manifest, env, platform, login_name):
+            case Err(login_err):
+                return Err(StreamWeaverError(f"profile `{profile.name}`: {login_err}"))
+            case Ok(lb):
+                login_bindings[platform] = lb
+    _ = paths
+    return Ok(ResolvedProfile(profile=profile, instances=inst_bindings, logins=login_bindings))
+
+
+def _load_profiles(
+    paths: TenantPaths, manifest: TenantManifest, env: Mapping[str, str]
+) -> Result[list[ResolvedProfile]]:
+    """Reads every profile listed in tenant.json and resolves it; fails on the first problem."""
+    out: list[ResolvedProfile] = []
+    for name in manifest.profiles:
+        pf = profile_file(paths, name)
+        match read_json_file(pf):
+            case Err(read_err):
+                return Err(StreamWeaverError(f"profile `{name}`: {read_err}"))
+            case Ok(doc):
+                pass
+        match parse_profile(doc):
+            case Err(schema_err):
+                return Err(StreamWeaverError(f"profile `{name}` ({paths.relative(pf)}): {schema_err}"))
+            case Ok(profile):
+                pass
+        if profile.name != name:
+            return Err(
+                StreamWeaverError(
+                    f"profile directory `{name}` holds a profile named `{profile.name}`; names must match"
+                )
+            )
+        match _resolve_profile(paths, manifest, env, profile):
+            case Err() as err:
+                return err
+            case Ok(resolved):
+                out.append(resolved)
+    return Ok(out)
+
+
+def _managed_aiomanager_doc(
+    scrubbed_cfg: JsonDict,
+    tenant_name: str,
+    resolved_profiles: Sequence[ResolvedProfile],
+) -> tuple[JsonDict, list[str]]:
+    """Applies managed `accounts[]` to a scrubbed aiomanager doc; returns the doc and human notes."""
+    if not resolved_profiles:
+        return scrubbed_cfg, []
+    outcome = apply_managed_accounts(scrubbed_cfg, tenant_name, resolved_profiles)
+    notes = [f"managed account: {m}" for m in outcome.managed]
+    notes += [f"unmanaged account kept as-is: {u}" for u in outcome.unmanaged]
+    doc = outcome.state
+    # Transient per-account hint for name-based Nuvio profile resolution (stripped on persist).
+    by_id = {rp.profile.account_id or "": rp for rp in resolved_profiles}
+    for acc in doc.get("accounts", []):
+        rp = by_id.get(str(acc.get("id")))
+        if rp is None:
+            rp = next((r for r in resolved_profiles if r.profile.display_name == acc.get("name")), None)
+        if rp and rp.profile.nuvio and rp.profile.nuvio.profile_name and not rp.profile.nuvio.profile_id:
+            acc["nuvioProfileName"] = rp.profile.nuvio.profile_name
+    return doc, notes
 
 
 def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
@@ -507,6 +624,8 @@ def _diff_service(
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
     bindings: Mapping[ServiceId, InstanceBinding],
+    tenant_name: str = "",
+    resolved_profiles: Sequence[ResolvedProfile] = (),
 ) -> Result[ConfigDiffOutcome | None]:
     """Pulls remote service config in memory, scrubs secrets, and diffs against the tenant's `{service_id}.json`."""
     svc = services.get(service_id)
@@ -522,6 +641,11 @@ def _diff_service(
             return err
         case Ok(local_scrubbed):
             pass
+    if service_id == "aiomanager":
+        # Diff what *would* be pushed: the local doc with its managed accounts regenerated from profiles.
+        local_scrubbed, _ = _managed_aiomanager_doc(local_scrubbed, tenant_name, resolved_profiles)
+        for acc in local_scrubbed.get("accounts", []):
+            acc.pop("nuvioProfileName", None)
 
     match svc.pull_remote(binding):
         case Err() as err:
@@ -581,6 +705,8 @@ def _push_service(
     services: Mapping[ServiceId, ConfigServiceProtocol],
     bindings: Mapping[ServiceId, InstanceBinding],
     create: bool = False,
+    tenant_name: str = "",
+    resolved_profiles: Sequence[ResolvedProfile] = (),
 ) -> Result[tuple[ServicePushOutcome | None, dict[str, str]]]:
     svc = services.get(service_id)
     binding = bindings.get(service_id)
@@ -595,6 +721,11 @@ def _push_service(
             return err
         case Ok(scrubbed_cfg):
             pass
+
+    if service_id == "aiomanager":
+        scrubbed_cfg, managed_notes = _managed_aiomanager_doc(scrubbed_cfg, tenant_name, resolved_profiles)
+        for note in managed_notes:
+            console.print(f"👤 [aiomanager] {note}")
 
     match inject_secrets(scrubbed_cfg, env):
         case Err() as err:
@@ -975,6 +1106,25 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
             case Ok():
                 pass
 
+    if manifest is not None:
+        env = load_env_file(paths.env_file)
+        match _load_profiles(paths, manifest, env):
+            case Err(prof_err):
+                failures.append(str(prof_err))
+            case Ok(resolved_profiles):
+                mgr_path = paths.doc("aiomanager")
+                if resolved_profiles and mgr_path.exists():
+                    match read_json_file(mgr_path):
+                        case Ok(mgr_doc) if not mgr_doc.get("isEncrypted"):
+                            outcome = apply_managed_accounts(mgr_doc, manifest.name, resolved_profiles)
+                            if outcome.changed:
+                                failures.append(
+                                    "aiomanager.json: accounts[] differs from the form generated by profiles/ "
+                                    "(edit profile.json, or run `sw push aiomanager` to regenerate)"
+                                )
+                        case _:
+                            pass
+
     match _sync_architecture_diagrams(paths.root, paths.docs_dir, check_only=True):
         case Err(diag_err):
             failures.append(f"diagram: {diag_err}")
@@ -986,6 +1136,214 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
             pass
 
     return failures
+
+
+# ============================================================================
+# `sw profile` — people (identity bindings) of the active tenant
+# ============================================================================
+
+profile_app = typer.Typer(help="Manage profiles: one person's instances, logins, Nuvio profile and extra addons.")
+app.add_typer(profile_app, name="profile")
+
+
+def _add_profile_to_manifest(paths: TenantPaths, name: str) -> None:
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(manifest_doc):
+            pass
+    profiles = manifest_doc.setdefault("profiles", [])
+    if not isinstance(profiles, list):
+        err_console.print("❌ tenant.json: `profiles` must be a list")
+        raise typer.Exit(code=1)
+    if name not in profiles:
+        profiles.append(name)
+        _write_tenant_manifest(paths, manifest_doc)
+
+
+def _write_profile(paths: TenantPaths, profile: Profile, *, force: bool) -> Path:
+    pf = profile_file(paths, profile.name)
+    if pf.exists() and not force:
+        err_console.print(f"❌ {paths.relative(pf)} already exists (use --force to overwrite)")
+        raise typer.Exit(code=1)
+    match write_json_file(pf, profile_to_doc(profile)):
+        case Err(write_err):
+            err_console.print(f"❌ {write_err}")
+            raise typer.Exit(code=1)
+        case Ok(saved):
+            return saved
+
+
+@profile_app.command("list")
+def cmd_profile_list(
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Show every profile with its instances, logins, Nuvio profile and extra addons."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    table = Table(title=f"Profiles — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
+    for col in ("Profile", "Display", "AIOStreams", "AIOMetadata", "Nuvio", "Stremio", "Extras", "Account id"):
+        table.add_column(col, overflow="fold")
+    for rp in ctx.profiles:
+        p = rp.profile
+        nuvio = "—"
+        if p.nuvio:
+            target = p.nuvio.profile_id or (f"name={p.nuvio.profile_name}" if p.nuvio.profile_name else "index 1")
+            nuvio = f"{p.nuvio.login} · {target} · {','.join(p.nuvio.platforms)}"
+        table.add_row(
+            p.name,
+            p.display_name,
+            p.instances.get("aiostreams", "default"),
+            p.instances.get("aiometadata", "default"),
+            nuvio,
+            p.stremio.login if p.stremio else "—",
+            ", ".join(a.name for a in p.extra_addons) or "—",
+            p.account_id or "(stable id)",
+        )
+    console.print(table)
+    if not ctx.profiles:
+        console.print("ℹ️  No profiles yet — `sw profile import <account-name> --name <profile>` or `sw profile new`.")
+
+
+@profile_app.command("import")
+def cmd_profile_import(
+    account: Annotated[str, typer.Argument(help="Existing AIOManager account name (as shown in aiomanager.json)")],
+    name: Annotated[str, typer.Option("--name", "-n", help="Profile name to create (default: slug of the account name)")] = "",
+    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing profile.json")] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Derive a profile from an existing AIOManager account (migration path for already-running setups)."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    manifest = _load_tenant_manifest(paths)
+    env = load_env_file(paths.env_file)
+    match read_json_file(paths.doc("aiomanager")):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(mgr_doc):
+            pass
+    accounts = [a for a in (mgr_doc.get("accounts") or []) if isinstance(a, dict)]
+    target = next((a for a in accounts if str(a.get("name") or "").lower() == account.strip().lower()), None)
+    if target is None:
+        known = ", ".join(str(a.get("name")) for a in accounts) or "none"
+        err_console.print(f"❌ No AIOManager account named `{account}` (known: {known})")
+        raise typer.Exit(code=1)
+
+    profile_name = (name or account).strip().lower().replace(" ", "-")
+    inst_bindings: dict[ServiceId, list[InstanceBinding]] = {}
+    for svc in ALL_SERVICES:
+        for inst_name in manifest.instances.get(svc, {}):
+            match resolve_instance_binding(manifest, env, svc, inst_name):
+                case Ok(b):
+                    inst_bindings.setdefault(svc, []).append(b)
+                case Err():
+                    continue
+    login_bindings: dict[str, list[LoginBinding]] = {}
+    for platform in SUPPORTED_PLATFORMS:
+        for login_name in manifest.logins.get(platform, {}):
+            match resolve_login_binding(manifest, env, platform, login_name):
+                case Ok(lb):
+                    login_bindings.setdefault(platform, []).append(lb)
+                case Err():
+                    continue
+
+    profile = derive_profile_from_account(
+        target, profile_name=profile_name, instance_bindings=inst_bindings, login_bindings=login_bindings
+    )
+    match parse_profile(profile_to_doc(profile)):
+        case Err(schema_err):
+            err_console.print(f"❌ derived profile is invalid: {schema_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+    saved = _write_profile(paths, profile, force=force)
+    _add_profile_to_manifest(paths, profile_name)
+    console.print(f"✅ Imported account `{target.get('name')}` → {paths.relative(saved)}")
+    console.print(
+        f"   instances: {dict(profile.instances)} · nuvio: {profile.nuvio.login if profile.nuvio else '—'} · "
+        f"stremio: {profile.stremio.login if profile.stremio else '—'} · extras: {[a.name for a in profile.extra_addons]}"
+    )
+    unmatched = [
+        c.get("platform") for c in (target.get("connections") or []) if isinstance(c, dict)
+    ]
+    for plat in unmatched:
+        if (plat == "nuvio" and profile.nuvio is None) or (plat == "stremio" and profile.stremio is None):
+            console.print(
+                f"   ⚠️  {plat} connection could not be matched to a registered login — "
+                f"run `sw login adopt {plat} --login <name> --prefix <PREFIX>` and re-import"
+            )
+
+
+@profile_app.command("new")
+def cmd_profile_new(
+    name: Annotated[str, typer.Argument(help="Profile name (e.g. dad)")],
+    display_name: Annotated[str | None, typer.Option("--display-name", help="Account / Nuvio display name (default: capitalised name)")] = None,
+    aiometadata: Annotated[str, typer.Option("--aiometadata", help="AIOMetadata instance name")] = DEFAULT_INSTANCE,
+    aiostreams: Annotated[str, typer.Option("--aiostreams", help="AIOStreams instance name")] = DEFAULT_INSTANCE,
+    nuvio_login: Annotated[str | None, typer.Option("--nuvio-login", help="Nuvio login name this person signs in with")] = None,
+    nuvio_profile: Annotated[
+        str | None,
+        typer.Option("--nuvio-profile", help="Nuvio profile *name* on that login (resolved at push); default: display name"),
+    ] = None,
+    nuvio_profile_id: Annotated[str | None, typer.Option("--nuvio-profile-id", help="Nuvio profile UUID (skips name matching)")] = None,
+    platforms: Annotated[str, typer.Option("--platforms", help="Comma-separated Nuvio platforms")] = "tv,desktop,mobile",
+    stremio_login: Annotated[str | None, typer.Option("--stremio-login", help="Stremio login name, if this person uses Stremio")] = None,
+    extra_from: Annotated[
+        str | None,
+        typer.Option("--extras-from", help="Copy `addons.extra` from this existing profile"),
+    ] = None,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing profile.json")] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Create a profile: who they are, which instances they use, how they sign in."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    prof_name = name.strip().lower()
+    shown = (display_name or prof_name.capitalize()).strip()
+    extras: tuple[ExtraAddon, ...] = ()
+    if extra_from:
+        src = next((rp.profile for rp in ctx.profiles if rp.profile.name == extra_from), None)
+        if src is None:
+            err_console.print(f"❌ --extras-from: no profile named `{extra_from}`")
+            raise typer.Exit(code=1)
+        extras = src.extra_addons
+    nuvio_spec = (
+        NuvioClientSpec(
+            login=nuvio_login,
+            profile_id=nuvio_profile_id,
+            profile_name=None if nuvio_profile_id else (nuvio_profile or shown),
+            platforms=tuple(p.strip() for p in platforms.split(",") if p.strip()),
+        )
+        if nuvio_login
+        else None
+    )
+    profile = Profile(
+        name=prof_name,
+        display_name=shown,
+        instances={"aiostreams": aiostreams, "aiometadata": aiometadata},
+        nuvio=nuvio_spec,
+        stremio=StremioClientSpec(login=stremio_login) if stremio_login else None,
+        extra_addons=extras,
+    )
+    match parse_profile(profile_to_doc(profile)):
+        case Err(schema_err):
+            err_console.print(f"❌ {schema_err}")
+            raise typer.Exit(code=1)
+        case Ok(parsed):
+            pass
+    match _resolve_profile(ctx.paths, ctx.manifest, ctx.env, parsed):
+        case Err(res_err):
+            err_console.print(f"❌ {res_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+    saved = _write_profile(ctx.paths, parsed, force=force)
+    _add_profile_to_manifest(ctx.paths, prof_name)
+    console.print(f"✅ Created profile `{prof_name}` → {ctx.paths.relative(saved)}")
+    console.print("   💡 Next: `sw push aiomanager` creates/updates its AIOManager account and syncs its Nuvio profile.")
+
 
 
 # ============================================================================
@@ -1364,7 +1722,8 @@ def cmd_config_pull(
     tenant: TenantNameOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
-    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    ctx = _resolve_context(workspace_dir, tenant, instance)
+    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
@@ -1589,7 +1948,8 @@ def cmd_config_push(
         cmd_config_diff(target=target, stat_only=False, exit_code=False, workspace_dir=workspace_dir)
         return
 
-    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    ctx = _resolve_context(workspace_dir, tenant, instance)
+    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
@@ -1617,6 +1977,8 @@ def cmd_config_push(
                             configs_dir=configs_dir,
                             services=services,
                             bindings=bindings,
+                            tenant_name=ctx.manifest.name,
+                            resolved_profiles=ctx.profiles,
                             create=create,
                         ),
                     )
@@ -1637,6 +1999,8 @@ def cmd_config_push(
                             configs_dir=configs_dir,
                             services=services,
                             bindings=bindings,
+                            tenant_name=ctx.manifest.name,
+                            resolved_profiles=ctx.profiles,
                             create=create,
                         )
                     }
@@ -1878,7 +2242,8 @@ def cmd_config_diff(
     tenant: TenantNameOption = None,
 ) -> None:
     """Compare the tenant's documents against live remote instances without modifying any files."""
-    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    ctx = _resolve_context(workspace_dir, tenant, instance)
+    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     configs_dir = paths.docs_dir
     has_drift = False
     svc_targets = _resolve_service_targets(target)
@@ -1892,7 +2257,13 @@ def cmd_config_diff(
 
         def _diff_one(sid: ServiceId) -> tuple[ServiceId, Result[ConfigDiffOutcome | None]]:
             return sid, _diff_service(
-                sid, env, configs_dir=configs_dir, services=services, bindings=bindings
+                sid,
+                env,
+                configs_dir=configs_dir,
+                services=services,
+                bindings=bindings,
+                tenant_name=ctx.manifest.name,
+                resolved_profiles=ctx.profiles,
             )
 
         svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}

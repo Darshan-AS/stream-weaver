@@ -14,7 +14,18 @@ SECRET_PLACEHOLDER_RE = re.compile(
     r"\{\{((?:SECRET_|AIOSTREAMS_|AIOMETADATA_|AIOMANAGER_|NUVIO_|STREMIO_)[A-Z0-9_]+)\}\}"
 )
 IDENTITY_KEY_SUFFIXES: tuple[str, ...] = ("_UUID",)
-"""Non-secret env keys that still identify an instance and are preferred as placeholders."""
+_IDENTITY_URL_PREFIXES: tuple[str, ...] = ("AIOSTREAMS", "AIOMETADATA", "AIOMANAGER")
+
+
+def is_identity_env_key(key: str) -> bool:
+    """
+    Non-secret env keys that still *identify* a service instance (its UUID or base URL). They are
+    preferred over `SECRET_*` keys when scrubbing so documents reference one source of truth and
+    stay portable across tenants (`{{AIOMETADATA_DAD_UUID}}`, `{{AIOSTREAMS_URL}}`).
+    """
+    return key.endswith(IDENTITY_KEY_SUFFIXES) or (
+        key.endswith("_URL") and key.startswith(_IDENTITY_URL_PREFIXES)
+    )
 WATCHLY_URL_RE = re.compile(
     r"(watchly\.[^/]+/)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
 )
@@ -423,7 +434,7 @@ def _find_existing_secret_key(env: Mapping[str, str], secret_val: str) -> str | 
     (`{{AIOMETADATA_DAD_UUID}}`) instead of a duplicated secret.
     """
     for existing_k, existing_v in env.items():
-        if existing_k.endswith(IDENTITY_KEY_SUFFIXES) and existing_v == secret_val:
+        if is_identity_env_key(existing_k) and existing_v == secret_val:
             return existing_k
     for existing_k, existing_v in env.items():
         if existing_k.startswith("SECRET_") and existing_v == secret_val:
@@ -525,7 +536,7 @@ def harvest_and_scrub(
         (
             (k, v)
             for k, v in working_env.items()
-            if (k.startswith("SECRET_") or k.endswith(IDENTITY_KEY_SUFFIXES))
+            if (k.startswith("SECRET_") or is_identity_env_key(k))
             and len(v) >= MIN_GLOBAL_SCRUB_LEN
             and not v.startswith("{{")
         ),
