@@ -32,7 +32,7 @@
           }
         },
         {
-          "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "transportUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "transportName": "",
           "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.37.0",
           "manifest": {
@@ -227,7 +227,7 @@
         {
           "savedAddonId": "4d3d3bf5-ccc9-4f2a-a902-079215e6a18d",
           "addonId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
-          "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "installedAt": "2026-10-15T18:21:40.385Z",
           "installedVia": "manual",
           "flags": {
@@ -3693,7 +3693,7 @@
       {
         "id": "4d3d3bf5-ccc9-4f2a-a902-079215e6a18d",
         "name": "AIOStreams",
-        "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+        "installUrl": "https://aiostreamsfortheweebsstable.midnightignite.me/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
         "manifest": {
           "name": "AIOStreams",
           "id": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199",
@@ -5061,7 +5061,7 @@
       "provider": "aiostreams",
       "value": "{{SECRET_VAULT_AIOSTREAMS_35C658}}",
       "serverUrl": "https://aiostreamsfortheweebsstable.midnightignite.me",
-      "addonUuid": "6d639290-199e-4c82-ab00-a8e28226a64a",
+      "addonUuid": "{{AIOSTREAMS_UUID}}",
       "id": "35c658a0-e310-4c75-b120-800137fc64ed",
       "updatedAt": 1792149872886
     },

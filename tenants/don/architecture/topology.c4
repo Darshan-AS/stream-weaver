@@ -762,6 +762,11 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
+  secretKey sec_aiostreams_uuid 'AIOSTREAMS_UUID' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_secret_account_auth_key 'SECRET_ACCOUNT_AUTH_KEY' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
