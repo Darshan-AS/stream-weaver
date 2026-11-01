@@ -206,3 +206,11 @@ flowchart LR
 | Platforms | Managed Blocks | Reuse Last Link |
 | :--- | :--- | :--- |
 | `tv`, `desktop`, `mobile` | `appearance`, `playback`, `audio`, `subtitles`, `tvLayout`, `notifications`, `tvPlugins` | `enabled` |
+
+---
+
+## 7. Profiles (`profiles/<name>/profile.json`)
+
+| Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `don` | Don | `default` | `default` | `don` → 6139337e… | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs` | `bingecat`, `cinemeta` |
