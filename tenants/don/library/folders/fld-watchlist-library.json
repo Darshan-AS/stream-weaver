@@ -1,0 +1,38 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-watchlist-library",
+  "folder": {
+    "id": "fld-watchlist-library",
+    "title": "Cloud Library & Release Alerts",
+    "sources": [
+      {
+        "addon": "aiostreams",
+        "type": "movie",
+        "preset": "lib",
+        "catalog": "aiostreams::library.torbox",
+        "title": "TorBox Cloud Library"
+      },
+      {
+        "addon": "aiostreams",
+        "type": "movie",
+        "preset": "ito",
+        "catalog": "itsout.released",
+        "title": "ItsOut! — Released Movies"
+      },
+      {
+        "addon": "aiostreams",
+        "type": "series",
+        "preset": "ito",
+        "catalog": "itsout.released",
+        "title": "ItsOut! — Released Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/adventure/adventure-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/49c41ea9.webp",
+    "focusGifEnabled": true
+  }
+}

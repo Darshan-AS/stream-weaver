@@ -1,0 +1,177 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/profile.v1.json",
+  "version": 1,
+  "name": "don",
+  "displayName": "Demo",
+  "instances": {
+    "aiostreams": "default",
+    "aiometadata": "default"
+  },
+  "clients": {
+    "nuvio": {
+      "login": "don",
+      "profile": {
+        "id": "00000000-0000-4000-8000-000000000008"
+      },
+      "platforms": [
+        "tv",
+        "desktop",
+        "mobile"
+      ]
+    },
+    "stremio": {
+      "login": "don"
+    }
+  },
+  "addons": {
+    "extra": [
+      {
+        "name": "bingecat",
+        "transportUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
+        "customName": "BingeCat"
+      },
+      {
+        "name": "cinemeta",
+        "transportUrl": "https://v3-cinemeta.strem.io",
+        "customName": "Cinemeta",
+        "metadata": {
+          "cinemetaConfig": {
+            "removeSearch": true,
+            "removeStandardCatalogs": true,
+            "removeMeta": false
+          }
+        }
+      }
+    ]
+  },
+  "collections": [
+    {
+      "ref": "col-for-you-discovery"
+    },
+    {
+      "ref": "col-streaming-services"
+    },
+    {
+      "ref": "col-indian-cinema"
+    },
+    {
+      "ref": "col-anime-japanese"
+    },
+    {
+      "ref": "col-courses-docs"
+    }
+  ],
+  "badges": {
+    "ref": "default"
+  },
+  "meta": {
+    "ref": "default"
+  },
+  "settings": {
+    "ref": "default"
+  },
+  "aiometadata": {
+    "extraCatalogs": [
+      {
+        "id": "tmdb.trending",
+        "type": "movie",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "tmdb.trending",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "tmdb.language",
+        "type": "movie",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "tmdb.language",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.popular.movies",
+        "type": "movie",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.popular.shows",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.most_favorited.movies.weekly",
+        "type": "movie",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.most_favorited.shows.weekly",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.unwatched",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "trakt.calendar",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "tmdb.year",
+        "type": "movie",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "tmdb.year",
+        "type": "series",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "mal.schedule",
+        "type": "anime",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "mal.genres",
+        "type": "anime",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "mal.top_movies",
+        "type": "anime",
+        "enabled": true,
+        "showInHome": false
+      },
+      {
+        "id": "mal.top_series",
+        "type": "anime",
+        "enabled": true,
+        "showInHome": false
+      }
+    ]
+  },
+  "appearance": {
+    "emoji": "💀",
+    "accentColor": "#3b82f6"
+  }
+}

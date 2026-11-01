@@ -1,0 +1,33 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-japanese-cinema",
+  "folder": {
+    "id": "fld-japanese-cinema",
+    "title": "Japanese Cinema & Drama",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Japanese Movies",
+        "catalog": {
+          "ref": "tmdb.discover.japanese_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Japanese Series",
+        "catalog": {
+          "ref": "tmdb.discover.japanese_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/international/japanese-cinema/japanese-cinema-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/b7665988.webp",
+    "focusGifEnabled": true
+  }
+}

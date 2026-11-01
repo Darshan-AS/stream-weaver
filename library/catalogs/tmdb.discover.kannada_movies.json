@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.kannada_movies",
+  "catalog": {
+    "id": "tmdb.discover.kannada_movies",
+    "type": "movie",
+    "name": "Kannada Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "kn",
+          "sort_by": "popularity.desc"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

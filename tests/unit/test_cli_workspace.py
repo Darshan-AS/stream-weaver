@@ -155,8 +155,13 @@ def test_sw_init_from_template_copies_documents(tmp_path: Path) -> None:
     target = tmp_path / "from-template"
     res = runner.invoke(app, ["init", str(target), "--from", str(example)])
     assert res.exit_code == 0, res.output
-    for doc in ("aiostreams", "aiometadata", "aiomanager", "nuvio_collections"):
+    for doc in ("aiostreams", "aiometadata", "aiomanager"):
         assert (target / f"{doc}.json").is_file(), doc
+    assert (target / "profiles" / "don" / "profile.json").is_file()
+    assert (target / "library" / "collections").is_dir()  # tenant-local recipes travel with the template
+    libs = json.loads((target / TENANT_FILE).read_text())["libraries"]
+    assert libs[0] == "library"
+    assert (target / libs[1]).resolve() == (example.parents[1] / "library").resolve()  # shared library re-anchored
     # template documents must carry no identity
     blob = "".join(p.read_text(encoding="utf-8") for p in target.glob("*.json"))
     assert "midnightignite" not in blob

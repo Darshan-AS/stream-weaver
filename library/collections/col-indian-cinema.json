@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-indian-cinema",
+  "collection": {
+    "id": "col-indian-cinema",
+    "title": "Indian Cinema & Regional OTT",
+    "folders": [
+      {
+        "ref": "fld-kannada-cinema"
+      },
+      {
+        "ref": "fld-hindi-cinema"
+      },
+      {
+        "ref": "fld-jiohotstar"
+      },
+      {
+        "ref": "fld-sonyliv"
+      },
+      {
+        "ref": "fld-zee5"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp",
+    "focusGlowEnabled": true
+  }
+}

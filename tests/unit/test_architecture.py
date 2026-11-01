@@ -4,10 +4,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from stream_weaver.cli.app import _sync_architecture_diagrams
+from stream_weaver.cli.app import _sync_diagrams_for_ctx, _try_context
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.errors import NetworkError
 from stream_weaver.core.result import Err, Ok, Result
+from stream_weaver.core.tenant import TenantPaths
 from stream_weaver.effects.http import HttpResponse
 from stream_weaver.providers.services import AIOManagerService
 
@@ -161,7 +162,9 @@ def test_compile_architecture_bundle_reflects_dynamic_plugins_and_views() -> Non
 def test_example_tenant_architecture_files_are_in_sync() -> None:
     """The committed demo tenant (`examples/home`) is the fixture; real tenants are checked by `sw validate` in CI."""
     example_dir = Path(__file__).resolve().parents[2] / "examples" / "home"
-    res = _sync_architecture_diagrams(example_dir, example_dir, check_only=True)
+    ctx_res = _try_context(TenantPaths(example_dir))
+    assert isinstance(ctx_res, Ok), ctx_res
+    res = _sync_diagrams_for_ctx(ctx_res.value, check_only=True)
     assert isinstance(res, Ok)
     assert res.value == (), (
         f"examples/home architecture is out of sync: {res.value}. "

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-prime-video",
+  "folder": {
+    "id": "fld-prime-video",
+    "title": "Prime Video",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "streaming.amp_movie",
+        "title": "Prime Video Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "streaming.amp_series",
+        "title": "Prime Video Series"
+      }
+    ],
+    "hideTitle": true,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/prime-video/prime-video-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/5c86c888.webp",
+    "focusGifEnabled": true
+  }
+}

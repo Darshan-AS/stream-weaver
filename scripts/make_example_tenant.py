@@ -29,6 +29,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from stream_weaver.core.logins import login_env_keys  # noqa: E402
+from stream_weaver.core.secrets import append_env_placeholders  # noqa: E402
 from stream_weaver.core.tenant import default_tenant_manifest  # noqa: E402
 
 UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
@@ -165,6 +167,10 @@ def main() -> None:
     for name in DOC_NAMES:
         src_doc = src / f"{name}.json"
         if not src_doc.is_file():
+            stale = dst / f"{name}.json"
+            if stale.exists():
+                stale.unlink()
+                print(f"🗑️  {name}.json (no longer in source tenant)")
             continue
         doc = json.loads(src_doc.read_text(encoding="utf-8"))
         doc = _drop_contraband(copy.deepcopy(doc))
@@ -172,11 +178,68 @@ def main() -> None:
         (dst / f"{name}.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"✅ {name}.json")
 
+    # profiles/ and the tenant-local library/ are copied verbatim (they are already identity-free by
+    # construction: symbolic addons, placeholders) — only names/ids pass through the scrubber.
+    # Recipes that depend on the private Contraband preset are dropped entirely, and every ref to
+    # them is pruned (folders from collections, collections from the profile).
+    lib_src = src / "library"
+    recipes: dict[Path, dict[str, Any]] = {}
+    if lib_src.is_dir():
+        for f in sorted(lib_src.rglob("*.json")):
+            recipes[f.relative_to(src)] = json.loads(f.read_text(encoding="utf-8"))
+    dropped_ids: set[str] = {str(d.get("id")) for d in recipes.values() if _mentions_contraband(d)}
+    changed = True
+    while changed:  # collections whose folders all vanished are dropped too
+        changed = False
+        for d in recipes.values():
+            if str(d.get("id")) in dropped_ids or d.get("kind") != "collection":
+                continue
+            body = d.get("collection") or {}
+            kept = [x for x in body.get("folders", []) if not (isinstance(x, dict) and x.get("ref") in dropped_ids)]
+            if not kept:
+                dropped_ids.add(str(d.get("id")))
+                changed = True
+    for rel, d in recipes.items():
+        if str(d.get("id")) in dropped_ids:
+            print(f"⏭️  {rel} (depends on the private Contraband preset)")
+            continue
+        if d.get("kind") == "collection":
+            body = d["collection"]
+            body["folders"] = [x for x in body.get("folders", []) if not (isinstance(x, dict) and x.get("ref") in dropped_ids)]
+        out = dst / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(scrub.walk(d), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"✅ {rel}")
+    prof_src = src / "profiles"
+    if prof_src.is_dir():
+        for f in sorted(prof_src.rglob("profile.json")):
+            rel = f.relative_to(src)
+            doc = json.loads(f.read_text(encoding="utf-8"))
+            doc.pop("accountId", None)
+            doc["collections"] = [
+                c for c in doc.get("collections", []) if not (isinstance(c, dict) and c.get("ref") in dropped_ids)
+            ]
+            out = dst / rel
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(scrub.walk(doc), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"✅ {rel}")
+
+    src_manifest = json.loads((src / "tenant.json").read_text(encoding="utf-8")) if (src / "tenant.json").is_file() else {}
     manifest = default_tenant_manifest("home")
+    manifest["logins"] = src_manifest.get("logins", {})
+    manifest["profiles"] = src_manifest.get("profiles", [])
     (dst / "tenant.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     env_example = src / ".env.example"
     if env_example.is_file():
-        (dst / ".env.example").write_text(scrub.text(env_example.read_text(encoding="utf-8")), encoding="utf-8")
+        text = scrub.text(env_example.read_text(encoding="utf-8"))
+        login_keys = [
+            k
+            for platform, logins in manifest["logins"].items()
+            for prefix in logins.values()
+            for k in login_env_keys(platform, prefix)
+        ]
+        text = append_env_placeholders(text, login_keys, header="Client logins (sw login nuvio|stremio --login <name>)")
+        (dst / ".env.example").write_text(text, encoding="utf-8")
     print(f"✅ tenant.json, .env.example  →  {dst.relative_to(ROOT)}  (now run: uv run sw diagram --dir {args.target})")
 
 

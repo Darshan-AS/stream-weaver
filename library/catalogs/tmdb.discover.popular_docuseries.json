@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.popular_docuseries",
+  "catalog": {
+    "id": "tmdb.discover.popular_docuseries",
+    "type": "series",
+    "name": "Popular Docuseries & Education",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "99",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 10
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

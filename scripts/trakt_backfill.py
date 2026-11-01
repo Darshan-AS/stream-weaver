@@ -39,7 +39,7 @@ TENANT_DIR = Path(
     or ROOT / "tenants" / os.environ.get("STREAM_WEAVER_TENANT", "don")
 ).resolve()
 
-from stream_weaver.cli.app import _resolve_nuvio_connection  # noqa: E402
+from stream_weaver.cli.nuvio import profile_nuvio_connection  # noqa: E402
 from stream_weaver.core.result import Ok  # noqa: E402
 from stream_weaver.effects.http import HttpxClient  # noqa: E402
 from stream_weaver.effects.storage import load_env_file  # noqa: E402
@@ -177,13 +177,13 @@ def build_history_payload(
 
 
 def pull_nuvio_watched(env: Mapping[str, str]) -> list[dict[str, Any]]:
-    res = _resolve_nuvio_connection(TENANT_DIR, env)
-    if not isinstance(res, Ok) or res.value is None:
-        sys.exit("❌ No Nuvio connection resolvable from <tenant>/aiomanager.json + .env")
-    conn, password, salt_b64, _ = res.value
+    res = profile_nuvio_connection(TENANT_DIR, env, profile_name=os.environ.get("STREAM_WEAVER_PROFILE"))
+    if not isinstance(res, Ok):
+        sys.exit(f"❌ No Nuvio connection resolvable for the tenant: {getattr(res, 'error', res)}")
+    conn, password, salt_b64, hint = res.value
     with HttpxClient() as http:
         syncer = NuvioClientSync(http)
-        auth = syncer._authenticate_and_resolve_profile(conn, password, salt_b64, env)  # noqa: SLF001
+        auth = syncer._authenticate_and_resolve_profile(conn, password, salt_b64, env, profile_name=hint)  # noqa: SLF001
         if not isinstance(auth, Ok):
             sys.exit(f"❌ Nuvio auth failed: {auth.error}")
         headers, profile_idx, _ = auth.value

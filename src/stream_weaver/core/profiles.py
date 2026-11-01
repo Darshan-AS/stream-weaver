@@ -1,16 +1,20 @@
 """
 Profiles — one person's identity binding inside a tenant (`profiles/<name>/profile.json`).
 
-Schema v1 covers the *identity* half of a profile: which named instances it uses, which client
-logins it signs in with (and which Nuvio profile), and any extra addons beyond the instances.
-The *taste* half (collections, badges, meta recipes) is added by the composition layer in a later
-schema version; the two halves are kept in the same document on purpose.
+Schema v1 has two halves in one document, on purpose:
+
+* **identity** — which named instances it uses, which client logins it signs in with (and which
+  Nuvio profile), extra addons beyond the instances, appearance;
+* **taste** — `collections` (ref-or-inline, see `core.composition`), whole-document refs for
+  `badges` / `meta` / `settings`, and `aiometadata.extraCatalogs` for catalogs that should stay
+  enabled on the instance although no collection references them (e.g. a Stremio board).
 
 Everything here is pure.
 """
 
 from __future__ import annotations
 
+import copy
 import re
 import uuid
 from collections.abc import Mapping
@@ -66,6 +70,16 @@ class Appearance:
 
 
 @dataclass(frozen=True, slots=True)
+class ExtraCatalogSpec:
+    """A catalog kept enabled on the profile's AIOMetadata instance without any collection using it."""
+
+    catalog_id: str
+    type: str
+    enabled: bool = True
+    show_in_home: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class Profile:
     name: str
     display_name: str
@@ -75,7 +89,17 @@ class Profile:
     extra_addons: tuple[ExtraAddon, ...] = ()
     account_id: str | None = None
     appearance: Appearance = field(default_factory=Appearance)
+    # taste
+    collections: tuple[Any, ...] = ()  # ref-or-inline items (validated structurally by the compiler)
+    badges: Any = None  # {"ref": id} | inline document | None
+    meta: Any = None
+    settings: Any = None
+    extra_catalogs: tuple[ExtraCatalogSpec, ...] = ()
     version: int = PROFILE_SCHEMA_VERSION
+
+    @property
+    def has_taste(self) -> bool:
+        return bool(self.collections or self.badges or self.meta or self.settings or self.extra_catalogs)
 
     @property
     def platforms(self) -> tuple[str, ...]:
@@ -201,6 +225,49 @@ def parse_profile(doc: Mapping[str, Any]) -> Result[Profile, ConfigValidationErr
     if account_id is not None and (not isinstance(account_id, str) or not account_id.strip()):
         return _err("`accountId` must be a non-empty string when present")
 
+    raw_cols = doc.get("collections", [])
+    if not is_json_list(raw_cols):
+        return _err("`collections` must be a list of `{ref}` items or inline collections")
+    for i, item in enumerate(raw_cols):
+        if not is_json_mapping(item):
+            return _err(f"`collections[{i}]` must be an object")
+        if "ref" in item and not isinstance(item["ref"], str):
+            return _err(f"`collections[{i}].ref` must be a string")
+
+    def _doc_ref(key: str) -> Result[Any, ConfigValidationError]:
+        val = doc.get(key)
+        if val is None:
+            return Ok(None)
+        if not is_json_mapping(val):
+            return _err(f"`{key}` must be a `{{ref}}` or an inline document")
+        if "ref" in val and (not isinstance(val["ref"], str) or set(val) - {"ref", "with"}):
+            return _err(f"`{key}` ref must be `{{\"ref\": id}}` (optionally with `with`)")
+        return Ok(dict(val))
+
+    taste_docs: dict[str, Any] = {}
+    for key in ("badges", "meta", "settings"):
+        match _doc_ref(key):
+            case Err() as err:
+                return err
+            case Ok(val):
+                taste_docs[key] = val
+
+    raw_meta_cfg = doc.get("aiometadata", {})
+    if not is_json_mapping(raw_meta_cfg):
+        return _err("`aiometadata` must be an object")
+    extra_catalogs: list[ExtraCatalogSpec] = []
+    for i, item in enumerate(raw_meta_cfg.get("extraCatalogs", []) or []):
+        if not is_json_mapping(item) or not isinstance(item.get("id"), str) or not isinstance(item.get("type"), str):
+            return _err(f"`aiometadata.extraCatalogs[{i}]` needs string `id` and `type`")
+        extra_catalogs.append(
+            ExtraCatalogSpec(
+                catalog_id=item["id"],
+                type=item["type"],
+                enabled=bool(item.get("enabled", True)),
+                show_in_home=bool(item.get("showInHome", False)),
+            )
+        )
+
     raw_app = doc.get("appearance", {})
     if not is_json_mapping(raw_app):
         return _err("`appearance` must be an object")
@@ -221,6 +288,11 @@ def parse_profile(doc: Mapping[str, Any]) -> Result[Profile, ConfigValidationErr
             extra_addons=tuple(extras),
             account_id=account_id,
             appearance=appearance,
+            collections=tuple(copy.deepcopy(list(raw_cols))),
+            badges=taste_docs["badges"],
+            meta=taste_docs["meta"],
+            settings=taste_docs["settings"],
+            extra_catalogs=tuple(extra_catalogs),
         )
     )
 
@@ -262,6 +334,18 @@ def profile_to_doc(profile: Profile) -> JsonDict:
     }
     if profile.account_id:
         doc["accountId"] = profile.account_id
+    if profile.collections:
+        doc["collections"] = copy.deepcopy(list(profile.collections))
+    for key, val in (("badges", profile.badges), ("meta", profile.meta), ("settings", profile.settings)):
+        if val is not None:
+            doc[key] = copy.deepcopy(val)
+    if profile.extra_catalogs:
+        doc["aiometadata"] = {
+            "extraCatalogs": [
+                {"id": e.catalog_id, "type": e.type, "enabled": e.enabled, "showInHome": e.show_in_home}
+                for e in profile.extra_catalogs
+            ]
+        }
     appearance: JsonDict = {}
     if profile.appearance.emoji:
         appearance["emoji"] = profile.appearance.emoji

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-peacock",
+  "folder": {
+    "id": "fld-peacock",
+    "title": "Peacock",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "streaming.pcp_movie",
+        "title": "Peacock Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "streaming.pcp_series",
+        "title": "Peacock Series"
+      }
+    ],
+    "hideTitle": true,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/peacock/peacock-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/970b675f.webp",
+    "focusGifEnabled": true
+  }
+}

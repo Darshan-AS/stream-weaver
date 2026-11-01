@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-courses-docs",
+  "collection": {
+    "id": "col-courses-docs",
+    "title": "Courses & Documentaries",
+    "folders": [
+      {
+        "ref": "fld-peterson-academy"
+      },
+      {
+        "ref": "fld-curiosity-stream"
+      },
+      {
+        "ref": "fld-docuseries-education"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/2653fb30.webp",
+    "focusGlowEnabled": true
+  }
+}

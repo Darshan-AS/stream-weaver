@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-apple-tv",
+  "folder": {
+    "id": "fld-apple-tv",
+    "title": "Apple TV+",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "streaming.atp_movie",
+        "title": "Apple TV+ Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "streaming.atp_series",
+        "title": "Apple TV+ Series"
+      }
+    ],
+    "hideTitle": true,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/apple-tv/apple-tv-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/4d8f0a8f.webp",
+    "focusGifEnabled": true
+  }
+}

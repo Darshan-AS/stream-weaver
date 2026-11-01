@@ -1,0 +1,41 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-docuseries-education",
+  "folder": {
+    "id": "fld-docuseries-education",
+    "title": "Top Documentaries & Docuseries",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Popular Docuseries & Education",
+        "catalog": {
+          "ref": "tmdb.discover.popular_docuseries"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Top Rated Docuseries",
+        "catalog": {
+          "ref": "tmdb.discover.top_docuseries"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Top Rated Documentaries",
+        "catalog": {
+          "ref": "tmdb.discover.top_documentaries"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/documentaries/science-tech-and-cosmos/science-tech-and-cosmos-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/dce3256c.webp",
+    "focusGifEnabled": true
+  }
+}

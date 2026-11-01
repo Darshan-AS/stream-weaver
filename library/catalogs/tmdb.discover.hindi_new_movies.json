@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.hindi_new_movies",
+  "catalog": {
+    "id": "tmdb.discover.hindi_new_movies",
+    "type": "movie",
+    "name": "New Hindi Releases",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "hi",
+          "sort_by": "primary_release_date.desc",
+          "vote_count.gte": 5
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

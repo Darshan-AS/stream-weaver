@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.japanese_series",
+  "catalog": {
+    "id": "tmdb.discover.japanese_series",
+    "type": "series",
+    "name": "Japanese Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_original_language": "ja",
+          "sort_by": "popularity.desc"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

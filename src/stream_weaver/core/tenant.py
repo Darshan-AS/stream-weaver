@@ -46,6 +46,10 @@ type LoginRegistry = Mapping[str, Mapping[str, str]]
 """platform → login name → env key prefix (e.g. {"nuvio": {"don": "NUVIO_DON"}})."""
 
 
+DEFAULT_LIBRARY_ROOTS: tuple[str, ...] = ("library", "../../library")
+"""Recipe roots relative to the tenant dir, highest precedence first: tenant-local, then shared."""
+
+
 @dataclass(frozen=True, slots=True)
 class TenantManifest:
     """Parsed, validated `tenant.json`."""
@@ -55,6 +59,16 @@ class TenantManifest:
     instances: InstanceRegistry = field(default_factory=dict)
     logins: LoginRegistry = field(default_factory=dict)
     profiles: tuple[str, ...] = ()
+    libraries: tuple[str, ...] = DEFAULT_LIBRARY_ROOTS
+
+    def library_roots(self, tenant_root: Path) -> tuple[Path, ...]:
+        """Absolute, existing recipe roots in precedence order (missing roots are skipped)."""
+        roots: list[Path] = []
+        for rel in self.libraries:
+            candidate = (tenant_root / rel).resolve()
+            if candidate.is_dir() and candidate not in roots:
+                roots.append(candidate)
+        return tuple(roots)
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +130,7 @@ def default_tenant_manifest(name: str) -> JsonDict:
         },
         "logins": {},
         "profiles": [],
+        "libraries": list(DEFAULT_LIBRARY_ROOTS),
     }
 
 
@@ -186,6 +201,10 @@ def parse_tenant_manifest(doc: Mapping[str, Any]) -> Result[TenantManifest, Conf
     if len(set(raw_profiles)) != len(raw_profiles):
         return Err(ConfigValidationError("tenant.json: `profiles` contains duplicates"))
 
+    raw_libs = doc.get("libraries", list(DEFAULT_LIBRARY_ROOTS))
+    if not is_json_list(raw_libs) or not all(isinstance(x, str) and x.strip() for x in raw_libs):
+        return Err(ConfigValidationError("tenant.json: `libraries` must be a list of relative paths"))
+
     return Ok(
         TenantManifest(
             name=name,
@@ -193,6 +212,7 @@ def parse_tenant_manifest(doc: Mapping[str, Any]) -> Result[TenantManifest, Conf
             instances=instances,
             logins=logins,
             profiles=tuple(raw_profiles),
+            libraries=tuple(raw_libs),
         )
     )
 

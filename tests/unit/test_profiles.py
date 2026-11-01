@@ -293,25 +293,26 @@ def test_sw_profile_import_and_new_on_example_tenant(tmp_path: Path) -> None:
         "SECRET_STREMIO_AUTH_KEY=k\n",
         encoding="utf-8",
     )
-    for plat, prefix in (("nuvio", "NUVIO"), ("stremio", "STREMIO")):
-        assert (
-            runner.invoke(
-                app,
-                ["login", "adopt", plat, "--login", "demo", "--prefix", prefix, "--dir", str(t)],
-            ).exit_code
-            == 0
-        )
-
+    # The template registers logins nuvio/don=NUVIO and stremio/don=STREMIO already.
+    # The template ships profile `don` (refs only). Importing the same account under a new name must
+    # reproduce the identity half exactly.
     res = runner.invoke(app, ["profile", "import", "Demo", "--name", "demo", "--dir", str(t)])
     assert res.exit_code == 0, res.output
     doc = json.loads((t / "profiles" / "demo" / "profile.json").read_text())
-    assert doc["clients"]["nuvio"]["login"] == "demo"
-    assert doc["clients"]["stremio"]["login"] == "demo"
+    assert doc["clients"]["nuvio"]["login"] == "don"
+    assert doc["clients"]["stremio"]["login"] == "don"
     assert doc["instances"] == {"aiostreams": "default", "aiometadata": "default"}
     assert [a["name"] for a in doc["addons"]["extra"]] == ["bingecat", "cinemeta"]
-    assert json.loads((t / "tenant.json").read_text())["profiles"] == ["demo"]
+    assert json.loads((t / "tenant.json").read_text())["profiles"] == ["don", "demo"]
+    shipped = json.loads((t / "profiles" / "don" / "profile.json").read_text())
+    assert shipped["collections"]
+    assert all("ref" in c for c in shipped["collections"])
 
-    # Regeneration from the imported profile is a no-op → validate passes the managed-accounts check
+    # Two profiles now claim the same display name → drop the duplicate again for the rest of the test
+    (t / "profiles" / "demo" / "profile.json").unlink()
+    manifest = json.loads((t / "tenant.json").read_text())
+    manifest["profiles"] = ["don"]
+    (t / "tenant.json").write_text(json.dumps(manifest))
     val = runner.invoke(app, ["validate", "--dir", str(t)])
     assert val.exit_code == 0, val.output
 
@@ -329,9 +330,9 @@ def test_sw_profile_import_and_new_on_example_tenant(tmp_path: Path) -> None:
             "--aiometadata",
             "dad",
             "--nuvio-login",
-            "demo",
+            "don",
             "--extras-from",
-            "demo",
+            "don",
             "--dir",
             str(t),
         ],

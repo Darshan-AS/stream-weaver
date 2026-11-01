@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-for-you-discovery",
+  "collection": {
+    "id": "col-for-you-discovery",
+    "title": "For You & Discovery",
+    "folders": [
+      {
+        "ref": "fld-ai-picks"
+      },
+      {
+        "ref": "fld-because-you-watched"
+      },
+      {
+        "ref": "fld-trending-popular"
+      },
+      {
+        "ref": "fld-top-rated"
+      },
+      {
+        "ref": "fld-watchlist-library"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
+    "focusGlowEnabled": true
+  }
+}

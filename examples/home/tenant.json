@@ -13,6 +13,19 @@
       "default": "AIOMANAGER"
     }
   },
-  "logins": {},
-  "profiles": []
+  "logins": {
+    "nuvio": {
+      "don": "NUVIO"
+    },
+    "stremio": {
+      "don": "STREMIO"
+    }
+  },
+  "profiles": [
+    "don"
+  ],
+  "libraries": [
+    "library",
+    "../../library"
+  ]
 }

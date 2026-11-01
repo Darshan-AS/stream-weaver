@@ -1,0 +1,40 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-hindi-cinema",
+  "folder": {
+    "id": "fld-hindi-cinema",
+    "title": "Hindi Cinema & Series",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "New Hindi Releases",
+        "catalog": {
+          "ref": "tmdb.discover.hindi_new_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Popular Hindi Movies",
+        "catalog": {
+          "ref": "tmdb.discover.hindi_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Hindi Series",
+        "catalog": {
+          "ref": "tmdb.discover.hindi_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/hindi_cinema.webp",
+    "focusGifEnabled": false
+  }
+}

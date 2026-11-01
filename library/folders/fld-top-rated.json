@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-top-rated",
+  "folder": {
+    "id": "fld-top-rated",
+    "title": "Top Rated All-Time",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "tmdb.top_rated",
+        "title": "Top Rated Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "tmdb.top_rated",
+        "title": "Top Rated Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-series/v2/top-streaming-series-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1d5e1036.webp",
+    "focusGifEnabled": true
+  }
+}

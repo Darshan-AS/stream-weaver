@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-airing-popular-anime",
+  "folder": {
+    "id": "fld-airing-popular-anime",
+    "title": "Airing & Popular Anime",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.airing_anime",
+        "title": "Anime Airing Now"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.most_popular_anime",
+        "title": "Most Popular Anime"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/discover-anime/discover-anime-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/692aa010.webp",
+    "focusGifEnabled": true
+  }
+}

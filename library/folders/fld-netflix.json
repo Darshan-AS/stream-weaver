@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-netflix",
+  "folder": {
+    "id": "fld-netflix",
+    "title": "Netflix",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "streaming.nfx_movie",
+        "title": "Netflix Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "streaming.nfx_series",
+        "title": "Netflix Series"
+      }
+    ],
+    "hideTitle": true,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/streaming-services/netflix/netflix-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/49571953.webp",
+    "focusGifEnabled": true
+  }
+}
