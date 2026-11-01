@@ -299,6 +299,8 @@ class NuvioClientSync:
         master_password: str,
         salt_b64: str,
         env: EnvMap,
+        *,
+        profile_name: str | None = None,
     ) -> Result[tuple[dict[str, str], int, dict[str, str]]]:
         """
         Acquires the login's shared `NuvioSession` (one auth per login per command, refresh-safe)
@@ -323,6 +325,16 @@ class NuvioClientSync:
 
         target_pid = str(creds.get("profileId") or "") or None
         profile_idx = session.profile_index(profile_id=target_pid) if target_pid else None
+        if profile_idx is None and profile_name:
+            profile_idx = session.profile_index(name=profile_name)
+            if profile_idx is None:
+                known = ", ".join(str(p.get("name") or p.get("profile_name") or "?") for p in session.profiles)
+                return Err(
+                    StreamWeaverError(
+                        f"Nuvio login has no profile named {profile_name!r} (known: {known or 'none'}); "
+                        "create it in the Nuvio app first."
+                    )
+                )
         if profile_idx is None:
             raw_idx = str(creds.get("profileIndex") or "").strip()
             profile_idx = int(raw_idx) if raw_idx.isdigit() else 1
@@ -958,7 +970,14 @@ class NuvioClientSync:
         salt_b64: str,
         env: EnvMap,
     ) -> Result[tuple[str, dict[str, str]]]:
-        match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
+        hint = account.get("nuvioProfileName")
+        match self._authenticate_and_resolve_profile(
+            connection,
+            master_password,
+            salt_b64,
+            env,
+            profile_name=str(hint) if isinstance(hint, str) and hint else None,
+        ):
             case Err() as err:
                 return err
             case Ok((headers, profile_idx, updated_secrets)):

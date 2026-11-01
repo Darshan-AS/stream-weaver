@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "accounts": [
     {
-      "id": "00000000-0000-4000-8000-000000000003",
+      "id": "00000000-0000-4000-8000-000000000006",
       "name": "Demo",
       "authKey": "{{SECRET_ACCOUNT_AUTH_KEY}}",
       "accentColor": "#3b82f6",
@@ -13,7 +13,7 @@
       },
       "addons": [
         {
-          "transportUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
+          "transportUrl": "{{AIOMETADATA_URL}}/stremio/{{AIOMETADATA_UUID}}",
           "transportName": "",
           "manifestId": "aio-metadata:3.8.3",
           "manifest": {
@@ -32,7 +32,7 @@
           }
         },
         {
-          "transportUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "transportUrl": "{{AIOSTREAMS_URL}}/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
           "transportName": "",
           "manifestId": "aiostreams.example.com.00000000-000:2.37.0",
           "manifest": {
@@ -168,7 +168,7 @@
       ],
       "connections": [
         {
-          "id": "00000000-0000-4000-8000-000000000005",
+          "id": "00000000-0000-4000-8000-000000000007",
           "platform": "nuvio",
           "connectionType": "native",
           "enabled": true,
@@ -176,7 +176,7 @@
             "accessToken": "{{SECRET_NUVIO_ACCESS_TOKEN}}",
             "refreshToken": "{{SECRET_NUVIO_REFRESH_TOKEN}}",
             "expiresAt": "1792693268000",
-            "profileId": "00000000-0000-4000-8000-000000000006",
+            "profileId": "00000000-0000-4000-8000-000000000008",
             "profileIndex": "",
             "email": "{{SECRET_NUVIO_EMAIL}}"
           },
@@ -187,7 +187,7 @@
           ]
         },
         {
-          "id": "00000000-0000-4000-8000-000000000007",
+          "id": "00000000-0000-4000-8000-000000000009",
           "platform": "stremio",
           "connectionType": "native",
           "enabled": true,
@@ -200,44 +200,44 @@
           ]
         }
       ],
-      "primaryConnectionId": "00000000-0000-4000-8000-000000000005",
+      "primaryConnectionId": "00000000-0000-4000-8000-000000000007",
       "apiKey": "{{SECRET_AIOMANAGER_APIKEY_7D210008}}",
       "createdAt": 1792088497304
     }
   ],
   "apiKeys": {
-    "00000000-0000-4000-8000-000000000003": "{{SECRET_AIOMANAGER_APIKEY_7D210008}}"
+    "00000000-0000-4000-8000-000000000006": "{{SECRET_AIOMANAGER_APIKEY_7D210008}}"
   },
   "accountStates": {
-    "00000000-0000-4000-8000-000000000003": {
-      "accountId": "00000000-0000-4000-8000-000000000003",
+    "00000000-0000-4000-8000-000000000006": {
+      "accountId": "00000000-0000-4000-8000-000000000006",
       "installedAddons": [
         {
-          "savedAddonId": "00000000-0000-4000-8000-000000000008",
-          "addonId": "aio-metadata",
-          "installUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
-          "installedAt": "2026-10-15T18:21:40.385Z",
-          "installedVia": "manual",
-          "flags": {
-            "official": false,
-            "enabled": true
-          },
-          "syncToLibrary": true
-        },
-        {
-          "savedAddonId": "00000000-0000-4000-8000-000000000009",
-          "addonId": "aiostreams.example.com.00000000-000",
-          "installUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
-          "installedAt": "2026-10-15T18:21:40.385Z",
-          "installedVia": "manual",
-          "flags": {
-            "official": false,
-            "enabled": true
-          },
-          "syncToLibrary": true
-        },
-        {
           "savedAddonId": "00000000-0000-4000-8000-000000000010",
+          "addonId": "aio-metadata",
+          "installUrl": "{{AIOMETADATA_URL}}/stremio/{{AIOMETADATA_UUID}}",
+          "installedAt": "2026-10-15T18:21:40.385Z",
+          "installedVia": "manual",
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "syncToLibrary": true
+        },
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000011",
+          "addonId": "aiostreams.example.com.00000000-000",
+          "installUrl": "{{AIOSTREAMS_URL}}/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "installedAt": "2026-10-15T18:21:40.385Z",
+          "installedVia": "manual",
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "syncToLibrary": true
+        },
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000012",
           "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio",
           "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
           "installedAt": "2026-10-15T19:39:38.710Z",
@@ -636,7 +636,7 @@
           }
         },
         {
-          "savedAddonId": "00000000-0000-4000-8000-000000000011",
+          "savedAddonId": "00000000-0000-4000-8000-000000000013",
           "addonId": "com.linvo.cinemeta",
           "installUrl": "https://v3-cinemeta.strem.io",
           "installedAt": "2026-10-15T18:21:40.385Z",
@@ -655,14 +655,14 @@
     "version": "1.0",
     "savedAddons": [
       {
-        "id": "00000000-0000-4000-8000-000000000008",
+        "id": "00000000-0000-4000-8000-000000000010",
         "name": "AIOMetadata",
-        "installUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
+        "installUrl": "{{AIOMETADATA_URL}}/stremio/{{AIOMETADATA_UUID}}",
         "manifest": {
           "id": "aio-metadata",
           "version": "3.8.3",
-          "logo": "https://aiometadata.example.com/logo.png",
-          "background": "https://aiometadata.example.com/background.png",
+          "logo": "{{AIOMETADATA_URL}}/logo.png",
+          "background": "{{AIOMETADATA_URL}}/background.png",
           "name": "AIOMetadata",
           "description": "A metadata addon for power users. AIOMetadata uses TMDB, TVDB, TVMaze, MyAnimeList, IMDB and Fanart.tv to provide accurate data for movies, series, and anime. You choose the source.",
           "resources": [
@@ -3676,7 +3676,7 @@
           "_timestamp": 1793346047798
         },
         "tags": [],
-        "profileId": "00000000-0000-4000-8000-000000000012",
+        "profileId": "00000000-0000-4000-8000-000000000014",
         "metadata": {
           "lastUpdated": 1792088499841
         },
@@ -3691,9 +3691,9 @@
         }
       },
       {
-        "id": "00000000-0000-4000-8000-000000000009",
+        "id": "00000000-0000-4000-8000-000000000011",
         "name": "AIOStreams",
-        "installUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+        "installUrl": "{{AIOSTREAMS_URL}}/stremio/{{AIOSTREAMS_UUID}}/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
         "manifest": {
           "name": "AIOStreams",
           "id": "aiostreams.example.com.00000000-000",
@@ -3824,7 +3824,7 @@
           "addonCatalogs": []
         },
         "tags": [],
-        "profileId": "00000000-0000-4000-8000-000000000012",
+        "profileId": "00000000-0000-4000-8000-000000000014",
         "metadata": {
           "lastUpdated": 1792088499841
         },
@@ -3839,7 +3839,7 @@
         }
       },
       {
-        "id": "00000000-0000-4000-8000-000000000010",
+        "id": "00000000-0000-4000-8000-000000000012",
         "name": "Bingecat AI Assistant - demo",
         "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
         "manifest": {
@@ -4223,7 +4223,7 @@
           "version": "1.29.0"
         },
         "tags": [],
-        "profileId": "00000000-0000-4000-8000-000000000012",
+        "profileId": "00000000-0000-4000-8000-000000000014",
         "autoRestore": true,
         "syncWithInstalled": true,
         "createdAt": "2026-10-15T19:36:07.328Z",
@@ -4235,7 +4235,7 @@
         }
       },
       {
-        "id": "00000000-0000-4000-8000-000000000011",
+        "id": "00000000-0000-4000-8000-000000000013",
         "name": "Cinemeta",
         "installUrl": "https://v3-cinemeta.strem.io",
         "manifest": {
@@ -5010,7 +5010,7 @@
           "logo": "https://v3-cinemeta.strem.io/logo.png"
         },
         "tags": [],
-        "profileId": "00000000-0000-4000-8000-000000000012",
+        "profileId": "00000000-0000-4000-8000-000000000014",
         "metadata": {
           "lastUpdated": 1792088499841
         },
@@ -5039,9 +5039,9 @@
       "name": "AIOStreams · aiostreams.example.com · 00000000",
       "provider": "aiostreams",
       "value": "{{SECRET_VAULT_AIOSTREAMS_35C658}}",
-      "serverUrl": "https://aiostreams.example.com",
-      "addonUuid": "00000000-0000-4000-8000-000000000004",
-      "id": "00000000-0000-4000-8000-000000000013",
+      "serverUrl": "{{AIOSTREAMS_URL}}",
+      "addonUuid": "{{AIOSTREAMS_UUID}}",
+      "id": "00000000-0000-4000-8000-000000000015",
       "updatedAt": 1792149872886
     },
     {
@@ -5052,7 +5052,7 @@
       "customProviderName": "TVDB",
       "group": "Metadata & Trackers",
       "catalogId": "tvdb",
-      "id": "00000000-0000-4000-8000-000000000014",
+      "id": "00000000-0000-4000-8000-000000000016",
       "updatedAt": 1792089794907
     },
     {
@@ -5063,7 +5063,7 @@
       "customProviderName": "TMDB",
       "group": "Metadata & Trackers",
       "catalogId": "tmdb",
-      "id": "00000000-0000-4000-8000-000000000015",
+      "id": "00000000-0000-4000-8000-000000000017",
       "updatedAt": 1792089907386
     },
     {
@@ -5074,7 +5074,7 @@
       "customProviderName": "RPDB",
       "group": "Metadata & Trackers",
       "catalogId": "rpdb",
-      "id": "00000000-0000-4000-8000-000000000016",
+      "id": "00000000-0000-4000-8000-000000000018",
       "updatedAt": 1792089943940
     },
     {
@@ -5086,7 +5086,7 @@
       "customProviderName": "Gemini AI",
       "group": "AI Services",
       "catalogId": "gemini",
-      "id": "00000000-0000-4000-8000-000000000017",
+      "id": "00000000-0000-4000-8000-000000000019",
       "updatedAt": 1792090078328
     }
   ],
@@ -5106,7 +5106,7 @@
   },
   "profiles": [
     {
-      "id": "00000000-0000-4000-8000-000000000012",
+      "id": "00000000-0000-4000-8000-000000000014",
       "name": "Demo",
       "createdAt": "2026-10-15T18:50:54.973Z",
       "updatedAt": "2026-10-15T18:50:54.973Z"

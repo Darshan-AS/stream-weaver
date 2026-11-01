@@ -111,6 +111,7 @@ class AIOStreamsService:
                     new_uuid = str(data.get("uuid", ""))
                     enc_pass = str(data.get("encryptedPassword", ""))
                     manifest_url = f"{base_url}/stremio/{new_uuid}/{enc_pass}/manifest.json"
+                    discovered = {f"SECRET_{binding.prefix}_ENCRYPTED_PASSWORD": enc_pass} if enc_pass else {}
                     return Ok(
                         (
                             ServicePushOutcome(
@@ -120,7 +121,7 @@ class AIOStreamsService:
                                 install_url=manifest_url,
                             ),
                             clean_cfg,
-                            {},
+                            discovered,
                         )
                     )
 

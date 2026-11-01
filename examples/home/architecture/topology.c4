@@ -297,8 +297,7 @@ model {
   aggregator aiostreams 'AIOStreams' {
     #enabled
     description 'Aggregates scrapers in sequential groups, checks Torbox cache, filters via SEL/Regex & formats streams'
-    technology 'AIOStreams (aiostreams.example.com)'
-    link https://aiostreams.example.com 'Live AIOStreams Instance'
+    technology 'AIOStreams (Configured Instance)'
     metadata {
       preferred_resolutions '2160p, 1440p, 1080p, 720p, 576p'
       required_languages 'Original, English, Kannada, Hindi, Japanese, Dual Audio, Multi, Dubbed, Unknown'
@@ -624,8 +623,7 @@ model {
   aggregator aiometadata 'AIOMetadata' {
     #enabled #metadata
     description 'Serves 61 active catalogs (45 on Home), canonical metadata, search & rating posters'
-    technology 'AIOMetadata (aiometadata.example.com)'
-    link https://aiometadata.example.com 'Live AIOMetadata Instance'
+    technology 'AIOMetadata (Configured Instance)'
     metadata {
       active_catalogs '61'
       home_catalogs '45'
@@ -711,7 +709,27 @@ model {
   // ==========================================================================
   // 7. Declarative Secrets & API Keys (.env Placeholders)
   // ==========================================================================
+  secretKey sec_aiomanager_url 'AIOMANAGER_URL' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_aiometadata_url 'AIOMETADATA_URL' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_aiometadata_uuid 'AIOMETADATA_UUID' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_aiostreams_url 'AIOSTREAMS_URL' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
+  secretKey sec_aiostreams_uuid 'AIOSTREAMS_UUID' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'

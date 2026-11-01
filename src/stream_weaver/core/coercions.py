@@ -34,6 +34,7 @@ AIOMANAGER_VOLATILE_KEYS: tuple[str, ...] = (
     "nuvioBadges",
     "nuvioMeta",
     "nuvioSettings",
+    "nuvioProfileName",
 )
 
 
@@ -154,6 +155,7 @@ def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
             acc.pop("nuvioBadges", None)
             acc.pop("nuvioMeta", None)
             acc.pop("nuvioSettings", None)
+            acc.pop("nuvioProfileName", None)
             acc_addons = acc.get("addons")
             if not isinstance(acc_addons, list):
                 continue
