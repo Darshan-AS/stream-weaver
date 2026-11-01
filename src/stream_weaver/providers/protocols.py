@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from typing import Any, Protocol
 
+from stream_weaver.core.instances import InstanceBinding
 from stream_weaver.core.result import Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId, ServicePushOutcome
 
@@ -29,26 +30,29 @@ class ClientSyncProtocol(Protocol):
 
 
 class ConfigServiceProtocol(Protocol):
-    """Protocol for GitOps-managed AIO services (AIOStreams, AIOMetadata, AIOManager)."""
+    """
+    Protocol for GitOps-managed AIO services (AIOStreams, AIOMetadata, AIOManager).
+
+    Adapters are addressed by an `InstanceBinding` (one named instance of the service); they
+    never read instance credentials from the environment themselves. `env` is passed only for
+    secondary needs such as secret injection into downstream client syncs.
+    """
 
     @property
     def service_id(self) -> ServiceId: ...
 
-    def is_configured_for_pull(self, env: EnvMap) -> bool: ...
-
-    def is_configured_for_push(self, env: EnvMap, *, create: bool = False) -> bool: ...
-
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict]: ...
+    def pull_remote(self, binding: InstanceBinding) -> Result[JsonDict]: ...
 
     def push_remote(
         self,
         config: JsonDict,
+        binding: InstanceBinding,
         env: EnvMap,
         *,
         create: bool = False,
     ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         """
-        Pushes `config` to the remote server.
+        Pushes `config` to the remote instance.
         Returns `Ok((outcome, updated_config_to_persist, newly_discovered_secrets))`.
         """
         ...

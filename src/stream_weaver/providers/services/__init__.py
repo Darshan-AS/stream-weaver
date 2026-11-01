@@ -22,6 +22,7 @@ from stream_weaver.core.crypto import (
     encrypt_envelope,
 )
 from stream_weaver.core.errors import NetworkError
+from stream_weaver.core.instances import InstanceBinding
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId, ServicePushOutcome
 from stream_weaver.effects.http import HttpClientProtocol
@@ -57,25 +58,9 @@ class AIOStreamsService:
     def service_id(self) -> ServiceId:
         return "aiostreams"
 
-    def is_configured_for_pull(self, env: EnvMap) -> bool:
-        return bool(
-            env.get("AIOSTREAMS_URL")
-            and env.get("AIOSTREAMS_UUID")
-            and env.get("AIOSTREAMS_PASSWORD")
-        )
-
-    def is_configured_for_push(self, env: EnvMap, *, create: bool = False) -> bool:
-        return bool(
-            env.get("AIOSTREAMS_URL")
-            and env.get("AIOSTREAMS_PASSWORD")
-            and (create or env.get("AIOSTREAMS_UUID"))
-        )
-
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
-        base_url = env.get("AIOSTREAMS_URL", "").rstrip("/")
-        token = base64.b64encode(
-            f"{env.get('AIOSTREAMS_UUID', '')}:{env.get('AIOSTREAMS_PASSWORD', '')}".encode()
-        ).decode("ascii")
+    def pull_remote(self, binding: InstanceBinding) -> Result[JsonDict]:
+        base_url = binding.base_url
+        token = base64.b64encode(f"{binding.uuid}:{binding.password}".encode()).decode("ascii")
         url = f"{base_url}/api/v1/user?raw=true"
 
         match self._http.request_json("GET", url, headers={"Authorization": f"Basic {token}"}):
@@ -89,14 +74,16 @@ class AIOStreamsService:
     def push_remote(
         self,
         config: JsonDict,
+        binding: InstanceBinding,
         env: EnvMap,
         *,
         create: bool = False,
     ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
-        base_url = env.get("AIOSTREAMS_URL", "").rstrip("/")
-        uuid = env.get("AIOSTREAMS_UUID", "")
-        password = env.get("AIOSTREAMS_PASSWORD", "")
-        addon_password = env.get("AIOSTREAMS_ADDON_PASSWORD", "")
+        _ = env
+        base_url = binding.base_url
+        uuid = binding.uuid
+        password = binding.password
+        addon_password = binding.addon_password
 
         match normalize_aiostreams(config):
             case Err() as err:
@@ -167,27 +154,12 @@ class AIOMetadataService:
     def service_id(self) -> ServiceId:
         return "aiometadata"
 
-    def is_configured_for_pull(self, env: EnvMap) -> bool:
-        return bool(
-            env.get("AIOMETADATA_URL")
-            and env.get("AIOMETADATA_UUID")
-            and env.get("AIOMETADATA_PASSWORD")
-        )
-
-    def is_configured_for_push(self, env: EnvMap, *, create: bool = False) -> bool:
-        return bool(
-            env.get("AIOMETADATA_URL")
-            and env.get("AIOMETADATA_PASSWORD")
-            and (create or env.get("AIOMETADATA_UUID"))
-        )
-
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
-        base_url = env.get("AIOMETADATA_URL", "").rstrip("/")
-        uuid = env.get("AIOMETADATA_UUID", "")
-        url = f"{base_url}/api/config/load/{uuid}"
-        body: JsonDict = {"password": env.get("AIOMETADATA_PASSWORD", "")}
-        if addon_pw := env.get("AIOMETADATA_ADDON_PASSWORD", ""):
-            body["addonPassword"] = addon_pw
+    def pull_remote(self, binding: InstanceBinding) -> Result[JsonDict]:
+        base_url = binding.base_url
+        url = f"{base_url}/api/config/load/{binding.uuid}"
+        body: JsonDict = {"password": binding.password}
+        if binding.addon_password:
+            body["addonPassword"] = binding.addon_password
 
         match self._http.request_json("POST", url, json_body=body):
             case Err() as err:
@@ -200,12 +172,14 @@ class AIOMetadataService:
     def push_remote(
         self,
         config: JsonDict,
+        binding: InstanceBinding,
         env: EnvMap,
         *,
         create: bool = False,
     ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
-        base_url = env.get("AIOMETADATA_URL", "").rstrip("/")
-        uuid = env.get("AIOMETADATA_UUID", "")
+        _ = env
+        base_url = binding.base_url
+        uuid = binding.uuid
 
         match normalize_aiometadata(config):
             case Err() as err:
@@ -215,11 +189,11 @@ class AIOMetadataService:
 
         body: JsonDict = {
             "config": clean_cfg,
-            "password": env.get("AIOMETADATA_PASSWORD", ""),
+            "password": binding.password,
             "force": True,
         }
-        if addon_pw := env.get("AIOMETADATA_ADDON_PASSWORD", ""):
-            body["addonPassword"] = addon_pw
+        if binding.addon_password:
+            body["addonPassword"] = binding.addon_password
 
         if create:
             url = f"{base_url}/api/config/save"
@@ -278,26 +252,15 @@ class AIOManagerService:
     def service_id(self) -> ServiceId:
         return "aiomanager"
 
-    def is_configured_for_pull(self, env: EnvMap) -> bool:
-        return bool(
-            env.get("AIOMANAGER_URL")
-            and env.get("AIOMANAGER_UUID")
-            and env.get("AIOMANAGER_SYNC_PASSWORD")
-        )
-
-    def is_configured_for_push(self, env: EnvMap, *, create: bool = False) -> bool:
-        _ = create
-        return self.is_configured_for_pull(env)
-
     def _pull_decrypted_remote_state(
         self,
-        env: EnvMap,
+        binding: InstanceBinding,
         *,
         allow_missing: bool = False,
     ) -> Result[JsonDict | None]:
-        base_url = env.get("AIOMANAGER_URL", "").rstrip("/")
-        uuid = env.get("AIOMANAGER_UUID", "")
-        password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
+        base_url = binding.base_url
+        uuid = binding.uuid
+        password = binding.password
         url = f"{base_url}/api/sync/{uuid}"
 
         derived_token = derive_sync_token(password)
@@ -326,8 +289,8 @@ class AIOManagerService:
             case Ok(decrypted_state):
                 return Ok(decrypted_state)
 
-    def pull_remote(self, env: EnvMap) -> Result[JsonDict]:
-        match self._pull_decrypted_remote_state(env):
+    def pull_remote(self, binding: InstanceBinding) -> Result[JsonDict]:
+        match self._pull_decrypted_remote_state(binding):
             case Err() as err:
                 return err
             case Ok(decrypted_state):
@@ -417,16 +380,17 @@ class AIOManagerService:
     def push_remote(
         self,
         config: JsonDict,
+        binding: InstanceBinding,
         env: EnvMap,
         *,
         create: bool = False,
     ) -> Result[tuple[ServicePushOutcome, JsonDict, dict[str, str]]]:
         _ = create
-        base_url = env.get("AIOMANAGER_URL", "").rstrip("/")
-        uuid = env.get("AIOMANAGER_UUID", "")
-        password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
+        base_url = binding.base_url
+        uuid = binding.uuid
+        password = binding.password
 
-        match self._pull_decrypted_remote_state(env, allow_missing=True):
+        match self._pull_decrypted_remote_state(binding, allow_missing=True):
             case Err() as err:
                 return err
             case Ok(live_remote_state):
