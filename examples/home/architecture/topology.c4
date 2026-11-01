@@ -711,17 +711,17 @@ model {
   // ==========================================================================
   // 7. Declarative Secrets & API Keys (.env Placeholders)
   // ==========================================================================
+  secretKey sec_aiometadata_uuid 'AIOMETADATA_UUID' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_secret_account_auth_key 'SECRET_ACCOUNT_AUTH_KEY' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
   secretKey sec_secret_aiomanager_apikey_7d210008 'SECRET_AIOMANAGER_APIKEY_7D210008' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
-  secretKey sec_secret_aiometadata_token 'SECRET_AIOMETADATA_TOKEN' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'

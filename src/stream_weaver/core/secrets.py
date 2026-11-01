@@ -10,7 +10,11 @@ from stream_weaver.core.errors import SecretError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict, ServiceId
 
-SECRET_PLACEHOLDER_RE = re.compile(r"\{\{(SECRET_[A-Z0-9_]+)\}\}")
+SECRET_PLACEHOLDER_RE = re.compile(
+    r"\{\{((?:SECRET_|AIOSTREAMS_|AIOMETADATA_|AIOMANAGER_|NUVIO_|STREMIO_)[A-Z0-9_]+)\}\}"
+)
+IDENTITY_KEY_SUFFIXES: tuple[str, ...] = ("_UUID",)
+"""Non-secret env keys that still identify an instance and are preferred as placeholders."""
 WATCHLY_URL_RE = re.compile(
     r"(watchly\.[^/]+/)((?!configure\b|static\b|public\b)[^/{}?]+)((?:/manifest\.json)?(?:\?[^\s\"']*)?)$"
 )
@@ -55,6 +59,9 @@ class SecretLens:
     derive_key: Callable[[tuple[str, ...], Mapping[str, Any]], str | None]
     regex_sub: tuple[re.Pattern[str], str] | None = None
     match_dict_key: bool = False
+    derive_key_with_root: Callable[[tuple[str, ...], Mapping[str, Any], Mapping[str, Any]], str | None] | None = None
+    """When set, takes precedence over `derive_key` and also receives the whole document (e.g. to name
+    a connection credential after its enclosing AIOManager account)."""
 
 
 def _sanitize_token(raw: str) -> str:
@@ -191,6 +198,29 @@ def _aiomanager_conn_cred(path: tuple[str, ...], parent: Mapping[str, Any]) -> s
     return f"SECRET_{plat}_{_camel_to_screaming_snake(cred_field)}"
 
 
+def _aiomanager_conn_cred_for_account(
+    path: tuple[str, ...], parent: Mapping[str, Any], root: Mapping[str, Any]
+) -> str | None:
+    """
+    Login-aware variant: `SECRET_<PLATFORM>_<ACCOUNT>_<FIELD>` (e.g. `SECRET_NUVIO_GF_ACCESS_TOKEN`),
+    matching the `logins` prefix convention. Values already tracked under another key (a shared
+    login, or the legacy `SECRET_NUVIO_*` keys) are deduplicated by value before this is used.
+    """
+    base = _aiomanager_conn_cred(path, parent)
+    if base is None:
+        return None
+    account_name = ""
+    accounts = root.get("accounts")
+    if len(path) > 1 and path[0] == "accounts" and path[1].isdigit() and isinstance(accounts, list):
+        idx = int(path[1])
+        if 0 <= idx < len(accounts) and isinstance(accounts[idx], Mapping):
+            account_name = _sanitize_token(str(accounts[idx].get("name") or ""))
+    if not account_name:
+        return base
+    plat = _sanitize_token(str(parent.get("platform", "CONN")))
+    return f"SECRET_{plat}_{account_name}_{_camel_to_screaming_snake(path[-1])}"
+
+
 def _aiomanager_vault_key(path: tuple[str, ...], parent: Mapping[str, Any]) -> str:
     prov = _sanitize_token(str(parent.get("provider", "VAULT")))
     raw_id = str(parent.get("id", path[1]))
@@ -223,6 +253,7 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
     SecretLens(
         path=("accounts", "*", "connections", "*", "credentials", "*"),
         derive_key=_aiomanager_conn_cred,
+        derive_key_with_root=_aiomanager_conn_cred_for_account,
     ),
     SecretLens(path=("vault", "*", "value"), derive_key=_aiomanager_vault_key),
     *(
@@ -386,7 +417,14 @@ def _path_matches(pattern: tuple[str, ...], actual: tuple[str, ...]) -> bool:
 
 
 def _find_existing_secret_key(env: Mapping[str, str], secret_val: str) -> str | None:
-    """If `secret_val` is already tracked under an existing `SECRET_*` key, reuse that key."""
+    """
+    If `secret_val` is already tracked in `.env`, reuse that key. Identity keys (an instance's
+    `*_UUID`) win over `SECRET_*` keys so documents reference the single source of truth
+    (`{{AIOMETADATA_DAD_UUID}}`) instead of a duplicated secret.
+    """
+    for existing_k, existing_v in env.items():
+        if existing_k.endswith(IDENTITY_KEY_SUFFIXES) and existing_v == secret_val:
+            return existing_k
     for existing_k, existing_v in env.items():
         if existing_k.startswith("SECRET_") and existing_v == secret_val:
             return existing_k
@@ -431,7 +469,11 @@ def harvest_and_scrub(
         for lens in lenses:
             if lens.match_dict_key != is_dict_key or not _path_matches(lens.path, path):
                 continue
-            derived_key = lens.derive_key(path, context_entity)
+            derived_key = (
+                lens.derive_key_with_root(path, context_entity, config)
+                if lens.derive_key_with_root is not None
+                else lens.derive_key(path, context_entity)
+            )
             if not derived_key:
                 continue
             if lens.regex_sub is not None:
@@ -439,7 +481,7 @@ def harvest_and_scrub(
                 match = regex.search(text)
                 if match:
                     token_val = match.group(2)
-                    if len(token_val) >= MIN_SECRET_LEN and not token_val.startswith("{{SECRET_"):
+                    if len(token_val) >= MIN_SECRET_LEN and not token_val.startswith("{{"):
                         actual_key = _record_secret(derived_key, token_val)
                         return regex.sub(rf"\1{{{{{actual_key}}}}}\3", text)
             elif len(text) >= MIN_SECRET_LEN:
@@ -483,9 +525,9 @@ def harvest_and_scrub(
         (
             (k, v)
             for k, v in working_env.items()
-            if k.startswith("SECRET_")
+            if (k.startswith("SECRET_") or k.endswith(IDENTITY_KEY_SUFFIXES))
             and len(v) >= MIN_GLOBAL_SCRUB_LEN
-            and not v.startswith("{{SECRET_")
+            and not v.startswith("{{")
         ),
         key=lambda item: len(item[1]),
         reverse=True,
