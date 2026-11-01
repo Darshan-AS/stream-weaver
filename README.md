@@ -51,24 +51,41 @@ flowchart LR
   * `ClientSyncProtocol` (`NuvioClientSync`, `StremioClientSync`)
 * `src/stream_weaver/effects/` & `src/stream_weaver/cli/` — **Imperative Shell** (`httpx` HTTP adapter, JSON/`.env` persistence, and `typer`/`rich` CLI).
 
-### Repository Layout (Tenants)
-The repo separates **tool** from **data**. The tool never assumes where a tenant lives; it is told via `--tenant <name>` (→ `./tenants/<name>`), `--dir <path>`, `STREAM_WEAVER_DIR`, or by running inside a directory containing `tenant.json`.
+### Repository Layout: Library → Profile → Tenant
+The repo separates **tool** from **data**, and data into three layers:
+
+| Layer | What lives here | Owned by |
+| :--- | :--- | :--- |
+| **Library** (`library/`, `tenants/<t>/library/`) | identity-free *recipes*: collection / folder / catalog / badges / meta / settings fragments, optionally parameterised (`${language}`, `for` loops) | shared, or tenant-private when it needs a custom AIOStreams preset |
+| **Profile** (`tenants/<t>/profiles/<p>/profile.json`) | one person: which instances and logins they use, which Nuvio profile, plus their *taste* — `collections` as `{ref, with}` items (or inline), `badges`/`meta`/`settings` refs, `aiometadata.extraCatalogs` | the tenant's maintainer |
+| **Tenant** (`tenants/<t>/`) | identity + infrastructure: `tenant.json` (instances, logins, profiles, library roots), `.env`, raw `aiostreams.json` / `aiomanager.json`, one `aiometadata[.<instance>].json` per AIOMetadata instance | one maintainer |
+
+The tool never assumes where a tenant lives; it is told via `--tenant <name>` (→ `./tenants/<name>`), `--dir <path>`, `STREAM_WEAVER_DIR`, or by running inside a directory containing `tenant.json`.
 
 ```text
 stream-weaver/
-├── src/stream_weaver/      tool (sw) — reads only the tenant directory it is given
-├── examples/home/          identity-free demo tenant: docs + test fixture (`sw init --from examples/home`)
+├── src/stream_weaver/            tool (sw) — reads only the tenant dir + library roots it is given
+├── library/                      shared recipes (collections/, folders/, catalogs/, badges/, meta/, settings/)
+├── examples/home/                identity-free demo tenant: docs + test fixture (`sw init --from examples/home`)
 ├── tenants/
-│   └── don/                a tenant = one maintainer's identity + infrastructure
-│       ├── tenant.json     marker + registry of named instances / logins / profiles
-│       ├── .env            all secret values (gitignored)
-│       ├── aiostreams.json · aiometadata.json · aiomanager.json · nuvio_*.json
-│       ├── architecture/   generated LikeC4 model
-│       └── ARCHITECTURE.md generated
-└── .github/CODEOWNERS      src/ is shared blast radius; tenants/<x>/ is self-owned
+│   └── don/
+│       ├── tenant.json           instances {aiometadata: {default, dad}}, logins {nuvio: {don}}, profiles [don, dad]
+│       ├── .env                  all values (gitignored): AIOMETADATA_DAD_UUID, SECRET_NUVIO_ACCESS_TOKEN, …
+│       ├── aiostreams.json       raw instance document (shared by every profile)
+│       ├── aiomanager.json       raw document; accounts[] is *managed* (regenerated from profiles on push)
+│       ├── aiometadata.json      instance `default` — catalogs *derived* from the profiles bound to it
+│       ├── aiometadata.dad.json  instance `dad`
+│       ├── profiles/{don,dad}/profile.json
+│       ├── library/              tenant-private recipes (Contraband, ItsOut-dependent folders)
+│       ├── architecture/ · ARCHITECTURE.md   generated
+└── .github/CODEOWNERS            src/ + library/ need review; tenants/<x>/ is self-owned
 ```
 
-A second person who self-hosts simply adds `tenants/<name>/` (`uv run sw init tenants/<name> --from examples/home`) and runs every command with `--tenant <name>`.
+**How a push works:** every profile is *compiled* — recipe refs are rendered, symbolic addons (`aiometadata`, `aiostreams`, `bingecat`, …) are resolved to manifest ids from the tenant's cached manifests, BingeCat rows are matched by name, AIOStreams rows by `preset` + `catalog`. The compiled documents feed three pushes: each AIOMetadata instance gets the union of catalogs its profiles reference (everything else disabled), `aiomanager.json` gets one managed account per profile (addons = instances + extras, connections = logins), and each Nuvio profile gets its collections / badges / meta / settings.
+
+**How a pull works:** server documents are compared with each profile's rendering. Items still equal to their recipe stay `{ref}`; items edited on a device are *ejected* inline into `profile.json` (lossless — the file always compiles back to what the server has). Raw instance documents (`aiostreams.json`, `aiomanager.json`) are written back as before.
+
+A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<name> --from examples/home`), gets the shared library for free, and runs every command with `--tenant <name>`.
 
 ---
 
@@ -140,14 +157,49 @@ uv run sw push nuvio_meta         # details-page enrichment only (see below)
 uv run sw push nuvio_settings     # playback / subtitles / audio / theme / TV layout (see below)
 ```
 
-### Nuvio Stream Badges (`nuvio_badges.json`)
+### People: Profiles, Instances, Logins
+```bash
+uv run sw profile list --tenant don                      # who exists, which instances/logins/collections
+uv run sw profile import "Don" --name don                # migrate an existing AIOManager account into a profile
+uv run sw profile nuvio-list --login don                 # Nuvio profiles (index, name, id) on a login
+uv run sw profile new dad --aiometadata dad --nuvio-login don --nuvio-profile Dad --extras-from don
+
+uv run sw instance list                                   # named service instances + readiness
+uv run sw instance new aiometadata dad --from tenants/don/aiometadata.json
+uv run sw push aiometadata --profile dad --create         # provision it; UUID written to AIOMETADATA_DAD_UUID
+
+uv run sw login nuvio --login gf                          # own Nuvio account → SECRET_NUVIO_GF_*
+uv run sw login adopt nuvio --login don --prefix NUVIO    # register already-present SECRET_NUVIO_* keys
+uv run sw login list
+
+uv run sw push --profile dad                              # scope Nuvio sync + instance bindings to one profile
+```
+
+### Recipes: the Library
+```bash
+uv run sw library list                                    # every recipe, params, and which root it comes from
+uv run sw library show folder regional-movies -w language=kn -w slug=kannada -w label=Kannada
+uv run sw migrate compose                                 # lift legacy root nuvio_*.json into recipes + refs (golden-gated)
+```
+A profile composes recipes:
+```jsonc
+"collections": [
+  { "ref": "regional-cinema", "with": { "language": "kn", "slug": "kannada", "label": "Kannada" } },
+  { "ref": "col-discover" },
+  { "ref": "col-streaming-services" },
+  { "id": "col-mine", "title": "Mine", "folders": [ /* inline folder, symbolic sources */ ] }
+]
+```
+Recipe templates are deliberately tiny: `${param}` substitution, `${item.key}` one-level access, `{"for": x, "in": "${list}", "item": …}` and `{"if": "${flag}", "item": …}` inside lists. Nothing else.
+
+### Nuvio Stream Badges (`library/badges/*.json`)
 `nuvio_badges.json` declaratively syncs regex-matched technology logo packs (such as
 [Elite-Badges](https://github.com/leonevz/Elite-Badges)) into `stream_badge_settings` across `tv`,
 `desktop`, and `mobile` via `sync_push_profile_settings_blob`—configuring stream-card badge
 placement (`BOTTOM` / `TOP`), player seek-bar badges (`showInPlayer`), addon logos, and file-size
 chips while preserving unrelated profile preferences.
 
-### Nuvio Details-Page Enrichment (`nuvio_meta.json`)
+### Nuvio Details-Page Enrichment (`library/meta/*.json`)
 The Stremio addon protocol only carries a single `imdbRating`; the multi-source ratings strip,
 Trakt reviews, and TMDB extras on a Nuvio details page are **client-side integrations** that
 Nuvio stores per profile in its cloud sync (`sync_push_profile_settings_blob` +
@@ -166,7 +218,7 @@ and `SECRET_TMDB_API_KEY` (already used by AIOMetadata). Merges are read-modify-
 unrelated preferences (theme, player, Trakt watch-progress source, …) are preserved, and
 never-initialised desktop/mobile profiles are skipped rather than seeded with partial defaults.
 
-### Nuvio App Settings (`nuvio_settings.json`)
+### Nuvio App Settings (`library/settings/*.json`)
 Everything else you would otherwise toggle by hand in each Nuvio client's Settings screens lives
 in `nuvio_settings.json` and is pushed into the same per-platform profile blobs
 (`sync_push_profile_settings_blob`) with read-modify-write merges, so device-local knobs
@@ -192,7 +244,7 @@ provider-credential RPCs; leave blank to keep whatever each device already has).
 If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web UI:
 ```bash
 uv run sw pull --tenant <you>
-git diff tenants/<you>/
+git diff tenants/<you>/          # raw docs rewritten; device edits to Home/badges/settings ejected into profiles/*/profile.json
 ```
 `sw pull` automatically harvests any new API keys into `.env`, dehydrates volatile runtime telemetry (`watchEvents`, `changelog`, duplicate cached manifests), and scrubs secrets into `{{SECRET_*}}` placeholders via JSON-path lenses.
 
