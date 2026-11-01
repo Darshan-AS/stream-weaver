@@ -13,6 +13,13 @@
       "default": "AIOMANAGER"
     }
   },
-  "logins": {},
+  "logins": {
+    "nuvio": {
+      "don": "NUVIO"
+    },
+    "stremio": {
+      "don": "STREMIO"
+    }
+  },
   "profiles": []
 }
