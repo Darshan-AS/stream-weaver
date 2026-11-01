@@ -1,0 +1,41 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-streaming-services",
+  "collection": {
+    "id": "col-streaming-services",
+    "title": "Streaming Services",
+    "folders": [
+      {
+        "ref": "fld-netflix"
+      },
+      {
+        "ref": "fld-prime-video"
+      },
+      {
+        "ref": "fld-apple-tv"
+      },
+      {
+        "ref": "fld-hbo-max"
+      },
+      {
+        "ref": "fld-disney-plus"
+      },
+      {
+        "ref": "fld-hulu"
+      },
+      {
+        "ref": "fld-paramount-plus"
+      },
+      {
+        "ref": "fld-peacock"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
+    "focusGlowEnabled": true
+  }
+}

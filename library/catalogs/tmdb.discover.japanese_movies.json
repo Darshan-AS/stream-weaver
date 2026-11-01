@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.japanese_movies",
+  "catalog": {
+    "id": "tmdb.discover.japanese_movies",
+    "type": "movie",
+    "name": "Japanese Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "ja",
+          "sort_by": "popularity.desc"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

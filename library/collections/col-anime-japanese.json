@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-anime-japanese",
+  "collection": {
+    "id": "col-anime-japanese",
+    "title": "Anime & Japanese",
+    "folders": [
+      {
+        "ref": "fld-airing-popular-anime"
+      },
+      {
+        "ref": "fld-top-rated-anime"
+      },
+      {
+        "ref": "fld-japanese-cinema"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/692aa010.webp",
+    "focusGlowEnabled": true
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-because-you-watched",
+  "folder": {
+    "id": "fld-because-you-watched",
+    "title": "Because You Watched",
+    "sources": [
+      {
+        "addon": "bingecat",
+        "type": "movie",
+        "match": {
+          "name": "Because you watched...",
+          "type": "movie"
+        },
+        "title": "Similar Movies"
+      },
+      {
+        "addon": "bingecat",
+        "type": "series",
+        "match": {
+          "name": "Because you watched...",
+          "type": "series"
+        },
+        "title": "Similar Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/v2/top-streaming-movies-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
+    "focusGifEnabled": true
+  }
+}

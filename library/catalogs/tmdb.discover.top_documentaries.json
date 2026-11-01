@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.top_documentaries",
+  "catalog": {
+    "id": "tmdb.discover.top_documentaries",
+    "type": "movie",
+    "name": "Top Rated Documentaries",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "99",
+          "sort_by": "vote_average.desc",
+          "vote_count.gte": 100
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

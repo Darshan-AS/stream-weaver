@@ -1,0 +1,53 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-ai-picks",
+  "folder": {
+    "id": "fld-ai-picks",
+    "title": "AI Picks For You",
+    "sources": [
+      {
+        "addon": "bingecat",
+        "type": "movie",
+        "match": {
+          "name": "AI Recommendations",
+          "type": "movie"
+        },
+        "title": "AI Picks — Movies"
+      },
+      {
+        "addon": "bingecat",
+        "type": "series",
+        "match": {
+          "name": "AI Recommendations",
+          "type": "series"
+        },
+        "title": "AI Picks — Series"
+      },
+      {
+        "addon": "bingecat",
+        "type": "movie",
+        "match": {
+          "name": "Latest movies for you",
+          "type": "movie"
+        },
+        "title": "Latest Movies For You"
+      },
+      {
+        "addon": "bingecat",
+        "type": "series",
+        "match": {
+          "name": "Latest series for you",
+          "type": "series"
+        },
+        "title": "Latest Series For You"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/for-you/v2/for-you-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/d8b14f4f.webp",
+    "focusGifEnabled": true
+  }
+}

@@ -36,7 +36,7 @@ from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
 from stream_weaver.effects.http import HttpResponse
 from stream_weaver.providers.services.clients import NuvioClientSync
 
-REPO_CONFIG = Path(__file__).resolve().parents[2] / "examples" / "home" / "nuvio_settings.json"
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "library" / "settings" / "default.json"
 
 
 def _normalized(doc: Mapping[str, Any]) -> dict[str, Any]:
@@ -84,7 +84,7 @@ def test_registry_defaults_validate_against_their_own_rows() -> None:
 
 
 def test_repo_config_is_valid_and_enables_reuse_last_link() -> None:
-    raw = json.loads(REPO_CONFIG.read_text(encoding="utf-8"))
+    raw = json.loads(REPO_CONFIG.read_text(encoding="utf-8"))["settings"]
     norm = _normalized(raw)
     assert norm["playback"]["reuseLastLink"] == {"enabled": True, "cacheHours": 24}
     assert active_blocks(norm) == frozenset(BLOCKS)
@@ -475,7 +475,7 @@ def test_nuvio_client_sync_push_and_pull_settings_e2e() -> None:
         "credentials": {"accessToken": enc_access, "profileId": "p-uuid-1"},
     }
     env = {"NUVIO_SUPABASE_ANON_KEY": "anon-key-123"}
-    raw_doc = json.loads(REPO_CONFIG.read_text(encoding="utf-8"))
+    raw_doc = json.loads(REPO_CONFIG.read_text(encoding="utf-8"))["settings"]
     raw_doc["playback"]["skip"]["animeSkip"]["clientId"] = "ask-e2e"
 
     remote_blobs: dict[str, dict[str, Any] | None] = {

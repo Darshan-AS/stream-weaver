@@ -1,10 +1,11 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
 import concurrent.futures
+import json
 import os
 import sys
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -13,6 +14,18 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from stream_weaver.cli.nuvio import (
+    ALL_NUVIO_DOCS,
+    NUVIO_TARGET_ALIASES,
+    NuvioDoc,
+    NuvioTarget,
+    local_nuvio_docs,
+    nuvio_targets,
+    profile_doc_after_pull,
+    pull_nuvio,
+    push_nuvio,
+)
+from stream_weaver.core.addon_index import build_addon_resolver
 from stream_weaver.core.aiomanager_accounts import (
     ResolvedProfile,
     apply_managed_accounts,
@@ -20,6 +33,7 @@ from stream_weaver.core.aiomanager_accounts import (
 )
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
+from stream_weaver.core.compile import CompiledProfile, compile_profile, derive_instance_catalogs
 from stream_weaver.core.crypto import decrypt_envelope
 from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.instances import (
@@ -28,6 +42,7 @@ from stream_weaver.core.instances import (
     instance_env_keys,
     resolve_instance_binding,
 )
+from stream_weaver.core.library import Library, Recipe, recipe_to_doc
 from stream_weaver.core.logins import (
     SUPPORTED_PLATFORMS,
     LoginBinding,
@@ -35,9 +50,7 @@ from stream_weaver.core.logins import (
     login_env_keys,
     resolve_login_binding,
 )
-from stream_weaver.core.nuvio_badges import normalize_nuvio_badges_doc
-from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
-from stream_weaver.core.nuvio_settings import active_blocks, normalize_nuvio_settings_doc
+from stream_weaver.core.migrate import custom_preset_ids, extract_composition
 from stream_weaver.core.profiles import (
     ExtraAddon,
     NuvioClientSpec,
@@ -78,7 +91,6 @@ from stream_weaver.effects.storage import (
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
 from stream_weaver.providers.services import build_config_services, warm_home_catalogs
-from stream_weaver.providers.services.clients import NuvioClientSync, decompile_nuvio_collections
 from stream_weaver.providers.services.nuvio_session import password_grant
 
 app = typer.Typer(
@@ -250,16 +262,23 @@ class _Context:
     env: dict[str, str]
     bindings: dict[ServiceId, InstanceBinding]
     profiles: list[ResolvedProfile]
+    library: Library
 
 
-def _resolve_context(
-    workspace_dir: Path | None = None,
-    tenant_name: str | None = None,
-    instance: str = DEFAULT_INSTANCE,
-) -> _Context:
-    """Active tenant paths, validated manifest, `.env`, per-service bindings for `instance`, and resolved profiles."""
-    paths = _resolve_tenant(workspace_dir, tenant_name)
-    manifest = _load_tenant_manifest(paths)
+def _try_context(
+    paths: TenantPaths, *, instance: str = DEFAULT_INSTANCE
+) -> Result[_Context]:
+    """Pure-ish context build that reports instead of exiting (used by `sw validate`)."""
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            return Err(StreamWeaverError(f"{TENANT_FILE}: {read_err}"))
+        case Ok(doc):
+            pass
+    match parse_tenant_manifest(doc):
+        case Err(schema_err):
+            return Err(StreamWeaverError(str(schema_err)))
+        case Ok(manifest):
+            pass
     env = load_env_file(paths.env_file)
     bindings: dict[ServiceId, InstanceBinding] = {}
     for svc in ALL_SERVICES:
@@ -268,13 +287,30 @@ def _resolve_context(
                 bindings[svc] = binding
             case Err():
                 continue
+    library = Library.load(manifest.library_roots(paths.root))
+    if library.errors:
+        return Err(StreamWeaverError("library: " + "; ".join(str(e) for e in library.errors)))
     match _load_profiles(paths, manifest, env):
         case Err(prof_err):
-            err_console.print(f"❌ {prof_err}")
-            raise typer.Exit(code=1)
+            return Err(StreamWeaverError(str(prof_err)))
         case Ok(profiles):
             pass
-    return _Context(paths=paths, manifest=manifest, env=env, bindings=bindings, profiles=profiles)
+    return Ok(_Context(paths=paths, manifest=manifest, env=env, bindings=bindings, profiles=profiles, library=library))
+
+
+def _resolve_context(
+    workspace_dir: Path | None = None,
+    tenant_name: str | None = None,
+    instance: str = DEFAULT_INSTANCE,
+) -> _Context:
+    """Active tenant paths, validated manifest, `.env`, per-service bindings for `instance`, profiles, library."""
+    paths = _resolve_tenant(workspace_dir, tenant_name)
+    match _try_context(paths, instance=instance):
+        case Err(ctx_err):
+            err_console.print(f"❌ {ctx_err}")
+            raise typer.Exit(code=1)
+        case Ok(ctx):
+            return ctx
 
 
 def _service_doc_path(configs_dir: Path, service: ServiceId, instance: str = DEFAULT_INSTANCE) -> Path:
@@ -369,200 +405,188 @@ def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
     cleaned = target.strip().lower()
     if cleaned == "all":
         return ALL_SERVICES
-    if cleaned in ("nuvio_collections", "nuvio_badges", "nuvio_meta", "nuvio_settings", "nuvio"):
+    if cleaned in NUVIO_TARGET_ALIASES:
         return ()
     if cleaned in ("aiostreams", "aiometadata", "aiomanager"):
         return (cleaned,)  # type: ignore[return-value]
     err_console.print(
-        f"❌ Unknown service target '{target}'. Choose from: all, aiostreams, aiometadata, aiomanager, nuvio, nuvio_collections, nuvio_badges, nuvio_meta, nuvio_settings"
+        f"❌ Unknown service target '{target}'. Choose from: all, aiostreams, aiometadata, aiomanager, "
+        + ", ".join(NUVIO_TARGET_ALIASES)
     )
     raise typer.Exit(code=1)
 
 
-def _should_include_nuvio_collections(target: str) -> bool:
-    return target.strip().lower() in ("all", "aiomanager", "nuvio_collections", "nuvio")
+def _nuvio_docs_for_target(target: str, *, implicit_all: bool) -> tuple[NuvioDoc, ...]:
+    """Which Nuvio documents a target addresses directly (`all` includes them only where `implicit_all`)."""
+    cleaned = target.strip().lower()
+    if cleaned in NUVIO_TARGET_ALIASES:
+        return NUVIO_TARGET_ALIASES[cleaned]
+    if cleaned == "all" and implicit_all:
+        return ALL_NUVIO_DOCS
+    return ()
 
 
-def _should_include_nuvio_badges(target: str) -> bool:
-    return target.strip().lower() in ("all", "aiomanager", "nuvio_badges", "nuvio")
+def _read_scrubbed_aiomanager(paths: TenantPaths) -> JsonDict:
+    return _load_optional_json(paths.doc("aiomanager"))
 
 
-def _should_include_nuvio_meta(target: str) -> bool:
-    return target.strip().lower() in ("all", "aiomanager", "nuvio_meta", "nuvio")
+def _compile_all(ctx: _Context) -> list[CompiledProfile]:
+    """Compiles every profile of the tenant (exits on the first compile error)."""
+    match _compile_all_result(ctx):
+        case Err(comp_err):
+            err_console.print(f"❌ {comp_err}")
+            raise typer.Exit(code=1)
+        case Ok(compiled):
+            return compiled
 
 
-def _should_include_nuvio_settings(target: str) -> bool:
-    return target.strip().lower() in ("all", "aiomanager", "nuvio_settings", "nuvio")
+def _compile_all_result(ctx: _Context) -> Result[list[CompiledProfile]]:
+    mgr_doc = _read_scrubbed_aiomanager(ctx.paths)
+    out: list[CompiledProfile] = []
+    for rp in ctx.profiles:
+        match compile_profile(rp, ctx.library, mgr_doc):
+            case Err(comp_err):
+                return Err(StreamWeaverError(str(comp_err)))
+            case Ok(cp):
+                out.append(cp)
+    return Ok(out)
 
 
-def _resolve_nuvio_connection(
-    configs_dir: Path,
-    env: Mapping[str, str],
-) -> Result[tuple[Mapping[str, Any], str, str, list[Any]] | None]:
-    """Resolves the active Nuvio connection, master password, salt, and addons from the tenant's `aiomanager.json`."""
-    mgr_path = configs_dir / "aiomanager.json"
-    password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
-    anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
-    if not mgr_path.exists() or not password or not anon_key:
-        return Ok(None)
-
-    match read_json_file(mgr_path):
-        case Err() as err:
-            return err
-        case Ok(mgr_scrubbed):
-            pass
-
-    match inject_secrets(mgr_scrubbed, env):
-        case Err() as err:
-            return err
-        case Ok(mgr_injected):
-            pass
-
-    salt_b64 = str(mgr_injected.get("salt") or "")
-    accounts = mgr_injected.get("accounts")
-    if isinstance(accounts, list):
-        for acc in accounts:
-            if not isinstance(acc, Mapping):
-                continue
-            conns = acc.get("connections")
-            if not isinstance(conns, list):
-                continue
-            for conn in conns:
-                if (
-                    isinstance(conn, Mapping)
-                    and conn.get("enabled", True)
-                    and str(conn.get("platform") or "").lower() == "nuvio"
-                ):
-                    raw_addons = acc.get("addons")
-                    addons_list = raw_addons if isinstance(raw_addons, list) else []
-                    return Ok((conn, password, salt_b64, addons_list))
-    return Ok(None)
-
-
-def _pull_remote_nuvio_collections_doc(
-    configs_dir: Path,
-    env: Mapping[str, str],
-    http_client: HttpClientProtocol,
-) -> Result[tuple[JsonDict | None, dict[str, str]]]:
-    """Pulls live Nuvio Home Collections via `NuvioClientSync.pull_collections` and scrubs secrets."""
-    match _resolve_nuvio_connection(configs_dir, env):
-        case Err() as err:
-            return err
-        case Ok(None):
-            return Ok((None, dict(env)))
-        case Ok((nuvio_conn, password, salt_b64, _)):
-            pass
-
-    nuvio_syncer = NuvioClientSync(http_client)
-    match nuvio_syncer.pull_collections(nuvio_conn, password, salt_b64, env):
-        case Err() as err:
-            return err
-        case Ok((collections_list, refreshed_secrets)):
-            pass
-
-    existing_cols_path = configs_dir / "nuvio_collections.json"
-    version = "1.0.0"
-    if existing_cols_path.exists() and isinstance(existing_res := read_json_file(existing_cols_path), Ok):
-        version = str(existing_res.value.get("version") or "1.0.0")
-
-    merged_env = {**env, **refreshed_secrets}
-    raw_doc: JsonDict = {"version": version, "collections": collections_list}
-    scrubbed_doc, updated_env = harvest_and_scrub("aiomanager", raw_doc, merged_env)
-    return Ok((scrubbed_doc, updated_env))
-
-
-def _pull_remote_nuvio_badges_doc(
-    configs_dir: Path,
-    env: Mapping[str, str],
-    http_client: HttpClientProtocol,
-) -> Result[tuple[JsonDict | None, dict[str, str]]]:
-    """Pulls live Nuvio Stream Badge settings across platforms and scrubs secrets."""
-    match _resolve_nuvio_connection(configs_dir, env):
-        case Err() as err:
-            return err
-        case Ok(None):
-            return Ok((None, dict(env)))
-        case Ok((nuvio_conn, password, salt_b64, _)):
-            pass
-
-    existing_badges_path = configs_dir / "nuvio_badges.json"
-    version = "1.0.0"
-    if existing_badges_path.exists() and isinstance(existing_res := read_json_file(existing_badges_path), Ok):
-        version = str(existing_res.value.get("version") or "1.0.0")
-
-    nuvio_syncer = NuvioClientSync(http_client)
-    match nuvio_syncer.pull_badges(nuvio_conn, password, salt_b64, env, version=version):
-        case Err() as err:
-            return err
-        case Ok((badges_doc, refreshed_secrets)):
-            merged_env = {**env, **refreshed_secrets}
-            scrubbed_doc, updated_env = harvest_and_scrub("aiomanager", badges_doc, merged_env)
-            return Ok((scrubbed_doc, updated_env))
-
-
-def _pull_remote_nuvio_meta_doc(
-    configs_dir: Path,
-    env: Mapping[str, str],
-    http_client: HttpClientProtocol,
-) -> Result[tuple[JsonDict | None, dict[str, str]]]:
-    """Pulls live Nuvio Meta enrichment settings (MDBList/TMDB/Trakt/Meta screen) and scrubs secrets."""
-    match _resolve_nuvio_connection(configs_dir, env):
-        case Err() as err:
-            return err
-        case Ok(None):
-            return Ok((None, dict(env)))
-        case Ok((nuvio_conn, password, salt_b64, _)):
-            pass
-
-    existing_meta_path = configs_dir / "nuvio_meta.json"
-    version = "1.0.0"
-    if existing_meta_path.exists() and isinstance(existing_res := read_json_file(existing_meta_path), Ok):
-        version = str(existing_res.value.get("version") or "1.0.0")
-
-    nuvio_syncer = NuvioClientSync(http_client)
-    match nuvio_syncer.pull_meta(nuvio_conn, password, salt_b64, env, version=version):
-        case Err() as err:
-            return err
-        case Ok((meta_doc, refreshed_secrets)):
-            merged_env = {**env, **refreshed_secrets}
-            scrubbed_doc, updated_env = harvest_and_scrub("aiomanager", meta_doc, merged_env)
-            return Ok((scrubbed_doc, updated_env))
-
-
-def _pull_remote_nuvio_settings_doc(
-    configs_dir: Path,
-    env: Mapping[str, str],
-    http_client: HttpClientProtocol,
-) -> Result[tuple[JsonDict | None, dict[str, str]]]:
-    """Pulls live Nuvio app settings (playback/subtitles/audio/theme/TV layout) and scrubs secrets."""
-    match _resolve_nuvio_connection(configs_dir, env):
-        case Err() as err:
-            return err
-        case Ok(None):
-            return Ok((None, dict(env)))
-        case Ok((nuvio_conn, password, salt_b64, _)):
-            pass
-
-    existing_settings_path = configs_dir / "nuvio_settings.json"
-    version = "1.0.0"
-    blocks: list[str] | None = None
-    if existing_settings_path.exists() and isinstance(
-        existing_res := read_json_file(existing_settings_path), Ok
+def _nuvio_targets_or_exit(ctx: _Context, compiled: Sequence[CompiledProfile]) -> list[NuvioTarget]:
+    match nuvio_targets(
+        tenant_name=ctx.manifest.name,
+        scrubbed_aiomanager=_read_scrubbed_aiomanager(ctx.paths),
+        env=ctx.env,
+        compiled_profiles=compiled,
     ):
-        version = str(existing_res.value.get("version") or "1.0.0")
-        if isinstance(norm_res := normalize_nuvio_settings_doc(existing_res.value), Ok):
-            blocks = sorted(active_blocks(norm_res.value))
+        case Err(t_err):
+            err_console.print(f"❌ {t_err}")
+            raise typer.Exit(code=1)
+        case Ok(targets):
+            return targets
 
-    nuvio_syncer = NuvioClientSync(http_client)
-    match nuvio_syncer.pull_settings(
-        nuvio_conn, password, salt_b64, env, version=version, blocks=blocks
-    ):
-        case Err() as err:
-            return err
-        case Ok((settings_doc, refreshed_secrets)):
-            merged_env = {**env, **refreshed_secrets}
-            scrubbed_doc, updated_env = harvest_and_scrub("aiomanager", settings_doc, merged_env)
-            return Ok((scrubbed_doc, updated_env))
+
+def _save_env_or_exit(env_path: Path, env: Mapping[str, str]) -> None:
+    match save_env_updates(env_path, env):
+        case Err(env_err):
+            err_console.print(f"❌ {env_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+
+
+def _push_nuvio_from_profiles(
+    ctx: _Context,
+    compiled: Sequence[CompiledProfile],
+    docs: Sequence[NuvioDoc],
+    working_env: dict[str, str],
+    http_client: HttpClientProtocol,
+) -> dict[str, str]:
+    targets = _nuvio_targets_or_exit(ctx, compiled)
+    if not targets:
+        console.print("⏭️  [nuvio] No profile has a Nuvio client; nothing to push")
+        return working_env
+    with console.status(f"🚀 Pushing Nuvio {', '.join(docs)} for {', '.join(t.name for t in targets)}..."):
+        res = push_nuvio(targets, docs, working_env, http_client)
+    match res:
+        case Err(push_err):
+            err_console.print(f"❌ {push_err}")
+            raise typer.Exit(code=1)
+        case Ok((messages, refreshed)):
+            pass
+    for msg in messages:
+        console.print(f"✅ {msg}")
+    if refreshed:
+        working_env = {**working_env, **refreshed}
+        _save_env_or_exit(ctx.paths.env_file, working_env)
+    return working_env
+
+
+def _pull_nuvio_into_profiles(
+    ctx: _Context,
+    compiled: Sequence[CompiledProfile],
+    docs: Sequence[NuvioDoc],
+    working_env: dict[str, str],
+    http_client: HttpClientProtocol,
+    *,
+    strict: bool,
+) -> dict[str, str]:
+    """Pulls each profile's Nuvio documents and ejects server edits into profile.json (lossless)."""
+    targets = _nuvio_targets_or_exit(ctx, compiled)
+    if not targets:
+        if strict:
+            console.print("⏭️  [nuvio] No profile has a Nuvio client; nothing to pull")
+        return working_env
+    with console.status(f"⏳ Pulling Nuvio {', '.join(docs)} for {', '.join(t.name for t in targets)}..."):
+        res = pull_nuvio(targets, docs, working_env, http_client, ctx.library)
+    match res:
+        case Err(pull_err):
+            if strict:
+                err_console.print(f"❌ {pull_err}")
+                raise typer.Exit(code=1)
+            err_console.print(f"⚠️  [nuvio] {pull_err}")
+            return working_env
+        case Ok((pulled, refreshed)):
+            pass
+    if refreshed:
+        working_env = {**working_env, **refreshed}
+    _save_env_or_exit(ctx.paths.env_file, working_env)
+    for p in pulled:
+        if not p.changed_docs:
+            console.print(f"✅ [nuvio:{p.name}] {', '.join(docs)} match the profile's recipes — nothing ejected")
+            continue
+        pf = profile_file(ctx.paths, p.name)
+        match write_json_file(pf, profile_doc_after_pull(p)):
+            case Err(write_err):
+                err_console.print(f"❌ {write_err}")
+                raise typer.Exit(code=1)
+            case Ok(saved):
+                console.print(
+                    f"✅ [nuvio:{p.name}] Ejected server edits for {', '.join(p.changed_docs)} into "
+                    f"{ctx.paths.relative(saved)} (review the diff; move durable changes into recipes)"
+                )
+    return working_env
+
+
+def _diff_nuvio_profiles(
+    ctx: _Context,
+    compiled: Sequence[CompiledProfile],
+    docs: Sequence[NuvioDoc],
+    env: Mapping[str, str],
+    http_client: HttpClientProtocol,
+    *,
+    strict: bool,
+) -> list[ConfigDiffOutcome]:
+    targets = _nuvio_targets_or_exit(ctx, compiled)
+    if not targets:
+        return []
+    match pull_nuvio(targets, docs, dict(env), http_client, ctx.library):
+        case Err(pull_err):
+            if strict:
+                err_console.print(f"❌ {pull_err}")
+                raise typer.Exit(code=1)
+            err_console.print(f"⚠️  [nuvio] {pull_err}")
+            return []
+        case Ok((pulled, _)):
+            pass
+    outcomes: list[ConfigDiffOutcome] = []
+    by_name = {cp.name: cp for cp in compiled}
+    for p in pulled:
+        local = local_nuvio_docs(by_name[p.name])
+        for kind in docs:
+            if kind not in p.remote or kind not in local:
+                continue
+            label = f"nuvio_{kind}:{p.name}" if len(pulled) > 1 else f"nuvio_{kind}"
+            local_doc = {"collections": local[kind]} if kind == "collections" else local[kind]
+            remote_doc = {"collections": p.remote[kind]} if kind == "collections" else p.remote[kind]
+            outcomes.append(compute_config_diff(_drop_version(local_doc), _drop_version(remote_doc), target=label))
+    return outcomes
+
+
+def _drop_version(doc: Mapping[str, Any]) -> JsonDict:
+    out = dict(doc)
+    out.pop("version", None)
+    return out
 
 
 def _persist_scrubbed_config(
@@ -626,6 +650,7 @@ def _diff_service(
     bindings: Mapping[ServiceId, InstanceBinding],
     tenant_name: str = "",
     resolved_profiles: Sequence[ResolvedProfile] = (),
+    compiled_profiles: Sequence[CompiledProfile] = (),
 ) -> Result[ConfigDiffOutcome | None]:
     """Pulls remote service config in memory, scrubs secrets, and diffs against the tenant's `{service_id}.json`."""
     svc = services.get(service_id)
@@ -646,6 +671,12 @@ def _diff_service(
         local_scrubbed, _ = _managed_aiomanager_doc(local_scrubbed, tenant_name, resolved_profiles)
         for acc in local_scrubbed.get("accounts", []):
             acc.pop("nuvioProfileName", None)
+    if service_id == "aiometadata" and compiled_profiles:
+        match derive_instance_catalogs(binding.name, local_scrubbed, compiled_profiles):
+            case Err(derive_err):
+                return Err(derive_err)
+            case Ok(plan):
+                local_scrubbed = {**local_scrubbed, "catalogs": plan.catalogs}
 
     match svc.pull_remote(binding):
         case Err() as err:
@@ -707,6 +738,7 @@ def _push_service(
     create: bool = False,
     tenant_name: str = "",
     resolved_profiles: Sequence[ResolvedProfile] = (),
+    compiled_profiles: Sequence[CompiledProfile] = (),
 ) -> Result[tuple[ServicePushOutcome | None, dict[str, str]]]:
     svc = services.get(service_id)
     binding = bindings.get(service_id)
@@ -726,81 +758,32 @@ def _push_service(
         scrubbed_cfg, managed_notes = _managed_aiomanager_doc(scrubbed_cfg, tenant_name, resolved_profiles)
         for note in managed_notes:
             console.print(f"👤 [aiomanager] {note}")
+        # Each managed account carries its profile's compiled Nuvio documents (fanned out by the sync).
+        payload_by_id = {cp.resolved.profile.account_id or "": cp for cp in compiled_profiles}
+        payload_by_name = {cp.resolved.profile.display_name: cp for cp in compiled_profiles}
+        for acc in scrubbed_cfg.get("accounts", []):
+            cp = payload_by_id.get(str(acc.get("id"))) or payload_by_name.get(str(acc.get("name")))
+            if cp is not None:
+                acc.update(cp.account_payload())
+
+    derived_catalogs_changed = False
+    if service_id == "aiometadata" and compiled_profiles:
+        match derive_instance_catalogs(binding.name, scrubbed_cfg, compiled_profiles):
+            case Err(derive_err):
+                return Err(derive_err)
+            case Ok(plan):
+                if plan.changed:
+                    scrubbed_cfg = {**scrubbed_cfg, "catalogs": plan.catalogs}
+                    derived_catalogs_changed = True
+                    console.print(
+                        f"🧮 [aiometadata/{binding.name}] catalogs derived from profile(s) {', '.join(plan.profiles)}"
+                    )
 
     match inject_secrets(scrubbed_cfg, env):
         case Err() as err:
             return err
         case Ok(injected_cfg):
             pass
-
-    if service_id == "aiomanager":
-        nuvio_cols_path = configs_dir / "nuvio_collections.json"
-        if nuvio_cols_path.exists():
-            match read_json_file(nuvio_cols_path):
-                case Err() as err:
-                    return err
-                case Ok(raw_cols_doc):
-                    match inject_secrets(raw_cols_doc, env):
-                        case Err() as err:
-                            return err
-                        case Ok(injected_cols_doc):
-                            cols_list = injected_cols_doc.get("collections")
-                            if isinstance(cols_list, list) and cols_list:
-                                injected_cfg["nuvioCollections"] = cols_list
-
-        nuvio_badges_path = configs_dir / "nuvio_badges.json"
-        if nuvio_badges_path.exists():
-            match read_json_file(nuvio_badges_path):
-                case Err() as err:
-                    return err
-                case Ok(raw_badges_doc):
-                    match inject_secrets(raw_badges_doc, env):
-                        case Err() as err:
-                            return err
-                        case Ok(injected_badges_doc):
-                            match normalize_nuvio_badges_doc(injected_badges_doc):
-                                case Err() as err:
-                                    return err
-                                case Ok(norm_badges_doc):
-                                    injected_cfg["nuvioBadges"] = norm_badges_doc
-
-        nuvio_meta_path = configs_dir / "nuvio_meta.json"
-        if nuvio_meta_path.exists():
-            match read_json_file(nuvio_meta_path):
-                case Err() as err:
-                    return err
-                case Ok(raw_meta_doc):
-                    match inject_secrets(raw_meta_doc, env):
-                        case Err(sec_err):
-                            # Implicit path (`sw push all|aiomanager`): don't block the whole push
-                            # on an unset MDBList/TMDB key; `sw push nuvio_meta` stays strict.
-                            err_console.print(
-                                f"⚠️  [nuvio_meta] Skipping Nuvio meta enrichment sync: {sec_err}"
-                            )
-                        case Ok(injected_meta_doc):
-                            match normalize_nuvio_meta_doc(injected_meta_doc):
-                                case Err() as err:
-                                    return err
-                                case Ok(norm_meta_doc):
-                                    injected_cfg["nuvioMeta"] = norm_meta_doc
-
-        nuvio_settings_path = configs_dir / "nuvio_settings.json"
-        if nuvio_settings_path.exists():
-            match read_json_file(nuvio_settings_path):
-                case Err() as err:
-                    return err
-                case Ok(raw_settings_doc):
-                    match inject_secrets(raw_settings_doc, env):
-                        case Err(sec_err):
-                            err_console.print(
-                                f"⚠️  [nuvio_settings] Skipping Nuvio app settings sync: {sec_err}"
-                            )
-                        case Ok(injected_settings_doc):
-                            match normalize_nuvio_settings_doc(injected_settings_doc):
-                                case Err() as err:
-                                    return err
-                                case Ok(norm_settings_doc):
-                                    injected_cfg["nuvioSettings"] = norm_settings_doc
 
     match svc.push_remote(injected_cfg, binding, env, create=create):
         case Err() as err:
@@ -813,6 +796,15 @@ def _push_service(
         discovered_secrets = {**discovered_secrets, binding.uuid_env_key: outcome.uuid}
 
     working_env = {**env, **discovered_secrets}
+    if service_id == "aiometadata" and derived_catalogs_changed:
+        # Keep the local instance document in its derived (pushed) form.
+        match _persist_scrubbed_config(
+            service_id, updated_cfg, working_env, env_path=env_path, configs_dir=configs_dir, instance=binding.name
+        ):
+            case Err() as err:
+                return err
+            case Ok((_, working_env)):
+                pass
     if service_id == "aiomanager":
         match _persist_scrubbed_config(
             service_id,
@@ -886,26 +878,38 @@ def _load_optional_json(path: Path) -> JsonDict:
 
 
 def _sync_architecture_diagrams(
-    root_dir: Path,
-    configs_dir: Path,
+    paths: TenantPaths,
+    compiled: Sequence[CompiledProfile] = (),
     *,
     check_only: bool = False,
 ) -> Result[tuple[Path, ...]]:
-    """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from the tenant's JSON documents."""
+    """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from the tenant's documents + compiled profiles."""
+    merged_cols: list[JsonDict] = []
+    seen: set[str] = set()
+    badges: JsonDict = {}
+    meta: JsonDict = {}
+    settings: JsonDict = {}
+    for cp in compiled:
+        for col in cp.collections_doc:
+            if str(col.get("id")) not in seen:
+                seen.add(str(col.get("id")))
+                merged_cols.append(col)
+        badges = badges or (cp.badges or {})
+        meta = meta or (cp.meta or {})
+        settings = settings or (cp.settings or {})
     bundle = compile_architecture_bundle(
-        aiomanager=_load_optional_json(configs_dir / "aiomanager.json"),
-        aiostreams=_load_optional_json(configs_dir / "aiostreams.json"),
-        aiometadata=_load_optional_json(configs_dir / "aiometadata.json"),
-        nuvio_collections=_load_optional_json(configs_dir / "nuvio_collections.json"),
-        nuvio_badges=_load_optional_json(configs_dir / "nuvio_badges.json"),
-        nuvio_meta=_load_optional_json(configs_dir / "nuvio_meta.json"),
-        nuvio_settings=_load_optional_json(configs_dir / "nuvio_settings.json"),
+        aiomanager=_load_optional_json(paths.doc("aiomanager")),
+        aiostreams=_load_optional_json(paths.doc("aiostreams")),
+        aiometadata=_load_optional_json(paths.doc("aiometadata")),
+        nuvio_collections={"version": "1.0.0", "collections": merged_cols} if merged_cols else {},
+        nuvio_badges=badges,
+        nuvio_meta=meta,
+        nuvio_settings=settings,
     )
-    arch_dir = root_dir / "architecture"
     targets: tuple[tuple[Path, str], ...] = (
-        (arch_dir / "topology.c4", bundle.likec4_dsl),
-        (arch_dir / "likec4.config.json", bundle.likec4_config_json),
-        (root_dir / "ARCHITECTURE.md", bundle.architecture_markdown),
+        (paths.architecture_dir / "topology.c4", bundle.likec4_dsl),
+        (paths.architecture_dir / "likec4.config.json", bundle.likec4_config_json),
+        (paths.architecture_md, bundle.architecture_markdown),
     )
 
     if check_only:
@@ -928,20 +932,20 @@ def _sync_architecture_diagrams(
     return Ok(tuple(written))
 
 
+def _sync_diagrams_for_ctx(ctx: _Context, *, check_only: bool = False) -> Result[tuple[Path, ...]]:
+    match _compile_all_result(ctx):
+        case Err() as err:
+            return err
+        case Ok(compiled):
+            return _sync_architecture_diagrams(ctx.paths, compiled, check_only=check_only)
+
+
 # ============================================================================
 # CLI Commands (`sw pull`, `sw push`, `sw sanitize`, `sw diagram`)
 # ============================================================================
 
 
-_TENANT_DOC_NAMES: tuple[str, ...] = (
-    "aiostreams",
-    "aiometadata",
-    "aiomanager",
-    "nuvio_collections",
-    "nuvio_badges",
-    "nuvio_meta",
-    "nuvio_settings",
-)
+_TENANT_DOC_NAMES: tuple[str, ...] = ("aiostreams", "aiometadata", "aiomanager")
 
 
 @config_app.command("init")
@@ -979,6 +983,22 @@ def cmd_config_init(
     paths.architecture_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_doc = default_tenant_manifest(tenant_name)
+    if template_dir is not None and (template_dir.expanduser().resolve() / TENANT_FILE).is_file():
+        tpl_root = template_dir.expanduser().resolve()
+        match read_json_file(tpl_root / TENANT_FILE):
+            case Ok(tpl_manifest):
+                manifest_doc = {**tpl_manifest, "name": tenant_name}
+                # Re-anchor the template's library roots relative to the new tenant so recipes stay reachable.
+                tpl_libs = tpl_manifest.get("libraries") or []
+                roots: list[str] = ["library"]
+                for rel in tpl_libs if isinstance(tpl_libs, list) else []:
+                    abs_root = (tpl_root / str(rel)).resolve()
+                    if abs_root == (tpl_root / "library").resolve() or not abs_root.is_dir():
+                        continue
+                    roots.append(os.path.relpath(abs_root, target_dir))
+                manifest_doc["libraries"] = roots
+            case Err():
+                pass
     match parse_tenant_manifest(manifest_doc):
         case Err(schema_err):
             err_console.print(f"❌ {schema_err}")
@@ -1021,8 +1041,25 @@ def cmd_config_init(
                     raise typer.Exit(code=1)
                 case Ok(text):
                     _emit(f"{doc_name}.json", lambda d, t=text: write_text_file(d, t), force)
+        for sub in ("profiles", "library"):
+            src_sub = src_root / sub
+            if not src_sub.is_dir():
+                continue
+            for src_file in sorted(p for p in src_sub.rglob("*.json") if p.is_file()):
+                rel = src_file.relative_to(src_root)
+                match read_text_file(src_file):
+                    case Err(read_err):
+                        err_console.print(f"❌ {read_err}")
+                        raise typer.Exit(code=1)
+                    case Ok(text):
+                        _emit(str(rel), lambda d, t=text: write_text_file(d, t), force)
 
-    match _sync_architecture_diagrams(paths.root, paths.docs_dir):
+    match _try_context(paths):
+        case Ok(init_ctx):
+            diag_res = _sync_diagrams_for_ctx(init_ctx)
+        case Err():
+            diag_res = _sync_architecture_diagrams(paths, ())
+    match diag_res:
         case Err(diag_err):
             err_console.print(f"❌ {diag_err}")
             raise typer.Exit(code=1)
@@ -1041,17 +1078,22 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
     """Offline checks for one tenant. Returns a list of human-readable failures (empty = OK)."""
     failures: list[str] = []
 
-    match read_json_file(paths.manifest_file):
-        case Err(read_err):
-            return [f"{TENANT_FILE}: {read_err}"]
-        case Ok(manifest_doc):
-            pass
-    manifest: TenantManifest | None = None
-    match parse_tenant_manifest(manifest_doc):
-        case Err(schema_err):
-            failures.append(str(schema_err))
-        case Ok(parsed_manifest):
-            manifest = parsed_manifest
+    match _try_context(paths):
+        case Err(ctx_err):
+            failures.append(str(ctx_err))
+            # still try the raw document checks below with a minimal manifest view
+            manifest: TenantManifest | None = None
+            compiled: list[CompiledProfile] = []
+            ctx: _Context | None = None
+        case Ok(ok_ctx):
+            ctx = ok_ctx
+            manifest = ok_ctx.manifest
+            match _compile_all_result(ok_ctx):
+                case Err(comp_err):
+                    failures.append(str(comp_err))
+                    compiled = []
+                case Ok(cps):
+                    compiled = cps
 
     for svc_id in ALL_SERVICES:
         instance_names = sorted(manifest.instances.get(svc_id, {})) if manifest else [DEFAULT_INSTANCE]
@@ -1074,58 +1116,40 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
                     failures.append(f"{label}: {norm_err}")
                 case Ok():
                     pass
+            if svc_id == "aiometadata" and compiled:
+                match derive_instance_catalogs(inst, raw_doc, compiled):
+                    case Err(derive_err):
+                        failures.append(str(derive_err))
+                    case Ok(plan) if plan.changed:
+                        failures.append(
+                            f"{label}: catalogs differ from the form derived from profile(s) {', '.join(plan.profiles)} "
+                            "(run `sw push aiometadata` to apply, or adjust collections / aiometadata.extraCatalogs)"
+                        )
+                    case Ok():
+                        pass
 
-    nuvio_checks: tuple[tuple[str, Any], ...] = (
-        ("nuvio_badges", normalize_nuvio_badges_doc),
-        ("nuvio_meta", normalize_nuvio_meta_doc),
-        ("nuvio_settings", normalize_nuvio_settings_doc),
-    )
-    for doc_name, normalizer in nuvio_checks:
-        doc_path = paths.doc(doc_name)
-        if not doc_path.exists():
-            continue
-        match read_json_file(doc_path):
-            case Err(read_err):
-                failures.append(f"{doc_name}.json: {read_err}")
-                continue
-            case Ok(raw_doc):
-                pass
-        match normalizer(raw_doc):
-            case Err(nuvio_err):
-                failures.append(f"{doc_name}.json: {nuvio_err}")
-            case Ok():
-                pass
+    legacy = [n for n in ("nuvio_collections", "nuvio_badges", "nuvio_meta", "nuvio_settings") if paths.doc(n).exists()]
+    if legacy:
+        failures.append(
+            f"legacy root document(s) {', '.join(n + '.json' for n in legacy)} found; "
+            "run `sw migrate compose` to lift them into library recipes + profile refs"
+        )
 
-    cols_path = paths.doc("nuvio_collections")
-    if cols_path.exists():
-        match read_json_file(cols_path):
-            case Err(read_err):
-                failures.append(f"nuvio_collections.json: {read_err}")
-            case Ok(cols_doc) if not isinstance(cols_doc.get("collections"), list):
-                failures.append("nuvio_collections.json: `collections` must be a list")
-            case Ok():
-                pass
+    if ctx is not None and ctx.profiles:
+        mgr_path = paths.doc("aiomanager")
+        if mgr_path.exists():
+            match read_json_file(mgr_path):
+                case Ok(mgr_doc) if not mgr_doc.get("isEncrypted"):
+                    outcome = apply_managed_accounts(mgr_doc, ctx.manifest.name, ctx.profiles)
+                    if outcome.changed:
+                        failures.append(
+                            "aiomanager.json: accounts[] differs from the form generated by profiles/ "
+                            "(edit profile.json, or run `sw push aiomanager` to regenerate)"
+                        )
+                case _:
+                    pass
 
-    if manifest is not None:
-        env = load_env_file(paths.env_file)
-        match _load_profiles(paths, manifest, env):
-            case Err(prof_err):
-                failures.append(str(prof_err))
-            case Ok(resolved_profiles):
-                mgr_path = paths.doc("aiomanager")
-                if resolved_profiles and mgr_path.exists():
-                    match read_json_file(mgr_path):
-                        case Ok(mgr_doc) if not mgr_doc.get("isEncrypted"):
-                            outcome = apply_managed_accounts(mgr_doc, manifest.name, resolved_profiles)
-                            if outcome.changed:
-                                failures.append(
-                                    "aiomanager.json: accounts[] differs from the form generated by profiles/ "
-                                    "(edit profile.json, or run `sw push aiomanager` to regenerate)"
-                                )
-                        case _:
-                            pass
-
-    match _sync_architecture_diagrams(paths.root, paths.docs_dir, check_only=True):
+    match _sync_architecture_diagrams(paths, compiled, check_only=True):
         case Err(diag_err):
             failures.append(f"diagram: {diag_err}")
         case Ok(stale) if stale:
@@ -1344,6 +1368,249 @@ def cmd_profile_new(
     console.print(f"✅ Created profile `{prof_name}` → {ctx.paths.relative(saved)}")
     console.print("   💡 Next: `sw push aiomanager` creates/updates its AIOManager account and syncs its Nuvio profile.")
 
+
+
+
+# ============================================================================
+# `sw library` — recipes available to the active tenant
+# ============================================================================
+
+library_app = typer.Typer(help="Browse and render the recipe library (tenant-local roots first, then shared).")
+app.add_typer(library_app, name="library")
+
+
+@library_app.command("list")
+def cmd_library_list(
+    kind: Annotated[str | None, typer.Argument(help="collection | folder | catalog | badges | meta | settings")] = None,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """List recipes with their source root and parameters."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    table = Table(title=f"Library — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
+    for col in ("Kind", "Id", "Params", "Root"):
+        table.add_column(col, overflow="fold")
+    for (k, rid), recipe in sorted(ctx.library.recipes.items()):
+        if kind and k != kind:
+            continue
+        root = ctx.library.root_of(k, rid)
+        params = ", ".join(
+            f"{p.name}:{p.type}" + (f"={p.default!r}" if p.has_default else "") for p in recipe.params.params
+        )
+        table.add_row(k, rid, params or "—", str(root) if root else "?")
+    console.print(table)
+    if not ctx.library.roots:
+        console.print("ℹ️  No library roots exist yet (tenant.json `libraries`). `sw migrate compose` creates them.")
+
+
+@library_app.command("show")
+def cmd_library_show(
+    kind: Annotated[str, typer.Argument(help="collection | folder | catalog | badges | meta | settings")],
+    rid: Annotated[str, typer.Argument(help="Recipe id")],
+    params: Annotated[
+        list[str] | None,
+        typer.Option("--with", "-w", help="Param binding key=value (JSON values allowed); repeatable"),
+    ] = None,
+    raw: Annotated[bool, typer.Option("--raw", help="Print the recipe file instead of rendering it")] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Render a recipe with the given params (or print its source)."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    if raw:
+        match ctx.library.get(kind, rid):
+            case Err(lib_err):
+                err_console.print(f"❌ {lib_err}")
+                raise typer.Exit(code=1)
+            case Ok(recipe):
+                console.print(json.dumps(recipe_to_doc(recipe), indent=2, ensure_ascii=False))
+                return
+    bound: dict[str, Any] = {}
+    for item in params or []:
+        key, sep, val = item.partition("=")
+        if not sep:
+            err_console.print(f"❌ --with expects key=value, got {item!r}")
+            raise typer.Exit(code=1)
+        try:
+            bound[key.strip()] = json.loads(val)
+        except ValueError:
+            bound[key.strip()] = val
+    match ctx.library.render(kind, rid, bound):
+        case Err(render_err):
+            err_console.print(f"❌ {render_err}")
+            raise typer.Exit(code=1)
+        case Ok(rendered):
+            console.print(json.dumps(rendered, indent=2, ensure_ascii=False))
+
+
+# ============================================================================
+# `sw migrate` — schema / layout upgrades
+# ============================================================================
+
+migrate_app = typer.Typer(help="One-shot migrations between stream-weaver layouts and schema versions.")
+app.add_typer(migrate_app, name="migrate")
+
+
+def _write_recipe(recipe: Recipe, *, force: bool) -> Result[Path]:
+    if recipe.source.exists() and not force:
+        match read_json_file(recipe.source):
+            case Ok(existing) if existing == recipe_to_doc(recipe):
+                return Ok(recipe.source)
+            case _:
+                return Err(
+                    StreamWeaverError(
+                        f"{recipe.source} already exists with different content (use --force to overwrite)"
+                    )
+                )
+    return write_json_file(recipe.source, recipe_to_doc(recipe))
+
+
+@migrate_app.command("compose")
+def cmd_migrate_compose(
+    profile: Annotated[
+        str | None,
+        typer.Option("--profile", "-p", help="Profile that owns the root Nuvio documents (default: the only profile)"),
+    ] = None,
+    badges_id: Annotated[str, typer.Option("--badges-id", help="Recipe id for the badges document")] = "default",
+    meta_id: Annotated[str, typer.Option("--meta-id", help="Recipe id for the meta document")] = "default",
+    settings_id: Annotated[str, typer.Option("--settings-id", help="Recipe id for the settings document")] = "default",
+    force: Annotated[bool, typer.Option("--force", help="Overwrite recipes that already exist with different content")] = False,
+    keep_root_docs: Annotated[bool, typer.Option("--keep-root-docs", help="Do not delete the lifted nuvio_*.json files")] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """
+    Lift root `nuvio_*.json` documents into library recipes + profile refs, 1:1 and lossless.
+
+    Writes nothing unless compiling the resulting refs reproduces the original documents exactly.
+    """
+    ctx = _resolve_context(workspace_dir, tenant)
+    paths = ctx.paths
+    if not ctx.profiles:
+        err_console.print("❌ No profiles; run `sw profile import <account>` first")
+        raise typer.Exit(code=1)
+    if profile is None and len(ctx.profiles) != 1:
+        err_console.print("❌ Several profiles exist; pass --profile <name>")
+        raise typer.Exit(code=1)
+    owner = next((rp for rp in ctx.profiles if profile is None or rp.profile.name == profile), None)
+    if owner is None:
+        err_console.print(f"❌ No profile named `{profile}`")
+        raise typer.Exit(code=1)
+    if owner.profile.has_taste:
+        err_console.print(f"❌ profile `{owner.profile.name}` already has collections/badges/meta/settings; nothing to lift")
+        raise typer.Exit(code=1)
+
+    def _opt(name: str) -> JsonDict | None:
+        p = paths.doc(name)
+        return _load_optional_json(p) if p.exists() else None
+
+    cols_doc = _opt("nuvio_collections")
+    badges_doc, meta_doc, settings_doc = _opt("nuvio_badges"), _opt("nuvio_meta"), _opt("nuvio_settings")
+    if cols_doc is None and badges_doc is None and meta_doc is None and settings_doc is None:
+        console.print("ℹ️  No root nuvio_*.json documents to lift.")
+        return
+
+    mgr_doc = _read_scrubbed_aiomanager(paths)
+    meta_binding = owner.instances.get("aiometadata")
+    meta_doc_path = _service_doc_path(paths.docs_dir, "aiometadata", meta_binding.name if meta_binding else DEFAULT_INSTANCE)
+    aiometadata_doc = _load_optional_json(meta_doc_path)
+    aiostreams_doc = _load_optional_json(
+        _service_doc_path(paths.docs_dir, "aiostreams", owner.instances["aiostreams"].name if owner.instances.get("aiostreams") else DEFAULT_INSTANCE)
+    )
+    resolver = build_addon_resolver(owner, mgr_doc)
+
+    roots = ctx.manifest.libraries
+    tenant_root = (paths.root / roots[0]).resolve()
+    shared_root = (paths.root / roots[-1]).resolve() if len(roots) > 1 else tenant_root
+    outcome = extract_composition(
+        collections=[c for c in (cols_doc or {}).get("collections", []) if isinstance(c, dict)],
+        badges=badges_doc,
+        meta=meta_doc,
+        settings=settings_doc,
+        aiometadata_catalogs=[c for c in aiometadata_doc.get("catalogs", []) if isinstance(c, dict)],
+        resolver=resolver,
+        custom_presets=custom_preset_ids(aiostreams_doc),
+        shared_root=shared_root,
+        tenant_root=tenant_root,
+        doc_recipe_ids={"badges": badges_id, "meta": meta_id, "settings": settings_id},
+    )
+
+    # --- golden gate: compile the would-be profile against an in-memory library and compare
+    in_memory = Library(
+        roots=(tenant_root, shared_root),
+        recipes={(r.kind, r.id): r for r in (*outcome.tenant_private, *outcome.shared)},
+    )
+    candidate = replace(
+        owner.profile,
+        collections=tuple(outcome.collections),
+        badges=outcome.badges,
+        meta=outcome.meta,
+        settings=outcome.settings,
+        extra_catalogs=outcome.extra_catalogs,
+    )
+    match compile_profile(replace(owner, profile=candidate), in_memory, mgr_doc):
+        case Err(comp_err):
+            err_console.print(f"❌ extraction does not compile: {comp_err}")
+            raise typer.Exit(code=1)
+        case Ok(cp):
+            pass
+    problems: list[str] = []
+    if cols_doc is not None and cp.collections_doc != list(cols_doc.get("collections", [])):
+        problems.append("collections")
+    for kind, original, compiled_doc in (("badges", badges_doc, cp.badges), ("meta", meta_doc, cp.meta), ("settings", settings_doc, cp.settings)):
+        if original is not None and compiled_doc != original:
+            problems.append(kind)
+    match derive_instance_catalogs(meta_binding.name if meta_binding else DEFAULT_INSTANCE, aiometadata_doc, [cp]):
+        case Ok(plan) if plan.changed:
+            problems.append("aiometadata catalogs")
+        case Err(derive_err):
+            problems.append(f"aiometadata catalogs ({derive_err})")
+        case Ok():
+            pass
+    if problems:
+        err_console.print(f"❌ Golden check failed — compiling the extracted recipes does not reproduce: {', '.join(problems)}")
+        raise typer.Exit(code=1)
+
+    # --- write
+    written = 0
+    for recipe in (*outcome.shared, *outcome.tenant_private):
+        match _write_recipe(recipe, force=force):
+            case Err(w_err):
+                err_console.print(f"❌ {w_err}")
+                raise typer.Exit(code=1)
+            case Ok():
+                written += 1
+    match write_json_file(profile_file(paths, candidate.name), profile_to_doc(candidate)):
+        case Err(w_err):
+            err_console.print(f"❌ {w_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+    removed: list[str] = []
+    if not keep_root_docs:
+        for name in ("nuvio_collections", "nuvio_badges", "nuvio_meta", "nuvio_settings"):
+            p = paths.doc(name)
+            if p.exists():
+                p.unlink()
+                removed.append(p.name)
+
+    console.print(
+        f"✅ Lifted {len(outcome.shared)} shared + {len(outcome.tenant_private)} tenant-private recipe(s) "
+        f"({written} written) → profile `{candidate.name}` now composes {len(outcome.collections)} collection ref(s)"
+    )
+    for note in outcome.notes:
+        console.print(f"   • {note}")
+    if removed:
+        console.print(f"   🗑️  removed root documents: {', '.join(removed)}")
+    match _try_context(paths):
+        case Ok(new_ctx):
+            match _sync_diagrams_for_ctx(new_ctx):
+                case Ok():
+                    console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
+                case Err(diag_err):
+                    err_console.print(f"⚠️  [diagram] {diag_err}")
+        case Err(ctx_err):
+            err_console.print(f"⚠️  {ctx_err}")
 
 
 # ============================================================================
@@ -1727,10 +1994,7 @@ def cmd_config_pull(
     root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
-    include_nuvio = _should_include_nuvio_collections(target)
-    include_nuvio_badges = _should_include_nuvio_badges(target)
-    include_nuvio_meta = _should_include_nuvio_meta(target)
-    include_nuvio_settings = _should_include_nuvio_settings(target)
+    compiled = _compile_all(ctx)
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
@@ -1787,137 +2051,13 @@ def cmd_config_pull(
                                 f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
                             )
 
-        if include_nuvio:
-            with console.status("⏳ Pulling Nuvio Home Collections..."):
-                nuvio_res = _pull_remote_nuvio_collections_doc(configs_dir, working_env, http_client)
-            match nuvio_res:
-                case Err(err):
-                    if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    err_console.print(f"⚠️  [nuvio_collections] {err}")
-                case Ok((None, working_env)):
-                    if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                        console.print(
-                            "⏭️  [nuvio_collections] Skipping pull: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                        )
-                case Ok((scrubbed_cols_doc, working_env)):
-                    assert scrubbed_cols_doc is not None
-                    if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                        err_console.print(f"❌ {env_err.error}")
-                        raise typer.Exit(code=1)
-                    cols_target = configs_dir / "nuvio_collections.json"
-                    match write_json_file(cols_target, scrubbed_cols_doc):
-                        case Err(write_err):
-                            err_console.print(f"❌ {write_err}")
-                            raise typer.Exit(code=1)
-                        case Ok(saved_cols_path):
-                            col_cnt = len(scrubbed_cols_doc.get("collections", []))
-                            console.print(
-                                f"✅ [nuvio_collections] Pulled {col_cnt} collections from Nuvio to {saved_cols_path.relative_to(root_dir)}"
-                            )
+        nuvio_docs = _nuvio_docs_for_target(target, implicit_all=True)
+        if nuvio_docs:
+            working_env = _pull_nuvio_into_profiles(
+                ctx, compiled, nuvio_docs, working_env, http_client, strict=target.strip().lower() != "all"
+            )
 
-        if include_nuvio_badges:
-            badges_target = configs_dir / "nuvio_badges.json"
-            explicit_badges = target.strip().lower() in ("nuvio_badges", "nuvio")
-            with console.status("⏳ Pulling Nuvio Stream Badges..."):
-                badges_res = _pull_remote_nuvio_badges_doc(configs_dir, working_env, http_client)
-            match badges_res:
-                case Err(err):
-                    if explicit_badges:
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    err_console.print(f"⚠️  [nuvio_badges] {err}")
-                case Ok((None, working_env)):
-                    if explicit_badges:
-                        console.print(
-                            "⏭️  [nuvio_badges] Skipping pull: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                        )
-                case Ok((scrubbed_badges_doc, working_env)):
-                    assert scrubbed_badges_doc is not None
-                    has_remote_badges = bool(scrubbed_badges_doc.get("imports"))
-                    if has_remote_badges or badges_target.exists() or explicit_badges:
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        match write_json_file(badges_target, scrubbed_badges_doc):
-                            case Err(write_err):
-                                err_console.print(f"❌ {write_err}")
-                                raise typer.Exit(code=1)
-                            case Ok(saved_badges_path):
-                                imp_cnt = len(scrubbed_badges_doc.get("imports", []))
-                                plat_cnt = len(scrubbed_badges_doc.get("platforms", []))
-                                console.print(
-                                    f"✅ [nuvio_badges] Pulled {imp_cnt} badge pack(s) across {plat_cnt} platform(s) to {saved_badges_path.relative_to(root_dir)}"
-                                )
-
-        if include_nuvio_meta:
-            meta_target = configs_dir / "nuvio_meta.json"
-            explicit_meta = target.strip().lower() in ("nuvio_meta", "nuvio")
-            with console.status("⏳ Pulling Nuvio Meta enrichment settings..."):
-                meta_res = _pull_remote_nuvio_meta_doc(configs_dir, working_env, http_client)
-            match meta_res:
-                case Err(err):
-                    if explicit_meta:
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    err_console.print(f"⚠️  [nuvio_meta] {err}")
-                case Ok((None, working_env)):
-                    if explicit_meta:
-                        console.print(
-                            "⏭️  [nuvio_meta] Skipping pull: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                        )
-                case Ok((scrubbed_meta_doc, working_env)):
-                    assert scrubbed_meta_doc is not None
-                    has_remote_meta = bool(scrubbed_meta_doc.get("platforms"))
-                    if has_remote_meta or meta_target.exists() or explicit_meta:
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        match write_json_file(meta_target, scrubbed_meta_doc):
-                            case Err(write_err):
-                                err_console.print(f"❌ {write_err}")
-                                raise typer.Exit(code=1)
-                            case Ok(saved_meta_path):
-                                plat_cnt = len(scrubbed_meta_doc.get("platforms", []))
-                                console.print(
-                                    f"✅ [nuvio_meta] Pulled meta enrichment settings synced across {plat_cnt} platform(s) to {saved_meta_path.relative_to(root_dir)}"
-                                )
-
-        if include_nuvio_settings:
-            settings_target = configs_dir / "nuvio_settings.json"
-            explicit_settings = target.strip().lower() in ("nuvio_settings", "nuvio")
-            with console.status("⏳ Pulling Nuvio app settings..."):
-                settings_res = _pull_remote_nuvio_settings_doc(configs_dir, working_env, http_client)
-            match settings_res:
-                case Err(err):
-                    if explicit_settings:
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    err_console.print(f"⚠️  [nuvio_settings] {err}")
-                case Ok((None, working_env)):
-                    if explicit_settings:
-                        console.print(
-                            "⏭️  [nuvio_settings] Skipping pull: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                        )
-                case Ok((scrubbed_settings_doc, working_env)):
-                    assert scrubbed_settings_doc is not None
-                    has_remote_settings = bool(scrubbed_settings_doc.get("platforms"))
-                    if has_remote_settings or settings_target.exists() or explicit_settings:
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        match write_json_file(settings_target, scrubbed_settings_doc):
-                            case Err(write_err):
-                                err_console.print(f"❌ {write_err}")
-                                raise typer.Exit(code=1)
-                            case Ok(saved_settings_path):
-                                plat_cnt = len(scrubbed_settings_doc.get("platforms", []))
-                                console.print(
-                                    f"✅ [nuvio_settings] Pulled app settings synced across {plat_cnt} platform(s) to {saved_settings_path.relative_to(root_dir)}"
-                                )
-
-    match _sync_architecture_diagrams(root_dir, configs_dir):
+    match _sync_diagrams_for_ctx(ctx):
         case Ok():
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
         case Err(diag_err):
@@ -1950,9 +2090,10 @@ def cmd_config_push(
 
     ctx = _resolve_context(workspace_dir, tenant, instance)
     paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
-    root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
+    env_path, configs_dir = paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
+    compiled = _compile_all(ctx)
 
     # Phase 1: upstream addon services (`aiostreams`, `aiometadata`) run concurrently.
     # Phase 2: `aiomanager` runs after Phase 1 so it refreshes the newly updated upstream manifests.
@@ -1979,6 +2120,7 @@ def cmd_config_push(
                             bindings=bindings,
                             tenant_name=ctx.manifest.name,
                             resolved_profiles=ctx.profiles,
+                            compiled_profiles=compiled,
                             create=create,
                         ),
                     )
@@ -2001,6 +2143,7 @@ def cmd_config_push(
                             bindings=bindings,
                             tenant_name=ctx.manifest.name,
                             resolved_profiles=ctx.profiles,
+                            compiled_profiles=compiled,
                             create=create,
                         )
                     }
@@ -2029,193 +2172,11 @@ def cmd_config_push(
                         for client_msg in outcome.synced_clients:
                             console.print(f"✅ {client_msg}")
 
-        cleaned_target = target.strip().lower()
-        if cleaned_target in ("nuvio_badges", "nuvio_meta", "nuvio_settings", "nuvio_collections", "nuvio"):
-            match _resolve_nuvio_connection(configs_dir, working_env):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(None):
-                    console.print(
-                        f"⏭️  [{cleaned_target}] Skipping push: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                    )
-                case Ok((nuvio_conn, password, salt_b64, addons_list)):
-                    nuvio_syncer = NuvioClientSync(http_client)
-                    if cleaned_target == "nuvio_badges":
-                        badges_path = configs_dir / "nuvio_badges.json"
-                        if not badges_path.exists():
-                            err_console.print("❌ Missing nuvio_badges.json")
-                            raise typer.Exit(code=1)
-                        match read_json_file(badges_path):
-                            case Err(err):
-                                err_console.print(f"❌ {err}")
-                                raise typer.Exit(code=1)
-                            case Ok(raw_badges):
-                                match inject_secrets(raw_badges, working_env):
-                                    case Err(err):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                    case Ok(inj_badges):
-                                        with console.status("🚀 Pushing Nuvio Stream Badges..."):
-                                            b_res = nuvio_syncer.push_badges(
-                                                inj_badges, nuvio_conn, password, salt_b64, working_env
-                                            )
-                                        match b_res:
-                                            case Err(err):
-                                                err_console.print(f"❌ {err}")
-                                                raise typer.Exit(code=1)
-                                            case Ok((msg, refreshed_secrets)):
-                                                if refreshed_secrets:
-                                                    working_env.update(refreshed_secrets)
-                                                    if isinstance(
-                                                        s_err := save_env_updates(env_path, working_env),
-                                                        Err,
-                                                    ):
-                                                        err_console.print(f"❌ {s_err.error}")
-                                                        raise typer.Exit(code=1)
-                                                console.print(f"✅ [nuvio_badges] {msg}")
-                    elif cleaned_target == "nuvio_meta":
-                        meta_path = configs_dir / "nuvio_meta.json"
-                        if not meta_path.exists():
-                            err_console.print("❌ Missing nuvio_meta.json")
-                            raise typer.Exit(code=1)
-                        match read_json_file(meta_path):
-                            case Err(err):
-                                err_console.print(f"❌ {err}")
-                                raise typer.Exit(code=1)
-                            case Ok(raw_meta):
-                                match inject_secrets(raw_meta, working_env):
-                                    case Err(err):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                    case Ok(inj_meta):
-                                        with console.status("🚀 Pushing Nuvio Meta enrichment settings..."):
-                                            m_res = nuvio_syncer.push_meta(
-                                                inj_meta, nuvio_conn, password, salt_b64, working_env
-                                            )
-                                        match m_res:
-                                            case Err(err):
-                                                err_console.print(f"❌ {err}")
-                                                raise typer.Exit(code=1)
-                                            case Ok((msg, refreshed_secrets)):
-                                                if refreshed_secrets:
-                                                    working_env.update(refreshed_secrets)
-                                                    if isinstance(
-                                                        s_err := save_env_updates(env_path, working_env),
-                                                        Err,
-                                                    ):
-                                                        err_console.print(f"❌ {s_err.error}")
-                                                        raise typer.Exit(code=1)
-                                                console.print(f"✅ [nuvio_meta] {msg}")
-                    elif cleaned_target == "nuvio_settings":
-                        settings_path = configs_dir / "nuvio_settings.json"
-                        if not settings_path.exists():
-                            err_console.print("❌ Missing nuvio_settings.json")
-                            raise typer.Exit(code=1)
-                        match read_json_file(settings_path):
-                            case Err(err):
-                                err_console.print(f"❌ {err}")
-                                raise typer.Exit(code=1)
-                            case Ok(raw_settings):
-                                match inject_secrets(raw_settings, working_env):
-                                    case Err(err):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                    case Ok(inj_settings):
-                                        with console.status("🚀 Pushing Nuvio app settings..."):
-                                            st_res = nuvio_syncer.push_settings(
-                                                inj_settings, nuvio_conn, password, salt_b64, working_env
-                                            )
-                                        match st_res:
-                                            case Err(err):
-                                                err_console.print(f"❌ {err}")
-                                                raise typer.Exit(code=1)
-                                            case Ok((msg, refreshed_secrets)):
-                                                if refreshed_secrets:
-                                                    working_env.update(refreshed_secrets)
-                                                    if isinstance(
-                                                        s_err := save_env_updates(env_path, working_env),
-                                                        Err,
-                                                    ):
-                                                        err_console.print(f"❌ {s_err.error}")
-                                                        raise typer.Exit(code=1)
-                                                console.print(f"✅ [nuvio_settings] {msg}")
-                    else:
-                        acc_payload: JsonDict = {"addons": addons_list}
-                        cols_path = configs_dir / "nuvio_collections.json"
-                        if cols_path.exists():
-                            match read_json_file(cols_path):
-                                case Err(err):
-                                    err_console.print(f"❌ {err}")
-                                    raise typer.Exit(code=1)
-                                case Ok(raw_cols):
-                                    match inject_secrets(raw_cols, working_env):
-                                        case Err(err):
-                                            err_console.print(f"❌ {err}")
-                                            raise typer.Exit(code=1)
-                                        case Ok(inj_cols):
-                                            cols_list = inj_cols.get("collections")
-                                            if isinstance(cols_list, list) and cols_list:
-                                                acc_payload["nuvioCollections"] = cols_list
-                        badges_path = configs_dir / "nuvio_badges.json"
-                        if cleaned_target == "nuvio" and badges_path.exists():
-                            match read_json_file(badges_path):
-                                case Err(err):
-                                    err_console.print(f"❌ {err}")
-                                    raise typer.Exit(code=1)
-                                case Ok(raw_badges):
-                                    match inject_secrets(raw_badges, working_env):
-                                        case Err(err):
-                                            err_console.print(f"❌ {err}")
-                                            raise typer.Exit(code=1)
-                                        case Ok(inj_badges):
-                                            acc_payload["nuvioBadges"] = inj_badges
-                        meta_path = configs_dir / "nuvio_meta.json"
-                        if cleaned_target == "nuvio" and meta_path.exists():
-                            match read_json_file(meta_path):
-                                case Err(err):
-                                    err_console.print(f"❌ {err}")
-                                    raise typer.Exit(code=1)
-                                case Ok(raw_meta):
-                                    match inject_secrets(raw_meta, working_env):
-                                        case Err(err):
-                                            err_console.print(f"❌ {err}")
-                                            raise typer.Exit(code=1)
-                                        case Ok(inj_meta):
-                                            acc_payload["nuvioMeta"] = inj_meta
-                        settings_path = configs_dir / "nuvio_settings.json"
-                        if cleaned_target == "nuvio" and settings_path.exists():
-                            match read_json_file(settings_path):
-                                case Err(err):
-                                    err_console.print(f"❌ {err}")
-                                    raise typer.Exit(code=1)
-                                case Ok(raw_settings):
-                                    match inject_secrets(raw_settings, working_env):
-                                        case Err(err):
-                                            err_console.print(f"❌ {err}")
-                                            raise typer.Exit(code=1)
-                                        case Ok(inj_settings):
-                                            acc_payload["nuvioSettings"] = inj_settings
-                        with console.status(f"🚀 Pushing {cleaned_target}..."):
-                            n_res = nuvio_syncer.sync_account(
-                                acc_payload, nuvio_conn, password, salt_b64, working_env
-                            )
-                        match n_res:
-                            case Err(err):
-                                err_console.print(f"❌ {err}")
-                                raise typer.Exit(code=1)
-                            case Ok((msg, refreshed_secrets)):
-                                if refreshed_secrets:
-                                    working_env.update(refreshed_secrets)
-                                    if isinstance(
-                                        s_err := save_env_updates(env_path, working_env),
-                                        Err,
-                                    ):
-                                        err_console.print(f"❌ {s_err.error}")
-                                        raise typer.Exit(code=1)
-                                console.print(f"✅ [{cleaned_target}] {msg}")
+        nuvio_docs = _nuvio_docs_for_target(target, implicit_all=False)
+        if nuvio_docs:
+            working_env = _push_nuvio_from_profiles(ctx, compiled, nuvio_docs, working_env, http_client)
 
-    match _sync_architecture_diagrams(root_dir, configs_dir):
+    match _sync_diagrams_for_ctx(ctx):
         case Ok():
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
         case Err(diag_err):
@@ -2247,10 +2208,8 @@ def cmd_config_diff(
     configs_dir = paths.docs_dir
     has_drift = False
     svc_targets = _resolve_service_targets(target)
-    include_nuvio = _should_include_nuvio_collections(target)
-    include_nuvio_badges = _should_include_nuvio_badges(target)
-    include_nuvio_meta = _should_include_nuvio_meta(target)
-    include_nuvio_settings = _should_include_nuvio_settings(target)
+    compiled = _compile_all(ctx)
+    nuvio_docs = _nuvio_docs_for_target(target, implicit_all=True)
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
@@ -2264,195 +2223,49 @@ def cmd_config_diff(
                 bindings=bindings,
                 tenant_name=ctx.manifest.name,
                 resolved_profiles=ctx.profiles,
+                compiled_profiles=compiled,
             )
 
         svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}
-        nuvio_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
-            None
-        )
-        badges_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
-            None
-        )
-        meta_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
-            None
-        )
-        settings_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
-            None
-        )
-        cols_path = configs_dir / "nuvio_collections.json"
-        badges_path = configs_dir / "nuvio_badges.json"
-        meta_path = configs_dir / "nuvio_meta.json"
-        settings_path = configs_dir / "nuvio_settings.json"
-
-        max_workers = max(
-            1,
-            len(svc_targets)
-            + (1 if include_nuvio else 0)
-            + (1 if include_nuvio_badges else 0)
-            + (1 if include_nuvio_meta else 0)
-            + (1 if include_nuvio_settings else 0),
-        )
+        nuvio_outcomes: list[ConfigDiffOutcome] = []
         with (
             console.status("🔍 Comparing local configs against live remote instances in parallel..."),
-            concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool,
+            concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(svc_targets) + 1)) as pool,
         ):
             futures = [pool.submit(_diff_one, sid) for sid in svc_targets]
-            if include_nuvio and cols_path.exists():
-                nuvio_future = pool.submit(
-                    _pull_remote_nuvio_collections_doc, configs_dir, env, http_client
+            nuvio_future = (
+                pool.submit(
+                    _diff_nuvio_profiles,
+                    ctx,
+                    compiled,
+                    nuvio_docs,
+                    env,
+                    http_client,
+                    strict=target.strip().lower() != "all",
                 )
-            if include_nuvio_badges and badges_path.exists():
-                badges_future = pool.submit(
-                    _pull_remote_nuvio_badges_doc, configs_dir, env, http_client
-                )
-            if include_nuvio_meta and meta_path.exists():
-                meta_future = pool.submit(
-                    _pull_remote_nuvio_meta_doc, configs_dir, env, http_client
-                )
-            if include_nuvio_settings and settings_path.exists():
-                settings_future = pool.submit(
-                    _pull_remote_nuvio_settings_doc, configs_dir, env, http_client
-                )
+                if nuvio_docs
+                else None
+            )
             for fut in futures:
                 sid, res = fut.result()
                 svc_diff_results[sid] = res
+            if nuvio_future is not None:
+                nuvio_outcomes = nuvio_future.result()
 
         collected_outcomes: list[ConfigDiffOutcome] = []
         skipped_msgs: list[str] = []
-
         for svc_id in svc_targets:
             match svc_diff_results[svc_id]:
                 case Err(err):
                     err_console.print(f"❌ {err}")
                     raise typer.Exit(code=1)
                 case Ok(None):
-                    skipped_msgs.append(
-                        f"⏭️  [{svc_id}] Skipping diff: missing local config or credentials in .env"
-                    )
+                    skipped_msgs.append(f"⏭️  [{svc_id}] Skipping diff: missing local config or credentials in .env")
                 case Ok(outcome):
                     assert outcome is not None
                     collected_outcomes.append(outcome)
-                    if not outcome.in_sync:
-                        has_drift = True
-
-        if nuvio_future is not None:
-            match read_json_file(cols_path):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(local_cols_doc):
-                    match nuvio_future.result():
-                        case Err(err):
-                            if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                                err_console.print(f"❌ {err}")
-                                raise typer.Exit(code=1)
-                        case Ok((remote_cols_doc, _)) if remote_cols_doc is not None:
-                            col_diff = compute_config_diff(
-                                local_cols_doc,
-                                remote_cols_doc,
-                                target="nuvio_collections",
-                            )
-                            collected_outcomes.append(col_diff)
-                            if not col_diff.in_sync:
-                                has_drift = True
-                        case Ok():
-                            if target.strip().lower() in ("nuvio_collections", "nuvio"):
-                                skipped_msgs.append(
-                                    "⏭️  [nuvio_collections] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                                )
-
-        if badges_future is not None:
-            match read_json_file(badges_path):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(local_badges_raw):
-                    match normalize_nuvio_badges_doc(local_badges_raw):
-                        case Err(err):
-                            err_console.print(f"❌ {err}")
-                            raise typer.Exit(code=1)
-                        case Ok(local_badges_doc):
-                            match badges_future.result():
-                                case Err(err):
-                                    if target.strip().lower() in ("nuvio_badges", "nuvio"):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                case Ok((remote_badges_doc, _)) if remote_badges_doc is not None:
-                                    badge_diff = compute_config_diff(
-                                        local_badges_doc,
-                                        remote_badges_doc,
-                                        target="nuvio_badges",
-                                    )
-                                    collected_outcomes.append(badge_diff)
-                                    if not badge_diff.in_sync:
-                                        has_drift = True
-                                case Ok():
-                                    if target.strip().lower() in ("nuvio_badges", "nuvio"):
-                                        skipped_msgs.append(
-                                            "⏭️  [nuvio_badges] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                                        )
-
-        if meta_future is not None:
-            match read_json_file(meta_path):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(local_meta_raw):
-                    match normalize_nuvio_meta_doc(local_meta_raw):
-                        case Err(err):
-                            err_console.print(f"❌ {err}")
-                            raise typer.Exit(code=1)
-                        case Ok(local_meta_doc):
-                            match meta_future.result():
-                                case Err(err):
-                                    if target.strip().lower() in ("nuvio_meta", "nuvio"):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                case Ok((remote_meta_doc, _)) if remote_meta_doc is not None:
-                                    meta_diff = compute_config_diff(
-                                        local_meta_doc,
-                                        remote_meta_doc,
-                                        target="nuvio_meta",
-                                    )
-                                    collected_outcomes.append(meta_diff)
-                                    if not meta_diff.in_sync:
-                                        has_drift = True
-                                case Ok():
-                                    if target.strip().lower() in ("nuvio_meta", "nuvio"):
-                                        skipped_msgs.append(
-                                            "⏭️  [nuvio_meta] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                                        )
-
-        if settings_future is not None:
-            match read_json_file(settings_path):
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(local_settings_raw):
-                    match normalize_nuvio_settings_doc(local_settings_raw):
-                        case Err(err):
-                            err_console.print(f"❌ {err}")
-                            raise typer.Exit(code=1)
-                        case Ok(local_settings_doc):
-                            match settings_future.result():
-                                case Err(err):
-                                    if target.strip().lower() in ("nuvio_settings", "nuvio"):
-                                        err_console.print(f"❌ {err}")
-                                        raise typer.Exit(code=1)
-                                case Ok((remote_settings_doc, _)) if remote_settings_doc is not None:
-                                    settings_diff = compute_config_diff(
-                                        local_settings_doc,
-                                        remote_settings_doc,
-                                        target="nuvio_settings",
-                                    )
-                                    collected_outcomes.append(settings_diff)
-                                    if not settings_diff.in_sync:
-                                        has_drift = True
-                                case Ok():
-                                    if target.strip().lower() in ("nuvio_settings", "nuvio"):
-                                        skipped_msgs.append(
-                                            "⏭️  [nuvio_settings] Skipping diff: missing Nuvio connection or NUVIO_SUPABASE_ANON_KEY in .env"
-                                        )
+        collected_outcomes.extend(nuvio_outcomes)
+        has_drift = any(not o.in_sync for o in collected_outcomes)
 
         for msg in skipped_msgs:
             console.print(msg)
@@ -2475,15 +2288,14 @@ def cmd_config_sanitize(
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
-    """Normalize, dehydrate, and scrub secrets from the tenant's JSON documents."""
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
-    working_env = dict(env)
+    """Normalize, dehydrate, and scrub secrets from the tenant's service documents."""
+    ctx = _resolve_context(workspace_dir, tenant, instance)
+    root_dir, env_path, configs_dir = ctx.paths.root, ctx.paths.env_file, ctx.paths.docs_dir
+    working_env = dict(ctx.env)
     found_any = False
 
     for svc_id in _resolve_service_targets(target):
-        match _sanitize_service(
-            svc_id, working_env, env_path=env_path, configs_dir=configs_dir, instance=instance
-        ):
+        match _sanitize_service(svc_id, working_env, env_path=env_path, configs_dir=configs_dir, instance=instance):
             case Err(err):
                 err_console.print(f"❌ {err}")
                 raise typer.Exit(code=1)
@@ -2495,104 +2307,10 @@ def cmd_config_sanitize(
             case Ok():
                 pass
 
-    cols_path = configs_dir / "nuvio_collections.json"
-    if _should_include_nuvio_collections(target) and cols_path.exists():
-        match read_json_file(cols_path):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok(raw_cols):
-                decompiled_cols = decompile_nuvio_collections(raw_cols)
-                normalized_doc: JsonDict = {
-                    "version": str(raw_cols.get("version") or "1.0.0"),
-                    "collections": decompiled_cols if decompiled_cols else raw_cols.get("collections", []),
-                }
-                scrubbed_cols, working_env = harvest_and_scrub("aiomanager", normalized_doc, working_env)
-                if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                    err_console.print(f"❌ {env_err.error}")
-                    raise typer.Exit(code=1)
-                if isinstance(write_res := write_json_file(cols_path, scrubbed_cols), Ok):
-                    found_any = True
-                    console.print(
-                        f"🧹 [nuvio_collections] Auto-harvested secrets to .env & scrubbed {write_res.value.relative_to(root_dir)}"
-                    )
-
-    badges_path = configs_dir / "nuvio_badges.json"
-    if _should_include_nuvio_badges(target) and badges_path.exists():
-        match read_json_file(badges_path):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok(raw_badges):
-                match normalize_nuvio_badges_doc(raw_badges):
-                    case Err(err):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    case Ok(norm_badges):
-                        scrubbed_badges, working_env = harvest_and_scrub(
-                            "aiomanager", norm_badges, working_env
-                        )
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        if isinstance(write_res := write_json_file(badges_path, scrubbed_badges), Ok):
-                            found_any = True
-                            console.print(
-                                f"🧹 [nuvio_badges] Auto-harvested secrets to .env & scrubbed {write_res.value.relative_to(root_dir)}"
-                            )
-
-    meta_path = configs_dir / "nuvio_meta.json"
-    if _should_include_nuvio_meta(target) and meta_path.exists():
-        match read_json_file(meta_path):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok(raw_meta):
-                match normalize_nuvio_meta_doc(raw_meta):
-                    case Err(err):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    case Ok(norm_meta):
-                        scrubbed_meta, working_env = harvest_and_scrub(
-                            "aiomanager", norm_meta, working_env
-                        )
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        if isinstance(write_res := write_json_file(meta_path, scrubbed_meta), Ok):
-                            found_any = True
-                            console.print(
-                                f"🧹 [nuvio_meta] Auto-harvested secrets to .env & scrubbed {write_res.value.relative_to(root_dir)}"
-                            )
-
-    settings_path = configs_dir / "nuvio_settings.json"
-    if _should_include_nuvio_settings(target) and settings_path.exists():
-        match read_json_file(settings_path):
-            case Err(err):
-                err_console.print(f"❌ {err}")
-                raise typer.Exit(code=1)
-            case Ok(raw_settings):
-                match normalize_nuvio_settings_doc(raw_settings):
-                    case Err(err):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    case Ok(norm_settings):
-                        scrubbed_settings, working_env = harvest_and_scrub(
-                            "aiomanager", norm_settings, working_env
-                        )
-                        if isinstance(env_err := save_env_updates(env_path, working_env), Err):
-                            err_console.print(f"❌ {env_err.error}")
-                            raise typer.Exit(code=1)
-                        if isinstance(write_res := write_json_file(settings_path, scrubbed_settings), Ok):
-                            found_any = True
-                            console.print(
-                                f"🧹 [nuvio_settings] Auto-harvested secrets to .env & scrubbed {write_res.value.relative_to(root_dir)}"
-                            )
-
     if not found_any:
-        console.print("ℹ️  No documents found in the tenant to sanitize.")
+        console.print("ℹ️  No service documents found in the tenant to sanitize.")
     else:
-        match _sync_architecture_diagrams(root_dir, configs_dir):
+        match _sync_diagrams_for_ctx(ctx):
             case Ok():
                 console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
             case Err(diag_err):
@@ -2610,8 +2328,9 @@ def cmd_config_diagram(
     tenant: TenantNameOption = None,
 ) -> None:
     """Compile LikeC4 (architecture/topology.c4) & ARCHITECTURE.md from the tenant's JSON documents."""
-    root_dir, _, configs_dir, _ = _resolve_paths(workspace_dir, tenant)
-    match _sync_architecture_diagrams(root_dir, configs_dir, check_only=check):
+    ctx = _resolve_context(workspace_dir, tenant)
+    root_dir = ctx.paths.root
+    match _sync_diagrams_for_ctx(ctx, check_only=check):
         case Err(err):
             err_console.print(f"❌ {err}")
             raise typer.Exit(code=1)
@@ -2638,8 +2357,9 @@ def cmd_config_warm(
     tenant: TenantNameOption = None,
 ) -> None:
     """Concurrently pre-warm all Home catalog endpoints across enabled addons."""
-    _, _, configs_dir, env = _resolve_paths(workspace_dir, tenant)
-    cfg_path = configs_dir / "aiomanager.json"
+    ctx = _resolve_context(workspace_dir, tenant)
+    env = ctx.env
+    cfg_path = ctx.paths.doc("aiomanager")
     if not cfg_path.exists():
         err_console.print("❌ Missing aiomanager.json")
         raise typer.Exit(code=1)

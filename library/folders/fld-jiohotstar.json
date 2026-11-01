@@ -1,0 +1,28 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-jiohotstar",
+  "folder": {
+    "id": "fld-jiohotstar",
+    "title": "JioHotstar",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "streaming.hst_movie",
+        "title": "JioHotstar Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "streaming.hst_series",
+        "title": "JioHotstar Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/jiohotstar.webp",
+    "focusGifEnabled": false
+  }
+}

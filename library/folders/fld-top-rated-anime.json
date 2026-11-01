@@ -1,0 +1,23 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-top-rated-anime",
+  "folder": {
+    "id": "fld-top-rated-anime",
+    "title": "Top Rated Anime",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.top_anime_anime",
+        "title": "All-Time Top Anime"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/anime/shonen-and-action-anime/shonen-and-action-anime-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/7cb9fcdf.webp",
+    "focusGifEnabled": true
+  }
+}

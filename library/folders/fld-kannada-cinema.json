@@ -1,0 +1,48 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-kannada-cinema",
+  "folder": {
+    "id": "fld-kannada-cinema",
+    "title": "Kannada Cinema",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "New Kannada Releases",
+        "catalog": {
+          "ref": "tmdb.discover.kannada_new_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Popular Kannada Movies",
+        "catalog": {
+          "ref": "tmdb.discover.kannada_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Top Rated Kannada Movies",
+        "catalog": {
+          "ref": "tmdb.discover.kannada_top_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Kannada Series",
+        "catalog": {
+          "ref": "tmdb.discover.kannada_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/kannada_cinema.webp",
+    "focusGifEnabled": false
+  }
+}

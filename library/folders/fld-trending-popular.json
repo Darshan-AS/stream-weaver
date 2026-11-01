@@ -1,0 +1,41 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-trending-popular",
+  "folder": {
+    "id": "fld-trending-popular",
+    "title": "Trending & Popular",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "trakt.trending.movies",
+        "title": "Trakt Trending Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.trending.shows",
+        "title": "Trakt Trending Series"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "tmdb.top",
+        "title": "TMDB Popular Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "tmdb.top",
+        "title": "TMDB Popular Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/discover/top-streaming-movies/v2/top-streaming-movies-hover.gif",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
+    "focusGifEnabled": true
+  }
+}

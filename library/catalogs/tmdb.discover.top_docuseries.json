@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.top_docuseries",
+  "catalog": {
+    "id": "tmdb.discover.top_docuseries",
+    "type": "series",
+    "name": "Top Rated Docuseries & Courses",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "99",
+          "sort_by": "vote_average.desc",
+          "vote_count.gte": 50
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}
