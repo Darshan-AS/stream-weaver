@@ -647,6 +647,7 @@ def compile_architecture_bundle(
     nuvio_badges: Mapping[str, Any] | None = None,
     nuvio_meta: Mapping[str, Any] | None = None,
     nuvio_settings: Mapping[str, Any] | None = None,
+    profiles: Sequence[Mapping[str, Any]] = (),
 ) -> ArchitectureBundle:
     """
     Pure function: compiles the declarative JSON configs into:
@@ -663,11 +664,39 @@ def compile_architecture_bundle(
         nuvio_meta=nuvio_meta,
         nuvio_settings=nuvio_settings,
     )
+    markdown = _build_architecture_markdown(snapshot)
+    if profiles:
+        markdown = markdown.rstrip("\n") + "\n" + _build_profiles_markdown(profiles) + "\n"
     return ArchitectureBundle(
         likec4_dsl=_build_likec4_dsl(snapshot),
         likec4_config_json=compile_likec4_config(),
-        architecture_markdown=_build_architecture_markdown(snapshot),
+        architecture_markdown=markdown,
     )
+
+
+def _build_profiles_markdown(profiles: Sequence[Mapping[str, Any]]) -> str:
+    """
+    `## 7. Profiles` — one row per person: which instances and logins they bind to, which Nuvio
+    profile they sync, and which collection recipes compose their Home. Input rows are plain
+    mappings produced by the CLI from `profile.json` (keeps this module free of profile types).
+    """
+    lines = [
+        "",
+        "---",
+        "",
+        "## 7. Profiles (`profiles/<name>/profile.json`)",
+        "",
+        "| Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |",
+        "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
+    ]
+    for pr in profiles:
+        cols = ", ".join(f"`{c}`" for c in pr.get("collections", [])) or "—"
+        extras = ", ".join(f"`{e}`" for e in pr.get("extras", [])) or "—"
+        lines.append(
+            f"| `{pr.get('name')}` | {pr.get('displayName', '')} | `{pr.get('aiostreams', 'default')}` | "
+            f"`{pr.get('aiometadata', 'default')}` | {pr.get('nuvio') or '—'} | {pr.get('stremio') or '—'} | {cols} | {extras} |"
+        )
+    return "\n".join(lines)
 
 
 def _build_likec4_dsl(snap: TopologySnapshot) -> str:

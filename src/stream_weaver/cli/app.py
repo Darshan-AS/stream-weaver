@@ -91,7 +91,7 @@ from stream_weaver.effects.storage import (
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
 from stream_weaver.providers.services import build_config_services, warm_home_catalogs
-from stream_weaver.providers.services.nuvio_session import password_grant
+from stream_weaver.providers.services.nuvio_session import NuvioSessionPool, password_grant
 
 app = typer.Typer(
     name="sw",
@@ -122,6 +122,15 @@ InstanceNameOption = Annotated[
         "--instance",
         "-i",
         help="Named service instance from tenant.json to address (default: `default`)",
+    ),
+]
+
+ProfileNameOption = Annotated[
+    str | None,
+    typer.Option(
+        "--profile",
+        "-p",
+        help="Scope to one profile: its Nuvio profile and its AIOMetadata/AIOStreams instances (default: all profiles)",
     ),
 ]
 
@@ -450,6 +459,59 @@ def _compile_all_result(ctx: _Context) -> Result[list[CompiledProfile]]:
             case Ok(cp):
                 out.append(cp)
     return Ok(out)
+
+
+def _scope_to_profile(
+    ctx: _Context, compiled: list[CompiledProfile], profile: str | None
+) -> tuple[_Context, list[CompiledProfile]]:
+    """
+    `--profile NAME`: narrows the compiled set to that profile and re-binds the aiometadata /
+    aiostreams service bindings to the instances that profile uses (so `sw push aiometadata
+    --profile dad` addresses Dad's instance without a separate `--instance`).
+    """
+    if profile is None:
+        return ctx, compiled
+    chosen = [cp for cp in compiled if cp.name == profile]
+    if not chosen:
+        known = ", ".join(cp.name for cp in compiled) or "none"
+        err_console.print(f"❌ No profile named `{profile}` (known: {known})")
+        raise typer.Exit(code=1)
+    bindings = dict(ctx.bindings)
+    for svc, binding in chosen[0].resolved.instances.items():
+        bindings[svc] = binding
+    scoped = _Context(
+        paths=ctx.paths,
+        manifest=ctx.manifest,
+        env=ctx.env,
+        bindings=bindings,
+        profiles=ctx.profiles,  # managed accounts always consider every profile
+        library=ctx.library,
+    )
+    return scoped, chosen
+
+
+def _profiles_summary(ctx: _Context) -> list[JsonDict]:
+    """Plain rows for the architecture `## Profiles` table."""
+    rows: list[JsonDict] = []
+    for rp in ctx.profiles:
+        pr = rp.profile
+        nuvio = None
+        if pr.nuvio:
+            target = pr.nuvio.profile_id[:8] + "…" if pr.nuvio.profile_id else f"name={pr.nuvio.profile_name}"
+            nuvio = f"`{pr.nuvio.login}` → {target}"
+        rows.append(
+            {
+                "name": pr.name,
+                "displayName": pr.display_name,
+                "aiostreams": pr.instances.get("aiostreams", "default"),
+                "aiometadata": pr.instances.get("aiometadata", "default"),
+                "nuvio": nuvio,
+                "stremio": f"`{pr.stremio.login}`" if pr.stremio else None,
+                "collections": [c.get("ref") if isinstance(c, dict) and "ref" in c else (c.get("id") if isinstance(c, dict) else "?") for c in pr.collections],
+                "extras": [a.name for a in pr.extra_addons],
+            }
+        )
+    return rows
 
 
 def _nuvio_targets_or_exit(ctx: _Context, compiled: Sequence[CompiledProfile]) -> list[NuvioTarget]:
@@ -882,6 +944,7 @@ def _sync_architecture_diagrams(
     compiled: Sequence[CompiledProfile] = (),
     *,
     check_only: bool = False,
+    profiles_summary: Sequence[JsonDict] = (),
 ) -> Result[tuple[Path, ...]]:
     """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from the tenant's documents + compiled profiles."""
     merged_cols: list[JsonDict] = []
@@ -905,6 +968,7 @@ def _sync_architecture_diagrams(
         nuvio_badges=badges,
         nuvio_meta=meta,
         nuvio_settings=settings,
+        profiles=profiles_summary,
     )
     targets: tuple[tuple[Path, str], ...] = (
         (paths.architecture_dir / "topology.c4", bundle.likec4_dsl),
@@ -937,7 +1001,9 @@ def _sync_diagrams_for_ctx(ctx: _Context, *, check_only: bool = False) -> Result
         case Err() as err:
             return err
         case Ok(compiled):
-            return _sync_architecture_diagrams(ctx.paths, compiled, check_only=check_only)
+            return _sync_architecture_diagrams(
+                ctx.paths, compiled, check_only=check_only, profiles_summary=_profiles_summary(ctx)
+            )
 
 
 # ============================================================================
@@ -1149,7 +1215,9 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
                 case _:
                     pass
 
-    match _sync_architecture_diagrams(paths, compiled, check_only=True):
+    match _sync_architecture_diagrams(
+        paths, compiled, check_only=True, profiles_summary=_profiles_summary(ctx) if ctx else ()
+    ):
         case Err(diag_err):
             failures.append(f"diagram: {diag_err}")
         case Ok(stale) if stale:
@@ -1298,6 +1366,46 @@ def cmd_profile_import(
                 f"   ⚠️  {plat} connection could not be matched to a registered login — "
                 f"run `sw login adopt {plat} --login <name> --prefix <PREFIX>` and re-import"
             )
+
+
+@profile_app.command("nuvio-list")
+def cmd_profile_nuvio_list(
+    login: Annotated[str, typer.Option("--login", "-l", help="Nuvio login name")],
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """List the Nuvio profiles that exist on a login (names + indexes) — use with `sw profile new --nuvio-profile`."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    match resolve_login_binding(ctx.manifest, ctx.env, "nuvio", login):
+        case Err(login_err):
+            err_console.print(f"❌ {login_err}")
+            raise typer.Exit(code=1)
+        case Ok(lb):
+            pass
+    with HttpxClient() as http_client:
+        pool = NuvioSessionPool(http_client, ctx.env.get("NUVIO_SUPABASE_ANON_KEY", ""))
+        match pool.acquire(
+            access_token=lb.credentials.get("accessToken", ""),
+            refresh_token=lb.credentials.get("refreshToken", ""),
+            env=ctx.env,
+        ):
+            case Err(sess_err):
+                err_console.print(f"❌ {sess_err}")
+                raise typer.Exit(code=1)
+            case Ok(session):
+                pass
+    if session.refreshed_secrets:
+        _save_env_or_exit(ctx.paths.env_file, {**ctx.env, **session.refreshed_secrets})
+    table = Table(title=f"Nuvio profiles — login `{login}`", box=box.ROUNDED, header_style="bold")
+    for col in ("Index", "Name", "Id"):
+        table.add_column(col, overflow="fold")
+    for p in session.profiles:
+        table.add_row(
+            str(p.get("profile_index") or p.get("profileIndex") or "?"),
+            str(p.get("name") or p.get("profile_name") or "?"),
+            str(p.get("id") or ""),
+        )
+    console.print(table)
 
 
 @profile_app.command("new")
@@ -1985,16 +2093,17 @@ def cmd_config_pull(
         typer.Argument(help="Service to pull: all, aiostreams, aiometadata, aiomanager, nuvio, nuvio_collections, nuvio_badges, nuvio_meta, or nuvio_settings"),
     ] = "all",
     instance: InstanceNameOption = DEFAULT_INSTANCE,
+    profile: ProfileNameOption = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
     ctx = _resolve_context(workspace_dir, tenant, instance)
+    ctx, compiled = _scope_to_profile(ctx, _compile_all(ctx), profile)
     paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
-    compiled = _compile_all(ctx)
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
@@ -2080,6 +2189,7 @@ def cmd_config_push(
         typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
     ] = False,
     instance: InstanceNameOption = DEFAULT_INSTANCE,
+    profile: ProfileNameOption = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -2089,11 +2199,12 @@ def cmd_config_push(
         return
 
     ctx = _resolve_context(workspace_dir, tenant, instance)
+    all_compiled = _compile_all(ctx)
+    ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
     paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     env_path, configs_dir = paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
-    compiled = _compile_all(ctx)
 
     # Phase 1: upstream addon services (`aiostreams`, `aiometadata`) run concurrently.
     # Phase 2: `aiomanager` runs after Phase 1 so it refreshes the newly updated upstream manifests.
@@ -2120,7 +2231,7 @@ def cmd_config_push(
                             bindings=bindings,
                             tenant_name=ctx.manifest.name,
                             resolved_profiles=ctx.profiles,
-                            compiled_profiles=compiled,
+                            compiled_profiles=all_compiled,
                             create=create,
                         ),
                     )
@@ -2143,7 +2254,7 @@ def cmd_config_push(
                             bindings=bindings,
                             tenant_name=ctx.manifest.name,
                             resolved_profiles=ctx.profiles,
-                            compiled_profiles=compiled,
+                            compiled_profiles=all_compiled,
                             create=create,
                         )
                     }
@@ -2199,16 +2310,18 @@ def cmd_config_diff(
         typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
     ] = False,
     instance: InstanceNameOption = DEFAULT_INSTANCE,
+    profile: ProfileNameOption = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Compare the tenant's documents against live remote instances without modifying any files."""
     ctx = _resolve_context(workspace_dir, tenant, instance)
+    all_compiled = _compile_all(ctx)
+    ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
     paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
     configs_dir = paths.docs_dir
     has_drift = False
     svc_targets = _resolve_service_targets(target)
-    compiled = _compile_all(ctx)
     nuvio_docs = _nuvio_docs_for_target(target, implicit_all=True)
 
     with HttpxClient() as http_client:
@@ -2223,7 +2336,7 @@ def cmd_config_diff(
                 bindings=bindings,
                 tenant_name=ctx.manifest.name,
                 resolved_profiles=ctx.profiles,
-                compiled_profiles=compiled,
+                compiled_profiles=all_compiled,
             )
 
         svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}
