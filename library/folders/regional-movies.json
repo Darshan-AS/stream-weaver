@@ -1,0 +1,137 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "regional-movies",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "decades": {
+      "type": "list",
+      "items": "object",
+      "default": [
+        {
+          "id": "80s",
+          "label": "80s",
+          "from": "1900-01-01",
+          "to": "1989-12-31"
+        },
+        {
+          "id": "90s",
+          "label": "90s",
+          "from": "1990-01-01",
+          "to": "1999-12-31"
+        },
+        {
+          "id": "2000s",
+          "label": "2000s",
+          "from": "2000-01-01",
+          "to": "2009-12-31"
+        }
+      ]
+    },
+    "top": {
+      "type": "bool",
+      "default": true
+    },
+    "newMinVotes": {
+      "type": "int",
+      "default": 3
+    },
+    "topMinVotes": {
+      "type": "int",
+      "default": 20
+    },
+    "decadeMinVotes": {
+      "type": "int",
+      "default": 5
+    },
+    "coverImageUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "folder": {
+    "id": "fld-${slug}-movies",
+    "title": "${label} Movies",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "New ${label} Releases",
+        "catalog": {
+          "ref": "regional-new-movies",
+          "with": {
+            "language": "${language}",
+            "slug": "${slug}",
+            "label": "${label}",
+            "minVotes": "${newMinVotes}"
+          }
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Popular ${label} Movies",
+        "catalog": {
+          "ref": "regional-popular-movies",
+          "with": {
+            "language": "${language}",
+            "slug": "${slug}",
+            "label": "${label}"
+          }
+        }
+      },
+      {
+        "if": "${top}",
+        "item": {
+          "addon": "aiometadata",
+          "type": "movie",
+          "title": "Top Rated ${label} Movies",
+          "catalog": {
+            "ref": "regional-top-movies",
+            "with": {
+              "language": "${language}",
+              "slug": "${slug}",
+              "label": "${label}",
+              "minVotes": "${topMinVotes}"
+            }
+          }
+        }
+      },
+      {
+        "for": "d",
+        "in": "${decades}",
+        "item": {
+          "addon": "aiometadata",
+          "type": "movie",
+          "title": "${label} Classics — ${d.label}",
+          "catalog": {
+            "ref": "regional-decade-movies",
+            "with": {
+              "language": "${language}",
+              "slug": "${slug}",
+              "label": "${label}",
+              "decade": "${d.id}",
+              "decadeLabel": "${d.label}",
+              "from": "${d.from}",
+              "to": "${d.to}",
+              "minVotes": "${decadeMinVotes}"
+            }
+          }
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "${coverImageUrl}",
+    "focusGifEnabled": false
+  }
+}

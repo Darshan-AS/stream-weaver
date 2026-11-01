@@ -2,11 +2,22 @@
   "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
   "version": 1,
   "kind": "catalog",
-  "id": "tmdb.discover.kannada_series",
+  "id": "regional-series",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    }
+  },
   "catalog": {
-    "id": "tmdb.discover.kannada_series",
+    "id": "tmdb.discover.${slug}_series",
     "type": "series",
-    "name": "Kannada Series",
+    "name": "${label} Series",
     "displayType": "series",
     "source": "tmdb",
     "metadata": {
@@ -14,7 +25,7 @@
         "version": 1,
         "mediaType": "tv",
         "params": {
-          "with_original_language": "kn",
+          "with_original_language": "${language}",
           "sort_by": "popularity.desc"
         }
       }

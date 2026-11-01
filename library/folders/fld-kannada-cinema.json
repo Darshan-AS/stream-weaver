@@ -12,7 +12,12 @@
         "type": "movie",
         "title": "New Kannada Releases",
         "catalog": {
-          "ref": "tmdb.discover.kannada_new_movies"
+          "ref": "regional-new-movies",
+          "with": {
+            "language": "kn",
+            "slug": "kannada",
+            "label": "Kannada"
+          }
         }
       },
       {
@@ -20,7 +25,12 @@
         "type": "movie",
         "title": "Popular Kannada Movies",
         "catalog": {
-          "ref": "tmdb.discover.kannada_movies"
+          "ref": "regional-popular-movies",
+          "with": {
+            "language": "kn",
+            "slug": "kannada",
+            "label": "Kannada"
+          }
         }
       },
       {
@@ -28,7 +38,12 @@
         "type": "movie",
         "title": "Top Rated Kannada Movies",
         "catalog": {
-          "ref": "tmdb.discover.kannada_top_movies"
+          "ref": "regional-top-movies",
+          "with": {
+            "language": "kn",
+            "slug": "kannada",
+            "label": "Kannada"
+          }
         }
       },
       {
@@ -36,7 +51,12 @@
         "type": "series",
         "title": "Kannada Series",
         "catalog": {
-          "ref": "tmdb.discover.kannada_series"
+          "ref": "regional-series",
+          "with": {
+            "language": "kn",
+            "slug": "kannada",
+            "label": "Kannada"
+          }
         }
       }
     ],

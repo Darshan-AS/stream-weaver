@@ -2,11 +2,22 @@
   "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
   "version": 1,
   "kind": "catalog",
-  "id": "tmdb.discover.hindi_movies",
+  "id": "regional-popular-movies",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    }
+  },
   "catalog": {
-    "id": "tmdb.discover.hindi_movies",
+    "id": "tmdb.discover.${slug}_movies",
     "type": "movie",
-    "name": "Hindi Movies",
+    "name": "${label} Movies",
     "displayType": "movie",
     "source": "tmdb",
     "metadata": {
@@ -14,7 +25,7 @@
         "version": 1,
         "mediaType": "movie",
         "params": {
-          "with_original_language": "hi",
+          "with_original_language": "${language}",
           "sort_by": "popularity.desc"
         }
       }
