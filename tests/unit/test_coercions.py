@@ -13,6 +13,7 @@ from stream_weaver.core.coercions import (
 )
 from stream_weaver.core.crypto import decrypt_envelope, encrypt_envelope
 from stream_weaver.core.errors import NetworkError
+from stream_weaver.core.instances import InstanceBinding
 from stream_weaver.core.result import Ok, Result
 from stream_weaver.effects.http import HttpResponse
 from stream_weaver.providers.services import AIOManagerService, extract_home_catalog_urls
@@ -344,12 +345,15 @@ def test_aiomanager_push_remote_preserves_encrypted_telemetry() -> None:
         "version": "2.0.0",
         "accounts": [{"id": "acc-1", "name": "Test", "addons": []}],
     }
-    env = {
-        "AIOMANAGER_URL": "https://aiomanager.example.com",
-        "AIOMANAGER_UUID": "u-test-1",
-        "AIOMANAGER_SYNC_PASSWORD": password,
-    }
-    push_res = svc.push_remote(local_dehydrated, env)
+    binding = InstanceBinding(
+        service="aiomanager",
+        name="default",
+        prefix="AIOMANAGER",
+        url="https://aiomanager.example.com",
+        uuid="u-test-1",
+        password=password,
+    )
+    push_res = svc.push_remote(local_dehydrated, binding, {})
     assert isinstance(push_res, Ok)
     _, dehydrated_for_disk, _ = push_res.value
 

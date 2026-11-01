@@ -8,7 +8,7 @@ from typing import Any
 
 from stream_weaver.core.errors import StorageError
 from stream_weaver.core.result import Err, Ok, Result
-from stream_weaver.core.secrets import merge_env_text, parse_env_text
+from stream_weaver.core.secrets import append_env_placeholders, merge_env_text, parse_env_text
 from stream_weaver.core.types import JsonDict, is_json_dict
 
 
@@ -32,6 +32,19 @@ def save_env_updates(env_path: Path, updates: Mapping[str, str]) -> Result[None,
         merged_text = merge_env_text(existing_text, updates)
         env_path.write_text(merged_text, encoding="utf-8")
         return Ok(None)
+    except OSError as exc:
+        return Err(StorageError(message=f"Failed to update {env_path}: {exc}", path=str(env_path)))
+
+
+def scaffold_env_keys(env_path: Path, keys: list[str], *, header: str = "") -> Result[list[str], StorageError]:
+    """Appends `KEY=` placeholders for keys missing from `env_path`; returns the keys added."""
+    try:
+        existing_text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+        merged_text = append_env_placeholders(existing_text, keys, header=header)
+        if merged_text != existing_text:
+            env_path.write_text(merged_text, encoding="utf-8")
+        before = set(existing_text.splitlines())
+        return Ok([k for k in keys if f"{k}=" in set(merged_text.splitlines()) - before])
     except OSError as exc:
         return Err(StorageError(message=f"Failed to update {env_path}: {exc}", path=str(env_path)))
 

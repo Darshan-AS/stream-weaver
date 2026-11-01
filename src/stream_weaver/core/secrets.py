@@ -2,7 +2,7 @@
 
 import copy
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -347,6 +347,31 @@ def merge_env_text(existing_text: str, updates: Mapping[str, str]) -> str:
             lines.append(f"{secret_key}={secret_val}")
 
     return "\n".join(lines) + ("\n" if lines else "")
+
+
+def append_env_placeholders(existing_text: str, keys: Sequence[str], *, header: str = "") -> str:
+    """
+    Purely appends `KEY=` placeholder lines for every key not already present in `.env` text
+    (used when registering a new instance / login). Unlike `merge_env_text`, empty values are
+    the point. Existing content is untouched; an optional `# header` precedes the new block.
+    """
+    present = {
+        ln.split("=", 1)[0].strip()
+        for ln in existing_text.splitlines()
+        if "=" in ln and not ln.lstrip().startswith("#")
+    }
+    missing = [k for k in keys if k not in present]
+    if not missing:
+        return existing_text
+    block: list[str] = []
+    if existing_text and not existing_text.endswith("\n"):
+        block.append("")
+    if existing_text:
+        block.append("")
+    if header:
+        block.append(f"# {header}")
+    block.extend(f"{k}=" for k in missing)
+    return existing_text + "\n".join(block) + "\n"
 
 
 # ---------------------------------------------------------------------------

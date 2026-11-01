@@ -15,6 +15,12 @@ from rich.table import Table
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
 from stream_weaver.core.crypto import decrypt_envelope
+from stream_weaver.core.instances import (
+    DEFAULT_INSTANCE,
+    InstanceBinding,
+    instance_env_keys,
+    resolve_instance_binding,
+)
 from stream_weaver.core.nuvio_badges import normalize_nuvio_badges_doc
 from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
 from stream_weaver.core.nuvio_settings import active_blocks, normalize_nuvio_settings_doc
@@ -43,6 +49,7 @@ from stream_weaver.effects.storage import (
     read_json_file,
     read_text_file,
     save_env_updates,
+    scaffold_env_keys,
     write_json_file,
     write_text_file,
 )
@@ -70,6 +77,15 @@ WorkspaceDirOption = Annotated[
         "--dir",
         "-C",
         help=f"Tenant directory containing {TENANT_FILE} and .env (default: CWD if it is a tenant)",
+    ),
+]
+
+InstanceNameOption = Annotated[
+    str,
+    typer.Option(
+        "--instance",
+        "-i",
+        help="Named service instance from tenant.json to address (default: `default`)",
     ),
 ]
 
@@ -200,6 +216,30 @@ def _resolve_paths(
     """Returns `(tenant_root, env_file, docs_dir, env)` for the active tenant."""
     paths = _resolve_tenant(workspace_dir, tenant_name)
     return paths.root, paths.env_file, paths.docs_dir, load_env_file(paths.env_file)
+
+
+def _resolve_context(
+    workspace_dir: Path | None = None,
+    tenant_name: str | None = None,
+    instance: str = DEFAULT_INSTANCE,
+) -> tuple[TenantPaths, TenantManifest, dict[str, str], dict[ServiceId, InstanceBinding]]:
+    """Active tenant paths, validated manifest, `.env` map, and per-service bindings for `instance` (where registered)."""
+    paths = _resolve_tenant(workspace_dir, tenant_name)
+    manifest = _load_tenant_manifest(paths)
+    env = load_env_file(paths.env_file)
+    bindings: dict[ServiceId, InstanceBinding] = {}
+    for svc in ALL_SERVICES:
+        match resolve_instance_binding(manifest, env, svc, instance):
+            case Ok(binding):
+                bindings[svc] = binding
+            case Err():
+                continue
+    return paths, manifest, env, bindings
+
+
+def _service_doc_path(configs_dir: Path, service: ServiceId, instance: str = DEFAULT_INSTANCE) -> Path:
+    """`<service>.json` for the default instance, `<service>.<instance>.json` otherwise."""
+    return configs_dir / (f"{service}.json" if instance == DEFAULT_INSTANCE else f"{service}.{instance}.json")
 
 
 def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
@@ -409,6 +449,7 @@ def _persist_scrubbed_config(
     *,
     env_path: Path,
     configs_dir: Path,
+    instance: str = DEFAULT_INSTANCE,
 ) -> Result[tuple[Path, dict[str, str]]]:
     scrubbed_cfg, updated_env = harvest_and_scrub(service, raw_config, env)
     match save_env_updates(env_path, updated_env):
@@ -417,7 +458,7 @@ def _persist_scrubbed_config(
         case Ok():
             pass
 
-    target_path = configs_dir / f"{service}.json"
+    target_path = _service_doc_path(configs_dir, service, instance)
     match write_json_file(target_path, scrubbed_cfg):
         case Err() as err:
             return err
@@ -432,17 +473,24 @@ def _pull_service(
     env_path: Path,
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
+    bindings: Mapping[ServiceId, InstanceBinding],
 ) -> Result[tuple[Path | None, dict[str, str]]]:
     svc = services.get(service_id)
-    if svc is None or not svc.is_configured_for_pull(env):
+    binding = bindings.get(service_id)
+    if svc is None or binding is None or not binding.configured_for_pull():
         return Ok((None, env))
 
-    match svc.pull_remote(env):
+    match svc.pull_remote(binding):
         case Err() as err:
             return err
         case Ok(normalized_cfg):
             return _persist_scrubbed_config(
-                service_id, normalized_cfg, env, env_path=env_path, configs_dir=configs_dir
+                service_id,
+                normalized_cfg,
+                env,
+                env_path=env_path,
+                configs_dir=configs_dir,
+                instance=binding.name,
             )
 
 
@@ -452,11 +500,15 @@ def _diff_service(
     *,
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
+    bindings: Mapping[ServiceId, InstanceBinding],
 ) -> Result[ConfigDiffOutcome | None]:
     """Pulls remote service config in memory, scrubs secrets, and diffs against the tenant's `{service_id}.json`."""
-    cfg_path = configs_dir / f"{service_id}.json"
     svc = services.get(service_id)
-    if not cfg_path.exists() or svc is None or not svc.is_configured_for_pull(env):
+    binding = bindings.get(service_id)
+    if svc is None or binding is None or not binding.configured_for_pull():
+        return Ok(None)
+    cfg_path = _service_doc_path(configs_dir, service_id, binding.name)
+    if not cfg_path.exists():
         return Ok(None)
 
     match read_json_file(cfg_path):
@@ -465,7 +517,7 @@ def _diff_service(
         case Ok(local_scrubbed):
             pass
 
-    match svc.pull_remote(env):
+    match svc.pull_remote(binding):
         case Err() as err:
             return err
         case Ok(remote_normalized):
@@ -521,11 +573,15 @@ def _push_service(
     env_path: Path,
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
+    bindings: Mapping[ServiceId, InstanceBinding],
     create: bool = False,
 ) -> Result[tuple[ServicePushOutcome | None, dict[str, str]]]:
-    cfg_path = configs_dir / f"{service_id}.json"
     svc = services.get(service_id)
-    if not cfg_path.exists() or svc is None or not svc.is_configured_for_push(env, create=create):
+    binding = bindings.get(service_id)
+    if svc is None or binding is None or not binding.configured_for_push(create=create):
+        return Ok((None, env))
+    cfg_path = _service_doc_path(configs_dir, service_id, binding.name)
+    if not cfg_path.exists():
         return Ok((None, env))
 
     match read_json_file(cfg_path):
@@ -609,16 +665,25 @@ def _push_service(
                                 case Ok(norm_settings_doc):
                                     injected_cfg["nuvioSettings"] = norm_settings_doc
 
-    match svc.push_remote(injected_cfg, env, create=create):
+    match svc.push_remote(injected_cfg, binding, env, create=create):
         case Err() as err:
             return err
         case Ok((outcome, updated_cfg, discovered_secrets)):
             pass
 
+    if outcome.created and outcome.uuid:
+        # A freshly provisioned instance: persist its UUID under the binding's own env key.
+        discovered_secrets = {**discovered_secrets, binding.uuid_env_key: outcome.uuid}
+
     working_env = {**env, **discovered_secrets}
     if service_id == "aiomanager":
         match _persist_scrubbed_config(
-            service_id, updated_cfg, working_env, env_path=env_path, configs_dir=configs_dir
+            service_id,
+            updated_cfg,
+            working_env,
+            env_path=env_path,
+            configs_dir=configs_dir,
+            instance=binding.name,
         ):
             case Err() as err:
                 return err
@@ -640,8 +705,9 @@ def _sanitize_service(
     *,
     env_path: Path,
     configs_dir: Path,
+    instance: str = DEFAULT_INSTANCE,
 ) -> Result[tuple[Path | None, dict[str, str]]]:
-    cfg_path = configs_dir / f"{service_id}.json"
+    cfg_path = _service_doc_path(configs_dir, service_id, instance)
     if not cfg_path.exists():
         return Ok((None, env))
 
@@ -668,7 +734,7 @@ def _sanitize_service(
             return err
         case Ok(normalized):
             return _persist_scrubbed_config(
-                service_id, normalized, env, env_path=env_path, configs_dir=configs_dir
+                service_id, normalized, env, env_path=env_path, configs_dir=configs_dir, instance=instance
             )
 
 
@@ -819,9 +885,16 @@ def cmd_config_init(
                 case Ok(text):
                     _emit(f"{doc_name}.json", lambda d, t=text: write_text_file(d, t), force)
 
+    match _sync_architecture_diagrams(paths.root, paths.docs_dir):
+        case Err(diag_err):
+            err_console.print(f"❌ {diag_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+
     console.print(f"🧶 Initialized tenant `{tenant_name}` at {target_dir}")
     if created:
-        console.print(f"   ✅ Created:   {', '.join(created)}, architecture/")
+        console.print(f"   ✅ Created:   {', '.join(created)}, architecture/, ARCHITECTURE.md")
     if preserved:
         console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
     console.print("   💡 Next: fill in instance URLs & credentials in .env, then run `sw pull` or `sw push --create`.")
@@ -836,30 +909,34 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
             return [f"{TENANT_FILE}: {read_err}"]
         case Ok(manifest_doc):
             pass
+    manifest: TenantManifest | None = None
     match parse_tenant_manifest(manifest_doc):
         case Err(schema_err):
             failures.append(str(schema_err))
-        case Ok():
-            pass
+        case Ok(parsed_manifest):
+            manifest = parsed_manifest
 
     for svc_id in ALL_SERVICES:
-        doc_path = paths.doc(svc_id)
-        if not doc_path.exists():
-            continue
-        match read_json_file(doc_path):
-            case Err(read_err):
-                failures.append(f"{svc_id}.json: {read_err}")
+        instance_names = sorted(manifest.instances.get(svc_id, {})) if manifest else [DEFAULT_INSTANCE]
+        for inst in instance_names or [DEFAULT_INSTANCE]:
+            doc_path = _service_doc_path(paths.docs_dir, svc_id, inst)
+            label = paths.relative(doc_path)
+            if not doc_path.exists():
                 continue
-            case Ok(raw_doc):
-                pass
-        if svc_id == "aiomanager" and raw_doc.get("isEncrypted"):
-            failures.append("aiomanager.json: still an encrypted envelope; run `sw sanitize aiomanager`")
-            continue
-        match normalize_service_config(svc_id, raw_doc):
-            case Err(norm_err):
-                failures.append(f"{svc_id}.json: {norm_err}")
-            case Ok():
-                pass
+            match read_json_file(doc_path):
+                case Err(read_err):
+                    failures.append(f"{label}: {read_err}")
+                    continue
+                case Ok(raw_doc):
+                    pass
+            if svc_id == "aiomanager" and raw_doc.get("isEncrypted"):
+                failures.append(f"{label}: still an encrypted envelope; run `sw sanitize aiomanager`")
+                continue
+            match normalize_service_config(svc_id, raw_doc):
+                case Err(norm_err):
+                    failures.append(f"{label}: {norm_err}")
+                case Ok():
+                    pass
 
     nuvio_checks: tuple[tuple[str, Any], ...] = (
         ("nuvio_badges", normalize_nuvio_badges_doc),
@@ -905,6 +982,145 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
     return failures
 
 
+# ============================================================================
+# `sw instance` — named service instances (tenant.json `instances` registry)
+# ============================================================================
+
+instance_app = typer.Typer(help="Register and inspect named service instances of the active tenant.")
+app.add_typer(instance_app, name="instance")
+
+
+def _write_tenant_manifest(paths: TenantPaths, doc: JsonDict) -> None:
+    match parse_tenant_manifest(doc):
+        case Err(schema_err):
+            err_console.print(f"❌ {schema_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+    match write_json_file(paths.manifest_file, doc):
+        case Err(write_err):
+            err_console.print(f"❌ {write_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+
+
+@instance_app.command("list")
+def cmd_instance_list(
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Show every registered instance, its env prefix, and whether .env has credentials for it."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    manifest = _load_tenant_manifest(paths)
+    env = load_env_file(paths.env_file)
+
+    table = Table(
+        title=f"Instances — tenant `{manifest.name}`", box=box.ROUNDED, header_style="bold", expand=False
+    )
+    for col in ("Service", "Instance", "Env prefix", "Document", "URL", "UUID", "Ready"):
+        table.add_column(col, overflow="fold")
+    for svc in ALL_SERVICES:
+        for name in sorted(manifest.instances.get(svc, {})):
+            match resolve_instance_binding(manifest, env, svc, name):
+                case Err(bind_err):
+                    err_console.print(f"❌ {bind_err}")
+                    raise typer.Exit(code=1)
+                case Ok(b):
+                    pass
+            doc_path = _service_doc_path(paths.docs_dir, svc, name)
+            table.add_row(
+                svc,
+                name,
+                b.prefix,
+                paths.relative(doc_path) + ("" if doc_path.exists() else " (missing)"),
+                b.url or "—",
+                b.uuid or "—",
+                "✅ pull+push" if b.configured_for_pull() else ("🆕 push --create" if b.configured_for_push(create=True) else "❌"),
+            )
+    console.print(table)
+
+
+@instance_app.command("new")
+def cmd_instance_new(
+    service: Annotated[str, typer.Argument(help="aiostreams | aiometadata | aiomanager")],
+    name: Annotated[str, typer.Argument(help="Instance name (e.g. dad)")],
+    prefix: Annotated[
+        str | None,
+        typer.Option("--prefix", help="Env key prefix (default: <SERVICE>_<NAME> upper-cased)"),
+    ] = None,
+    template: Annotated[
+        Path | None,
+        typer.Option("--from", help="Existing document to copy as this instance's starting point (any tenant)"),
+    ] = None,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Register a named instance: tenant.json entry, .env/.env.example keys, optional starter document."""
+    svc = service.strip().lower()
+    if svc not in ALL_SERVICES:
+        err_console.print(f"❌ Unknown service `{service}`; choose from {', '.join(ALL_SERVICES)}")
+        raise typer.Exit(code=1)
+    svc_id: ServiceId = svc
+    inst = name.strip().lower()
+    env_prefix = (prefix or f"{svc_id.upper()}_{inst.upper().replace('-', '_')}").strip()
+
+    paths = _resolve_tenant(workspace_dir, tenant)
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(manifest_doc):
+            pass
+    instances = manifest_doc.setdefault("instances", {})
+    if not isinstance(instances, dict):
+        err_console.print("❌ tenant.json: `instances` must be an object")
+        raise typer.Exit(code=1)
+    svc_registry = instances.setdefault(svc_id, {})
+    if inst in svc_registry:
+        err_console.print(f"❌ `{svc_id}/{inst}` already registered (prefix {svc_registry[inst]})")
+        raise typer.Exit(code=1)
+    svc_registry[inst] = env_prefix
+    _write_tenant_manifest(paths, manifest_doc)
+
+    keys = instance_env_keys(svc_id, env_prefix)
+    url_key = keys[0]
+    # Non-default instances inherit the default URL unless their own is set — scaffold the others only.
+    scaffold = [k for k in keys if k != url_key]
+    for target_path in (paths.env_file, paths.env_example_file):
+        match scaffold_env_keys(target_path, scaffold, header=f"{svc_id}/{inst} instance ({url_key} optional)"):
+            case Err(write_err):
+                err_console.print(f"❌ {write_err}")
+                raise typer.Exit(code=1)
+            case Ok():
+                pass
+
+    doc_path = _service_doc_path(paths.docs_dir, svc_id, inst)
+    if template is not None:
+        src_doc = template.expanduser().resolve()
+        match read_text_file(src_doc):
+            case Err(read_err):
+                err_console.print(f"❌ {read_err}")
+                raise typer.Exit(code=1)
+            case Ok(text):
+                pass
+        match write_text_file(doc_path, text):
+            case Err(write_err):
+                err_console.print(f"❌ {write_err}")
+                raise typer.Exit(code=1)
+            case Ok():
+                pass
+
+    console.print(f"✅ Registered `{svc_id}/{inst}` → env prefix {env_prefix}")
+    console.print(f"   • keys scaffolded in .env: {', '.join(scaffold)} ({url_key} optional; inherits default URL)")
+    console.print(f"   • document: {paths.relative(doc_path)}" + ("" if doc_path.exists() else " (create it or pass --from)"))
+    console.print(
+        f"   💡 Next: set {env_prefix}_{'SYNC_PASSWORD' if svc_id == 'aiomanager' else 'PASSWORD'} in .env, then "
+        f"`sw push {svc_id} --instance {inst} --create` to provision it (UUID is written back automatically)."
+    )
+
+
+
 @config_app.command("validate")
 @app.command("validate")
 def cmd_config_validate(
@@ -947,11 +1163,13 @@ def cmd_config_pull(
         str,
         typer.Argument(help="Service to pull: all, aiostreams, aiometadata, aiomanager, nuvio, nuvio_collections, nuvio_badges, nuvio_meta, or nuvio_settings"),
     ] = "all",
+    instance: InstanceNameOption = DEFAULT_INSTANCE,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
+    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -965,18 +1183,25 @@ def cmd_config_pull(
         skipped_svcs: list[ServiceId] = []
         for svc_id in svc_targets:
             svc = services.get(svc_id)
-            if svc is None or not svc.is_configured_for_pull(working_env):
+            binding = bindings.get(svc_id)
+            if svc is None or binding is None or not binding.configured_for_pull():
                 skipped_svcs.append(svc_id)
             else:
                 configured_svcs.append(svc_id)
 
         for svc_id in skipped_svcs:
-            console.print(f"⏭️  [{svc_id}] Skipping pull: missing URL, UUID, or password in .env")
+            b = bindings.get(svc_id)
+            hint = (
+                f"missing {b.url_env_key}, {b.uuid_env_key}, or {b.password_env_key} in .env"
+                if b is not None
+                else "no `default` instance registered in tenant.json"
+            )
+            console.print(f"⏭️  [{svc_id}] Skipping pull: {hint}")
 
         pulled_raw: dict[ServiceId, Result[JsonDict]] = {}
         if configured_svcs:
             def _fetch_remote_svc(sid: ServiceId) -> tuple[ServiceId, Result[JsonDict]]:
-                return sid, services[sid].pull_remote(working_env)
+                return sid, services[sid].pull_remote(bindings[sid])
 
             with (
                 console.status(f"⏳ Pulling {', '.join(configured_svcs)} in parallel..."),
@@ -1002,7 +1227,7 @@ def cmd_config_pull(
                             err_console.print(f"❌ {p_err}")
                             raise typer.Exit(code=1)
                         case Ok((saved_path, working_env)):
-                            uid = working_env.get(f"{svc_id.upper()}_UUID", "")
+                            uid = bindings[svc_id].uuid
                             console.print(
                                 f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
                             )
@@ -1159,6 +1384,7 @@ def cmd_config_push(
         bool,
         typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
     ] = False,
+    instance: InstanceNameOption = DEFAULT_INSTANCE,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -1167,7 +1393,8 @@ def cmd_config_push(
         cmd_config_diff(target=target, stat_only=False, exit_code=False, workspace_dir=workspace_dir)
         return
 
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
+    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
 
@@ -1193,6 +1420,7 @@ def cmd_config_push(
                             env_path=env_path,
                             configs_dir=configs_dir,
                             services=services,
+                            bindings=bindings,
                             create=create,
                         ),
                     )
@@ -1212,6 +1440,7 @@ def cmd_config_push(
                             env_path=env_path,
                             configs_dir=configs_dir,
                             services=services,
+                            bindings=bindings,
                             create=create,
                         )
                     }
@@ -1448,11 +1677,13 @@ def cmd_config_diff(
         bool,
         typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
     ] = False,
+    instance: InstanceNameOption = DEFAULT_INSTANCE,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Compare the tenant's documents against live remote instances without modifying any files."""
-    _, _, configs_dir, env = _resolve_paths(workspace_dir, tenant)
+    paths, _manifest, env, bindings = _resolve_context(workspace_dir, tenant, instance)
+    configs_dir = paths.docs_dir
     has_drift = False
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -1464,7 +1695,9 @@ def cmd_config_diff(
         services = build_config_services(http_client)
 
         def _diff_one(sid: ServiceId) -> tuple[ServiceId, Result[ConfigDiffOutcome | None]]:
-            return sid, _diff_service(sid, env, configs_dir=configs_dir, services=services)
+            return sid, _diff_service(
+                sid, env, configs_dir=configs_dir, services=services, bindings=bindings
+            )
 
         svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}
         nuvio_future: concurrent.futures.Future[Result[tuple[JsonDict | None, dict[str, str]]]] | None = (
@@ -1671,6 +1904,7 @@ def cmd_config_sanitize(
         str,
         typer.Argument(help="Service file to sanitize: all, aiostreams, aiometadata, or aiomanager"),
     ] = "all",
+    instance: InstanceNameOption = DEFAULT_INSTANCE,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -1681,7 +1915,7 @@ def cmd_config_sanitize(
 
     for svc_id in _resolve_service_targets(target):
         match _sanitize_service(
-            svc_id, working_env, env_path=env_path, configs_dir=configs_dir
+            svc_id, working_env, env_path=env_path, configs_dir=configs_dir, instance=instance
         ):
             case Err(err):
                 err_console.print(f"❌ {err}")
