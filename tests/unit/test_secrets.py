@@ -114,10 +114,10 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
                         },
                     },
                     {
-                        "transportUrl": "https://aiostreams.example.com/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/enc_pw_payload_xyz",
+                        "transportUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000001/enc_pw_payload_xyz",
                     },
                     {
-                        "transportUrl": "https://aiometadata.example.com/stremio/351ba1f7-8129-4fee-a10b-8fa96ac06a15",
+                        "transportUrl": "https://aiometadata.example.com/stremio/00000000-0000-4000-8000-000000000002",
                     },
                 ],
                 "connections": [
@@ -186,7 +186,7 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
     }
     assert (
         scrubbed["accounts"][0]["addons"][2]["transportUrl"]
-        == "https://aiostreams.example.com/stremio/6d639290-199e-4c82-ab00-a8e28226a64a/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}"
+        == "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000001/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}"
     )
     assert (
         scrubbed["accounts"][0]["addons"][3]["transportUrl"]
@@ -199,7 +199,7 @@ def test_harvest_and_inject_aiomanager_watchly_bingecat_and_vault() -> None:
     assert env["SECRET_WATCHLY_TOKEN"] == "old_deleted_watchly_tok"
     assert env["SECRET_BINGECAT_TOKEN"] == "2ec3e4b9-31e3-48f0-935e-8896b1d8b012"
     assert env["SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD"] == "enc_pw_payload_xyz"
-    assert env["SECRET_AIOMETADATA_TOKEN"] == "351ba1f7-8129-4fee-a10b-8fa96ac06a15"
+    assert env["SECRET_AIOMETADATA_TOKEN"] == "00000000-0000-4000-8000-000000000002"
     assert env["SECRET_NUVIO_ACCESS_TOKEN"] == "nuvio_acc_tok_123"
     assert env["SECRET_NUVIO_EMAIL"] == "user@example.com"
     assert env["SECRET_VAULT_AIOSTREAMS_35C658"] == "vault_secret_val_99"
@@ -261,3 +261,65 @@ def test_parse_and_merge_env_preserves_comments() -> None:
     assert parsed["AIOSTREAMS_URL"] == "https://example.com"
     assert parsed["SECRET_TMDB_API_KEY"] == "new_val"
     assert parsed["SECRET_TORBOX_API_KEY"] == "tb_1234"
+
+
+def test_instance_uuid_in_env_wins_over_harvesting_a_duplicate_secret() -> None:
+    """An AIOMetadata UUID already known as `<PREFIX>_UUID` scrubs to that identity key, not SECRET_*."""
+    cfg = {
+        "accounts": [
+            {
+                "id": "acc-dad",
+                "name": "Dad",
+                "addons": [
+                    {
+                        "transportUrl": "https://aiometadata.example.com/stremio/00000000-0000-4000-8000-000000000007/manifest.json"
+                    }
+                ],
+            }
+        ]
+    }
+    env = {"AIOMETADATA_DAD_UUID": "00000000-0000-4000-8000-000000000007"}
+    scrubbed, out_env = harvest_and_scrub("aiomanager", cfg, env)
+    assert (
+        scrubbed["accounts"][0]["addons"][0]["transportUrl"]
+        == "https://aiometadata.example.com/stremio/{{AIOMETADATA_DAD_UUID}}/manifest.json"
+    )
+    assert "SECRET_AIOMETADATA_TOKEN" not in out_env
+    # and the identity placeholder round-trips through injection
+    injected = inject_secrets(scrubbed, env)
+    assert isinstance(injected, Ok)
+    assert injected.value == cfg
+
+
+def test_new_login_credentials_are_named_after_the_account() -> None:
+    """A connection whose tokens are not yet known gets SECRET_<PLATFORM>_<ACCOUNT>_<FIELD> keys."""
+    cfg = {
+        "accounts": [
+            {
+                "id": "acc-gf",
+                "name": "GF",
+                "connections": [
+                    {
+                        "id": "c1",
+                        "platform": "nuvio",
+                        "credentials": {"accessToken": "tok_gf_access_1", "refreshToken": "tok_gf_refresh_1"},
+                    }
+                ],
+            }
+        ]
+    }
+    scrubbed, env = harvest_and_scrub("aiomanager", cfg, {})
+    creds = scrubbed["accounts"][0]["connections"][0]["credentials"]
+    assert creds == {
+        "accessToken": "{{SECRET_NUVIO_GF_ACCESS_TOKEN}}",
+        "refreshToken": "{{SECRET_NUVIO_GF_REFRESH_TOKEN}}",
+    }
+    assert env["SECRET_NUVIO_GF_ACCESS_TOKEN"] == "tok_gf_access_1"
+
+    # A second account sharing the same login reuses the first account's keys (value dedup).
+    cfg2 = {"accounts": [cfg["accounts"][0], {**cfg["accounts"][0], "id": "acc-dad", "name": "Dad"}]}
+    scrubbed2, _ = harvest_and_scrub("aiomanager", cfg2, env)
+    assert (
+        scrubbed2["accounts"][1]["connections"][0]["credentials"]["accessToken"]
+        == "{{SECRET_NUVIO_GF_ACCESS_TOKEN}}"
+    )

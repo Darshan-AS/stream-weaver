@@ -13,7 +13,7 @@
       },
       "addons": [
         {
-          "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "transportUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{AIOMETADATA_UUID}}",
           "transportName": "",
           "manifestId": "aio-metadata:3.8.3",
           "manifest": {
@@ -215,7 +215,7 @@
         {
           "savedAddonId": "191e2dc6-ab8c-4116-b63e-b7cbd06431eb",
           "addonId": "aio-metadata",
-          "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{AIOMETADATA_UUID}}",
           "installedAt": "2026-10-15T18:21:40.385Z",
           "installedVia": "manual",
           "flags": {
@@ -657,7 +657,7 @@
       {
         "id": "191e2dc6-ab8c-4116-b63e-b7cbd06431eb",
         "name": "AIOMetadata",
-        "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+        "installUrl": "https://aiometadatafortheweebs.midnightignite.me/stremio/{{AIOMETADATA_UUID}}",
         "manifest": {
           "id": "aio-metadata",
           "version": "3.8.3",

@@ -13,7 +13,7 @@
       },
       "addons": [
         {
-          "transportUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "transportUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
           "transportName": "",
           "manifestId": "aio-metadata:3.8.3",
           "manifest": {
@@ -215,7 +215,7 @@
         {
           "savedAddonId": "00000000-0000-4000-8000-000000000008",
           "addonId": "aio-metadata",
-          "installUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "installUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
           "installedAt": "2026-10-15T18:21:40.385Z",
           "installedVia": "manual",
           "flags": {
@@ -657,7 +657,7 @@
       {
         "id": "00000000-0000-4000-8000-000000000008",
         "name": "AIOMetadata",
-        "installUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+        "installUrl": "https://aiometadata.example.com/stremio/{{AIOMETADATA_UUID}}",
         "manifest": {
           "id": "aio-metadata",
           "version": "3.8.3",
