@@ -46,6 +46,8 @@ class InstanceBinding:
     uuid: str
     password: str
     addon_password: str = ""
+    url_from_prefix: str | None = None
+    """Prefix whose `_URL` actually supplied `url` when inherited from the default instance."""
 
     @property
     def label(self) -> str:
@@ -53,7 +55,8 @@ class InstanceBinding:
 
     @property
     def url_env_key(self) -> str:
-        return f"{self.prefix}_URL"
+        """The env key documents should reference for this instance's base URL (resolves on every tenant)."""
+        return f"{self.url_from_prefix or self.prefix}_URL"
 
     @property
     def uuid_env_key(self) -> str:
@@ -86,6 +89,7 @@ class InstanceBinding:
             uuid=uuid,
             password=self.password,
             addon_password=self.addon_password,
+            url_from_prefix=self.url_from_prefix,
         )
 
 
@@ -128,10 +132,12 @@ def resolve_instance_binding(
             pass
 
     url = env.get(f"{prefix}_URL", "")
+    url_from_prefix: str | None = None
     if not url and name != DEFAULT_INSTANCE:
         default_prefix = manifest.instances.get(service, {}).get(DEFAULT_INSTANCE)
         if default_prefix:
             url = env.get(f"{default_prefix}_URL", "")
+            url_from_prefix = default_prefix if url else None
 
     return Ok(
         InstanceBinding(
@@ -144,6 +150,7 @@ def resolve_instance_binding(
             addon_password=env.get(f"{prefix}_ADDON_PASSWORD", "")
             if service in _HAS_ADDON_PASSWORD
             else "",
+            url_from_prefix=url_from_prefix,
         )
     )
 

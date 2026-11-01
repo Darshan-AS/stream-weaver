@@ -110,7 +110,7 @@ def test_second_profile_compiles_with_parameterised_recipes_and_own_instance(tmp
     assert names == ["Demo", "Dad"]
     dad_acc = outcome.state["accounts"][1]
     urls = [a["transportUrl"] for a in dad_acc["addons"]]
-    assert urls[0] == "{{AIOMETADATA_DAD_URL}}/stremio/{{AIOMETADATA_DAD_UUID}}"
+    assert urls[0] == "{{AIOMETADATA_URL}}/stremio/{{AIOMETADATA_DAD_UUID}}"
     assert "v3-cinemeta" in urls[-1]
     assert not any("bingecat" in u for u in urls)
     (conn,) = dad_acc["connections"]

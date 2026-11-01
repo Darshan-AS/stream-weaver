@@ -1,0 +1,1403 @@
+{
+  "mal": {
+    "skipRecap": false,
+    "skipFiller": false,
+    "allowEpisodeMarking": true,
+    "useImdbIdForCatalogAndSearch": false
+  },
+  "sfw": true,
+  "tmdb": {
+    "scrapeImdb": true,
+    "forceLatinCastNames": false
+  },
+  "search": {
+    "enabled": true,
+    "providers": {
+      "movie": "tmdb.search",
+      "series": "tvdb.search",
+      "anime_movie": "kitsu.search.movie",
+      "anime_series": "kitsu.search.series"
+    },
+    "ai_enabled": false,
+    "searchNames": {},
+    "searchOrder": [
+      "movie",
+      "series",
+      "anime_series",
+      "anime_movie",
+      "tvdb.collections.search",
+      "people_search_movie",
+      "people_search_series",
+      "gemini.search"
+    ],
+    "engineEnabled": {
+      "tmdb.search": true,
+      "tvdb.search": true,
+      "gemini.search": false,
+      "tvmaze.search": true,
+      "mal.search.movie": false,
+      "mal.search.series": false,
+      "tmdb.people.search": false,
+      "people_search_movie": true,
+      "people_search_series": true,
+      "tvdb.collections.search": true,
+      "kitsu.search.series": true,
+      "kitsu.search.movie": true
+    },
+    "engineRatingPosters": {
+      "movie": true,
+      "series": true,
+      "gemini.search": true,
+      "anime_series": true,
+      "anime_movie": true,
+      "tvdb.collections.search": true
+    }
+  },
+  "apiKeys": {
+    "gemini": "{{SECRET_GEMINI_API_KEY}}",
+    "tmdb": "{{SECRET_TMDB_API_KEY}}",
+    "tvdb": "{{SECRET_TVDB_API_KEY}}",
+    "fanart": "",
+    "rpdb": "{{SECRET_RPDB_API_KEY}}",
+    "topPoster": "",
+    "mdblist": "{{SECRET_MDBLIST_API_KEY}}",
+    "traktTokenId": "{{SECRET_TRAKT_TOKEN_ID}}",
+    "simklTokenId": "",
+    "anilistTokenId": ""
+  },
+  "catalogs": [
+    {
+      "id": "trakt.upnext",
+      "name": "Trakt Up Next",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 300,
+      "metadata": {
+        "useShowPosterForUpNext": true,
+        "includeAnimeInUpNext": true
+      }
+    },
+    {
+      "id": "trakt.watchlist.movies",
+      "name": "Trakt Watchlist",
+      "type": "movie",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.watchlist.series",
+      "name": "Trakt Watchlist",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.trending.movies",
+      "name": "Trakt Trending",
+      "type": "movie",
+      "source": "trakt",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.trending.shows",
+      "name": "Trakt Trending",
+      "type": "series",
+      "source": "trakt",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "tmdb.top",
+      "name": "TMDB Popular",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.top",
+      "name": "TMDB Popular",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.top_rated",
+      "name": "TMDB Top Rated",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.top_rated",
+      "name": "TMDB Top Rated",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.airing",
+      "name": "Anime Airing Now",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "cacheTTL": 43200
+    },
+    {
+      "id": "mal.most_popular",
+      "name": "Popular Anime",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.top_anime",
+      "name": "Top Rated Anime",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.nfx",
+      "name": "Netflix",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.nfx",
+      "name": "Netflix",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.amp",
+      "name": "Prime Video",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.amp",
+      "name": "Prime Video",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hst",
+      "name": "JioHotstar",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hst",
+      "name": "JioHotstar",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hbm",
+      "name": "HBO Max",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hbm",
+      "name": "HBO Max",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.atp",
+      "name": "Apple TV+",
+      "sort": "popularity",
+      "type": "movie",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "order": "asc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.atp",
+      "name": "Apple TV+",
+      "sort": "popularity",
+      "type": "series",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "order": "asc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.dnp",
+      "name": "Disney+",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.dnp",
+      "name": "Disney+",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.slv",
+      "name": "Sony LIV",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.slv",
+      "name": "Sony LIV",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.zee",
+      "name": "Zee5",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.zee",
+      "name": "Zee5",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_movies",
+      "type": "movie",
+      "name": "Hindi Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_new_movies",
+      "type": "movie",
+      "name": "New Hindi Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_series",
+      "type": "series",
+      "name": "Hindi Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_movies",
+      "type": "movie",
+      "name": "Kannada Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_new_movies",
+      "type": "movie",
+      "name": "New Kannada Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_top_movies",
+      "type": "movie",
+      "name": "Top Rated Kannada Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 20
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_series",
+      "type": "series",
+      "name": "Kannada Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.japanese_movies",
+      "type": "movie",
+      "name": "Japanese Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "ja",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.japanese_series",
+      "type": "series",
+      "name": "Japanese Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "ja",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.cts",
+      "name": "Curiosity Stream",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.cts",
+      "name": "Curiosity Stream",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": false,
+      "showInHome": false,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.popular_docuseries",
+      "type": "series",
+      "name": "Popular Docuseries & Education",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 10
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.top_docuseries",
+      "type": "series",
+      "name": "Top Rated Docuseries & Courses",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 50
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.top_documentaries",
+      "type": "movie",
+      "name": "Top Rated Documentaries",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "99",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 100
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.trending",
+      "name": "TMDB Trending",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.trending",
+      "name": "TMDB Trending",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.language",
+      "name": "TMDB By Language",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.language",
+      "name": "TMDB By Language",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "trakt.popular.movies",
+      "name": "Trakt Popular",
+      "type": "movie",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.popular.shows",
+      "name": "Trakt Popular",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.most_favorited.movies.weekly",
+      "name": "Trakt Most Watched (Weekly)",
+      "type": "movie",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.most_favorited.shows.weekly",
+      "name": "Trakt Most Watched (Weekly)",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "streaming.pmp",
+      "name": "Paramount+",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.pmp",
+      "name": "Paramount+",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.pcp",
+      "name": "Peacock Premium",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.pcp",
+      "name": "Peacock Premium",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hlu",
+      "name": "Hulu",
+      "sort": "popularity",
+      "type": "movie",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "movie",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "streaming.hlu",
+      "name": "Hulu",
+      "sort": "popularity",
+      "type": "series",
+      "order": "asc",
+      "source": "streaming",
+      "enabled": true,
+      "showInHome": true,
+      "displayType": "series",
+      "sortDirection": "desc",
+      "cacheTTL": 86400
+    },
+    {
+      "id": "trakt.recommendations.movies",
+      "name": "Trakt Recommendations",
+      "type": "movie",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.recommendations.shows",
+      "name": "Trakt Recommendations",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 7200
+    },
+    {
+      "id": "trakt.unwatched",
+      "name": "My Recently Aired",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 300
+    },
+    {
+      "id": "trakt.calendar",
+      "name": "Airing Soon",
+      "type": "series",
+      "source": "trakt",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 300,
+      "metadata": {
+        "airingSoonDays": 7
+      }
+    },
+    {
+      "id": "tmdb.airing_today",
+      "name": "TMDB Airing Today",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 43200
+    },
+    {
+      "id": "tmdb.year",
+      "name": "TMDB By Year",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.year",
+      "name": "TMDB By Year",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tmdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvdb.trending",
+      "name": "TVDB Trending",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tvdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvdb.trending",
+      "name": "TVDB Trending",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tvdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvdb.genres",
+      "name": "TVDB Genres",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tvdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvdb.genres",
+      "name": "TVDB Genres",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tvdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvdb.collections",
+      "name": "TVDB Collections",
+      "sort": "default",
+      "type": "movie",
+      "order": "asc",
+      "source": "tvdb",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tvmaze.schedule",
+      "name": "TVmaze Daily Schedule",
+      "sort": "default",
+      "type": "series",
+      "order": "asc",
+      "source": "tvmaze",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.upcoming",
+      "name": "MAL Upcoming Season",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.schedule",
+      "name": "MAL Airing Schedule",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 43200
+    },
+    {
+      "id": "mal.seasons",
+      "name": "MAL Seasons",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.80sDecade",
+      "name": "MAL Best of 80s",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.90sDecade",
+      "name": "MAL Best of 90s",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.00sDecade",
+      "name": "MAL Best of 2000s",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.10sDecade",
+      "name": "MAL Best of 2010s",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.20sDecade",
+      "name": "MAL Best of 2020s",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.genres",
+      "name": "MAL Genres",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.studios",
+      "name": "MAL By Studio",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.top_movies",
+      "name": "MAL Top Movies",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.top_series",
+      "name": "MAL Top Series",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "mal.most_favorites",
+      "name": "MAL Most Favorites",
+      "sort": "default",
+      "type": "anime",
+      "order": "asc",
+      "source": "mal",
+      "enabled": false,
+      "showInHome": false,
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_80s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 80s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1989-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_90s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 90s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "1990-01-01",
+            "primary_release_date.lte": "1999-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_2000s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 2000s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "2000-01-01",
+            "primary_release_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_classic_series",
+      "type": "series",
+      "name": "Kannada Classic Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "kn",
+            "first_air_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_top_movies",
+      "type": "movie",
+      "name": "Top Rated Hindi Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 20
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_80s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 80s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1989-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_90s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 90s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "1990-01-01",
+            "primary_release_date.lte": "1999-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_2000s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 2000s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "2000-01-01",
+            "primary_release_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_classic_series",
+      "type": "series",
+      "name": "Hindi Classic Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "hi",
+            "first_air_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    }
+  ],
+  "language": "en-US",
+  "timezone": "Asia/Kolkata",
+  "ageRating": "None",
+  "castCount": 30,
+  "providers": {
+    "anime": "tvdb",
+    "movie": "tmdb",
+    "series": "tmdb",
+    "anime_id_provider": "kitsu",
+    "forceAnimeForDetectedImdb": true
+  },
+  "sessionId": "",
+  "streaming": [
+    "nfx",
+    "hbm",
+    "dnp",
+    "pmp",
+    "pcp",
+    "hlu",
+    "amp",
+    "wow",
+    "cts",
+    "atp",
+    "sst",
+    "hst",
+    "slv",
+    "zee"
+  ],
+  "blurThumbs": false,
+  "showPrefix": false,
+  "artProviders": {
+    "anime": {
+      "logo": "meta",
+      "poster": "meta",
+      "background": "meta"
+    },
+    "movie": {
+      "logo": "meta",
+      "poster": "meta",
+      "background": "meta"
+    },
+    "series": {
+      "logo": "meta",
+      "poster": "meta",
+      "background": "meta"
+    },
+    "englishArtOnly": true
+  },
+  "includeAdult": false,
+  "searchEnabled": true,
+  "tvdbSeasonType": "default",
+  "usePosterProxy": false,
+  "displayAgeRating": true,
+  "showRateMeButton": false,
+  "anilistWatchTracking": false,
+  "mdblistWatchTracking": false,
+  "posterRatingProvider": "custom",
+  "customPosterUrlPattern": "https://postersplus.slokker.cc/poster?tmdb_id={tmdb_id?}&imdb_id={imdb_id?}&stremio_id={id}&type={type}&shape={shape}&pc=stremio_tv_nuvio&tg=medium&bgr=medium&tvso=true&vpcb=true&vcl=false&fti=true&irs=fallback&trs=fallback&rdm=3&mam=2&mmfsr=0.058&mmfxo=0.065&rtc=FFFFFF&rb=myanimelist:a,anilist:a,imdb,tomatoes:mt,letterboxd:m,trakt:t&rbm=3&mw=lb:0.99,tk:0.01&tw=tk:0.80,rt:0.20&fbs=photoreal&lmhr=0.20&lbr=0.17&lba=true&cg=false&sm=notch&sws=true&sbsw=1.80&sbsh=1.20&sbfr=0.46&nvc=true&sbpo=auto_hug&bdm=7&bms=5&bqs=frosted&bcts=frosted&_sm=notch&_bs=1.20&_ws=true&_pc=true&_rb=true&_bdm=7&_bqs=frosted&_bcts=frosted",
+  "showDisabledCatalogs": false,
+  "hideUnreleasedDigital": false,
+  "hideUnreleasedDigitalSearch": false,
+  "showMetaProviderAttribution": true,
+  "enableRatingPostersForLibrary": true,
+  "catalogSetupComplete": true,
+  "simklWatchTracking": false,
+  "traktWatchTracking": false,
+  "hideWatchedTrakt": false,
+  "hideWatchedMdblist": false,
+  "catalogModeOnly": false,
+  "configHash": "18ebafe1bf145ac0",
+  "managerAccounts": [
+    {
+      "id": "ef06f97b-4780-4c5c-85b9-bbb943ea8b21",
+      "managerId": "aiomanager",
+      "label": "Don's AIOManager",
+      "instanceUrl": "{{AIOMANAGER_URL}}",
+      "keyId": "b98730fa-cad2-4f25-ae82-16ec6b6456d3",
+      "profileTags": [],
+      "autoSync": true,
+      "lastSyncedAt": "2026-10-15T19:48:51.535Z"
+    }
+  ]
+}

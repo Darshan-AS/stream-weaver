@@ -32,7 +32,7 @@ flowchart LR
     end
 
     subgraph Clients["📺 Streaming Clients"]
-        Nuvio["Nuvio App\n(5 Home Collections)"]
+        Nuvio["Nuvio App\n(8 Home Collections)"]
         Stremio["Stremio App"]
     end
 
@@ -190,6 +190,9 @@ flowchart LR
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |
 | `col-courses-docs` | **Courses & Documentaries** (3) | Peterson Academy, Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata, AIOStreams |
+| `col-kannada` | **Kannada** (2) | Kannada Movies, Kannada Series | AIOMetadata |
+| `col-hindi` | **Hindi** (2) | Hindi Movies, Hindi Series | AIOMetadata |
+| `col-discover` | **Discover** (2) | Trending & Popular, Top Rated All-Time | AIOMetadata |
 
 ---
 
@@ -214,3 +217,4 @@ flowchart LR
 | Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `don` | Don | `default` | `default` | `don` → 6139337e… | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs` | `bingecat`, `cinemeta` |
+| `dad` | Dad | `default` | `dad` | `don` → 0dfcbb7e… | — | `regional-cinema`, `regional-cinema`, `col-discover`, `col-streaming-services` | `cinemeta` |

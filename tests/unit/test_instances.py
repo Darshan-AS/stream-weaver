@@ -79,11 +79,13 @@ def test_named_instance_inherits_default_url_only_when_unset() -> None:
     assert not dad.value.configured_for_pull()
     assert dad.value.configured_for_push(create=True)  # ready for `--create`
     assert dad.value.uuid_env_key == "AIOMETADATA_DAD_UUID"
+    assert dad.value.url_env_key == "AIOMETADATA_URL"  # inherited → documents reference the default key
 
     env2 = {**env, "AIOMETADATA_DAD_URL": "https://other.example.com"}
     dad2 = resolve_instance_binding(m, env2, "aiometadata", "dad")
     assert isinstance(dad2, Ok)
     assert dad2.value.url == "https://other.example.com"
+    assert dad2.value.url_env_key == "AIOMETADATA_DAD_URL"
 
 
 def test_unknown_instance_is_an_error_with_hint() -> None:

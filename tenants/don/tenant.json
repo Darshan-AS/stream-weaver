@@ -7,7 +7,8 @@
       "default": "AIOSTREAMS"
     },
     "aiometadata": {
-      "default": "AIOMETADATA"
+      "default": "AIOMETADATA",
+      "dad": "AIOMETADATA_DAD"
     },
     "aiomanager": {
       "default": "AIOMANAGER"
@@ -22,6 +23,7 @@
     }
   },
   "profiles": [
-    "don"
+    "don",
+    "dad"
   ]
 }

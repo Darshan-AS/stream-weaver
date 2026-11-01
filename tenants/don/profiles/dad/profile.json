@@ -1,0 +1,82 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/profile.v1.json",
+  "version": 1,
+  "name": "dad",
+  "displayName": "Dad",
+  "instances": {
+    "aiostreams": "default",
+    "aiometadata": "dad"
+  },
+  "clients": {
+    "nuvio": {
+      "login": "don",
+      "profile": {
+        "id": "0dfcbb7e-8143-400d-aa85-ee51974b4970"
+      },
+      "platforms": [
+        "tv",
+        "desktop",
+        "mobile"
+      ]
+    }
+  },
+  "addons": {
+    "extra": [
+      {
+        "name": "cinemeta",
+        "transportUrl": "https://v3-cinemeta.strem.io",
+        "customName": "Cinemeta",
+        "metadata": {
+          "cinemetaConfig": {
+            "removeSearch": true,
+            "removeStandardCatalogs": true,
+            "removeMeta": false
+          }
+        }
+      }
+    ]
+  },
+  "collections": [
+    {
+      "ref": "regional-cinema",
+      "with": {
+        "language": "kn",
+        "slug": "kannada",
+        "label": "Kannada",
+        "moviesCoverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/kannada_cinema.webp",
+        "seriesCoverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/kannada_cinema.webp",
+        "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp"
+      }
+    },
+    {
+      "ref": "regional-cinema",
+      "with": {
+        "language": "hi",
+        "slug": "hindi",
+        "label": "Hindi",
+        "moviesCoverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/hindi_cinema.webp",
+        "seriesCoverImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/hindi_cinema.webp",
+        "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp"
+      }
+    },
+    {
+      "ref": "col-discover"
+    },
+    {
+      "ref": "col-streaming-services"
+    }
+  ],
+  "badges": {
+    "ref": "default"
+  },
+  "meta": {
+    "ref": "default"
+  },
+  "settings": {
+    "ref": "default"
+  },
+  "appearance": {
+    "emoji": "👨",
+    "accentColor": "#f59e0b"
+  }
+}

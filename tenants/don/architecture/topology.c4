@@ -242,9 +242,23 @@ model {
       description 'Syncs capabilities: addons'
       technology 'native'
     }
+    subsystem acc_dad 'Account Profile: Dad' {
+      #enabled
+      description '3 enabled addons synced across 1 client connections'
+      technology 'AIOManager Profile'
+      metadata {
+        installed_addons 'AIOMetadata, AIOStreams, Cinemeta'
+        connections '1'
+      }
+    }
+    plugin conn_dad_nuvio 'Nuvio Native Connector' {
+      #enabled
+      description 'Syncs capabilities: addons, plugins, profiles'
+      technology 'native'
+    }
     subsystem nuvio_collections 'Nuvio Home Collections Compiler' {
       #enabled #catalog
-      description '5 Curated Collections (24 Tabbed Folders) synced to Nuvio'
+      description '8 Curated Collections (30 Tabbed Folders) synced to Nuvio'
       technology 'nuvio_collections.json'
       plugin col_for_you_discovery 'For You & Discovery (5 folders)' {
         #enabled #catalog
@@ -299,6 +313,39 @@ model {
           folder_count '3'
           folders 'Peterson Academy, Curiosity Stream, Top Documentaries & Docuseries'
           upstream_addons 'aiometadata, aiostreams'
+        }
+      }
+      plugin col_kannada 'Kannada (2 folders)' {
+        #enabled #catalog
+        description 'Folders: Kannada Movies, Kannada Series'
+        technology 'View: TABBED_GRID'
+        metadata {
+          collection_id 'col-kannada'
+          folder_count '2'
+          folders 'Kannada Movies, Kannada Series'
+          upstream_addons 'aiometadata'
+        }
+      }
+      plugin col_hindi 'Hindi (2 folders)' {
+        #enabled #catalog
+        description 'Folders: Hindi Movies, Hindi Series'
+        technology 'View: TABBED_GRID'
+        metadata {
+          collection_id 'col-hindi'
+          folder_count '2'
+          folders 'Hindi Movies, Hindi Series'
+          upstream_addons 'aiometadata'
+        }
+      }
+      plugin col_discover 'Discover (2 folders)' {
+        #enabled #catalog
+        description 'Folders: Trending & Popular, Top Rated All-Time'
+        technology 'View: TABBED_GRID'
+        metadata {
+          collection_id 'col-discover'
+          folder_count '2'
+          folders 'Trending & Popular, Top Rated All-Time'
+          upstream_addons 'aiometadata'
         }
       }
     }
@@ -760,6 +807,11 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
+  secretKey sec_aiometadata_dad_uuid 'AIOMETADATA_DAD_UUID' {
+    #secret
+    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
+    technology 'Environment Variable'
+  }
   secretKey sec_aiometadata_url 'AIOMETADATA_URL' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
@@ -945,6 +997,13 @@ model {
   aiomanager.acc_don -> aiostreams 'Manages & monitors addon manifest'
   aiomanager.acc_don -> bingecat 'Manages & monitors addon manifest'
   aiomanager.acc_don -> cinemeta 'Applies Cinemeta catalog/search overrides'
+  aiomanager.acc_dad -> aiomanager.conn_dad_nuvio 'Pushes profile state'
+  aiomanager.conn_dad_nuvio -> nuvio 'Syncs addons, plugins, profiles' {
+    technology 'Nuvio Native Sync'
+  }
+  aiomanager.acc_dad -> aiometadata 'Manages & monitors addon manifest'
+  aiomanager.acc_dad -> aiostreams 'Manages & monitors addon manifest'
+  aiomanager.acc_dad -> cinemeta 'Applies Cinemeta catalog/search overrides'
   aiomanager.nuvio_collections.col_for_you_discovery -> nuvio 'Renders 5 tabbed folders'
   aiomanager.nuvio_collections.col_for_you_discovery -> aiometadata 'Pulls catalog rows for For You & Discovery' {
     #catalog
@@ -972,6 +1031,18 @@ model {
     #catalog
   }
   aiomanager.nuvio_collections.col_courses_docs -> aiostreams 'Pulls catalog rows for Courses & Documentaries' {
+    #catalog
+  }
+  aiomanager.nuvio_collections.col_kannada -> nuvio 'Renders 2 tabbed folders'
+  aiomanager.nuvio_collections.col_kannada -> aiometadata 'Pulls catalog rows for Kannada' {
+    #catalog
+  }
+  aiomanager.nuvio_collections.col_hindi -> nuvio 'Renders 2 tabbed folders'
+  aiomanager.nuvio_collections.col_hindi -> aiometadata 'Pulls catalog rows for Hindi' {
+    #catalog
+  }
+  aiomanager.nuvio_collections.col_discover -> nuvio 'Renders 2 tabbed folders'
+  aiomanager.nuvio_collections.col_discover -> aiometadata 'Pulls catalog rows for Discover' {
     #catalog
   }
   aiomanager.nuvio_badges -> nuvio 'Syncs Stream & Player Badges (tv, desktop, mobile)' {
@@ -1220,7 +1291,7 @@ views {
   // 3. Nuvio Home Collections Drill-Down View
   view nuvio_collections_view of aiomanager.nuvio_collections {
     title '3. Nuvio Home Collections — Curated Categories & Upstream Addon Sources'
-    description 'Drill-down into the 5 Nuvio Home Collections (24 Tabbed Folders) and which addons feed each collection'
+    description 'Drill-down into the 8 Nuvio Home Collections (30 Tabbed Folders) and which addons feed each collection'
     include
       *,
       aiomanager.nuvio_collections.*,
@@ -1339,7 +1410,7 @@ views {
     stream_weaver -> aiostreams '1. Injects {{SECRET_*}} keys & pushes aiostreams.json (PUT /api/v1/user)'
     stream_weaver -> aiometadata '2. Injects {{SECRET_*}} keys & pushes aiometadata.json (PUT /api/config)'
     stream_weaver -> aiomanager '3. Rehydrates manifests, compiles Nuvio collections & pushes AES-256-GCM envelope'
-    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 5 tabbed Home Collections'
+    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 8 tabbed Home Collections'
     stream_weaver -> stremio '5. Directly reconciles Stremio addon collection via AuthKey'
     stream_weaver -> aiometadata '6. Concurrently pre-warms 45+ Home catalog endpoints (sw warm)'
 

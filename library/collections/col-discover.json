@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-discover",
+  "params": {
+    "backdropImageUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "collection": {
+    "id": "col-discover",
+    "title": "Discover",
+    "folders": [
+      {
+        "ref": "fld-trending-popular"
+      },
+      {
+        "ref": "fld-top-rated"
+      }
+    ],
+    "pinToTop": false,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "${backdropImageUrl}",
+    "focusGlowEnabled": true
+  }
+}

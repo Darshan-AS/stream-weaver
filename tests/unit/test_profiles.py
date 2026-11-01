@@ -36,7 +36,7 @@ runner = CliRunner()
 EXAMPLE = Path(__file__).resolve().parents[2] / "examples" / "home"
 
 AIOMETA = InstanceBinding("aiometadata", "default", "AIOMETADATA", "https://m", "u-m", "p")
-AIOMETA_DAD = InstanceBinding("aiometadata", "dad", "AIOMETADATA_DAD", "https://m", "u-d", "p")
+AIOMETA_DAD = InstanceBinding("aiometadata", "dad", "AIOMETADATA_DAD", "https://m", "u-d", "p", url_from_prefix="AIOMETADATA")
 AIOSTREAMS = InstanceBinding("aiostreams", "default", "AIOSTREAMS", "https://s", "u-s", "p")
 NUVIO_DON = LoginBinding(
     "nuvio", "don", "NUVIO", {"accessToken": "a", "refreshToken": "r", "email": "e"}
@@ -106,7 +106,7 @@ def test_parse_profile_rejects_bad_inputs() -> None:
 def test_instance_transport_urls_use_identity_placeholders() -> None:
     assert (
         instance_transport_url(AIOMETA_DAD)
-        == "{{AIOMETADATA_DAD_URL}}/stremio/{{AIOMETADATA_DAD_UUID}}"
+        == "{{AIOMETADATA_URL}}/stremio/{{AIOMETADATA_DAD_UUID}}"
     )
     assert (
         instance_transport_url(AIOSTREAMS)
