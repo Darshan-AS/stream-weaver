@@ -18,6 +18,7 @@ from stream_weaver.core.coercions import (
 )
 from stream_weaver.core.crypto import (
     decrypt_envelope,
+    decrypt_field,
     derive_sync_token,
     encrypt_envelope,
 )
@@ -442,18 +443,28 @@ class AIOManagerService:
                         sync_tasks.append((syncer, acc, conn))
 
         if sync_tasks:
-            def _run_client_sync(
-                task: tuple[ClientSyncProtocol, dict[str, Any], dict[str, Any]],
-            ) -> Result[tuple[str, dict[str, str]]]:
-                syncer_item, acc_item, conn_item = task
-                return syncer_item.sync_account(acc_item, conn_item, password, salt_b64, env)
+            # Group by (platform, login identity): connections sharing one login run sequentially so a
+            # refresh-token rotation can never race; distinct logins / platforms still run in parallel.
+            groups: dict[tuple[str, str], list[tuple[ClientSyncProtocol, dict[str, Any], dict[str, Any]]]] = {}
+            for task in sync_tasks:
+                _, _, conn_item = task
+                groups.setdefault(_login_identity(conn_item, password, salt_b64), []).append(task)
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(sync_tasks)) as pool:
-                for sync_res in pool.map(_run_client_sync, sync_tasks):
-                    if isinstance(sync_res, Ok):
-                        msg, new_secrets = sync_res.value
-                        synced_summaries.append(msg)
-                        discovered_secrets.update(new_secrets)
+            def _run_group(
+                group: list[tuple[ClientSyncProtocol, dict[str, Any], dict[str, Any]]],
+            ) -> list[Result[tuple[str, dict[str, str]]]]:
+                return [
+                    syncer_item.sync_account(acc_item, conn_item, password, salt_b64, env)
+                    for syncer_item, acc_item, conn_item in group
+                ]
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(groups)) as pool:
+                for group_results in pool.map(_run_group, groups.values()):
+                    for sync_res in group_results:
+                        if isinstance(sync_res, Ok):
+                            msg, new_secrets = sync_res.value
+                            synced_summaries.append(msg)
+                            discovered_secrets.update(new_secrets)
 
         warmed, total = warm_home_catalogs(refreshed, self._http)
         if total > 0:
@@ -471,6 +482,20 @@ class AIOManagerService:
                 discovered_secrets,
             )
         )
+
+
+def _login_identity(connection: Mapping[str, Any], password: str, salt_b64: str) -> tuple[str, str]:
+    """`(platform, identity)` for a client connection — the key under which syncs are serialised."""
+    platform = str(connection.get("platform") or "").lower()
+    creds = connection.get("credentials")
+    if not isinstance(creds, Mapping):
+        return platform, str(connection.get("id") or "")
+    if platform == "nuvio":
+        raw = creds.get("refreshToken") or creds.get("accessToken") or ""
+    else:
+        raw = creds.get("authKey") or creds.get("accessToken") or ""
+    ident = decrypt_field(str(raw), password, salt_b64) if raw else str(connection.get("id") or "")
+    return platform, ident
 
 
 def extract_home_catalog_urls(state: JsonDict) -> list[str]:

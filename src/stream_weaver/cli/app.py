@@ -21,6 +21,12 @@ from stream_weaver.core.instances import (
     instance_env_keys,
     resolve_instance_binding,
 )
+from stream_weaver.core.logins import (
+    SUPPORTED_PLATFORMS,
+    login_env_key,
+    login_env_keys,
+    resolve_login_binding,
+)
 from stream_weaver.core.nuvio_badges import normalize_nuvio_badges_doc
 from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
 from stream_weaver.core.nuvio_settings import active_blocks, normalize_nuvio_settings_doc
@@ -56,6 +62,7 @@ from stream_weaver.effects.storage import (
 from stream_weaver.providers.protocols import ConfigServiceProtocol
 from stream_weaver.providers.services import build_config_services, warm_home_catalogs
 from stream_weaver.providers.services.clients import NuvioClientSync, decompile_nuvio_collections
+from stream_weaver.providers.services.nuvio_session import password_grant
 
 app = typer.Typer(
     name="sw",
@@ -980,6 +987,196 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
             pass
 
     return failures
+
+
+# ============================================================================
+# `sw login` — named client logins (tenant.json `logins` registry)
+# ============================================================================
+
+login_app = typer.Typer(help="Sign in to client platforms (Nuvio, Stremio) and store tokens per named login.")
+app.add_typer(login_app, name="login")
+
+
+def _register_login(paths: TenantPaths, platform: str, name: str, prefix: str) -> None:
+    """Idempotently records `logins[platform][name] = prefix` in tenant.json."""
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(manifest_doc):
+            pass
+    logins = manifest_doc.setdefault("logins", {})
+    if not isinstance(logins, dict):
+        err_console.print("❌ tenant.json: `logins` must be an object")
+        raise typer.Exit(code=1)
+    registry = logins.setdefault(platform, {})
+    existing = registry.get(name)
+    if existing is not None and existing != prefix:
+        err_console.print(f"❌ login `{platform}/{name}` is already registered with prefix {existing}")
+        raise typer.Exit(code=1)
+    if existing is None:
+        registry[name] = prefix
+        _write_tenant_manifest(paths, manifest_doc)
+
+
+def _store_login_secrets(paths: TenantPaths, updates: Mapping[str, str]) -> None:
+    match save_env_updates(paths.env_file, updates):
+        case Err(write_err):
+            err_console.print(f"❌ {write_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+    match scaffold_env_keys(paths.env_example_file, list(updates)):
+        case Err(write_err):
+            err_console.print(f"❌ {write_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+
+
+@login_app.command("list")
+def cmd_login_list(
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Show registered logins and whether .env holds credentials for them."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    manifest = _load_tenant_manifest(paths)
+    env = load_env_file(paths.env_file)
+    table = Table(title=f"Logins — tenant `{manifest.name}`", box=box.ROUNDED, header_style="bold")
+    for col in ("Platform", "Login", "Env prefix", "Email", "Ready"):
+        table.add_column(col, overflow="fold")
+    for platform in SUPPORTED_PLATFORMS:
+        for name in sorted(manifest.logins.get(platform, {})):
+            match resolve_login_binding(manifest, env, platform, name):
+                case Err(bind_err):
+                    err_console.print(f"❌ {bind_err}")
+                    raise typer.Exit(code=1)
+                case Ok(b):
+                    pass
+            table.add_row(platform, name, b.prefix, b.credentials.get("email") or "—", "✅" if b.configured() else "❌")
+    console.print(table)
+
+
+@login_app.command("nuvio")
+def cmd_login_nuvio(
+    login: Annotated[str, typer.Option("--login", "-l", help="Login name (e.g. don, gf)")],
+    email: Annotated[str | None, typer.Option("--email", help="Nuvio account email (prompted if omitted)")] = None,
+    password: Annotated[
+        str | None,
+        typer.Option("--password", help="Nuvio account password (prompted, hidden, if omitted)"),
+    ] = None,
+    prefix: Annotated[
+        str | None,
+        typer.Option("--prefix", help="Env prefix (default: NUVIO_<LOGIN>; use NUVIO to adopt legacy SECRET_NUVIO_* keys)"),
+    ] = None,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Sign in to Nuvio (Supabase password grant) and store tokens as SECRET_<PREFIX>_* for this login."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    env = load_env_file(paths.env_file)
+    anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
+    if not anon_key:
+        err_console.print("❌ NUVIO_SUPABASE_ANON_KEY is not set in .env")
+        raise typer.Exit(code=1)
+
+    login_name = login.strip().lower()
+    env_prefix = (prefix or f"NUVIO_{login_name.upper().replace('-', '_')}").strip()
+    email_val = (email or typer.prompt("Nuvio email")).strip()
+    password_val = password or typer.prompt("Nuvio password", hide_input=True)
+
+    with HttpxClient() as http_client:
+        match password_grant(http_client, anon_key, email_val, password_val):
+            case Err(auth_err):
+                err_console.print(f"❌ {auth_err}")
+                raise typer.Exit(code=1)
+            case Ok((access_token, refresh_token)):
+                pass
+
+    _register_login(paths, "nuvio", login_name, env_prefix)
+    _store_login_secrets(
+        paths,
+        {
+            login_env_key(env_prefix, "ACCESS_TOKEN"): access_token,
+            login_env_key(env_prefix, "REFRESH_TOKEN"): refresh_token,
+            login_env_key(env_prefix, "EMAIL"): email_val,
+        },
+    )
+    console.print(f"✅ Signed in to Nuvio as {email_val}; stored under SECRET_{env_prefix}_* for login `{login_name}`")
+
+
+@login_app.command("stremio")
+def cmd_login_stremio(
+    login: Annotated[str, typer.Option("--login", "-l", help="Login name (e.g. don)")],
+    email: Annotated[str | None, typer.Option("--email", help="Stremio account email (prompted if omitted)")] = None,
+    password: Annotated[
+        str | None,
+        typer.Option("--password", help="Stremio account password (prompted, hidden, if omitted)"),
+    ] = None,
+    prefix: Annotated[
+        str | None,
+        typer.Option("--prefix", help="Env prefix (default: STREMIO_<LOGIN>; use STREMIO to adopt legacy SECRET_STREMIO_* keys)"),
+    ] = None,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Sign in to Stremio and store its authKey as SECRET_<PREFIX>_AUTH_KEY for this login."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    login_name = login.strip().lower()
+    env_prefix = (prefix or f"STREMIO_{login_name.upper().replace('-', '_')}").strip()
+    email_val = (email or typer.prompt("Stremio email")).strip()
+    password_val = password or typer.prompt("Stremio password", hide_input=True)
+
+    with HttpxClient() as http_client:
+        match http_client.request_json(
+            "POST",
+            "https://api.strem.io/api/login",
+            json_body={"type": "Login", "email": email_val, "password": password_val, "facebook": False},
+        ):
+            case Err(net_err):
+                err_console.print(f"❌ {net_err}")
+                raise typer.Exit(code=1)
+            case Ok(resp):
+                pass
+    result = resp.data.get("result") if isinstance(resp.data, dict) else None
+    auth_key = str(result.get("authKey") or "") if isinstance(result, dict) else ""
+    if resp.status_code != 200 or not auth_key:
+        detail = resp.data.get("error") if isinstance(resp.data, dict) else resp.text
+        err_console.print(f"❌ Stremio sign-in failed (HTTP {resp.status_code}): {str(detail)[:200]}")
+        raise typer.Exit(code=1)
+
+    _register_login(paths, "stremio", login_name, env_prefix)
+    _store_login_secrets(
+        paths,
+        {login_env_key(env_prefix, "AUTH_KEY"): auth_key, login_env_key(env_prefix, "EMAIL"): email_val},
+    )
+    console.print(f"✅ Signed in to Stremio as {email_val}; stored under SECRET_{env_prefix}_* for login `{login_name}`")
+
+
+@login_app.command("adopt")
+def cmd_login_adopt(
+    platform: Annotated[str, typer.Argument(help="nuvio | stremio")],
+    login: Annotated[str, typer.Option("--login", "-l", help="Login name to register")],
+    prefix: Annotated[str, typer.Option("--prefix", help="Existing env prefix whose SECRET_<PREFIX>_* keys hold the tokens")],
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Register an existing set of SECRET_<PREFIX>_* credentials (e.g. legacy SECRET_NUVIO_*) as a named login."""
+    plat = platform.strip().lower()
+    if plat not in SUPPORTED_PLATFORMS:
+        err_console.print(f"❌ Unsupported platform `{platform}`; choose from {', '.join(SUPPORTED_PLATFORMS)}")
+        raise typer.Exit(code=1)
+    paths = _resolve_tenant(workspace_dir, tenant)
+    env = load_env_file(paths.env_file)
+    keys = login_env_keys(plat, prefix.strip())
+    missing = [k for k in keys if not env.get(k) and not k.endswith("_EMAIL")]
+    if missing:
+        err_console.print(f"❌ .env is missing {', '.join(missing)}")
+        raise typer.Exit(code=1)
+    _register_login(paths, plat, login.strip().lower(), prefix.strip())
+    console.print(f"✅ Registered `{plat}/{login.strip().lower()}` → SECRET_{prefix.strip()}_*")
+
 
 
 # ============================================================================

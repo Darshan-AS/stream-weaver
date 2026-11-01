@@ -39,6 +39,7 @@ from stream_weaver.core.nuvio_settings import (
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict
 from stream_weaver.effects.http import HttpClientProtocol
+from stream_weaver.providers.services.nuvio_session import NuvioSessionPool
 
 
 def compile_nuvio_collections(
@@ -282,8 +283,11 @@ def build_stremio_addons_payload(addons: list[Any]) -> list[JsonDict]:
 class NuvioClientSync:
     """Pushes and pulls an account's addons and curated collections to/from a linked Nuvio profile."""
 
-    def __init__(self, http_client: HttpClientProtocol) -> None:
+    def __init__(
+        self, http_client: HttpClientProtocol, session_pool: NuvioSessionPool | None = None
+    ) -> None:
         self._http = http_client
+        self._pool = session_pool
 
     @property
     def platform_id(self) -> str:
@@ -296,81 +300,40 @@ class NuvioClientSync:
         salt_b64: str,
         env: EnvMap,
     ) -> Result[tuple[dict[str, str], int, dict[str, str]]]:
-        """Authenticates against Nuvio Supabase (refreshing JWT on 401) and resolves `profile_idx`."""
+        """
+        Acquires the login's shared `NuvioSession` (one auth per login per command, refresh-safe)
+        and resolves this connection's `profile_idx` from the session's profile list.
+        """
         creds = connection.get("credentials")
         if not isinstance(creds, Mapping) or not creds.get("accessToken"):
             return Err(StreamWeaverError("Nuvio connection has no accessToken."))
 
-        nuvio_anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
-        if not nuvio_anon_key:
-            return Err(
-                StreamWeaverError(
-                    "NUVIO_SUPABASE_ANON_KEY is not set in .env; skipping direct Nuvio sync."
-                )
-            )
-
         access_token = decrypt_field(str(creds["accessToken"]), master_password, salt_b64)
-        headers: dict[str, str] = {
-            "apikey": nuvio_anon_key,
-            "Authorization": f"Bearer {access_token}",
-        }
-        updated_secrets: dict[str, str] = {}
-
-        prof_res = self._http.request_json(
-            "POST",
-            "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
-            headers=headers,
-            json_body={},
+        refresh_token = (
+            decrypt_field(str(creds["refreshToken"]), master_password, salt_b64)
+            if creds.get("refreshToken")
+            else ""
         )
-        match prof_res:
+        pool = self._session_pool(env)
+        match pool.acquire(access_token=access_token, refresh_token=refresh_token, env=env):
             case Err() as err:
                 return err
-            case Ok(prof_resp):
-                p_status = prof_resp.status_code
-                profiles = prof_resp.data
+            case Ok(session):
+                pass
 
-        if p_status == 401 and creds.get("refreshToken"):
-            refresh_tok = decrypt_field(str(creds["refreshToken"]), master_password, salt_b64)
-            refresh_res = self._http.request_json(
-                "POST",
-                "https://api.nuvio.tv/auth/v1/token?grant_type=refresh_token",
-                headers={"apikey": nuvio_anon_key},
-                json_body={"refresh_token": refresh_tok},
-            )
-            match refresh_res:
-                case Ok(r_resp) if (
-                    r_resp.status_code == 200
-                    and isinstance(r_resp.data, dict)
-                    and r_resp.data.get("access_token")
-                ):
-                    access_token = str(r_resp.data["access_token"])
-                    updated_secrets["SECRET_NUVIO_ACCESS_TOKEN"] = access_token
-                    if r_resp.data.get("refresh_token"):
-                        updated_secrets["SECRET_NUVIO_REFRESH_TOKEN"] = str(
-                            r_resp.data["refresh_token"]
-                        )
-                    headers["Authorization"] = f"Bearer {access_token}"
-                    retry_prof = self._http.request_json(
-                        "POST",
-                        "https://api.nuvio.tv/rest/v1/rpc/sync_pull_profiles",
-                        headers=headers,
-                        json_body={},
-                    )
-                    if isinstance(retry_prof, Ok):
-                        p_status = retry_prof.value.status_code
-                        profiles = retry_prof.value.data
-                case _:
-                    pass
+        target_pid = str(creds.get("profileId") or "") or None
+        profile_idx = session.profile_index(profile_id=target_pid) if target_pid else None
+        if profile_idx is None:
+            raw_idx = str(creds.get("profileIndex") or "").strip()
+            profile_idx = int(raw_idx) if raw_idx.isdigit() else 1
 
-        profile_idx = 1
-        target_pid = creds.get("profileId")
-        if p_status == 200 and isinstance(profiles, list):
-            for p in profiles:
-                if isinstance(p, dict) and str(p.get("id")) == str(target_pid):
-                    profile_idx = int(p.get("profile_index") or p.get("profileIndex") or 1)
-                    break
+        return Ok((dict(session.headers), profile_idx, dict(session.refreshed_secrets)))
 
-        return Ok((headers, profile_idx, updated_secrets))
+    def _session_pool(self, env: EnvMap) -> NuvioSessionPool:
+        """Lazily creates the per-run pool (callers may inject a shared one via the constructor)."""
+        if self._pool is None:
+            self._pool = NuvioSessionPool(self._http, env.get("NUVIO_SUPABASE_ANON_KEY", ""))
+        return self._pool
 
     def pull_collections(
         self,
