@@ -1,0 +1,45 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "regional-classic-series",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "to": {
+      "type": "string",
+      "default": "2009-12-31"
+    },
+    "minVotes": {
+      "type": "int",
+      "default": 3
+    }
+  },
+  "catalog": {
+    "id": "tmdb.discover.${slug}_classic_series",
+    "type": "series",
+    "name": "${label} Classic Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_original_language": "${language}",
+          "first_air_date.lte": "${to}",
+          "sort_by": "vote_count.desc",
+          "vote_count.gte": "${minVotes}"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

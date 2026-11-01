@@ -1,0 +1,69 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "regional-series",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "classics": {
+      "type": "bool",
+      "default": true
+    },
+    "classicsUntil": {
+      "type": "string",
+      "default": "2009-12-31"
+    },
+    "coverImageUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "folder": {
+    "id": "fld-${slug}-series",
+    "title": "${label} Series",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Popular ${label} Series",
+        "catalog": {
+          "ref": "regional-series",
+          "with": {
+            "language": "${language}",
+            "slug": "${slug}",
+            "label": "${label}"
+          }
+        }
+      },
+      {
+        "if": "${classics}",
+        "item": {
+          "addon": "aiometadata",
+          "type": "series",
+          "title": "${label} Classic Series",
+          "catalog": {
+            "ref": "regional-classic-series",
+            "with": {
+              "language": "${language}",
+              "slug": "${slug}",
+              "label": "${label}",
+              "to": "${classicsUntil}"
+            }
+          }
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "${coverImageUrl}",
+    "focusGifEnabled": false
+  }
+}

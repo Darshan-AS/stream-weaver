@@ -1,0 +1,40 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "regional-top-movies",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "minVotes": {
+      "type": "int",
+      "default": 20
+    }
+  },
+  "catalog": {
+    "id": "tmdb.discover.${slug}_top_movies",
+    "type": "movie",
+    "name": "Top Rated ${label} Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "${language}",
+          "sort_by": "vote_average.desc",
+          "vote_count.gte": "${minVotes}"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

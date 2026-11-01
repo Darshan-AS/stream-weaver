@@ -5,6 +5,8 @@ A recipe body may contain exactly three constructs, nothing else:
 
 * `"${name}"` inside strings — parameter substitution. A string that is *exactly* `${name}`
   yields the parameter's typed value (list, bool, number); otherwise the value is interpolated.
+  `${name.key}` reads a key of an object-valued variable (one level of member access, used by
+  `for` loops over lists of objects); there is no other navigation.
 * `{"for": "x", "in": "${list}", "item": <node>}` inside a list — expands to one `item` per
   element, with `x` bound; nested `for`s may reference outer variables.
 * `{"if": "${flag}", "item": <node>}` inside a list — included only when the (bool) value is true.
@@ -24,8 +26,21 @@ from stream_weaver.core.errors import ConfigValidationError
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import JsonValue, is_json_list, is_json_mapping
 
-_VAR_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
-_EXACT_VAR_RE = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$")
+_VAR_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\}")
+_EXACT_VAR_RE = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\}$")
+
+
+def _lookup(scope: Mapping[str, JsonValue], ref: str) -> tuple[bool, JsonValue]:
+    """Resolves `name` or `name.key` against the scope. Returns (found, value)."""
+    name, _, key = ref.partition(".")
+    if name not in scope:
+        return False, None
+    val = scope[name]
+    if not key:
+        return True, val
+    if isinstance(val, Mapping) and key in val:
+        return True, val[key]
+    return False, None
 
 PARAM_TYPES: tuple[str, ...] = ("string", "bool", "int", "list")
 
@@ -123,18 +138,17 @@ def bind_params(
 def _subst_string(text: str, scope: Mapping[str, JsonValue], *, context: str) -> Result[JsonValue, ConfigValidationError]:
     exact = _EXACT_VAR_RE.match(text)
     if exact:
-        name = exact.group(1)
-        if name not in scope:
-            return _err(f"{context}: unknown variable `${{{name}}}`")
-        return Ok(scope[name])
+        found, value = _lookup(scope, exact.group(1))
+        if not found:
+            return _err(f"{context}: unknown variable `${{{exact.group(1)}}}`")
+        return Ok(value)
     missing: list[str] = []
 
     def _repl(m: re.Match[str]) -> str:
-        name = m.group(1)
-        if name not in scope:
-            missing.append(name)
+        found, val = _lookup(scope, m.group(1))
+        if not found:
+            missing.append(m.group(1))
             return m.group(0)
-        val = scope[name]
         if isinstance(val, bool):
             return "true" if val else "false"
         if isinstance(val, int | float | str):
@@ -221,12 +235,12 @@ def _expand_for(
 
 
 def referenced_variables(node: Any) -> frozenset[str]:
-    """All `${name}` variables mentioned anywhere in a body (for linting recipes against their params)."""
+    """All `${name}` root variables mentioned anywhere in a body (for linting recipes against their params)."""
     found: set[str] = set()
 
     def _walk(n: Any) -> None:
         if isinstance(n, str):
-            found.update(_VAR_RE.findall(n))
+            found.update(ref.split(".", 1)[0] for ref in _VAR_RE.findall(n))
         elif isinstance(n, list):
             for x in n:
                 _walk(x)

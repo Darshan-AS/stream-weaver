@@ -12,7 +12,13 @@
         "type": "movie",
         "title": "New Hindi Releases",
         "catalog": {
-          "ref": "tmdb.discover.hindi_new_movies"
+          "ref": "regional-new-movies",
+          "with": {
+            "language": "hi",
+            "slug": "hindi",
+            "label": "Hindi",
+            "minVotes": 5
+          }
         }
       },
       {
@@ -20,7 +26,12 @@
         "type": "movie",
         "title": "Popular Hindi Movies",
         "catalog": {
-          "ref": "tmdb.discover.hindi_movies"
+          "ref": "regional-popular-movies",
+          "with": {
+            "language": "hi",
+            "slug": "hindi",
+            "label": "Hindi"
+          }
         }
       },
       {
@@ -28,7 +39,12 @@
         "type": "series",
         "title": "Hindi Series",
         "catalog": {
-          "ref": "tmdb.discover.hindi_series"
+          "ref": "regional-series",
+          "with": {
+            "language": "hi",
+            "slug": "hindi",
+            "label": "Hindi"
+          }
         }
       }
     ],

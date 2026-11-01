@@ -1,0 +1,90 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "regional-cinema",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "decades": {
+      "type": "list",
+      "items": "object",
+      "default": [
+        {
+          "id": "80s",
+          "label": "80s",
+          "from": "1900-01-01",
+          "to": "1989-12-31"
+        },
+        {
+          "id": "90s",
+          "label": "90s",
+          "from": "1990-01-01",
+          "to": "1999-12-31"
+        },
+        {
+          "id": "2000s",
+          "label": "2000s",
+          "from": "2000-01-01",
+          "to": "2009-12-31"
+        }
+      ]
+    },
+    "series": {
+      "type": "bool",
+      "default": true
+    },
+    "moviesCoverImageUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "seriesCoverImageUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "backdropImageUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "collection": {
+    "id": "col-${slug}",
+    "title": "${label}",
+    "folders": [
+      {
+        "ref": "regional-movies",
+        "with": {
+          "language": "${language}",
+          "slug": "${slug}",
+          "label": "${label}",
+          "decades": "${decades}",
+          "coverImageUrl": "${moviesCoverImageUrl}"
+        }
+      },
+      {
+        "if": "${series}",
+        "item": {
+          "ref": "regional-series",
+          "with": {
+            "language": "${language}",
+            "slug": "${slug}",
+            "label": "${label}",
+            "coverImageUrl": "${seriesCoverImageUrl}"
+          }
+        }
+      }
+    ],
+    "pinToTop": false,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "${backdropImageUrl}",
+    "focusGlowEnabled": true
+  }
+}

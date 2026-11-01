@@ -1,0 +1,54 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "regional-decade-movies",
+  "params": {
+    "language": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "decade": {
+      "type": "string"
+    },
+    "decadeLabel": {
+      "type": "string"
+    },
+    "from": {
+      "type": "string"
+    },
+    "to": {
+      "type": "string"
+    },
+    "minVotes": {
+      "type": "int",
+      "default": 5
+    }
+  },
+  "catalog": {
+    "id": "tmdb.discover.${slug}_${decade}_movies",
+    "type": "movie",
+    "name": "${label} Classics — ${decadeLabel}",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "${language}",
+          "primary_release_date.gte": "${from}",
+          "primary_release_date.lte": "${to}",
+          "sort_by": "vote_count.desc",
+          "vote_count.gte": "${minVotes}"
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}
