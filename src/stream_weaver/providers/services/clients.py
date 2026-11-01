@@ -157,7 +157,7 @@ def compile_nuvio_collections(
 def decompile_nuvio_collections(remote_payload: Any) -> list[JsonDict]:
     """
     Pure function: unwraps Nuvio's `sync_pull_collections` response and strips runtime-compiled
-    fields (`catalogSources`) so the collections match the declarative `configs/nuvio_collections.json` schema.
+    fields (`catalogSources`) so the collections match the declarative `nuvio_collections.json` schema.
     """
     raw_list: list[Any] = []
     if isinstance(remote_payload, list):
@@ -381,7 +381,7 @@ class NuvioClientSync:
     ) -> Result[tuple[list[JsonDict], dict[str, str]]]:
         """
         Pulls live Home Collections from Nuvio (`POST /rest/v1/rpc/sync_pull_collections`)
-        and decompiles them into declarative `configs/nuvio_collections.json` format.
+        and decompiles them into declarative `nuvio_collections.json` format.
         """
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
@@ -450,7 +450,7 @@ class NuvioClientSync:
     ) -> Result[tuple[JsonDict, dict[str, str]]]:
         """
         Pulls live `stream_badge_settings` across Nuvio platforms (`tv`, `desktop`, `mobile`)
-        and decompiles them into the declarative `configs/nuvio_badges.json` format.
+        and decompiles them into the declarative `nuvio_badges.json` format.
         """
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
@@ -593,7 +593,7 @@ class NuvioClientSync:
         salt_b64: str,
         env: EnvMap,
     ) -> Result[tuple[str, dict[str, str]]]:
-        """Directly compiles and pushes `configs/nuvio_badges.json` to Nuvio profile settings blobs."""
+        """Directly compiles and pushes `nuvio_badges.json` to Nuvio profile settings blobs."""
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
                 return err
@@ -777,7 +777,7 @@ class NuvioClientSync:
     ) -> Result[tuple[JsonDict, dict[str, str]]]:
         """
         Pulls live MDBList / TMDB / Trakt-comments / Meta-screen settings across Nuvio platforms
-        (plus provider credentials) and decompiles them into `configs/nuvio_meta.json` format.
+        (plus provider credentials) and decompiles them into `nuvio_meta.json` format.
         """
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
@@ -811,7 +811,7 @@ class NuvioClientSync:
         salt_b64: str,
         env: EnvMap,
     ) -> Result[tuple[str, dict[str, str]]]:
-        """Directly compiles and pushes `configs/nuvio_meta.json` to Nuvio profile settings + credentials."""
+        """Directly compiles and pushes `nuvio_meta.json` to Nuvio profile settings + credentials."""
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
                 return err
@@ -930,7 +930,7 @@ class NuvioClientSync:
     ) -> Result[tuple[JsonDict, dict[str, str]]]:
         """
         Pulls live Nuvio app settings blobs across platforms (plus provider credentials) and
-        decompiles them into `configs/nuvio_settings.json` format, restricted to `blocks`.
+        decompiles them into `nuvio_settings.json` format, restricted to `blocks`.
         """
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
@@ -969,7 +969,7 @@ class NuvioClientSync:
         salt_b64: str,
         env: EnvMap,
     ) -> Result[tuple[str, dict[str, str]]]:
-        """Directly compiles and pushes `configs/nuvio_settings.json` to Nuvio profile settings blobs."""
+        """Directly compiles and pushes `nuvio_settings.json` to Nuvio profile settings blobs."""
         match self._authenticate_and_resolve_profile(connection, master_password, salt_b64, env):
             case Err() as err:
                 return err

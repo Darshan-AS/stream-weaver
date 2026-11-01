@@ -1,0 +1,14 @@
+# Ownership boundaries (see plan §1).
+#
+#   src/ + library/ + examples/   → shared blast radius: review required from the maintainer
+#   tenants/<name>/               → owned by that tenant's maintainer only
+
+/src/                 @Darshan-AS
+/library/             @Darshan-AS
+/examples/            @Darshan-AS
+/tests/               @Darshan-AS
+/.github/             @Darshan-AS
+/scripts/             @Darshan-AS
+
+/tenants/don/         @Darshan-AS
+# /tenants/bro/       @<brother-github-handle>

@@ -1,5 +1,5 @@
 """
-Pure, table-driven compiler for Nuvio per-profile app settings (`configs/nuvio_settings.json`).
+Pure, table-driven compiler for Nuvio per-profile app settings (`nuvio_settings.json`).
 
 Nuvio stores most in-app preferences in a per-platform (`tv` / `desktop` / `mobile`) cloud blob
 written through `sync_push_profile_settings_blob`. This module makes every *portable* preference
@@ -1307,7 +1307,7 @@ def normalize_setting_value(setting: Setting, raw: Any) -> Result[Any, ConfigVal
 
 def normalize_nuvio_settings_doc(data: Any) -> Result[JsonDict, ConfigValidationError]:
     """
-    Validates and canonicalizes `configs/nuvio_settings.json`.
+    Validates and canonicalizes `nuvio_settings.json`.
 
     Any top-level block (`appearance`, `playback`, `audio`, `subtitles`, `tvLayout`,
     `notifications`, `tvPlugins`) that is omitted or `null` is left untouched on every device and
@@ -1645,7 +1645,7 @@ def decompile_nuvio_settings(
 ) -> JsonDict:
     """
     Reverse-compiles live Nuvio profile settings blobs into the canonical
-    `configs/nuvio_settings.json` shape.
+    `nuvio_settings.json` shape.
 
     Each setting's value comes from the highest-priority platform (mobile > desktop > tv) that
     both has a blob and a binding for it, so TV-only knobs come from the TV blob. `platforms`

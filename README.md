@@ -3,9 +3,9 @@
 This repository (**`stream-weaver`**) is the declarative GitOps control plane for your **Stremio** + **Nuvio** streaming stack, paired with **[`aio_contraband`](https://github.com/Darshan-AS/aio_contraband)** (`dev.darshanas.contraband`) for curated niche courses, rare lectures, and unlisted specials.
 
 It manages:
-1. **[AIOStreams](https://github.com/Viren070/AIOStreams)** (`configs/aiostreams.json`) — Stream scrapers, TorBox/Debrid services, SEL filtering/sorting, stream formatting, and the **Contraband** custom addon.
-2. **[AIOMetadata](https://github.com/cedya77/aiometadata)** (`configs/aiometadata.json`) — TMDB/TVDB/MAL/AniList metadata providers, MDBList/Trakt catalogs, artwork rules, and search.
-3. **[AIOManager](https://github.com/Sonicx161/AIOManager)** (`configs/aiomanager.json`) — Saved addon library, account profiles, Autopilot failover rules, and bidirectional Stremio $\leftrightarrow$ Nuvio sync.
+1. **[AIOStreams](https://github.com/Viren070/AIOStreams)** (`aiostreams.json`) — Stream scrapers, TorBox/Debrid services, SEL filtering/sorting, stream formatting, and the **Contraband** custom addon.
+2. **[AIOMetadata](https://github.com/cedya77/aiometadata)** (`aiometadata.json`) — TMDB/TVDB/MAL/AniList metadata providers, MDBList/Trakt catalogs, artwork rules, and search.
+3. **[AIOManager](https://github.com/Sonicx161/AIOManager)** (`aiomanager.json`) — Saved addon library, account profiles, Autopilot failover rules, and bidirectional Stremio $\leftrightarrow$ Nuvio sync.
 
 > **Contraband Addon Compiler & TorBox Queue (`cb`):** The static Stremio addon compiler and TorBox ingestor now live directly inside the **[`aio_contraband`](https://github.com/Darshan-AS/aio_contraband)** repository (`../aio_contraband`) via the `cb` CLI (`uv run cb add`, `uv run cb sync`, `uv run cb watch`, `uv run cb list`).
 
@@ -51,23 +51,43 @@ flowchart LR
   * `ClientSyncProtocol` (`NuvioClientSync`, `StremioClientSync`)
 * `src/stream_weaver/effects/` & `src/stream_weaver/cli/` — **Imperative Shell** (`httpx` HTTP adapter, JSON/`.env` persistence, and `typer`/`rich` CLI).
 
+### Repository Layout (Tenants)
+The repo separates **tool** from **data**. The tool never assumes where a tenant lives; it is told via `--tenant <name>` (→ `./tenants/<name>`), `--dir <path>`, `STREAM_WEAVER_DIR`, or by running inside a directory containing `tenant.json`.
+
+```text
+stream-weaver/
+├── src/stream_weaver/      tool (sw) — reads only the tenant directory it is given
+├── examples/home/          identity-free demo tenant: docs + test fixture (`sw init --from examples/home`)
+├── tenants/
+│   └── don/                a tenant = one maintainer's identity + infrastructure
+│       ├── tenant.json     marker + registry of named instances / logins / profiles
+│       ├── .env            all secret values (gitignored)
+│       ├── aiostreams.json · aiometadata.json · aiomanager.json · nuvio_*.json
+│       ├── architecture/   generated LikeC4 model
+│       └── ARCHITECTURE.md generated
+└── .github/CODEOWNERS      src/ is shared blast radius; tenants/<x>/ is self-owned
+```
+
+A second person who self-hosts simply adds `tenants/<name>/` (`uv run sw init tenants/<name> --from examples/home`) and runs every command with `--tenant <name>`.
+
 ---
 
 ## 1. Quick Start: Spin Up Your Own AIO Instances (For Family / Friends)
 
 > **Do I need to clone `aio_contraband`?**
-> **No!** If you just want to *watch* the Contraband catalogs (like **Peterson Academy**), `configs/aiostreams.json` already points directly to `https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/manifest.json`. You only need `stream-weaver`.
+> **No!** If you just want to *watch* the Contraband catalogs (like **Peterson Academy**), add the `swc` custom preset pointing at `https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/manifest.json` to your tenant's `aiostreams.json`. You only need `stream-weaver`.
 
-### Step 1: Clone `stream-weaver`, Install Dependencies & Create `.env`
+### Step 1: Clone `stream-weaver`, Install Dependencies & Scaffold Your Tenant
 ```bash
 git clone git@github.com:Darshan-AS/stream-weaver.git
 cd stream-weaver
 uv sync
-cp .env.example .env
+uv run sw init tenants/<you> --from examples/home   # tenant.json, .env, starter documents
 ```
+Every `sw` command below takes `--tenant <you>` (or `cd tenants/<you>` first).
 
 ### Step 2: Fill in Your Keys in `.env`
-Open `.env` and fill in:
+Open `tenants/<you>/.env` and fill in:
 1. **Instance URLs**:
    ```dotenv
    AIOSTREAMS_URL=https://aiostreams.example.com
@@ -78,7 +98,7 @@ Open `.env` and fill in:
    AIOSTREAMS_PASSWORD=choose-a-strong-password
    AIOMETADATA_PASSWORD=choose-a-strong-password
    ```
-3. **Required API Keys** (used to populate `{{SECRET_*}}` placeholders in `configs/aiostreams.json` and `configs/aiometadata.json`):
+3. **Required API Keys** (used to populate `{{SECRET_*}}` placeholders in your tenant's `aiostreams.json` and `aiometadata.json`):
    * `SECRET_TORBOX_API_KEY` — Your TorBox API key (from [torbox.app/settings](https://torbox.app/settings))
    * `SECRET_TMDB_API_KEY` & `SECRET_TMDB_ACCESS_TOKEN` — Free from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
    * `SECRET_TVDB_API_KEY` — Free from [thetvdb.com/api-information](https://thetvdb.com/api-information)
@@ -90,13 +110,13 @@ Open `.env` and fill in:
 ### Step 3: Bootstrap Your Own AIOStreams & AIOMetadata Instances (`--create`)
 Run `sw push` with `--create` to provision brand-new user profiles on the servers:
 ```bash
-uv run sw push aiostreams --create
-uv run sw push aiometadata --create
+uv run sw push aiostreams --create --tenant <you>
+uv run sw push aiometadata --create --tenant <you>
 ```
 Each command will output your newly created **UUID** and **Install URL** (`manifest.json`):
 1. Copy the printed `AIOSTREAMS_UUID` and `AIOMETADATA_UUID` into your `.env` file.
 2. Install the two generated `manifest.json` URLs into **Stremio** / **Nuvio** (or into your own **AIOManager** profile).
-3. Whenever you want to tweak your setup later, just edit `configs/*.json` and run `uv run sw push`—it will update your UUIDs in-place without changing your Install URLs!
+3. Whenever you want to tweak your setup later, just edit your tenant's JSON documents and run `uv run sw push --tenant <you>`—it will update your UUIDs in-place without changing your Install URLs!
 
 ---
 
@@ -120,18 +140,18 @@ uv run sw push nuvio_meta         # details-page enrichment only (see below)
 uv run sw push nuvio_settings     # playback / subtitles / audio / theme / TV layout (see below)
 ```
 
-### Nuvio Stream Badges (`configs/nuvio_badges.json`)
-`configs/nuvio_badges.json` declaratively syncs regex-matched technology logo packs (such as
+### Nuvio Stream Badges (`nuvio_badges.json`)
+`nuvio_badges.json` declaratively syncs regex-matched technology logo packs (such as
 [Elite-Badges](https://github.com/leonevz/Elite-Badges)) into `stream_badge_settings` across `tv`,
 `desktop`, and `mobile` via `sync_push_profile_settings_blob`—configuring stream-card badge
 placement (`BOTTOM` / `TOP`), player seek-bar badges (`showInPlayer`), addon logos, and file-size
 chips while preserving unrelated profile preferences.
 
-### Nuvio Details-Page Enrichment (`configs/nuvio_meta.json`)
+### Nuvio Details-Page Enrichment (`nuvio_meta.json`)
 The Stremio addon protocol only carries a single `imdbRating`; the multi-source ratings strip,
 Trakt reviews, and TMDB extras on a Nuvio details page are **client-side integrations** that
 Nuvio stores per profile in its cloud sync (`sync_push_profile_settings_blob` +
-`sync_push_provider_credentials`). `configs/nuvio_meta.json` drives all of them declaratively
+`sync_push_provider_credentials`). `nuvio_meta.json` drives all of them declaratively
 across `tv`, `desktop`, and `mobile` so nothing has to be toggled in the app UI:
 
 | Block | What it switches on | Nuvio feature it writes |
@@ -146,9 +166,9 @@ and `SECRET_TMDB_API_KEY` (already used by AIOMetadata). Merges are read-modify-
 unrelated preferences (theme, player, Trakt watch-progress source, …) are preserved, and
 never-initialised desktop/mobile profiles are skipped rather than seeded with partial defaults.
 
-### Nuvio App Settings (`configs/nuvio_settings.json`)
+### Nuvio App Settings (`nuvio_settings.json`)
 Everything else you would otherwise toggle by hand in each Nuvio client's Settings screens lives
-in `configs/nuvio_settings.json` and is pushed into the same per-platform profile blobs
+in `nuvio_settings.json` and is pushed into the same per-platform profile blobs
 (`sync_push_profile_settings_blob`) with read-modify-write merges, so device-local knobs
 (decoders, libmpv/iOS tuning, buffers, per-title track memory) are never touched:
 
@@ -171,8 +191,8 @@ provider-credential RPCs; leave blank to keep whatever each device already has).
 ### Pulling Changes Made in the Web UI
 If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web UI:
 ```bash
-uv run sw pull
-git diff configs/
+uv run sw pull --tenant <you>
+git diff tenants/<you>/
 ```
 `sw pull` automatically harvests any new API keys into `.env`, dehydrates volatile runtime telemetry (`watchEvents`, `changelog`, duplicate cached manifests), and scrubs secrets into `{{SECRET_*}}` placeholders via JSON-path lenses.
 
@@ -182,14 +202,20 @@ uv run sw sanitize
 ```
 
 ### Self-Updating Architecture Topology (`LikeC4` & `ARCHITECTURE.md`)
-`stream-weaver` automatically compiles your live `configs/*.json` into an interactive **LikeC4** model (`architecture/topology.c4`) and a GitHub-rendered Markdown overview ([`ARCHITECTURE.md`](ARCHITECTURE.md)) on every `sw pull`, `sw push`, `sw sanitize`, and `git commit`:
+`stream-weaver` automatically compiles each tenant's JSON documents into an interactive **LikeC4** model (`tenants/<you>/architecture/topology.c4`) and a GitHub-rendered Markdown overview (e.g. [`tenants/don/ARCHITECTURE.md`](tenants/don/ARCHITECTURE.md)) on every `sw pull`, `sw push`, `sw sanitize`, and `git commit`:
 ```bash
 # Manually regenerate or check for drift:
 uv run sw diagram
 uv run sw diagram --check
 
 # Launch the interactive LikeC4 zoomable architecture explorer:
-npx likec4 start architecture
+npx likec4 start tenants/<you>/architecture
+```
+
+### Offline Validation (CI gate)
+```bash
+uv run sw validate --tenant <you>   # tenant.json schema, document normalization, architecture sync
+uv run sw validate --all-tenants    # what CI runs on every PR
 ```
 
 ---

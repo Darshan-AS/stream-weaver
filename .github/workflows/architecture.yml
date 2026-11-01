@@ -1,9 +1,8 @@
-name: Architecture Topology (LikeC4 & GitHub Pages)
+name: Validate tenants & publish architecture
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 permissions:
@@ -15,44 +14,44 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  # Tenant whose LikeC4 model is published to GitHub Pages.
+  PAGES_TENANT: don
+
 jobs:
-  verify-and-build:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.14"
+          enable-cache: true
 
-      - name: Verify architecture topology is in sync with configs/*.json
-        env:
-          PYTHONPATH: src
+      - name: Install
+        run: uv sync --all-extras
+
+      - name: Lint, type-check, unit tests (incl. boundary lint)
         run: |
-          python3 -c '
-          import json
-          from pathlib import Path
-          from stream_weaver.core.architecture import compile_architecture_bundle
-          bundle = compile_architecture_bundle(
-              aiomanager=json.loads(Path("configs/aiomanager.json").read_text(encoding="utf-8")),
-              aiostreams=json.loads(Path("configs/aiostreams.json").read_text(encoding="utf-8")),
-              aiometadata=json.loads(Path("configs/aiometadata.json").read_text(encoding="utf-8")),
-              nuvio_collections=json.loads(Path("configs/nuvio_collections.json").read_text(encoding="utf-8")),
-          )
-          assert Path("architecture/topology.c4").read_text(encoding="utf-8") == bundle.likec4_dsl, "topology.c4 is out of sync"
-          assert Path("ARCHITECTURE.md").read_text(encoding="utf-8") == bundle.architecture_markdown, "ARCHITECTURE.md is out of sync"
-          print("✅ LikeC4 topology & ARCHITECTURE.md are in sync with configs/*.json")
-          '
+          uv run ruff check src tests
+          uv run mypy
+          uv run pytest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Validate every tenant offline (schema, documents, architecture sync)
+        run: uv run sw validate --all-tenants
+
+  build-pages:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Build LikeC4 static architecture site
-        run: npx --yes likec4 build architecture --base /stream-weaver/ -o dist/architecture
+        run: npx --yes likec4 build "tenants/${PAGES_TENANT}/architecture" --base /stream-weaver/ -o dist/architecture
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -62,7 +61,7 @@ jobs:
 
   deploy-pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify-and-build
+    needs: build-pages
     runs-on: ubuntu-latest
     environment:
       name: github-pages

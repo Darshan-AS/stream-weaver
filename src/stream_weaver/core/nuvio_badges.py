@@ -81,7 +81,7 @@ def validate_badge_source_url(raw_url: str) -> Result[str, ConfigValidationError
 
 def normalize_nuvio_badges_doc(data: Any) -> Result[JsonDict, ConfigValidationError]:
     """
-    Validates and normalizes a declarative `configs/nuvio_badges.json` document into
+    Validates and normalizes a declarative `nuvio_badges.json` document into
     canonical key order and Nuvio's 3-import / single-active-import invariants.
     """
     if not is_json_mapping(data):
@@ -810,7 +810,7 @@ def decompile_nuvio_badges(
 ) -> JsonDict:
     """
     Pure function: inspects `sync_pull_profile_settings_blob` payloads across
-    `("tv", "desktop", "mobile")` and reconstructs the declarative `configs/nuvio_badges.json`
+    `("tv", "desktop", "mobile")` and reconstructs the declarative `nuvio_badges.json`
     representation, listing only platforms whose active badge settings are in sync.
     """
     decoded_by_plat: dict[str, dict[str, Any]] = {}

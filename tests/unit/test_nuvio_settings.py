@@ -36,7 +36,7 @@ from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
 from stream_weaver.effects.http import HttpResponse
 from stream_weaver.providers.services.clients import NuvioClientSync
 
-REPO_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "nuvio_settings.json"
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "examples" / "home" / "nuvio_settings.json"
 
 
 def _normalized(doc: Mapping[str, Any]) -> dict[str, Any]:

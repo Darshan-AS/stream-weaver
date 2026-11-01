@@ -2,7 +2,7 @@
 """
 One-off: back-fill Simkl history from Nuvio Sync's watched items (preserving original `watched_at`).
 
-Usage (from the stream-weaver root, with .env populated):
+Usage (from the repo root; tenant via STREAM_WEAVER_DIR or STREAM_WEAVER_TENANT, default `don`):
 
     .venv/bin/python scripts/simkl_backfill.py            # dry run: prints what WOULD be sent
     .venv/bin/python scripts/simkl_backfill.py --apply    # authorise via Simkl PIN, then push
@@ -19,6 +19,7 @@ Items already marked watched/completed on Simkl are skipped so re-running is ide
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from collections import defaultdict
@@ -31,6 +32,12 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+# Tenant directory: STREAM_WEAVER_DIR, else ./tenants/<STREAM_WEAVER_TENANT or "don">
+TENANT_DIR = Path(
+    os.environ.get("STREAM_WEAVER_DIR")
+    or ROOT / "tenants" / os.environ.get("STREAM_WEAVER_TENANT", "don")
+).resolve()
 
 from stream_weaver.cli.app import _resolve_nuvio_connection  # noqa: E402
 from stream_weaver.core.result import Ok  # noqa: E402
@@ -243,9 +250,9 @@ def build_simkl_history_payload(
 
 
 def pull_nuvio_watched(env: Mapping[str, str]) -> list[dict[str, Any]]:
-    res = _resolve_nuvio_connection(ROOT / "configs", env)
+    res = _resolve_nuvio_connection(TENANT_DIR, env)
     if not isinstance(res, Ok) or res.value is None:
-        sys.exit("❌ No Nuvio connection resolvable from configs/aiomanager.json + .env")
+        sys.exit("❌ No Nuvio connection resolvable from <tenant>/aiomanager.json + .env")
     conn, password, salt_b64, _ = res.value
     with HttpxClient() as http:
         syncer = NuvioClientSync(http)
@@ -515,7 +522,7 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    env = load_env_file(ROOT / ".env")
+    env = load_env_file(TENANT_DIR / ".env")
     rows = pull_nuvio_watched(env)
     print(f"📥 Nuvio Sync watched items: {len(rows)}", flush=True)
 

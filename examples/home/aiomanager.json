@@ -1,0 +1,5149 @@
+{
+  "version": "2.0.0",
+  "accounts": [
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "name": "Demo",
+      "authKey": "{{SECRET_ACCOUNT_AUTH_KEY}}",
+      "accentColor": "#3b82f6",
+      "emoji": "💀",
+      "profiles": [],
+      "deletedAddons": {
+        "https://watchly.elfhosted.com/{{SECRET_WATCHLY_TOKEN}}": 1792092935456
+      },
+      "addons": [
+        {
+          "transportUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "transportName": "",
+          "manifestId": "aio-metadata:3.8.3",
+          "manifest": {
+            "id": "aio-metadata",
+            "version": "3.8.3",
+            "name": "AIOMetadata",
+            "_deduped": true
+          },
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "metadata": {
+            "lastUpdated": 1792093742705,
+            "customName": "AIOMetadata"
+          }
+        },
+        {
+          "transportUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "transportName": "",
+          "manifestId": "aiostreams.example.com.00000000-000:2.37.0",
+          "manifest": {
+            "id": "aiostreams.example.com.00000000-000",
+            "version": "2.37.0",
+            "name": "AIOStreams",
+            "_deduped": true
+          },
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "metadata": {
+            "lastUpdated": 1792093742705,
+            "customName": "AIOStreams"
+          }
+        },
+        {
+          "transportUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
+          "transportName": "",
+          "manifestId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}:1.29.0",
+          "manifest": {
+            "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+            "version": "1.29.0",
+            "name": "Bingecat AI Assistant - demo",
+            "_deduped": true
+          },
+          "flags": {
+            "enabled": true
+          },
+          "metadata": {
+            "lastUpdated": 1792093742705,
+            "customName": "BingeCat"
+          }
+        },
+        {
+          "transportUrl": "https://v3-cinemeta.strem.io",
+          "transportName": "",
+          "manifestId": "com.linvo.cinemeta:3.0.14",
+          "manifest": {
+            "id": "com.linvo.cinemeta",
+            "version": "3.0.14",
+            "description": "The official addon for movie and series catalogs",
+            "name": "Cinemeta",
+            "resources": [
+              "catalog",
+              "meta",
+              "addon_catalog"
+            ],
+            "types": [
+              "movie",
+              "series"
+            ],
+            "idPrefixes": [
+              "tt"
+            ],
+            "addonCatalogs": [
+              {
+                "type": "all",
+                "id": "official",
+                "name": "Official"
+              },
+              {
+                "type": "movie",
+                "id": "official",
+                "name": "Official"
+              },
+              {
+                "type": "series",
+                "id": "official",
+                "name": "Official"
+              },
+              {
+                "type": "channel",
+                "id": "official",
+                "name": "Official"
+              },
+              {
+                "type": "all",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "movie",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "series",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "channel",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "tv",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "Podcasts",
+                "id": "community",
+                "name": "Community"
+              },
+              {
+                "type": "other",
+                "id": "community",
+                "name": "Community"
+              }
+            ],
+            "catalogs": [],
+            "behaviorHints": {
+              "newEpisodeNotifications": true
+            },
+            "logo": "https://v3-cinemeta.strem.io/logo.png"
+          },
+          "flags": {
+            "enabled": true
+          },
+          "metadata": {
+            "lastUpdated": 1792093742705,
+            "customName": "Cinemeta",
+            "cinemetaConfig": {
+              "removeSearch": true,
+              "removeStandardCatalogs": true,
+              "removeMeta": false
+            }
+          }
+        }
+      ],
+      "connections": [
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "platform": "nuvio",
+          "connectionType": "native",
+          "enabled": true,
+          "credentials": {
+            "accessToken": "{{SECRET_NUVIO_ACCESS_TOKEN}}",
+            "refreshToken": "{{SECRET_NUVIO_REFRESH_TOKEN}}",
+            "expiresAt": "1792693268000",
+            "profileId": "00000000-0000-4000-8000-000000000006",
+            "profileIndex": "",
+            "email": "{{SECRET_NUVIO_EMAIL}}"
+          },
+          "capabilities": [
+            "addons",
+            "plugins",
+            "profiles"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "platform": "stremio",
+          "connectionType": "native",
+          "enabled": true,
+          "credentials": {
+            "authKey": "{{SECRET_STREMIO_AUTH_KEY}}",
+            "email": "{{SECRET_NUVIO_EMAIL}}"
+          },
+          "capabilities": [
+            "addons"
+          ]
+        }
+      ],
+      "primaryConnectionId": "00000000-0000-4000-8000-000000000005",
+      "apiKey": "{{SECRET_AIOMANAGER_APIKEY_7D210008}}",
+      "createdAt": 1792088497304
+    }
+  ],
+  "apiKeys": {
+    "00000000-0000-4000-8000-000000000003": "{{SECRET_AIOMANAGER_APIKEY_7D210008}}"
+  },
+  "accountStates": {
+    "00000000-0000-4000-8000-000000000003": {
+      "accountId": "00000000-0000-4000-8000-000000000003",
+      "installedAddons": [
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000008",
+          "addonId": "aio-metadata",
+          "installUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+          "installedAt": "2026-10-15T18:21:40.385Z",
+          "installedVia": "manual",
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "syncToLibrary": true
+        },
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000009",
+          "addonId": "aiostreams.example.com.00000000-000",
+          "installUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+          "installedAt": "2026-10-15T18:21:40.385Z",
+          "installedVia": "manual",
+          "flags": {
+            "official": false,
+            "enabled": true
+          },
+          "syncToLibrary": true
+        },
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000010",
+          "addonId": "com.aicat.{{SECRET_BINGECAT_TOKEN}}.nuvio",
+          "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
+          "installedAt": "2026-10-15T19:39:38.710Z",
+          "installedVia": "saved-addon",
+          "appliedTags": [],
+          "flags": {
+            "enabled": true,
+            "official": false
+          },
+          "syncToLibrary": true,
+          "manifest": {
+            "behaviorHints": {
+              "configurable": true,
+              "configurationRequired": false
+            },
+            "catalogs": [
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Comedy",
+                      "Adventure",
+                      "Thriller",
+                      "History",
+                      "Action",
+                      "Biography",
+                      "Fantasy",
+                      "War",
+                      "Animation",
+                      "Romance",
+                      "Documentary",
+                      "Family",
+                      "Horror",
+                      "Sci-Fi",
+                      "Crime",
+                      "Mystery",
+                      "Sport"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172519",
+                "name": "Latest movies for you",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Thriller",
+                      "Crime",
+                      "Action",
+                      "Mystery",
+                      "Comedy",
+                      "Sci-Fi",
+                      "Animation",
+                      "Horror",
+                      "Adventure",
+                      "Fantasy",
+                      "Sport",
+                      "Romance",
+                      "Documentary",
+                      "Game-Show",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172520",
+                "name": "Latest series for you",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Crime",
+                      "Thriller",
+                      "Biography",
+                      "Romance",
+                      "Mystery",
+                      "History",
+                      "Action",
+                      "Film-Noir",
+                      "Comedy",
+                      "Horror",
+                      "War",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172514",
+                "name": "Because you watched...",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Animation",
+                      "Drama",
+                      "Fantasy",
+                      "Action",
+                      "Adventure",
+                      "Romance",
+                      "Comedy",
+                      "Mystery",
+                      "Sci-Fi",
+                      "Thriller",
+                      "History",
+                      "Horror",
+                      "Crime",
+                      "War",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172515",
+                "name": "Because you watched...",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Action",
+                      "Adventure",
+                      "Sci-Fi",
+                      "Drama",
+                      "Thriller",
+                      "Fantasy",
+                      "Crime",
+                      "Animation",
+                      "Comedy",
+                      "Mystery",
+                      "Horror",
+                      "History",
+                      "War",
+                      "Biography",
+                      "Family",
+                      "Western"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172517",
+                "name": "AI Recommendations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "genre",
+                    "options": [
+                      "Drama",
+                      "Fantasy",
+                      "Adventure",
+                      "Comedy",
+                      "Sci-Fi",
+                      "Action",
+                      "Animation",
+                      "Mystery",
+                      "Crime",
+                      "Thriller",
+                      "Horror",
+                      "Romance",
+                      "History",
+                      "Family"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_172518",
+                "name": "AI Recommendations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238347",
+                "name": "When Hearts Meet",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238348",
+                "name": "Mystery Thrillers",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238351",
+                "name": "Machines, AI & Cyberpunk",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238349",
+                "name": "Japanese Drama",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238352",
+                "name": "Manga Adaptations",
+                "pageSize": 50,
+                "showInHome": true,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238350",
+                "name": "Fantasy Anime",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "movie"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238353",
+                "name": "Animated Comedies",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "series"
+              },
+              {
+                "extra": [
+                  {
+                    "default": "None",
+                    "isRequired": true,
+                    "name": "genre",
+                    "options": [
+                      "None"
+                    ],
+                    "optionsLimit": 1
+                  },
+                  {
+                    "isRequired": false,
+                    "name": "skip"
+                  }
+                ],
+                "id": "aicat_list_for_you_238354",
+                "name": "Case Closed",
+                "pageSize": 50,
+                "showInHome": false,
+                "type": "series"
+              }
+            ],
+            "description": "AI-generated movie and series catalogs personalized for you",
+            "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+            "idPrefixes": [
+              "tt",
+              "tmdb:",
+              "tvdb:"
+            ],
+            "logo": "https://bingecat.com/static/logo.png",
+            "name": "Bingecat AI Assistant - demo",
+            "resources": [
+              "catalog"
+            ],
+            "types": [
+              "movie",
+              "series"
+            ],
+            "version": "1.29.0"
+          }
+        },
+        {
+          "savedAddonId": "00000000-0000-4000-8000-000000000011",
+          "addonId": "com.linvo.cinemeta",
+          "installUrl": "https://v3-cinemeta.strem.io",
+          "installedAt": "2026-10-15T18:21:40.385Z",
+          "installedVia": "manual",
+          "flags": {
+            "enabled": true,
+            "official": true
+          },
+          "syncToLibrary": false
+        }
+      ],
+      "lastSync": "2026-10-16T11:32:57.506Z"
+    }
+  },
+  "addons": {
+    "version": "1.0",
+    "savedAddons": [
+      {
+        "id": "00000000-0000-4000-8000-000000000008",
+        "name": "AIOMetadata",
+        "installUrl": "https://aiometadata.example.com/stremio/{{SECRET_AIOMETADATA_TOKEN}}",
+        "manifest": {
+          "id": "aio-metadata",
+          "version": "3.8.3",
+          "logo": "https://aiometadata.example.com/logo.png",
+          "background": "https://aiometadata.example.com/background.png",
+          "name": "AIOMetadata",
+          "description": "A metadata addon for power users. AIOMetadata uses TMDB, TVDB, TVMaze, MyAnimeList, IMDB and Fanart.tv to provide accurate data for movies, series, and anime. You choose the source.",
+          "resources": [
+            "catalog",
+            "meta"
+          ],
+          "types": [
+            "movie",
+            "series",
+            "anime.movie",
+            "anime.series",
+            "anime",
+            "Trakt",
+            "collection",
+            "person"
+          ],
+          "idPrefixes": [
+            "tmdb:",
+            "tt",
+            "tvdb:",
+            "mal:",
+            "tvmaze:",
+            "kitsu:",
+            "anidb:",
+            "anilist:",
+            "tvdbc:",
+            "upnext_",
+            "unwatched_",
+            "mdblist_upnext_",
+            "pmdb_resume_",
+            "simkl_upnext_",
+            "aiom.error.",
+            "aiom.collection:"
+          ],
+          "stremioAddonsConfig": {
+            "issuer": "https://stremio-addons.net",
+            "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..3_iKJ-pKhR-LclfTPxvyag.uY747PgjymdL0OMdZrE7HTOVG-8nNWC-LrlJ5tCXm2i2FioXv_ismzWV0_XsLl0Me9cW9D3xog6d4tSHDY8Pe27mbIylUb61MS4VVqg_sFZXUVon2le-fRFrtmMnIqCF.oyYRDftPN2sohMpDMbMbYg"
+          },
+          "behaviorHints": {
+            "configurable": true,
+            "configurationRequired": false,
+            "newEpisodeNotifications": true
+          },
+          "catalogs": [
+            {
+              "id": "trakt.trending.movies",
+              "type": "movie",
+              "name": "Trakt Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Holiday",
+                    "Horror",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "None",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "trakt.trending.shows",
+              "type": "series",
+              "name": "Trakt Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "None",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.top",
+              "type": "movie",
+              "name": "TMDB Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.top",
+              "type": "series",
+              "name": "TMDB Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.top_rated",
+              "type": "movie",
+              "name": "TMDB Top Rated",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.top_rated",
+              "type": "series",
+              "name": "TMDB Top Rated",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "mal.airing_anime",
+              "type": "series",
+              "name": "Anime Airing Now",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "mal.most_popular_anime",
+              "type": "series",
+              "name": "Popular Anime",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "mal.top_anime_anime",
+              "type": "series",
+              "name": "Top Rated Anime",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.nfx_movie",
+              "type": "movie",
+              "name": "Netflix",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.nfx_series",
+              "type": "series",
+              "name": "Netflix",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.amp_movie",
+              "type": "movie",
+              "name": "Prime Video",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.amp_series",
+              "type": "series",
+              "name": "Prime Video",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hst_movie",
+              "type": "movie",
+              "name": "JioHotstar",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hst_series",
+              "type": "series",
+              "name": "JioHotstar",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hbm_movie",
+              "type": "movie",
+              "name": "HBO Max",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hbm_series",
+              "type": "series",
+              "name": "HBO Max",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.atp_movie",
+              "type": "movie",
+              "name": "Apple TV+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.atp_series",
+              "type": "series",
+              "name": "Apple TV+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.dnp_movie",
+              "type": "movie",
+              "name": "Disney+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.dnp_series",
+              "type": "series",
+              "name": "Disney+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.slv_movie",
+              "type": "movie",
+              "name": "Sony LIV",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.slv_series",
+              "type": "series",
+              "name": "Sony LIV",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.zee_movie",
+              "type": "movie",
+              "name": "Zee5",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.zee_series",
+              "type": "series",
+              "name": "Zee5",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.hindi_movies",
+              "type": "movie",
+              "name": "Hindi Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.hindi_new_movies",
+              "type": "movie",
+              "name": "New Hindi Releases",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.hindi_series",
+              "type": "series",
+              "name": "Hindi Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_movies",
+              "type": "movie",
+              "name": "Kannada Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_new_movies",
+              "type": "movie",
+              "name": "New Kannada Releases",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_top_movies",
+              "type": "movie",
+              "name": "Top Rated Kannada Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.kannada_series",
+              "type": "series",
+              "name": "Kannada Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.japanese_movies",
+              "type": "movie",
+              "name": "Japanese Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.japanese_series",
+              "type": "series",
+              "name": "Japanese Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.cts_movie",
+              "type": "movie",
+              "name": "Curiosity Stream",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.cts_series",
+              "type": "series",
+              "name": "Curiosity Stream",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.popular_docuseries",
+              "type": "series",
+              "name": "Popular Docuseries & Education",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.top_docuseries",
+              "type": "series",
+              "name": "Top Rated Docuseries & Courses",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.top_documentaries",
+              "type": "movie",
+              "name": "Top Rated Documentaries",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.trending",
+              "type": "movie",
+              "name": "TMDB Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Day",
+                    "Week"
+                  ],
+                  "isRequired": true,
+                  "default": "Day"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.trending",
+              "type": "series",
+              "name": "TMDB Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Day",
+                    "Week"
+                  ],
+                  "isRequired": true,
+                  "default": "Day"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.language",
+              "type": "movie",
+              "name": "TMDB By Language",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "English",
+                    "Abkhazian",
+                    "Afar",
+                    "Afrikaans",
+                    "Akan",
+                    "Albanian",
+                    "Amharic",
+                    "Arabic",
+                    "Aragonese",
+                    "Armenian",
+                    "Assamese",
+                    "Avaric",
+                    "Avestan",
+                    "Aymara",
+                    "Azerbaijani",
+                    "Bambara",
+                    "Bashkir",
+                    "Basque",
+                    "Belarusian",
+                    "Bengali",
+                    "Bislama",
+                    "Bosnian",
+                    "Breton",
+                    "Bulgarian",
+                    "Burmese",
+                    "Cantonese",
+                    "Catalan",
+                    "Chamorro",
+                    "Chechen",
+                    "Chichewa; Nyanja",
+                    "Chuvash",
+                    "Cornish",
+                    "Corsican",
+                    "Cree",
+                    "Croatian",
+                    "Czech",
+                    "Danish",
+                    "Divehi",
+                    "Dutch",
+                    "Dzongkha",
+                    "Esperanto",
+                    "Estonian",
+                    "Ewe",
+                    "Faroese",
+                    "Fijian",
+                    "Finnish",
+                    "French",
+                    "Frisian",
+                    "Fulah",
+                    "Gaelic",
+                    "Galician",
+                    "Ganda",
+                    "Georgian",
+                    "German",
+                    "Greek",
+                    "Guarani",
+                    "Gujarati",
+                    "Haitian; Haitian Creole",
+                    "Hausa",
+                    "Hebrew",
+                    "Herero",
+                    "Hindi",
+                    "Hiri Motu",
+                    "Hungarian",
+                    "Icelandic",
+                    "Ido",
+                    "Igbo",
+                    "Indonesian",
+                    "Interlingua",
+                    "Interlingue",
+                    "Inuktitut",
+                    "Inupiaq",
+                    "Irish",
+                    "Italian",
+                    "Japanese",
+                    "Javanese",
+                    "Kalaallisut",
+                    "Kannada",
+                    "Kanuri",
+                    "Kashmiri",
+                    "Kazakh",
+                    "Khmer",
+                    "Kikuyu",
+                    "Kinyarwanda",
+                    "Kirghiz",
+                    "Komi",
+                    "Kongo",
+                    "Korean",
+                    "Kuanyama",
+                    "Kurdish",
+                    "Lao",
+                    "Latin",
+                    "Latvian",
+                    "Letzeburgesch",
+                    "Limburgish",
+                    "Lingala",
+                    "Lithuanian",
+                    "Luba-Katanga",
+                    "Macedonian",
+                    "Malagasy",
+                    "Malay",
+                    "Malayalam",
+                    "Maltese",
+                    "Mandarin",
+                    "Manx",
+                    "Maori",
+                    "Marathi",
+                    "Marshall",
+                    "Moldavian",
+                    "Mongolian",
+                    "Nauru",
+                    "Navajo",
+                    "Ndebele",
+                    "Ndonga",
+                    "Nepali",
+                    "No Language",
+                    "Northern Sami",
+                    "Norwegian",
+                    "Norwegian Bokmål",
+                    "Norwegian Nynorsk",
+                    "Occitan",
+                    "Ojibwa",
+                    "Oriya",
+                    "Oromo",
+                    "Ossetian; Ossetic",
+                    "Pali",
+                    "Persian",
+                    "Polish",
+                    "Portuguese",
+                    "Punjabi",
+                    "Pushto",
+                    "Quechua",
+                    "Raeto-Romance",
+                    "Romanian",
+                    "Rundi",
+                    "Russian",
+                    "Samoan",
+                    "Sango",
+                    "Sanskrit",
+                    "Sardinian",
+                    "Serbian",
+                    "Serbo-Croatian",
+                    "Shona",
+                    "Sindhi",
+                    "Sinhalese",
+                    "Slavic",
+                    "Slovak",
+                    "Slovenian",
+                    "Somali",
+                    "Sotho",
+                    "Spanish",
+                    "Sundanese",
+                    "Swahili",
+                    "Swati",
+                    "Swedish",
+                    "Tagalog",
+                    "Tahitian",
+                    "Tajik",
+                    "Tamil",
+                    "Tatar",
+                    "Telugu",
+                    "Thai",
+                    "Tibetan",
+                    "Tigrinya",
+                    "Tonga",
+                    "Tsonga",
+                    "Tswana",
+                    "Turkish",
+                    "Turkmen",
+                    "Twi",
+                    "Uighur",
+                    "Ukrainian",
+                    "Urdu",
+                    "Uzbek",
+                    "Venda",
+                    "Vietnamese",
+                    "Volapük",
+                    "Walloon",
+                    "Welsh",
+                    "Wolof",
+                    "Xhosa",
+                    "Yi",
+                    "Yiddish",
+                    "Yoruba",
+                    "Zhuang",
+                    "Zulu"
+                  ],
+                  "isRequired": true,
+                  "default": "English"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.language",
+              "type": "series",
+              "name": "TMDB By Language",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "English",
+                    "Abkhazian",
+                    "Afar",
+                    "Afrikaans",
+                    "Akan",
+                    "Albanian",
+                    "Amharic",
+                    "Arabic",
+                    "Aragonese",
+                    "Armenian",
+                    "Assamese",
+                    "Avaric",
+                    "Avestan",
+                    "Aymara",
+                    "Azerbaijani",
+                    "Bambara",
+                    "Bashkir",
+                    "Basque",
+                    "Belarusian",
+                    "Bengali",
+                    "Bislama",
+                    "Bosnian",
+                    "Breton",
+                    "Bulgarian",
+                    "Burmese",
+                    "Cantonese",
+                    "Catalan",
+                    "Chamorro",
+                    "Chechen",
+                    "Chichewa; Nyanja",
+                    "Chuvash",
+                    "Cornish",
+                    "Corsican",
+                    "Cree",
+                    "Croatian",
+                    "Czech",
+                    "Danish",
+                    "Divehi",
+                    "Dutch",
+                    "Dzongkha",
+                    "Esperanto",
+                    "Estonian",
+                    "Ewe",
+                    "Faroese",
+                    "Fijian",
+                    "Finnish",
+                    "French",
+                    "Frisian",
+                    "Fulah",
+                    "Gaelic",
+                    "Galician",
+                    "Ganda",
+                    "Georgian",
+                    "German",
+                    "Greek",
+                    "Guarani",
+                    "Gujarati",
+                    "Haitian; Haitian Creole",
+                    "Hausa",
+                    "Hebrew",
+                    "Herero",
+                    "Hindi",
+                    "Hiri Motu",
+                    "Hungarian",
+                    "Icelandic",
+                    "Ido",
+                    "Igbo",
+                    "Indonesian",
+                    "Interlingua",
+                    "Interlingue",
+                    "Inuktitut",
+                    "Inupiaq",
+                    "Irish",
+                    "Italian",
+                    "Japanese",
+                    "Javanese",
+                    "Kalaallisut",
+                    "Kannada",
+                    "Kanuri",
+                    "Kashmiri",
+                    "Kazakh",
+                    "Khmer",
+                    "Kikuyu",
+                    "Kinyarwanda",
+                    "Kirghiz",
+                    "Komi",
+                    "Kongo",
+                    "Korean",
+                    "Kuanyama",
+                    "Kurdish",
+                    "Lao",
+                    "Latin",
+                    "Latvian",
+                    "Letzeburgesch",
+                    "Limburgish",
+                    "Lingala",
+                    "Lithuanian",
+                    "Luba-Katanga",
+                    "Macedonian",
+                    "Malagasy",
+                    "Malay",
+                    "Malayalam",
+                    "Maltese",
+                    "Mandarin",
+                    "Manx",
+                    "Maori",
+                    "Marathi",
+                    "Marshall",
+                    "Moldavian",
+                    "Mongolian",
+                    "Nauru",
+                    "Navajo",
+                    "Ndebele",
+                    "Ndonga",
+                    "Nepali",
+                    "No Language",
+                    "Northern Sami",
+                    "Norwegian",
+                    "Norwegian Bokmål",
+                    "Norwegian Nynorsk",
+                    "Occitan",
+                    "Ojibwa",
+                    "Oriya",
+                    "Oromo",
+                    "Ossetian; Ossetic",
+                    "Pali",
+                    "Persian",
+                    "Polish",
+                    "Portuguese",
+                    "Punjabi",
+                    "Pushto",
+                    "Quechua",
+                    "Raeto-Romance",
+                    "Romanian",
+                    "Rundi",
+                    "Russian",
+                    "Samoan",
+                    "Sango",
+                    "Sanskrit",
+                    "Sardinian",
+                    "Serbian",
+                    "Serbo-Croatian",
+                    "Shona",
+                    "Sindhi",
+                    "Sinhalese",
+                    "Slavic",
+                    "Slovak",
+                    "Slovenian",
+                    "Somali",
+                    "Sotho",
+                    "Spanish",
+                    "Sundanese",
+                    "Swahili",
+                    "Swati",
+                    "Swedish",
+                    "Tagalog",
+                    "Tahitian",
+                    "Tajik",
+                    "Tamil",
+                    "Tatar",
+                    "Telugu",
+                    "Thai",
+                    "Tibetan",
+                    "Tigrinya",
+                    "Tonga",
+                    "Tsonga",
+                    "Tswana",
+                    "Turkish",
+                    "Turkmen",
+                    "Twi",
+                    "Uighur",
+                    "Ukrainian",
+                    "Urdu",
+                    "Uzbek",
+                    "Venda",
+                    "Vietnamese",
+                    "Volapük",
+                    "Walloon",
+                    "Welsh",
+                    "Wolof",
+                    "Xhosa",
+                    "Yi",
+                    "Yiddish",
+                    "Yoruba",
+                    "Zhuang",
+                    "Zulu"
+                  ],
+                  "isRequired": true,
+                  "default": "English"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.popular.movies",
+              "type": "movie",
+              "name": "Trakt Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Holiday",
+                    "Horror",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.popular.shows",
+              "type": "series",
+              "name": "Trakt Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.most_favorited.movies.weekly",
+              "type": "movie",
+              "name": "Trakt Most Watched (Weekly)",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Holiday",
+                    "Horror",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.most_favorited.shows.weekly",
+              "type": "series",
+              "name": "Trakt Most Watched (Weekly)",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.pmp_movie",
+              "type": "movie",
+              "name": "Paramount+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.pmp_series",
+              "type": "series",
+              "name": "Paramount+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.pcp_movie",
+              "type": "movie",
+              "name": "Peacock Premium",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.pcp_series",
+              "type": "series",
+              "name": "Peacock Premium",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hlu_movie",
+              "type": "movie",
+              "name": "Hulu",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "streaming.hlu_series",
+              "type": "series",
+              "name": "Hulu",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "trakt.unwatched",
+              "type": "series",
+              "name": "My Recently Aired",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.calendar",
+              "type": "series",
+              "name": "Airing Soon",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.year",
+              "type": "movie",
+              "name": "TMDB By Year",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "2026",
+                    "2025",
+                    "2024",
+                    "2023",
+                    "2022",
+                    "2021",
+                    "2020",
+                    "2019",
+                    "2018",
+                    "2017",
+                    "2016",
+                    "2015",
+                    "2014",
+                    "2013",
+                    "2012",
+                    "2011",
+                    "2010",
+                    "2009",
+                    "2008",
+                    "2007",
+                    "2006",
+                    "2005",
+                    "2004",
+                    "2003",
+                    "2002",
+                    "2001",
+                    "2000",
+                    "1999",
+                    "1998",
+                    "1997",
+                    "1996",
+                    "1995",
+                    "1994",
+                    "1993",
+                    "1992",
+                    "1991",
+                    "1990",
+                    "1989",
+                    "1988",
+                    "1987",
+                    "1986",
+                    "1985",
+                    "1984",
+                    "1983",
+                    "1982",
+                    "1981",
+                    "1980",
+                    "1979",
+                    "1978",
+                    "1977",
+                    "1976",
+                    "1975",
+                    "1974",
+                    "1973",
+                    "1972",
+                    "1971",
+                    "1970",
+                    "1969",
+                    "1968",
+                    "1967",
+                    "1966",
+                    "1965",
+                    "1964",
+                    "1963",
+                    "1962",
+                    "1961",
+                    "1960",
+                    "1959",
+                    "1958",
+                    "1957",
+                    "1956",
+                    "1955",
+                    "1954",
+                    "1953",
+                    "1952",
+                    "1951",
+                    "1950",
+                    "1949",
+                    "1948",
+                    "1947",
+                    "1946",
+                    "1945",
+                    "1944",
+                    "1943",
+                    "1942",
+                    "1941",
+                    "1940",
+                    "1939",
+                    "1938",
+                    "1937",
+                    "1936",
+                    "1935",
+                    "1934",
+                    "1933",
+                    "1932",
+                    "1931",
+                    "1930",
+                    "1929",
+                    "1928",
+                    "1927",
+                    "1926",
+                    "1925",
+                    "1924",
+                    "1923",
+                    "1922",
+                    "1921",
+                    "1920",
+                    "1919",
+                    "1918",
+                    "1917",
+                    "1916",
+                    "1915",
+                    "1914",
+                    "1913",
+                    "1912",
+                    "1911",
+                    "1910",
+                    "1909",
+                    "1908",
+                    "1907",
+                    "1906",
+                    "1905",
+                    "1904",
+                    "1903",
+                    "1902",
+                    "1901",
+                    "1900"
+                  ],
+                  "isRequired": true,
+                  "default": "2026"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.year",
+              "type": "series",
+              "name": "TMDB By Year",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "2026",
+                    "2025",
+                    "2024",
+                    "2023",
+                    "2022",
+                    "2021",
+                    "2020",
+                    "2019",
+                    "2018",
+                    "2017",
+                    "2016",
+                    "2015",
+                    "2014",
+                    "2013",
+                    "2012",
+                    "2011",
+                    "2010",
+                    "2009",
+                    "2008",
+                    "2007",
+                    "2006",
+                    "2005",
+                    "2004",
+                    "2003",
+                    "2002",
+                    "2001",
+                    "2000",
+                    "1999",
+                    "1998",
+                    "1997",
+                    "1996",
+                    "1995",
+                    "1994",
+                    "1993",
+                    "1992",
+                    "1991",
+                    "1990",
+                    "1989",
+                    "1988",
+                    "1987",
+                    "1986",
+                    "1985",
+                    "1984",
+                    "1983",
+                    "1982",
+                    "1981",
+                    "1980",
+                    "1979",
+                    "1978",
+                    "1977",
+                    "1976",
+                    "1975",
+                    "1974",
+                    "1973",
+                    "1972",
+                    "1971",
+                    "1970",
+                    "1969",
+                    "1968",
+                    "1967",
+                    "1966",
+                    "1965",
+                    "1964",
+                    "1963",
+                    "1962",
+                    "1961",
+                    "1960",
+                    "1959",
+                    "1958",
+                    "1957",
+                    "1956",
+                    "1955",
+                    "1954",
+                    "1953",
+                    "1952",
+                    "1951",
+                    "1950",
+                    "1949",
+                    "1948",
+                    "1947",
+                    "1946",
+                    "1945",
+                    "1944",
+                    "1943",
+                    "1942",
+                    "1941",
+                    "1940",
+                    "1939",
+                    "1938",
+                    "1937",
+                    "1936",
+                    "1935",
+                    "1934",
+                    "1933",
+                    "1932",
+                    "1931",
+                    "1930",
+                    "1929",
+                    "1928",
+                    "1927",
+                    "1926",
+                    "1925",
+                    "1924",
+                    "1923",
+                    "1922",
+                    "1921",
+                    "1920",
+                    "1919",
+                    "1918",
+                    "1917",
+                    "1916",
+                    "1915",
+                    "1914",
+                    "1913",
+                    "1912",
+                    "1911",
+                    "1910",
+                    "1909",
+                    "1908",
+                    "1907",
+                    "1906",
+                    "1905",
+                    "1904",
+                    "1903",
+                    "1902",
+                    "1901",
+                    "1900"
+                  ],
+                  "isRequired": true,
+                  "default": "2026"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "mal.schedule",
+              "type": "anime",
+              "name": "MAL Airing Schedule",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                  ],
+                  "isRequired": true,
+                  "default": "Monday"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "mal.genres",
+              "type": "anime",
+              "name": "MAL Genres",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adult Cast",
+                    "Adventure",
+                    "Anthropomorphic",
+                    "Avant Garde",
+                    "Award Winning",
+                    "Boys Love",
+                    "CGDCT",
+                    "Childcare",
+                    "Combat Sports",
+                    "Comedy",
+                    "Crossdressing",
+                    "Delinquents",
+                    "Detective",
+                    "Drama",
+                    "Ecchi",
+                    "Educational",
+                    "Erotica",
+                    "Fantasy",
+                    "Gag Humor",
+                    "Girls Love",
+                    "Gore",
+                    "Gourmet",
+                    "Harem",
+                    "Hentai",
+                    "High Stakes Game",
+                    "Historical",
+                    "Horror",
+                    "Idols (Female)",
+                    "Idols (Male)",
+                    "Isekai",
+                    "Iyashikei",
+                    "Josei",
+                    "Kids",
+                    "Love Polygon",
+                    "Love Status Quo",
+                    "Magical Sex Shift",
+                    "Mahou Shoujo",
+                    "Martial Arts",
+                    "Mecha",
+                    "Medical",
+                    "Military",
+                    "Music",
+                    "Mystery",
+                    "Mythology",
+                    "Organized Crime",
+                    "Otaku Culture",
+                    "Parody",
+                    "Performing Arts",
+                    "Pets",
+                    "Psychological",
+                    "Racing",
+                    "Reincarnation",
+                    "Reverse Harem",
+                    "Romance",
+                    "Samurai",
+                    "School",
+                    "Sci-Fi",
+                    "Seinen",
+                    "Shoujo",
+                    "Shounen",
+                    "Showbiz",
+                    "Slice of Life",
+                    "Space",
+                    "Sports",
+                    "Strategy Game",
+                    "Super Power",
+                    "Supernatural",
+                    "Survival",
+                    "Suspense",
+                    "Team Sports",
+                    "Time Travel",
+                    "Urban Fantasy",
+                    "Vampire",
+                    "Video Game",
+                    "Villainess",
+                    "Visual Arts",
+                    "Workplace"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "mal.top_movies",
+              "type": "anime",
+              "name": "MAL Top Movies",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "mal.top_series",
+              "type": "anime",
+              "name": "MAL Top Series",
+              "pageSize": 25,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "search.movie",
+              "type": "movie",
+              "name": "Movies Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "search.series",
+              "type": "series",
+              "name": "Series Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "search.anime_series",
+              "type": "anime.series",
+              "name": "Anime Series Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "search.anime_movie",
+              "type": "anime.movie",
+              "name": "Anime Movies Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "search.tvdb.collections.search",
+              "type": "collection",
+              "name": "TVDB Collections",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "people_search.people_search_movie",
+              "type": "movie",
+              "name": "People Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "id": "people_search.people_search_series",
+              "type": "series",
+              "name": "People Search",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ]
+            },
+            {
+              "type": "series",
+              "id": "calendar-videos",
+              "extra": [
+                {
+                  "name": "calendarVideosIds",
+                  "isRequired": true,
+                  "optionsLimit": 100
+                }
+              ],
+              "extraSupported": [
+                "calendarVideosIds"
+              ],
+              "extraRequired": [
+                "calendarVideosIds"
+              ],
+              "name": "Calendar videos"
+            },
+            {
+              "id": "aiom.similar",
+              "type": "movie",
+              "name": "More Like This",
+              "extra": [
+                {
+                  "name": "similar",
+                  "isRequired": true
+                }
+              ],
+              "showInHome": false,
+              "idPrefixes": [
+                "mal:",
+                "kitsu:",
+                "anilist:",
+                "anidb:",
+                "tt",
+                "tmdb:",
+                "tvdb:",
+                "tvmaze:"
+              ]
+            },
+            {
+              "id": "aiom.similar",
+              "type": "series",
+              "name": "More Like This",
+              "extra": [
+                {
+                  "name": "similar",
+                  "isRequired": true
+                }
+              ],
+              "showInHome": false,
+              "idPrefixes": [
+                "mal:",
+                "kitsu:",
+                "anilist:",
+                "anidb:",
+                "tt",
+                "tmdb:",
+                "tvdb:",
+                "tvmaze:"
+              ]
+            }
+          ],
+          "configVersion": 1793346046280,
+          "language": "en-US",
+          "_debug": {
+            "language": "en-US",
+            "configVersion": 1793346046280,
+            "timestamp": "2026-10-30T07:40:47.798Z"
+          },
+          "_timestamp": 1793346047798
+        },
+        "tags": [],
+        "profileId": "00000000-0000-4000-8000-000000000012",
+        "metadata": {
+          "lastUpdated": 1792088499841
+        },
+        "autoRestore": true,
+        "syncWithInstalled": true,
+        "createdAt": "2026-10-15T19:17:08.359Z",
+        "updatedAt": "2026-10-15T19:49:02.723Z",
+        "sourceType": "manual",
+        "health": {
+          "isOnline": true,
+          "lastChecked": 1792093048399
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000009",
+        "name": "AIOStreams",
+        "installUrl": "https://aiostreams.example.com/stremio/00000000-0000-4000-8000-000000000004/{{SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD}}",
+        "manifest": {
+          "name": "AIOStreams",
+          "id": "aiostreams.example.com.00000000-000",
+          "version": "2.37.0",
+          "description": "AIOStreams consolidates multiple Stremio addons and debrid services into a single, easily configurable addon. It allows highly customisable filtering, sorting, and formatting of results and supports proxying all your streams through MediaFlow Proxy or StremThru for improved compatibility and IP restriction bypassing.",
+          "catalogs": [
+            {
+              "type": "movie",
+              "id": "lib791b.aiostreams::library.torbox",
+              "name": "TorBox Cloud Library",
+              "extra": [
+                {
+                  "name": "skip"
+                },
+                {
+                  "name": "search"
+                },
+                {
+                  "name": "genre",
+                  "isRequired": false,
+                  "options": [
+                    "Date Added ↓",
+                    "Date Added ↑",
+                    "Title A-Z",
+                    "Title Z-A",
+                    "Actions"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "movie",
+              "id": "itoe3b0.itsout.released",
+              "name": "ItsOut! — Released Movies"
+            },
+            {
+              "type": "series",
+              "id": "itoe3b0.itsout.released",
+              "name": "ItsOut! — Released Series"
+            }
+          ],
+          "resources": [
+            {
+              "name": "catalog",
+              "types": [
+                "series",
+                "movie"
+              ]
+            },
+            {
+              "name": "meta",
+              "types": [
+                "series",
+                "library"
+              ],
+              "idPrefixes": [
+                "sw_",
+                "pa_",
+                "aiostreams::library.torbox",
+                "aiostreamserror"
+              ]
+            },
+            {
+              "name": "stream",
+              "types": [
+                "series",
+                "movie",
+                "library",
+                "other",
+                "anime",
+                "tv",
+                "events",
+                "HdHub"
+              ],
+              "idPrefixes": [
+                "sw_",
+                "pa_",
+                "tt",
+                "imdb",
+                "mal",
+                "tvdb",
+                "tmdb",
+                "kitsu",
+                "aiostreams::library.torbox",
+                "anilist",
+                "anidb",
+                "kitsu:",
+                "mal:",
+                "tmdb:",
+                "tvdb:",
+                "mf",
+                "dl",
+                "basedon:item:",
+                "basedon:open:collection:",
+                "einthusan"
+              ]
+            },
+            {
+              "name": "subtitles",
+              "types": [
+                "movie",
+                "series",
+                "subtitles",
+                "anime"
+              ],
+              "idPrefixes": [
+                "tt",
+                "kitsu"
+              ]
+            }
+          ],
+          "types": [
+            "series",
+            "movie",
+            "library",
+            "other",
+            "anime",
+            "tv",
+            "events",
+            "HdHub",
+            "subtitles"
+          ],
+          "logo": "https://numb3rs.stream/assets/images/aiostreams.svg",
+          "behaviorHints": {
+            "configurable": true,
+            "configurationRequired": false
+          },
+          "addonCatalogs": []
+        },
+        "tags": [],
+        "profileId": "00000000-0000-4000-8000-000000000012",
+        "metadata": {
+          "lastUpdated": 1792088499841
+        },
+        "autoRestore": true,
+        "syncWithInstalled": true,
+        "createdAt": "2026-10-15T18:50:54.987Z",
+        "updatedAt": "2026-10-15T19:49:02.728Z",
+        "sourceType": "manual",
+        "health": {
+          "isOnline": true,
+          "lastChecked": 1792093048399
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "name": "Bingecat AI Assistant - demo",
+        "installUrl": "https://bingecat.com/stremio/{{SECRET_BINGECAT_TOKEN}}/manifest.json",
+        "manifest": {
+          "behaviorHints": {
+            "configurable": true,
+            "configurationRequired": false
+          },
+          "catalogs": [
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Adventure",
+                    "Comedy",
+                    "History",
+                    "Thriller",
+                    "Biography",
+                    "Action",
+                    "Fantasy",
+                    "Romance",
+                    "War",
+                    "Animation",
+                    "Documentary",
+                    "Family",
+                    "Horror",
+                    "Sci-Fi",
+                    "Crime",
+                    "Mystery",
+                    "Sport"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172519",
+              "name": "Latest movies for you",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Drama",
+                    "Thriller",
+                    "Action",
+                    "Crime",
+                    "Mystery",
+                    "Comedy",
+                    "Sci-Fi",
+                    "Horror",
+                    "Adventure",
+                    "Animation",
+                    "Fantasy",
+                    "Romance",
+                    "Sport",
+                    "Documentary",
+                    "Game-Show",
+                    "History"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172520",
+              "name": "Latest series for you",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Sci-Fi",
+                    "Action",
+                    "Thriller",
+                    "Drama",
+                    "Mystery",
+                    "Adventure",
+                    "Crime",
+                    "Fantasy",
+                    "Horror",
+                    "Animation",
+                    "Romance",
+                    "Comedy"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172514",
+              "name": "Because you watched...",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Animation",
+                    "Comedy",
+                    "Romance",
+                    "Drama",
+                    "Fantasy",
+                    "Action",
+                    "Sci-Fi",
+                    "Adventure",
+                    "Mystery",
+                    "Thriller",
+                    "Horror"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172515",
+              "name": "Because you watched...",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Sci-Fi",
+                    "Adventure",
+                    "Drama",
+                    "Thriller",
+                    "Fantasy",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Mystery",
+                    "Horror",
+                    "Family",
+                    "Romance",
+                    "Sport",
+                    "Western"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172517",
+              "name": "AI Recommendations",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "genre",
+                  "options": [
+                    "Adventure",
+                    "Animation",
+                    "Fantasy",
+                    "Action",
+                    "Drama",
+                    "Sci-Fi",
+                    "Comedy",
+                    "Family",
+                    "Thriller",
+                    "Mystery",
+                    "Crime",
+                    "Horror",
+                    "Romance",
+                    "History"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_172518",
+              "name": "AI Recommendations",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319612",
+              "name": "Japanese Drama",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319613",
+              "name": "Hindi Comedies",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319614",
+              "name": "Hindi Crime & Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319616",
+              "name": "When Hearts Meet",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319615",
+              "name": "Hindi Dramas",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319617",
+              "name": "Fantasy Anime",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319618",
+              "name": "Mystery Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_319619",
+              "name": "Manga Adaptations",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            }
+          ],
+          "description": "AI-generated movie and series catalogs personalized for you",
+          "id": "com.aicat.{{SECRET_BINGECAT_TOKEN}}",
+          "idPrefixes": [
+            "tt",
+            "tmdb:",
+            "tvdb:"
+          ],
+          "logo": "https://bingecat.com/static/logo.png",
+          "name": "Bingecat AI Assistant - demo",
+          "resources": [
+            "catalog"
+          ],
+          "types": [
+            "movie",
+            "series"
+          ],
+          "version": "1.29.0"
+        },
+        "tags": [],
+        "profileId": "00000000-0000-4000-8000-000000000012",
+        "autoRestore": true,
+        "syncWithInstalled": true,
+        "createdAt": "2026-10-15T19:36:07.328Z",
+        "updatedAt": "2026-10-15T19:49:02.734Z",
+        "sourceType": "manual",
+        "health": {
+          "isOnline": true,
+          "lastChecked": 1792093048399
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "name": "Cinemeta",
+        "installUrl": "https://v3-cinemeta.strem.io",
+        "manifest": {
+          "id": "com.linvo.cinemeta",
+          "version": "3.0.14",
+          "description": "The official addon for movie and series catalogs",
+          "name": "Cinemeta",
+          "resources": [
+            "catalog",
+            "meta",
+            "addon_catalog"
+          ],
+          "types": [
+            "movie",
+            "series"
+          ],
+          "idPrefixes": [
+            "tt"
+          ],
+          "addonCatalogs": [
+            {
+              "type": "all",
+              "id": "official",
+              "name": "Official"
+            },
+            {
+              "type": "movie",
+              "id": "official",
+              "name": "Official"
+            },
+            {
+              "type": "series",
+              "id": "official",
+              "name": "Official"
+            },
+            {
+              "type": "channel",
+              "id": "official",
+              "name": "Official"
+            },
+            {
+              "type": "all",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "movie",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "series",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "channel",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "tv",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "Podcasts",
+              "id": "community",
+              "name": "Community"
+            },
+            {
+              "type": "other",
+              "id": "community",
+              "name": "Community"
+            }
+          ],
+          "catalogs": [
+            {
+              "type": "movie",
+              "id": "top",
+              "genres": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Biography",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Mystery",
+                "Romance",
+                "Sci-Fi",
+                "Sport",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Biography",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Mystery",
+                    "Romance",
+                    "Sci-Fi",
+                    "Sport",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ]
+                },
+                {
+                  "name": "search"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "search",
+                "genre",
+                "skip"
+              ],
+              "name": "Popular"
+            },
+            {
+              "type": "series",
+              "id": "top",
+              "genres": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Biography",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Mystery",
+                "Romance",
+                "Sci-Fi",
+                "Sport",
+                "Thriller",
+                "War",
+                "Western",
+                "Reality-TV",
+                "Talk-Show",
+                "Game-Show"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Biography",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Mystery",
+                    "Romance",
+                    "Sci-Fi",
+                    "Sport",
+                    "Thriller",
+                    "War",
+                    "Western",
+                    "Reality-TV",
+                    "Talk-Show",
+                    "Game-Show"
+                  ]
+                },
+                {
+                  "name": "search"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "search",
+                "genre",
+                "skip"
+              ],
+              "name": "Popular"
+            },
+            {
+              "type": "movie",
+              "id": "year",
+              "genres": [
+                "2026",
+                "2025",
+                "2024",
+                "2023",
+                "2022",
+                "2021",
+                "2020",
+                "2019",
+                "2018",
+                "2017",
+                "2016",
+                "2015",
+                "2014",
+                "2013",
+                "2012",
+                "2011",
+                "2010",
+                "2009",
+                "2008",
+                "2007",
+                "2006",
+                "2005",
+                "2004",
+                "2003",
+                "2002",
+                "2001",
+                "2000",
+                "1999",
+                "1998",
+                "1997",
+                "1996",
+                "1995",
+                "1994",
+                "1993",
+                "1992",
+                "1991",
+                "1990",
+                "1989",
+                "1988",
+                "1987",
+                "1986",
+                "1985",
+                "1984",
+                "1983",
+                "1982",
+                "1981",
+                "1980",
+                "1979",
+                "1978",
+                "1977",
+                "1976",
+                "1975",
+                "1974",
+                "1973",
+                "1972",
+                "1971",
+                "1970",
+                "1969",
+                "1968",
+                "1967",
+                "1966",
+                "1965",
+                "1964",
+                "1963",
+                "1962",
+                "1961",
+                "1960",
+                "1959",
+                "1958",
+                "1957",
+                "1956",
+                "1955",
+                "1954",
+                "1953",
+                "1952",
+                "1951",
+                "1950",
+                "1949",
+                "1948",
+                "1947",
+                "1946",
+                "1945",
+                "1944",
+                "1943",
+                "1942",
+                "1941",
+                "1940",
+                "1939",
+                "1938",
+                "1937",
+                "1936",
+                "1935",
+                "1934",
+                "1933",
+                "1932",
+                "1931",
+                "1930",
+                "1929",
+                "1928",
+                "1927",
+                "1926",
+                "1925",
+                "1924",
+                "1923",
+                "1922",
+                "1921",
+                "1920"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "2026",
+                    "2025",
+                    "2024",
+                    "2023",
+                    "2022",
+                    "2021",
+                    "2020",
+                    "2019",
+                    "2018",
+                    "2017",
+                    "2016",
+                    "2015",
+                    "2014",
+                    "2013",
+                    "2012",
+                    "2011",
+                    "2010",
+                    "2009",
+                    "2008",
+                    "2007",
+                    "2006",
+                    "2005",
+                    "2004",
+                    "2003",
+                    "2002",
+                    "2001",
+                    "2000",
+                    "1999",
+                    "1998",
+                    "1997",
+                    "1996",
+                    "1995",
+                    "1994",
+                    "1993",
+                    "1992",
+                    "1991",
+                    "1990",
+                    "1989",
+                    "1988",
+                    "1987",
+                    "1986",
+                    "1985",
+                    "1984",
+                    "1983",
+                    "1982",
+                    "1981",
+                    "1980",
+                    "1979",
+                    "1978",
+                    "1977",
+                    "1976",
+                    "1975",
+                    "1974",
+                    "1973",
+                    "1972",
+                    "1971",
+                    "1970",
+                    "1969",
+                    "1968",
+                    "1967",
+                    "1966",
+                    "1965",
+                    "1964",
+                    "1963",
+                    "1962",
+                    "1961",
+                    "1960",
+                    "1959",
+                    "1958",
+                    "1957",
+                    "1956",
+                    "1955",
+                    "1954",
+                    "1953",
+                    "1952",
+                    "1951",
+                    "1950",
+                    "1949",
+                    "1948",
+                    "1947",
+                    "1946",
+                    "1945",
+                    "1944",
+                    "1943",
+                    "1942",
+                    "1941",
+                    "1940",
+                    "1939",
+                    "1938",
+                    "1937",
+                    "1936",
+                    "1935",
+                    "1934",
+                    "1933",
+                    "1932",
+                    "1931",
+                    "1930",
+                    "1929",
+                    "1928",
+                    "1927",
+                    "1926",
+                    "1925",
+                    "1924",
+                    "1923",
+                    "1922",
+                    "1921",
+                    "1920"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "genre",
+                "skip"
+              ],
+              "extraRequired": [
+                "genre"
+              ],
+              "name": "New"
+            },
+            {
+              "type": "series",
+              "id": "year",
+              "genres": [
+                "2026",
+                "2025",
+                "2024",
+                "2023",
+                "2022",
+                "2021",
+                "2020",
+                "2019",
+                "2018",
+                "2017",
+                "2016",
+                "2015",
+                "2014",
+                "2013",
+                "2012",
+                "2011",
+                "2010",
+                "2009",
+                "2008",
+                "2007",
+                "2006",
+                "2005",
+                "2004",
+                "2003",
+                "2002",
+                "2001",
+                "2000",
+                "1999",
+                "1998",
+                "1997",
+                "1996",
+                "1995",
+                "1994",
+                "1993",
+                "1992",
+                "1991",
+                "1990",
+                "1989",
+                "1988",
+                "1987",
+                "1986",
+                "1985",
+                "1984",
+                "1983",
+                "1982",
+                "1981",
+                "1980",
+                "1979",
+                "1978",
+                "1977",
+                "1976",
+                "1975",
+                "1974",
+                "1973",
+                "1972",
+                "1971",
+                "1970",
+                "1969",
+                "1968",
+                "1967",
+                "1966",
+                "1965",
+                "1964",
+                "1963",
+                "1962",
+                "1961",
+                "1960"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "2026",
+                    "2025",
+                    "2024",
+                    "2023",
+                    "2022",
+                    "2021",
+                    "2020",
+                    "2019",
+                    "2018",
+                    "2017",
+                    "2016",
+                    "2015",
+                    "2014",
+                    "2013",
+                    "2012",
+                    "2011",
+                    "2010",
+                    "2009",
+                    "2008",
+                    "2007",
+                    "2006",
+                    "2005",
+                    "2004",
+                    "2003",
+                    "2002",
+                    "2001",
+                    "2000",
+                    "1999",
+                    "1998",
+                    "1997",
+                    "1996",
+                    "1995",
+                    "1994",
+                    "1993",
+                    "1992",
+                    "1991",
+                    "1990",
+                    "1989",
+                    "1988",
+                    "1987",
+                    "1986",
+                    "1985",
+                    "1984",
+                    "1983",
+                    "1982",
+                    "1981",
+                    "1980",
+                    "1979",
+                    "1978",
+                    "1977",
+                    "1976",
+                    "1975",
+                    "1974",
+                    "1973",
+                    "1972",
+                    "1971",
+                    "1970",
+                    "1969",
+                    "1968",
+                    "1967",
+                    "1966",
+                    "1965",
+                    "1964",
+                    "1963",
+                    "1962",
+                    "1961",
+                    "1960"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "genre",
+                "skip"
+              ],
+              "extraRequired": [
+                "genre"
+              ],
+              "name": "New"
+            },
+            {
+              "type": "movie",
+              "id": "imdbRating",
+              "genres": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Biography",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Mystery",
+                "Romance",
+                "Sci-Fi",
+                "Sport",
+                "Thriller",
+                "War",
+                "Western"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Biography",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Mystery",
+                    "Romance",
+                    "Sci-Fi",
+                    "Sport",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ]
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "genre",
+                "skip"
+              ],
+              "name": "Featured"
+            },
+            {
+              "type": "series",
+              "id": "imdbRating",
+              "genres": [
+                "Action",
+                "Adventure",
+                "Animation",
+                "Biography",
+                "Comedy",
+                "Crime",
+                "Documentary",
+                "Drama",
+                "Family",
+                "Fantasy",
+                "History",
+                "Horror",
+                "Mystery",
+                "Romance",
+                "Sci-Fi",
+                "Sport",
+                "Thriller",
+                "War",
+                "Western",
+                "Reality-TV",
+                "Talk-Show",
+                "Game-Show"
+              ],
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Biography",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Mystery",
+                    "Romance",
+                    "Sci-Fi",
+                    "Sport",
+                    "Thriller",
+                    "War",
+                    "Western",
+                    "Reality-TV",
+                    "Talk-Show",
+                    "Game-Show"
+                  ]
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "extraSupported": [
+                "genre",
+                "skip"
+              ],
+              "name": "Featured"
+            },
+            {
+              "type": "series",
+              "id": "last-videos",
+              "extra": [
+                {
+                  "name": "lastVideosIds",
+                  "isRequired": true,
+                  "optionsLimit": 100
+                }
+              ],
+              "extraSupported": [
+                "lastVideosIds"
+              ],
+              "extraRequired": [
+                "lastVideosIds"
+              ],
+              "name": "Last videos"
+            },
+            {
+              "type": "series",
+              "id": "calendar-videos",
+              "extra": [
+                {
+                  "name": "calendarVideosIds",
+                  "isRequired": true,
+                  "optionsLimit": 100
+                }
+              ],
+              "extraSupported": [
+                "calendarVideosIds"
+              ],
+              "extraRequired": [
+                "calendarVideosIds"
+              ],
+              "name": "Calendar videos"
+            }
+          ],
+          "behaviorHints": {
+            "newEpisodeNotifications": true
+          },
+          "logo": "https://v3-cinemeta.strem.io/logo.png"
+        },
+        "tags": [],
+        "profileId": "00000000-0000-4000-8000-000000000012",
+        "metadata": {
+          "lastUpdated": 1792088499841
+        },
+        "autoRestore": false,
+        "syncWithInstalled": false,
+        "createdAt": "2026-10-15T19:16:18.886Z",
+        "updatedAt": "2026-10-15T19:49:02.714Z",
+        "sourceType": "manual",
+        "health": {
+          "isOnline": true,
+          "lastChecked": 1792093048399
+        }
+      }
+    ]
+  },
+  "failover": {
+    "rules": [],
+    "webhook": {
+      "url": "",
+      "enabled": false,
+      "updatedAt": 0
+    }
+  },
+  "vault": [
+    {
+      "name": "AIOStreams · aiostreams.example.com · 00000000",
+      "provider": "aiostreams",
+      "value": "{{SECRET_VAULT_AIOSTREAMS_35C658}}",
+      "serverUrl": "https://aiostreams.example.com",
+      "addonUuid": "00000000-0000-4000-8000-000000000004",
+      "id": "00000000-0000-4000-8000-000000000013",
+      "updatedAt": 1792149872886
+    },
+    {
+      "name": "TVDB",
+      "provider": "other",
+      "value": "{{SECRET_TVDB_API_KEY}}",
+      "customDashboardUrl": "https://www.thetvdb.com",
+      "customProviderName": "TVDB",
+      "group": "Metadata & Trackers",
+      "catalogId": "tvdb",
+      "id": "00000000-0000-4000-8000-000000000014",
+      "updatedAt": 1792089794907
+    },
+    {
+      "name": "TMDB",
+      "provider": "other",
+      "value": "{{SECRET_TMDB_API_KEY}}",
+      "customDashboardUrl": "https://www.themoviedb.org",
+      "customProviderName": "TMDB",
+      "group": "Metadata & Trackers",
+      "catalogId": "tmdb",
+      "id": "00000000-0000-4000-8000-000000000015",
+      "updatedAt": 1792089907386
+    },
+    {
+      "name": "RPDB",
+      "provider": "other",
+      "value": "{{SECRET_RPDB_API_KEY}}",
+      "customDashboardUrl": "https://ratingposterdb.com",
+      "customProviderName": "RPDB",
+      "group": "Metadata & Trackers",
+      "catalogId": "rpdb",
+      "id": "00000000-0000-4000-8000-000000000016",
+      "updatedAt": 1792089943940
+    },
+    {
+      "name": "Gemini API 3",
+      "provider": "other",
+      "value": "{{SECRET_GEMINI_API_KEY}}",
+      "customExpiry": "2026-11-14",
+      "customDashboardUrl": "https://aistudio.google.com/",
+      "customProviderName": "Gemini AI",
+      "group": "AI Services",
+      "catalogId": "gemini",
+      "id": "00000000-0000-4000-8000-000000000017",
+      "updatedAt": 1792090078328
+    }
+  ],
+  "notes": [],
+  "salt": "ZGVtby1zYWx0LWRlbW8tc2FsdA==",
+  "name": "Demo",
+  "avatar": null,
+  "lastSeenVersion": "2.0.0",
+  "customThemes": [],
+  "discoverFavorites": [],
+  "discoverPrefs": {
+    "sortBy": "stars",
+    "showAdult": false,
+    "selectedCategories": [],
+    "compact": false,
+    "viewMode": "store"
+  },
+  "profiles": [
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "Demo",
+      "createdAt": "2026-10-15T18:50:54.973Z",
+      "updatedAt": "2026-10-15T18:50:54.973Z"
+    }
+  ],
+  "settings": {
+    "theme": "dark",
+    "privacyMode": false,
+    "privacyLevelNames": 0,
+    "privacyLevelUrls": 0,
+    "privacyLevelProfiles": 0,
+    "privacyLevelEmail": 0,
+    "libraryViewMode": "grid",
+    "accountsView": "grid",
+    "addonListView": "grid",
+    "hideDisabledAddons": false,
+    "addonPreviewCount": 4,
+    "customThemes": [],
+    "activity": {
+      "timeFilter": "all",
+      "sinceDate": "",
+      "viewMode": "grid"
+    },
+    "notesGraph": {
+      "linkDistance": 150,
+      "repelStrength": 5000,
+      "centerGravity": 0.01,
+      "rotation": 0,
+      "showTags": false,
+      "showOrphans": true,
+      "nodeScale": 1,
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "scale": 1
+      }
+    }
+  },
+  "_syncSalt": "ZGVtby1zeW5jLXNhbHQtZGVtbw=="
+}

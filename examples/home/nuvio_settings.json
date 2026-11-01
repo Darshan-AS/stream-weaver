@@ -1,0 +1,191 @@
+{
+  "version": "1.0.0",
+  "platforms": [
+    "tv",
+    "desktop",
+    "mobile"
+  ],
+  "appearance": {
+    "theme": "ocean",
+    "amoledBlack": true,
+    "navBarStyle": "adaptive",
+    "desktopNavigation": "topBar",
+    "tv": {
+      "font": "inter",
+      "amoledSurfaces": false,
+      "settingsUiStyle": "classic",
+      "startupSplash": true
+    }
+  },
+  "playback": {
+    "reuseLastLink": {
+      "enabled": true,
+      "cacheHours": 24
+    },
+    "streamSelection": {
+      "mode": "manual",
+      "scope": "all",
+      "allowedAddons": [],
+      "regex": "",
+      "timeoutSeconds": 3
+    },
+    "nextEpisode": {
+      "autoPlay": true,
+      "preferBingeGroup": true,
+      "reuseBingeGroup": true,
+      "fallbackToFirstStream": true,
+      "thresholdMode": "percentage",
+      "thresholdPercent": 99.0,
+      "thresholdMinutesBeforeEnd": 2.0,
+      "preloadNextEpisodeSources": true,
+      "stillWatchingPrompt": {
+        "enabled": false,
+        "episodeThreshold": 3
+      }
+    },
+    "skip": {
+      "skipIntro": true,
+      "autoSkip": [
+        "intro",
+        "recap"
+      ],
+      "animeSkip": {
+        "enabled": false,
+        "clientId": ""
+      },
+      "introDbApiKey": ""
+    },
+    "ui": {
+      "loadingOverlay": true,
+      "contentWarnings": false,
+      "holdToSpeed": {
+        "enabled": true,
+        "speed": 2.0
+      },
+      "touchGestures": true,
+      "tv": {
+        "pauseOverlay": true,
+        "osdClock": true,
+        "showLoadingStatus": true,
+        "postPlayRecommendations": true,
+        "postPlayMovieThresholdPercent": 96,
+        "playbackIssueReports": false
+      }
+    },
+    "externalPlayer": {
+      "enabled": false,
+      "forwardSubtitles": true,
+      "sendSkipSegments": true
+    }
+  },
+  "audio": {
+    "preferredLanguage": "original",
+    "secondaryLanguage": "en",
+    "tv": {
+      "skipSilence": false
+    }
+  },
+  "subtitles": {
+    "preferredLanguage": "en",
+    "secondaryLanguage": null,
+    "useForced": true,
+    "showOnlyPreferredLanguages": false,
+    "stripSdh": true,
+    "addonStartupMode": "preferredOnly",
+    "style": {
+      "textColor": "#FFFFFFFF",
+      "backgroundColor": "#00000000",
+      "outline": {
+        "enabled": true,
+        "color": "#FF000000",
+        "width": 2
+      },
+      "bold": false,
+      "sizeSp": 18,
+      "bottomOffset": 20
+    },
+    "tv": {
+      "sizePercent": 100,
+      "verticalOffsetPercent": 5,
+      "organizationMode": "byLanguage",
+      "hdrStyle": {
+        "enabled": true,
+        "textColor": "#FFFFFFFF",
+        "brightness": 40,
+        "dimPlayerControls": false
+      }
+    }
+  },
+  "tvLayout": {
+    "homeLayout": "modern",
+    "heroSection": true,
+    "heroCatalogKeys": [],
+    "heroFullScreenBackdrop": false,
+    "sidebar": {
+      "collapsedByDefault": false,
+      "modern": true,
+      "blur": false
+    },
+    "discoverLocation": "inSidebar",
+    "posters": {
+      "labels": true,
+      "addonName": false,
+      "catalogType": false,
+      "landscapeMode": false,
+      "alwaysLandscapeClearlogo": false,
+      "classicFocusGradient": false,
+      "widthDp": 126,
+      "heightDp": 189,
+      "cornerRadiusDp": 16
+    },
+    "focusedPoster": {
+      "expandToBackdrop": true,
+      "expandDelaySeconds": 3,
+      "autoplayTrailer": true,
+      "trailerMuted": true,
+      "trailerTarget": "heroMedia"
+    },
+    "cardDepth": {
+      "enabled": true,
+      "edgeStrength": 28,
+      "sheenStrength": 10,
+      "edgeCoverage": 0,
+      "posters": true,
+      "continueWatching": true,
+      "episodeCards": true,
+      "cast": true,
+      "trailers": true
+    },
+    "continueWatching": {
+      "enabled": true,
+      "cardStyle": "card",
+      "sortMode": "streaming",
+      "episodeThumbnails": true,
+      "showUnairedNextUp": true,
+      "nextUpFromFurthestEpisode": true,
+      "blurNextUp": false
+    },
+    "details": {
+      "trailerButton": true,
+      "preferExternalMetaAddon": true,
+      "blurUnwatchedEpisodes": false,
+      "showFullReleaseDate": true,
+      "episodeOptionsOverlay": "blur",
+      "randomEpisodeShuffle": true
+    },
+    "homeImdbRatings": "showAll",
+    "hideUnreleasedContent": false,
+    "followAddonsOrder": false,
+    "performance": {
+      "memoryOnlyVerticalScroll": true,
+      "smoothBringIntoView": true,
+      "fastHorizontalNavigation": false
+    }
+  },
+  "notifications": {
+    "episodeReleaseAlerts": true
+  },
+  "tvPlugins": {
+    "groupStreamsByRepository": true
+  }
+}
