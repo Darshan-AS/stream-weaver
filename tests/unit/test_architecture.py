@@ -158,14 +158,14 @@ def test_compile_architecture_bundle_reflects_dynamic_plugins_and_views() -> Non
     assert "| `tio` | **Torrentio** |" in bundle.architecture_markdown
 
 
-def test_committed_architecture_files_are_in_sync_with_configs() -> None:
-    root_dir = Path(__file__).resolve().parents[2]
-    configs_dir = root_dir / "configs"
-    res = _sync_architecture_diagrams(root_dir, configs_dir, check_only=True)
+def test_example_tenant_architecture_files_are_in_sync() -> None:
+    """The committed demo tenant (`examples/home`) is the fixture; real tenants are checked by `sw validate` in CI."""
+    example_dir = Path(__file__).resolve().parents[2] / "examples" / "home"
+    res = _sync_architecture_diagrams(example_dir, example_dir, check_only=True)
     assert isinstance(res, Ok)
     assert res.value == (), (
-        f"Architecture diagrams are out of sync with configs/*.json: {res.value}. "
-        "Run `uv run sw diagram` to update them."
+        f"examples/home architecture is out of sync: {res.value}. "
+        "Run `uv run sw diagram --dir examples/home` to update it."
     )
 
 

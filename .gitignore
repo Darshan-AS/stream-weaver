@@ -1,8 +1,11 @@
-# Environment & Secrets (NEVER commit these)
+# Environment & Secrets (NEVER commit these) — applies at any depth, incl. tenants/*/.env
 .env
 .env.*
 !.env.example
 !docker/.env.selfhost.example
+
+# Per-tenant manifest / network caches
+tenants/*/.cache/
 
 # Unscrubbed / backup config files & magnet dumps
 *.raw.json

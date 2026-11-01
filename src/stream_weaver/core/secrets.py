@@ -274,10 +274,10 @@ AIOMANAGER_LENSES: tuple[SecretLens, ...] = (
         derive_key=lambda _, __: "SECRET_BINGECAT_TOKEN",
         regex_sub=(BINGECAT_ID_RE, r"\1{{SECRET_BINGECAT_TOKEN}}\3"),
     ),
-    # `configs/nuvio_meta.json` (Nuvio details-page enrichment) API keys
+    # `nuvio_meta.json` (Nuvio details-page enrichment) API keys
     SecretLens(path=("ratings", "apiKey"), derive_key=_const_key("SECRET_MDBLIST_API_KEY")),
     SecretLens(path=("tmdbEnrichment", "apiKey"), derive_key=_const_key("SECRET_TMDB_API_KEY")),
-    # `configs/nuvio_settings.json` (Nuvio app settings) skip-provider credentials
+    # `nuvio_settings.json` (Nuvio app settings) skip-provider credentials
     SecretLens(
         path=("playback", "skip", "animeSkip", "clientId"),
         derive_key=_const_key("SECRET_ANIMESKIP_CLIENT_ID"),

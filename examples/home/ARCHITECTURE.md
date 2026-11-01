@@ -1,13 +1,13 @@
 # Stream Weaver — Live System Architecture & Topology
 
-> **Auto-Generated Architecture-as-Code:** This file and [`architecture/topology.c4`](architecture/topology.c4) are deterministically compiled from [`configs/aiomanager.json`](configs/aiomanager.json), [`configs/aiostreams.json`](configs/aiostreams.json), [`configs/aiometadata.json`](configs/aiometadata.json), and [`configs/nuvio_collections.json`](configs/nuvio_collections.json) via `uv run sw diagram` (and automatically updated on `sw pull`, `sw push`, `sw sanitize`, and `git commit`).
+> **Auto-Generated Architecture-as-Code:** This file and [`architecture/topology.c4`](architecture/topology.c4) are deterministically compiled from this tenant's [`aiomanager.json`](aiomanager.json), [`aiostreams.json`](aiostreams.json), [`aiometadata.json`](aiometadata.json), and [`nuvio_collections.json`](nuvio_collections.json) via `uv run sw diagram --dir <tenant>` (and automatically updated on `sw pull`, `sw push`, `sw sanitize`, and `git commit`).
 
-## Interactive Drill-Down Explorer (LikeC4 — 10 Views)
+## Interactive Drill-Down Explorer (LikeC4 — 9 Views)
 
-For the interactive, Google-Maps-style zoomable graph with **10 perspectives** (`index`, `aiomanager_view`, `nuvio_collections_view`, `aiostreams_view`, `aiometadata_view`, `contraband_view`, `secrets_view`, `stream_resolution_flow`, `gitops_sync_flow`, `ai_search_flow`):
+For the interactive, Google-Maps-style zoomable graph with **9 perspectives** (`index`, `aiomanager_view`, `nuvio_collections_view`, `aiostreams_view`, `aiometadata_view`, `secrets_view`, `stream_resolution_flow`, `gitops_sync_flow`, `ai_search_flow`):
 
 ```bash
-# Regenerate topology from configs/*.json at any time:
+# Regenerate this tenant's topology at any time (run from the tenant directory, or add --dir <tenant>):
 uv run sw diagram
 
 # Launch the interactive LikeC4 web explorer locally:
@@ -41,10 +41,9 @@ flowchart LR
     end
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
-        AS["AIOStreams\n(23 Active Plugins)"]
+        AS["AIOStreams\n(22 Active Plugins)"]
         AM["AIOMetadata\n(61 Active Catalogs, 45 Home)"]
         BC["BingeCat AI Assistant"]
-        CB["Contraband Static Addon\n(Peterson Academy)"]
         CM["Cinemeta (IMDb Fallback)"]
     end
 
@@ -62,8 +61,7 @@ flowchart LR
     SW ==> MGR & AS & AM
     MGR == "Native Sync" ==> Nuvio & Stremio
     Nuvio & Stremio --> AS & AM & BC & CM
-    AS --> CB & DEB & TMDB & TVDB & POSTER & GH
-    CB --> GH & DEB
+    AS --> DEB & TMDB & TVDB & POSTER & GH
     AM --> TMDB & TVDB & GEM & TRAKT & MAL & POSTER
 ```
 
@@ -76,7 +74,6 @@ flowchart LR
     subgraph AIOStreams["AIOStreams Internal Pipeline"]
         SEL["SEL Filter, Deduplicator\n& Custom Formatter"]
         subgraph G1["Group 1: Primary Sequential (condition: true)"]
-            P_swc["Contraband (swc)"]
             P_lib["Library (lib)"]
             P_tio["Torrentio (tio)"]
             P_met["Meteor (met)"]
@@ -107,22 +104,19 @@ flowchart LR
     end
 
     DEB_EXT[("TorBox Cloud & Debrid API\n(SECRET_TORBOX_API_KEY)")]
-    CB_EXT[("Static Addon Manifest\n(GitHub Raw)")]
     RULES_EXT[("Tamtaro & Ranked\nSEL / Regex Rules")]
     META_EXT[("TMDB / TVDB / RPDB")]
 
     SEL --> G1
     G1 -. "If count(cached(totalStreams)) < 3" .-> G2
     G1 ==> DEB_EXT
-    P_swc --> CB_EXT
     SEL --> RULES_EXT & META_EXT
 ```
 
-### Active AIOStreams Plugins (`configs/aiostreams.json`)
+### Active AIOStreams Plugins (`aiostreams.json`)
 
 | ID | Plugin Name | Preset Type | Execution Group | Resources | Upstream Dependency |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `swc` | **Contraband** | `custom` | Group 1 (Primary) | `catalog, meta, stream` | Static Manifest + Torbox |
 | `lib` | **Library** | `library` | Group 1 (Primary) | `stream, catalog, meta` | Torbox Cloud Library (`SECRET_TORBOX_API_KEY`) |
 | `tio` | **Torrentio** | `torrentio` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
 | `met` | **Meteor** | `meteor` | Group 1 (Primary) | `stream` | Torbox Cache + Public Indexers |
@@ -181,7 +175,7 @@ flowchart LR
 
 ---
 
-## 4. Nuvio Curated Home Collections (`configs/nuvio_collections.json`)
+## 4. Nuvio Curated Home Collections (`nuvio_collections.json`)
 
 | Collection ID | Title | Tabbed Folders | Upstream Addons |
 | :--- | :--- | :--- | :--- |
@@ -189,11 +183,11 @@ flowchart LR
 | `col-streaming-services` | **Streaming Services** (8) | Netflix, Prime Video, Apple TV+, HBO Max, Disney+, Hulu, Paramount+, Peacock | AIOMetadata |
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |
-| `col-courses-docs` | **Courses & Documentaries** (3) | Peterson Academy, Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata, AIOStreams |
+| `col-courses-docs` | **Courses & Documentaries** (2) | Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata |
 
 ---
 
-## 5. Nuvio Stream & Player Badges (`configs/nuvio_badges.json`)
+## 5. Nuvio Stream & Player Badges (`nuvio_badges.json`)
 
 | Platforms | Placement | Paused Player Logos | Active Badge Pack URLs |
 | :--- | :--- | :--- | :--- |
@@ -201,7 +195,7 @@ flowchart LR
 
 ---
 
-## 6. Nuvio App Settings (`configs/nuvio_settings.json`)
+## 6. Nuvio App Settings (`nuvio_settings.json`)
 
 | Platforms | Managed Blocks | Reuse Last Link |
 | :--- | :--- | :--- |

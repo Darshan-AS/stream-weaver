@@ -20,6 +20,16 @@ from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
 from stream_weaver.core.nuvio_settings import active_blocks, normalize_nuvio_settings_doc
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
+from stream_weaver.core.tenant import (
+    ENV_DIR_OVERRIDE,
+    TENANT_FILE,
+    TenantManifest,
+    TenantPaths,
+    default_tenant_manifest,
+    discover_tenants,
+    parse_tenant_manifest,
+    resolve_tenant_root,
+)
 from stream_weaver.core.types import (
     ALL_SERVICES,
     ConfigDiffOutcome,
@@ -52,13 +62,23 @@ console = Console(markup=False, highlight=False)
 err_console = Console(stderr=True, markup=False, highlight=False)
 
 _CLI_WORKSPACE_DIR: Path | None = None
+_CLI_TENANT_NAME: str | None = None
 
 WorkspaceDirOption = Annotated[
     Path | None,
     typer.Option(
         "--dir",
         "-C",
-        help="Workspace directory containing .env and configs/ (defaults to CWD if initialized, else repo root)",
+        help=f"Tenant directory containing {TENANT_FILE} and .env (default: CWD if it is a tenant)",
+    ),
+]
+
+TenantNameOption = Annotated[
+    str | None,
+    typer.Option(
+        "--tenant",
+        "-t",
+        help="Tenant name → resolves to ./tenants/<name> relative to the current directory",
     ),
 ]
 
@@ -129,47 +149,57 @@ _INIT_GITIGNORE_TEMPLATE = """\
 @app.callback()
 def _main_callback(
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
     """Global options for the Stream Weaver CLI."""
-    global _CLI_WORKSPACE_DIR
+    global _CLI_WORKSPACE_DIR, _CLI_TENANT_NAME
     _CLI_WORKSPACE_DIR = workspace_dir
+    _CLI_TENANT_NAME = tenant
 
 
-def resolve_workspace_root(
-    explicit_dir: Path | None = None,
+def _resolve_tenant(
+    workspace_dir: Path | None = None,
+    tenant_name: str | None = None,
     *,
-    cwd: Path | None = None,
-    env_override: str | None = None,
-) -> Path:
-    """
-    Resolves the active Stream Weaver state directory using priority:
-    1. Explicit `--dir` / `-C` CLI option (either on subcommand or global callback)
-    2. `STREAM_WEAVER_DIR` environment variable
-    3. Current working directory if it contains `configs/` or `.stream-weaver`
-    4. Package repository root fallback (for in-repo personal GitOps)
-    """
-    chosen = explicit_dir or _CLI_WORKSPACE_DIR
-    if chosen is not None:
-        return chosen.expanduser().resolve()
+    require_marker: bool = True,
+) -> TenantPaths:
+    """Resolves the active tenant directory or exits with a actionable error."""
+    match resolve_tenant_root(
+        workspace_dir or _CLI_WORKSPACE_DIR,
+        tenant_name=tenant_name or _CLI_TENANT_NAME,
+        env_override=os.environ.get(ENV_DIR_OVERRIDE),
+        require_marker=require_marker,
+    ):
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
+        case Ok(root):
+            return TenantPaths(root)
 
-    raw_env_dir = env_override if env_override is not None else os.environ.get("STREAM_WEAVER_DIR", "")
-    if raw_env_dir.strip():
-        return Path(raw_env_dir.strip()).expanduser().resolve()
 
-    effective_cwd = (cwd or Path.cwd()).resolve()
-    if (effective_cwd / "configs").is_dir() or (effective_cwd / ".stream-weaver").exists():
-        return effective_cwd
-
-    return Path(__file__).resolve().parents[3]
+def _load_tenant_manifest(paths: TenantPaths) -> TenantManifest:
+    """Reads and validates `tenant.json` or exits."""
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(doc):
+            pass
+    match parse_tenant_manifest(doc):
+        case Err(schema_err):
+            err_console.print(f"❌ {schema_err}")
+            raise typer.Exit(code=1)
+        case Ok(manifest):
+            return manifest
 
 
 def _resolve_paths(
     workspace_dir: Path | None = None,
+    tenant_name: str | None = None,
 ) -> tuple[Path, Path, Path, dict[str, str]]:
-    root_dir = resolve_workspace_root(workspace_dir)
-    env_path = root_dir / ".env"
-    configs_dir = root_dir / "configs"
-    return root_dir, env_path, configs_dir, load_env_file(env_path)
+    """Returns `(tenant_root, env_file, docs_dir, env)` for the active tenant."""
+    paths = _resolve_tenant(workspace_dir, tenant_name)
+    return paths.root, paths.env_file, paths.docs_dir, load_env_file(paths.env_file)
 
 
 def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
@@ -206,7 +236,7 @@ def _resolve_nuvio_connection(
     configs_dir: Path,
     env: Mapping[str, str],
 ) -> Result[tuple[Mapping[str, Any], str, str, list[Any]] | None]:
-    """Resolves the active Nuvio connection, master password, salt, and addons from `configs/aiomanager.json`."""
+    """Resolves the active Nuvio connection, master password, salt, and addons from the tenant's `aiomanager.json`."""
     mgr_path = configs_dir / "aiomanager.json"
     password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
     anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
@@ -423,7 +453,7 @@ def _diff_service(
     configs_dir: Path,
     services: Mapping[ServiceId, ConfigServiceProtocol],
 ) -> Result[ConfigDiffOutcome | None]:
-    """Pulls remote service config in memory, scrubs secrets, and diffs against `configs/{service_id}.json`."""
+    """Pulls remote service config in memory, scrubs secrets, and diffs against the tenant's `{service_id}.json`."""
     cfg_path = configs_dir / f"{service_id}.json"
     svc = services.get(service_id)
     if not cfg_path.exists() or svc is None or not svc.is_configured_for_pull(env):
@@ -658,7 +688,7 @@ def _sync_architecture_diagrams(
     *,
     check_only: bool = False,
 ) -> Result[tuple[Path, ...]]:
-    """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from `configs/*.json`."""
+    """Compiles LikeC4 (`architecture/topology.c4`) and `ARCHITECTURE.md` from the tenant's JSON documents."""
     bundle = compile_architecture_bundle(
         aiomanager=_load_optional_json(configs_dir / "aiomanager.json"),
         aiostreams=_load_optional_json(configs_dir / "aiostreams.json"),
@@ -700,51 +730,214 @@ def _sync_architecture_diagrams(
 # ============================================================================
 
 
+_TENANT_DOC_NAMES: tuple[str, ...] = (
+    "aiostreams",
+    "aiometadata",
+    "aiomanager",
+    "nuvio_collections",
+    "nuvio_badges",
+    "nuvio_meta",
+    "nuvio_settings",
+)
+
+
 @config_app.command("init")
 @app.command("init")
 def cmd_config_init(
     directory: Annotated[
         Path | None,
-        typer.Argument(help="Target directory to initialize as a Stream Weaver state repo"),
+        typer.Argument(help="Directory to scaffold as a tenant (default: CWD)"),
+    ] = None,
+    name: Annotated[
+        str | None,
+        typer.Option("--name", "-n", help="Tenant name (default: directory basename)"),
+    ] = None,
+    template_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--from",
+            help="Template tenant directory whose JSON documents are copied as a starting point (e.g. examples/home)",
+        ),
     ] = None,
     force: Annotated[
         bool,
-        typer.Option("--force", help="Overwrite .env.example and .gitignore templates if present"),
+        typer.Option("--force", help="Overwrite tenant.json, .env.example, .gitignore and template documents if present"),
     ] = False,
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
-    """Scaffold a new Stream Weaver GitOps state directory (configs/, .env, .gitignore)."""
-    target_dir = (directory or workspace_dir or _CLI_WORKSPACE_DIR or Path.cwd()).expanduser().resolve()
-    configs_dir = target_dir / "configs"
-    arch_dir = target_dir / "architecture"
-    configs_dir.mkdir(parents=True, exist_ok=True)
-    arch_dir.mkdir(parents=True, exist_ok=True)
+    """Scaffold a new tenant directory (tenant.json, .env, .gitignore, optional template documents)."""
+    if directory is not None:
+        target_dir = directory.expanduser().resolve()
+    else:
+        target_dir = _resolve_tenant(workspace_dir, tenant, require_marker=False).root
+    paths = TenantPaths(target_dir)
+    tenant_name = (name or target_dir.name).strip().lower()
+    paths.architecture_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest_doc = default_tenant_manifest(tenant_name)
+    match parse_tenant_manifest(manifest_doc):
+        case Err(schema_err):
+            err_console.print(f"❌ {schema_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
 
     created: list[str] = []
     preserved: list[str] = []
 
-    for rel_name, template_text, allow_force in (
-        (".gitignore", _INIT_GITIGNORE_TEMPLATE, force),
-        (".env.example", _INIT_ENV_TEMPLATE, force),
-        (".env", _INIT_ENV_TEMPLATE, False),
-    ):
+    def _emit(rel_name: str, writer: Any, allow_force: bool) -> None:
         dest = target_dir / rel_name
         if dest.exists() and not allow_force:
             preserved.append(rel_name)
-            continue
-        match write_text_file(dest, template_text):
-            case Err(err):
-                err_console.print(f"❌ {err}")
+            return
+        match writer(dest):
+            case Err(write_err):
+                err_console.print(f"❌ {write_err}")
                 raise typer.Exit(code=1)
             case Ok():
                 created.append(rel_name)
 
-    console.print(f"🧶 Initialized Stream Weaver workspace at {target_dir}")
+    _emit(TENANT_FILE, lambda d: write_json_file(d, manifest_doc), force)
+    _emit(".gitignore", lambda d: write_text_file(d, _INIT_GITIGNORE_TEMPLATE), force)
+    _emit(".env.example", lambda d: write_text_file(d, _INIT_ENV_TEMPLATE), force)
+    _emit(".env", lambda d: write_text_file(d, _INIT_ENV_TEMPLATE), False)
+
+    if template_dir is not None:
+        src_root = template_dir.expanduser().resolve()
+        if not src_root.is_dir():
+            err_console.print(f"❌ Template directory not found: {src_root}")
+            raise typer.Exit(code=1)
+        for doc_name in _TENANT_DOC_NAMES:
+            src_doc = src_root / f"{doc_name}.json"
+            if not src_doc.is_file():
+                continue
+            match read_text_file(src_doc):
+                case Err(read_err):
+                    err_console.print(f"❌ {read_err}")
+                    raise typer.Exit(code=1)
+                case Ok(text):
+                    _emit(f"{doc_name}.json", lambda d, t=text: write_text_file(d, t), force)
+
+    console.print(f"🧶 Initialized tenant `{tenant_name}` at {target_dir}")
     if created:
-        console.print(f"   ✅ Created:   {', '.join(created)}, configs/, architecture/")
+        console.print(f"   ✅ Created:   {', '.join(created)}, architecture/")
     if preserved:
         console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
-    console.print("   💡 Next: Fill in your instance URLs & credentials in .env, then run `sw pull`.")
+    console.print("   💡 Next: fill in instance URLs & credentials in .env, then run `sw pull` or `sw push --create`.")
+
+
+def _validate_tenant(paths: TenantPaths) -> list[str]:
+    """Offline checks for one tenant. Returns a list of human-readable failures (empty = OK)."""
+    failures: list[str] = []
+
+    match read_json_file(paths.manifest_file):
+        case Err(read_err):
+            return [f"{TENANT_FILE}: {read_err}"]
+        case Ok(manifest_doc):
+            pass
+    match parse_tenant_manifest(manifest_doc):
+        case Err(schema_err):
+            failures.append(str(schema_err))
+        case Ok():
+            pass
+
+    for svc_id in ALL_SERVICES:
+        doc_path = paths.doc(svc_id)
+        if not doc_path.exists():
+            continue
+        match read_json_file(doc_path):
+            case Err(read_err):
+                failures.append(f"{svc_id}.json: {read_err}")
+                continue
+            case Ok(raw_doc):
+                pass
+        if svc_id == "aiomanager" and raw_doc.get("isEncrypted"):
+            failures.append("aiomanager.json: still an encrypted envelope; run `sw sanitize aiomanager`")
+            continue
+        match normalize_service_config(svc_id, raw_doc):
+            case Err(norm_err):
+                failures.append(f"{svc_id}.json: {norm_err}")
+            case Ok():
+                pass
+
+    nuvio_checks: tuple[tuple[str, Any], ...] = (
+        ("nuvio_badges", normalize_nuvio_badges_doc),
+        ("nuvio_meta", normalize_nuvio_meta_doc),
+        ("nuvio_settings", normalize_nuvio_settings_doc),
+    )
+    for doc_name, normalizer in nuvio_checks:
+        doc_path = paths.doc(doc_name)
+        if not doc_path.exists():
+            continue
+        match read_json_file(doc_path):
+            case Err(read_err):
+                failures.append(f"{doc_name}.json: {read_err}")
+                continue
+            case Ok(raw_doc):
+                pass
+        match normalizer(raw_doc):
+            case Err(nuvio_err):
+                failures.append(f"{doc_name}.json: {nuvio_err}")
+            case Ok():
+                pass
+
+    cols_path = paths.doc("nuvio_collections")
+    if cols_path.exists():
+        match read_json_file(cols_path):
+            case Err(read_err):
+                failures.append(f"nuvio_collections.json: {read_err}")
+            case Ok(cols_doc) if not isinstance(cols_doc.get("collections"), list):
+                failures.append("nuvio_collections.json: `collections` must be a list")
+            case Ok():
+                pass
+
+    match _sync_architecture_diagrams(paths.root, paths.docs_dir, check_only=True):
+        case Err(diag_err):
+            failures.append(f"diagram: {diag_err}")
+        case Ok(stale) if stale:
+            failures.append(
+                "diagram out of sync: " + ", ".join(paths.relative(p) for p in stale) + " (run `sw diagram`)"
+            )
+        case Ok():
+            pass
+
+    return failures
+
+
+@config_app.command("validate")
+@app.command("validate")
+def cmd_config_validate(
+    all_tenants: Annotated[
+        bool,
+        typer.Option("--all-tenants", help="Validate every ./tenants/*/ directory instead of the active tenant"),
+    ] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Offline validation: tenant.json schema, document parse/normalize, and architecture sync."""
+    if all_tenants:
+        repo_root = (workspace_dir or _CLI_WORKSPACE_DIR or Path.cwd()).expanduser().resolve()
+        targets = [TenantPaths(p) for p in discover_tenants(repo_root)]
+        if not targets:
+            err_console.print(f"❌ No tenants found under {repo_root / 'tenants'}")
+            raise typer.Exit(code=1)
+    else:
+        targets = [_resolve_tenant(workspace_dir, tenant)]
+
+    any_failed = False
+    for paths in targets:
+        failures = _validate_tenant(paths)
+        label = paths.root.name
+        if failures:
+            any_failed = True
+            err_console.print(f"❌ [{label}] {len(failures)} problem(s):")
+            for f in failures:
+                err_console.print(f"   • {f}")
+        else:
+            console.print(f"✅ [{label}] tenant is valid")
+    if any_failed:
+        raise typer.Exit(code=1)
 
 
 @config_app.command("pull")
@@ -755,9 +948,10 @@ def cmd_config_pull(
         typer.Argument(help="Service to pull: all, aiostreams, aiometadata, aiomanager, nuvio, nuvio_collections, nuvio_badges, nuvio_meta, or nuvio_settings"),
     ] = "all",
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -966,13 +1160,14 @@ def cmd_config_push(
         typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
     ] = False,
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
-    """Inject secrets from .env and push local configs/ to remote servers."""
+    """Inject secrets from .env and push the tenant's documents to remote servers."""
     if dry_run:
         cmd_config_diff(target=target, stat_only=False, exit_code=False, workspace_dir=workspace_dir)
         return
 
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
     working_env = dict(env)
     svc_targets = _resolve_service_targets(target)
 
@@ -1060,7 +1255,7 @@ def cmd_config_push(
                     if cleaned_target == "nuvio_badges":
                         badges_path = configs_dir / "nuvio_badges.json"
                         if not badges_path.exists():
-                            err_console.print("❌ Missing configs/nuvio_badges.json")
+                            err_console.print("❌ Missing nuvio_badges.json")
                             raise typer.Exit(code=1)
                         match read_json_file(badges_path):
                             case Err(err):
@@ -1093,7 +1288,7 @@ def cmd_config_push(
                     elif cleaned_target == "nuvio_meta":
                         meta_path = configs_dir / "nuvio_meta.json"
                         if not meta_path.exists():
-                            err_console.print("❌ Missing configs/nuvio_meta.json")
+                            err_console.print("❌ Missing nuvio_meta.json")
                             raise typer.Exit(code=1)
                         match read_json_file(meta_path):
                             case Err(err):
@@ -1126,7 +1321,7 @@ def cmd_config_push(
                     elif cleaned_target == "nuvio_settings":
                         settings_path = configs_dir / "nuvio_settings.json"
                         if not settings_path.exists():
-                            err_console.print("❌ Missing configs/nuvio_settings.json")
+                            err_console.print("❌ Missing nuvio_settings.json")
                             raise typer.Exit(code=1)
                         match read_json_file(settings_path):
                             case Err(err):
@@ -1254,9 +1449,10 @@ def cmd_config_diff(
         typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
     ] = False,
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
-    """Compare local configs/*.json against live remote instances without modifying any files."""
-    _, _, configs_dir, env = _resolve_paths(workspace_dir)
+    """Compare the tenant's documents against live remote instances without modifying any files."""
+    _, _, configs_dir, env = _resolve_paths(workspace_dir, tenant)
     has_drift = False
     svc_targets = _resolve_service_targets(target)
     include_nuvio = _should_include_nuvio_collections(target)
@@ -1476,9 +1672,10 @@ def cmd_config_sanitize(
         typer.Argument(help="Service file to sanitize: all, aiostreams, aiometadata, or aiomanager"),
     ] = "all",
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
-    """Normalize, dehydrate, and scrub secrets from local JSON files in configs/."""
-    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir)
+    """Normalize, dehydrate, and scrub secrets from the tenant's JSON documents."""
+    root_dir, env_path, configs_dir, env = _resolve_paths(workspace_dir, tenant)
     working_env = dict(env)
     found_any = False
 
@@ -1592,7 +1789,7 @@ def cmd_config_sanitize(
                             )
 
     if not found_any:
-        console.print("ℹ️  No config files found in configs/ to sanitize.")
+        console.print("ℹ️  No documents found in the tenant to sanitize.")
     else:
         match _sync_architecture_diagrams(root_dir, configs_dir):
             case Ok():
@@ -1609,9 +1806,10 @@ def cmd_config_diagram(
         typer.Option("--check", help="Verify that architecture diagrams are up-to-date without writing"),
     ] = False,
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
-    """Compile LikeC4 (architecture/topology.c4) & ARCHITECTURE.md from configs/*.json."""
-    root_dir, _, configs_dir, _ = _resolve_paths(workspace_dir)
+    """Compile LikeC4 (architecture/topology.c4) & ARCHITECTURE.md from the tenant's JSON documents."""
+    root_dir, _, configs_dir, _ = _resolve_paths(workspace_dir, tenant)
     match _sync_architecture_diagrams(root_dir, configs_dir, check_only=check):
         case Err(err):
             err_console.print(f"❌ {err}")
@@ -1620,9 +1818,9 @@ def cmd_config_diagram(
             if check:
                 if paths:
                     rel_paths = ", ".join(str(p.relative_to(root_dir)) for p in paths)
-                    err_console.print(f"❌ [diagram] Out of sync with configs/*.json: {rel_paths}")
+                    err_console.print(f"❌ [diagram] Out of sync with the tenant's JSON documents: {rel_paths}")
                     raise typer.Exit(code=1)
-                console.print("✅ [diagram] LikeC4 topology & ARCHITECTURE.md are in sync with configs/*.json")
+                console.print("✅ [diagram] LikeC4 topology & ARCHITECTURE.md are in sync with the tenant's JSON documents")
             else:
                 rel_paths = ", ".join(str(p.relative_to(root_dir)) for p in paths)
                 console.print(f"🗺️  [diagram] Compiled LikeC4 model & docs: {rel_paths}")
@@ -1636,12 +1834,13 @@ def cmd_config_warm(
         typer.Option("--workers", "-w", help="Number of concurrent requests to warm Home catalogs"),
     ] = 8,
     workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
 ) -> None:
     """Concurrently pre-warm all Home catalog endpoints across enabled addons."""
-    _, _, configs_dir, env = _resolve_paths(workspace_dir)
+    _, _, configs_dir, env = _resolve_paths(workspace_dir, tenant)
     cfg_path = configs_dir / "aiomanager.json"
     if not cfg_path.exists():
-        err_console.print("❌ Missing configs/aiomanager.json")
+        err_console.print("❌ Missing aiomanager.json")
         raise typer.Exit(code=1)
 
     match read_json_file(cfg_path):

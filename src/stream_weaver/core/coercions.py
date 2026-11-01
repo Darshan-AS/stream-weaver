@@ -105,7 +105,7 @@ def sanitize_manifest_home_catalogs(manifest: JsonDict) -> JsonDict:
 def dehydrate_aiomanager(data: Any) -> Result[JsonDict, ConfigValidationError]:
     """
     Purely strips volatile runtime telemetry (`watchEvents`, `changelog`, etc.) and
-    deduplicates cached addon manifests so `configs/aiomanager.json` stays compact and diff-friendly.
+    deduplicates cached addon manifests so `aiomanager.json` stays compact and diff-friendly.
     """
     if not is_json_mapping(data):
         return Err(
@@ -311,7 +311,7 @@ def compute_config_diff(
             remote_lines,
             local_lines,
             fromfile=f"remote/{target}.json",
-            tofile=f"configs/{target}.json",
+            tofile=f"local/{target}.json",
             n=context_lines,
         )
     )

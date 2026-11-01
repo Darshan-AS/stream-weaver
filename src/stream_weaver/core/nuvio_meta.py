@@ -547,7 +547,7 @@ def _normalize_meta_screen(raw: Any) -> Result[JsonDict | None, ConfigValidation
 
 def normalize_nuvio_meta_doc(data: Any) -> Result[JsonDict, ConfigValidationError]:
     """
-    Validates and canonicalizes `configs/nuvio_meta.json`. The output shape is the single
+    Validates and canonicalizes `nuvio_meta.json`. The output shape is the single
     source of truth for compilation, decompilation, and `sw diff` comparisons.
     """
     if not isinstance(data, Mapping):
@@ -1378,7 +1378,7 @@ def decompile_nuvio_meta(
 ) -> JsonDict:
     """
     Reverse-compiles live Nuvio profile settings blobs (+ provider credential rows) into the
-    canonical `configs/nuvio_meta.json` shape. `platforms` lists only the platforms whose
+    canonical `nuvio_meta.json` shape. `platforms` lists only the platforms whose
     remote state matches the consensus doc (mobile > desktop > tv priority), so `sw diff`
     surfaces per-platform drift.
     """

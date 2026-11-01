@@ -1,0 +1,18 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/tenant.v1.json",
+  "version": 1,
+  "name": "home",
+  "instances": {
+    "aiostreams": {
+      "default": "AIOSTREAMS"
+    },
+    "aiometadata": {
+      "default": "AIOMETADATA"
+    },
+    "aiomanager": {
+      "default": "AIOMANAGER"
+    }
+  },
+  "logins": {},
+  "profiles": []
+}
