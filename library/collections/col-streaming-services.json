@@ -3,33 +3,32 @@
   "version": 1,
   "kind": "collection",
   "id": "col-streaming-services",
+  "params": {
+    "services": {
+      "type": "list",
+      "items": "string",
+      "default": [
+        "fld-netflix",
+        "fld-prime-video",
+        "fld-apple-tv",
+        "fld-hbo-max",
+        "fld-disney-plus",
+        "fld-hulu",
+        "fld-paramount-plus",
+        "fld-peacock"
+      ]
+    }
+  },
   "collection": {
     "id": "col-streaming-services",
     "title": "Streaming Services",
     "folders": [
       {
-        "ref": "fld-netflix"
-      },
-      {
-        "ref": "fld-prime-video"
-      },
-      {
-        "ref": "fld-apple-tv"
-      },
-      {
-        "ref": "fld-hbo-max"
-      },
-      {
-        "ref": "fld-disney-plus"
-      },
-      {
-        "ref": "fld-hulu"
-      },
-      {
-        "ref": "fld-paramount-plus"
-      },
-      {
-        "ref": "fld-peacock"
+        "for": "s",
+        "in": "${services}",
+        "item": {
+          "ref": "${s}"
+        }
       }
     ],
     "pinToTop": true,
