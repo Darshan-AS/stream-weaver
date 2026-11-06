@@ -67,6 +67,352 @@
   },
   "catalogs": [
     {
+      "id": "tmdb.discover.kannada_new_movies",
+      "type": "movie",
+      "name": "New Kannada Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_movies",
+      "type": "movie",
+      "name": "Kannada Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_top_movies",
+      "type": "movie",
+      "name": "Top Rated Kannada Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 20
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_80s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 80s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1989-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_90s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 90s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "1990-01-01",
+            "primary_release_date.lte": "1999-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_2000s_movies",
+      "type": "movie",
+      "name": "Kannada Classics — 2000s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "2000-01-01",
+            "primary_release_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.kannada_series",
+      "type": "series",
+      "name": "Kannada Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "kn",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_classic_series",
+      "type": "series",
+      "name": "Kannada Classic Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "kn",
+            "first_air_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_new_movies",
+      "type": "movie",
+      "name": "New Hindi Releases",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_movies",
+      "type": "movie",
+      "name": "Hindi Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_top_movies",
+      "type": "movie",
+      "name": "Top Rated Hindi Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "vote_average.desc",
+            "vote_count.gte": 20
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_80s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 80s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1989-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_90s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 90s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "1990-01-01",
+            "primary_release_date.lte": "1999-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_2000s_movies",
+      "type": "movie",
+      "name": "Hindi Classics — 2000s",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "2000-01-01",
+            "primary_release_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.hindi_series",
+      "type": "series",
+      "name": "Hindi Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "enabled": true,
+      "showInHome": true,
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "hi",
+            "sort_by": "popularity.desc"
+          }
+        }
+      },
+      "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.hindi_classic_series",
+      "type": "series",
+      "name": "Hindi Classic Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_original_language": "hi",
+            "first_air_date.lte": "2009-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 3
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
       "id": "trakt.upnext",
       "name": "Trakt Up Next",
       "type": "series",
@@ -103,7 +449,7 @@
       "type": "movie",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 7200
     },
     {
@@ -112,7 +458,7 @@
       "type": "series",
       "source": "trakt",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 7200
     },
     {
@@ -123,7 +469,7 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 86400
     },
     {
@@ -134,7 +480,7 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 86400
     },
     {
@@ -145,7 +491,7 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 86400
     },
     {
@@ -156,7 +502,7 @@
       "order": "asc",
       "source": "tmdb",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "cacheTTL": 86400
     },
     {
@@ -203,7 +549,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -216,7 +562,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -229,7 +575,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -242,7 +588,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -281,7 +627,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -294,7 +640,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -306,7 +652,7 @@
       "type": "movie",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "order": "asc",
@@ -319,7 +665,7 @@
       "type": "series",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "order": "asc",
@@ -333,7 +679,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -346,7 +692,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -401,149 +747,6 @@
       "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.hindi_movies",
-      "type": "movie",
-      "name": "Hindi Movies",
-      "displayType": "movie",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "sort_by": "popularity.desc"
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.hindi_new_movies",
-      "type": "movie",
-      "name": "New Hindi Releases",
-      "displayType": "movie",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "sort_by": "primary_release_date.desc",
-            "vote_count.gte": 3
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.hindi_series",
-      "type": "series",
-      "name": "Hindi Series",
-      "displayType": "series",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "tv",
-          "params": {
-            "with_original_language": "hi",
-            "sort_by": "popularity.desc"
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.kannada_movies",
-      "type": "movie",
-      "name": "Kannada Movies",
-      "displayType": "movie",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "sort_by": "popularity.desc"
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.kannada_new_movies",
-      "type": "movie",
-      "name": "New Kannada Releases",
-      "displayType": "movie",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "sort_by": "primary_release_date.desc",
-            "vote_count.gte": 3
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.kannada_top_movies",
-      "type": "movie",
-      "name": "Top Rated Kannada Movies",
-      "displayType": "movie",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "sort_by": "vote_average.desc",
-            "vote_count.gte": 20
-          }
-        }
-      },
-      "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.kannada_series",
-      "type": "series",
-      "name": "Kannada Series",
-      "displayType": "series",
-      "source": "tmdb",
-      "enabled": true,
-      "showInHome": true,
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "tv",
-          "params": {
-            "with_original_language": "kn",
-            "sort_by": "popularity.desc"
-          }
-        }
-      },
       "cacheTTL": 86400
     },
     {
@@ -763,7 +966,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -776,7 +979,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -789,7 +992,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -802,7 +1005,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -815,7 +1018,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "movie",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -828,7 +1031,7 @@
       "order": "asc",
       "source": "streaming",
       "enabled": true,
-      "showInHome": true,
+      "showInHome": false,
       "displayType": "series",
       "sortDirection": "desc",
       "cacheTTL": 86400
@@ -1113,209 +1316,6 @@
       "enabled": false,
       "showInHome": false,
       "cacheTTL": 86400
-    },
-    {
-      "id": "tmdb.discover.kannada_80s_movies",
-      "type": "movie",
-      "name": "Kannada Classics — 80s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "primary_release_date.gte": "1900-01-01",
-            "primary_release_date.lte": "1989-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.kannada_90s_movies",
-      "type": "movie",
-      "name": "Kannada Classics — 90s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "primary_release_date.gte": "1990-01-01",
-            "primary_release_date.lte": "1999-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.kannada_2000s_movies",
-      "type": "movie",
-      "name": "Kannada Classics — 2000s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "kn",
-            "primary_release_date.gte": "2000-01-01",
-            "primary_release_date.lte": "2009-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.kannada_classic_series",
-      "type": "series",
-      "name": "Kannada Classic Series",
-      "displayType": "series",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "tv",
-          "params": {
-            "with_original_language": "kn",
-            "first_air_date.lte": "2009-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 3
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.hindi_top_movies",
-      "type": "movie",
-      "name": "Top Rated Hindi Movies",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "sort_by": "vote_average.desc",
-            "vote_count.gte": 20
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.hindi_80s_movies",
-      "type": "movie",
-      "name": "Hindi Classics — 80s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "primary_release_date.gte": "1900-01-01",
-            "primary_release_date.lte": "1989-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.hindi_90s_movies",
-      "type": "movie",
-      "name": "Hindi Classics — 90s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "primary_release_date.gte": "1990-01-01",
-            "primary_release_date.lte": "1999-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.hindi_2000s_movies",
-      "type": "movie",
-      "name": "Hindi Classics — 2000s",
-      "displayType": "movie",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "movie",
-          "params": {
-            "with_original_language": "hi",
-            "primary_release_date.gte": "2000-01-01",
-            "primary_release_date.lte": "2009-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
-    },
-    {
-      "id": "tmdb.discover.hindi_classic_series",
-      "type": "series",
-      "name": "Hindi Classic Series",
-      "displayType": "series",
-      "source": "tmdb",
-      "metadata": {
-        "discover": {
-          "version": 1,
-          "mediaType": "tv",
-          "params": {
-            "with_original_language": "hi",
-            "first_air_date.lte": "2009-12-31",
-            "sort_by": "vote_count.desc",
-            "vote_count.gte": 3
-          }
-        }
-      },
-      "cacheTTL": 86400,
-      "enabled": true,
-      "showInHome": true
     }
   ],
   "language": "en-US",

@@ -3029,9 +3029,9 @@
             "_debug": {
               "language": "en-US",
               "configVersion": 1793346046280,
-              "timestamp": "2026-11-01T18:07:15.721Z"
+              "timestamp": "2026-11-06T19:34:10.318Z"
             },
-            "_timestamp": 1793556435721
+            "_timestamp": 1793993650318
           },
           "flags": {
             "official": false,
@@ -3806,109 +3806,9 @@
           },
           "catalogs": [
             {
-              "id": "trakt.trending.movies",
+              "id": "tmdb.discover.kannada_new_movies",
               "type": "movie",
-              "name": "Trakt Trending",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Holiday",
-                    "Horror",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "None",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "trakt.trending.shows",
-              "type": "series",
-              "name": "Trakt Trending",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Anime",
-                    "Biography",
-                    "Children",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Donghua",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "Game Show",
-                    "History",
-                    "Holiday",
-                    "Home And Garden",
-                    "Horror",
-                    "Mini Series",
-                    "Music",
-                    "Musical",
-                    "Mystery",
-                    "News",
-                    "None",
-                    "Reality",
-                    "Romance",
-                    "Science Fiction",
-                    "Short",
-                    "Soap",
-                    "Special Interest",
-                    "Sporting Event",
-                    "Superhero",
-                    "Suspense",
-                    "Talk Show",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.top",
-              "type": "movie",
-              "name": "TMDB Popular",
+              "name": "New Kannada Releases",
               "pageSize": 50,
               "extra": [
                 {
@@ -3932,574 +3832,6 @@
                     "TV Movie",
                     "Thriller",
                     "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.top",
-              "type": "series",
-              "name": "TMDB Popular",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.top_rated",
-              "type": "movie",
-              "name": "TMDB Top Rated",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.top_rated",
-              "type": "series",
-              "name": "TMDB Top Rated",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.nfx_movie",
-              "type": "movie",
-              "name": "Netflix",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.nfx_series",
-              "type": "series",
-              "name": "Netflix",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.amp_movie",
-              "type": "movie",
-              "name": "Prime Video",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.amp_series",
-              "type": "series",
-              "name": "Prime Video",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.hbm_movie",
-              "type": "movie",
-              "name": "HBO Max",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.hbm_series",
-              "type": "series",
-              "name": "HBO Max",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.atp_movie",
-              "type": "movie",
-              "name": "Apple TV+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.atp_series",
-              "type": "series",
-              "name": "Apple TV+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.dnp_movie",
-              "type": "movie",
-              "name": "Disney+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.dnp_series",
-              "type": "series",
-              "name": "Disney+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.discover.hindi_movies",
-              "type": "movie",
-              "name": "Hindi Movies",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.discover.hindi_new_movies",
-              "type": "movie",
-              "name": "New Hindi Releases",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.discover.hindi_series",
-              "type": "series",
-              "name": "Hindi Series",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
                     "Western"
                   ],
                   "isRequired": false
@@ -4514,43 +3846,6 @@
               "id": "tmdb.discover.kannada_movies",
               "type": "movie",
               "name": "Kannada Movies",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.discover.kannada_new_movies",
-              "type": "movie",
-              "name": "New Kannada Releases",
               "pageSize": 50,
               "extra": [
                 {
@@ -4611,253 +3906,6 @@
                     "TV Movie",
                     "Thriller",
                     "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "tmdb.discover.kannada_series",
-              "type": "series",
-              "name": "Kannada Series",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.pmp_movie",
-              "type": "movie",
-              "name": "Paramount+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.pmp_series",
-              "type": "series",
-              "name": "Paramount+",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.pcp_movie",
-              "type": "movie",
-              "name": "Peacock Premium",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.pcp_series",
-              "type": "series",
-              "name": "Peacock Premium",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.hlu_movie",
-              "type": "movie",
-              "name": "Hulu",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action",
-                    "Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Fantasy",
-                    "History",
-                    "Horror",
-                    "Music",
-                    "Mystery",
-                    "Romance",
-                    "Science Fiction",
-                    "TV Movie",
-                    "Thriller",
-                    "War",
-                    "Western"
-                  ],
-                  "isRequired": false
-                },
-                {
-                  "name": "skip"
-                }
-              ],
-              "showInHome": true
-            },
-            {
-              "id": "streaming.hlu_series",
-              "type": "series",
-              "name": "Hulu",
-              "pageSize": 50,
-              "extra": [
-                {
-                  "name": "genre",
-                  "options": [
-                    "Action & Adventure",
-                    "Animation",
-                    "Comedy",
-                    "Crime",
-                    "Documentary",
-                    "Drama",
-                    "Family",
-                    "Kids",
-                    "Mystery",
-                    "News",
-                    "Reality",
-                    "Sci-Fi & Fantasy",
-                    "Soap",
-                    "Talk",
-                    "War & Politics",
                     "Western"
                   ],
                   "isRequired": false
@@ -4980,6 +4028,40 @@
               "showInHome": true
             },
             {
+              "id": "tmdb.discover.kannada_series",
+              "type": "series",
+              "name": "Kannada Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.discover.kannada_classic_series",
               "type": "series",
               "name": "Kannada Classic Series",
@@ -5003,6 +4085,80 @@
                     "Soap",
                     "Talk",
                     "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.hindi_new_movies",
+              "type": "movie",
+              "name": "New Hindi Releases",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.hindi_movies",
+              "type": "movie",
+              "name": "Hindi Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
                     "Western"
                   ],
                   "isRequired": false
@@ -5162,6 +4318,40 @@
               "showInHome": true
             },
             {
+              "id": "tmdb.discover.hindi_series",
+              "type": "series",
+              "name": "Hindi Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.discover.hindi_classic_series",
               "type": "series",
               "name": "Hindi Classic Series",
@@ -5194,6 +4384,856 @@
                 }
               ],
               "showInHome": true
+            },
+            {
+              "id": "trakt.trending.movies",
+              "type": "movie",
+              "name": "Trakt Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Holiday",
+                    "Horror",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "trakt.trending.shows",
+              "type": "series",
+              "name": "Trakt Trending",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Anime",
+                    "Biography",
+                    "Children",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Donghua",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "Game Show",
+                    "History",
+                    "Holiday",
+                    "Home And Garden",
+                    "Horror",
+                    "Mini Series",
+                    "Music",
+                    "Musical",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Romance",
+                    "Science Fiction",
+                    "Short",
+                    "Soap",
+                    "Special Interest",
+                    "Sporting Event",
+                    "Superhero",
+                    "Suspense",
+                    "Talk Show",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.top",
+              "type": "movie",
+              "name": "TMDB Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.top",
+              "type": "series",
+              "name": "TMDB Popular",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.top_rated",
+              "type": "movie",
+              "name": "TMDB Top Rated",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "tmdb.top_rated",
+              "type": "series",
+              "name": "TMDB Top Rated",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.nfx_movie",
+              "type": "movie",
+              "name": "Netflix",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.nfx_series",
+              "type": "series",
+              "name": "Netflix",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.amp_movie",
+              "type": "movie",
+              "name": "Prime Video",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.amp_series",
+              "type": "series",
+              "name": "Prime Video",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.hbm_movie",
+              "type": "movie",
+              "name": "HBO Max",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.hbm_series",
+              "type": "series",
+              "name": "HBO Max",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.atp_movie",
+              "type": "movie",
+              "name": "Apple TV+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.atp_series",
+              "type": "series",
+              "name": "Apple TV+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.dnp_movie",
+              "type": "movie",
+              "name": "Disney+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.dnp_series",
+              "type": "series",
+              "name": "Disney+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.pmp_movie",
+              "type": "movie",
+              "name": "Paramount+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.pmp_series",
+              "type": "series",
+              "name": "Paramount+",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.pcp_movie",
+              "type": "movie",
+              "name": "Peacock Premium",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.pcp_series",
+              "type": "series",
+              "name": "Peacock Premium",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.hlu_movie",
+              "type": "movie",
+              "name": "Hulu",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
+            },
+            {
+              "id": "streaming.hlu_series",
+              "type": "series",
+              "name": "Hulu",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "None",
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": true,
+                  "default": "None"
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": false
             },
             {
               "id": "search.movie",
@@ -5356,14 +5396,14 @@
               ]
             }
           ],
-          "configVersion": 1793556316277,
+          "configVersion": 1793993648188,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1793556316277,
-            "timestamp": "2026-11-01T18:07:15.716Z"
+            "configVersion": 1793993648188,
+            "timestamp": "2026-11-06T19:34:10.212Z"
           },
-          "_timestamp": 1793556435716
+          "_timestamp": 1793993650212
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -5572,10 +5612,10 @@
                     "Thriller",
                     "Biography",
                     "Action",
+                    "Animation",
                     "Fantasy",
                     "Romance",
                     "War",
-                    "Animation",
                     "Documentary",
                     "Family",
                     "Horror",
@@ -5605,20 +5645,21 @@
                   "options": [
                     "Drama",
                     "Thriller",
-                    "Action",
                     "Crime",
+                    "Action",
                     "Mystery",
                     "Comedy",
-                    "Sci-Fi",
                     "Horror",
+                    "Sci-Fi",
                     "Adventure",
                     "Animation",
                     "Fantasy",
                     "Romance",
+                    "History",
                     "Sport",
                     "Documentary",
                     "Game-Show",
-                    "History"
+                    "Western"
                   ],
                   "optionsLimit": 1
                 },
@@ -5639,18 +5680,22 @@
                   "isRequired": false,
                   "name": "genre",
                   "options": [
-                    "Sci-Fi",
                     "Action",
-                    "Thriller",
-                    "Drama",
-                    "Mystery",
                     "Adventure",
-                    "Crime",
+                    "Drama",
                     "Fantasy",
-                    "Horror",
-                    "Animation",
+                    "Sci-Fi",
+                    "Thriller",
+                    "Comedy",
                     "Romance",
-                    "Comedy"
+                    "History",
+                    "War",
+                    "Mystery",
+                    "Crime",
+                    "Animation",
+                    "Biography",
+                    "Family",
+                    "Western"
                   ],
                   "optionsLimit": 1
                 },
@@ -5703,21 +5748,23 @@
                   "name": "genre",
                   "options": [
                     "Action",
-                    "Sci-Fi",
                     "Adventure",
                     "Drama",
+                    "Sci-Fi",
                     "Fantasy",
                     "Thriller",
                     "Animation",
-                    "Crime",
-                    "Horror",
-                    "Mystery",
                     "Comedy",
-                    "Romance",
+                    "Crime",
+                    "Biography",
                     "Family",
                     "History",
-                    "Biography",
+                    "Mystery",
+                    "Horror",
                     "War",
+                    "Documentary",
+                    "Romance",
+                    "Sport",
                     "Western"
                   ],
                   "optionsLimit": 1
@@ -5740,18 +5787,20 @@
                   "name": "genre",
                   "options": [
                     "Adventure",
-                    "Animation",
                     "Action",
                     "Fantasy",
-                    "Sci-Fi",
+                    "Animation",
                     "Comedy",
-                    "Family",
+                    "Sci-Fi",
                     "Drama",
+                    "Family",
                     "Mystery",
-                    "Thriller",
                     "Crime",
                     "Horror",
-                    "Romance"
+                    "Thriller",
+                    "Romance",
+                    "Sport",
+                    "History"
                   ],
                   "optionsLimit": 1
                 },
@@ -5782,7 +5831,7 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_319612",
+              "id": "aicat_list_for_you_352798",
               "name": "Japanese Drama",
               "pageSize": 50,
               "showInHome": false,
@@ -5795,10 +5844,32 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_319613",
-              "name": "Hindi Comedies",
+              "id": "aicat_list_for_you_352804",
+              "name": "Mystery Thrillers",
               "pageSize": 50,
               "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352799",
+              "name": "Hindi Comedies",
+              "pageSize": 50,
+              "showInHome": false,
               "type": "movie"
             },
             {
@@ -5808,21 +5879,8 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_319618",
-              "name": "Mystery Thrillers",
-              "pageSize": 50,
-              "showInHome": true,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_319614",
-              "name": "Hindi Crime & Thrillers",
+              "id": "aicat_list_for_you_352803",
+              "name": "Fantasy Anime",
               "pageSize": 50,
               "showInHome": true,
               "type": "movie"
@@ -5843,7 +5901,42 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_319615",
+              "id": "aicat_list_for_you_352800",
+              "name": "Hindi Crime & Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352805",
+              "name": "Manga Adaptations",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352801",
               "name": "Hindi Dramas",
               "pageSize": 50,
               "showInHome": false,
@@ -5865,55 +5958,11 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_319616",
-              "name": "When Hearts Meet",
+              "id": "aicat_list_for_you_352802",
+              "name": "Machines, AI & Cyberpunk",
               "pageSize": 50,
               "showInHome": false,
               "type": "movie"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_319617",
-              "name": "Fantasy Anime",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "movie"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_319619",
-              "name": "Manga Adaptations",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "series"
             }
           ],
           "description": "AI-generated movie and series catalogs personalized for you",

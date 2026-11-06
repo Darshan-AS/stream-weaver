@@ -38,6 +38,7 @@ class CompiledProfile:
     badges: JsonDict | None
     meta: JsonDict | None
     settings: JsonDict | None
+    extra_catalogs: tuple[ExtraCatalog, ...] = ()  # recipe-backed extras already rendered
 
     @property
     def name(self) -> str:
@@ -90,6 +91,22 @@ def compile_profile(
             case Ok(doc):
                 docs[kind] = doc
 
+    extras: list[ExtraCatalog] = []
+    for i, e in enumerate(profile.extra_catalogs):
+        if e.recipe is None:
+            extras.append(ExtraCatalog(e.catalog_id, e.type, e.enabled, e.show_in_home))
+            continue
+        match library.render("catalog", str(e.recipe["ref"]), e.recipe.get("with")):
+            case Err(err):
+                return Err(ConfigValidationError(f"{ctx}: aiometadata.extraCatalogs[{i}]: {err.message}"))
+            case Ok(rendered):
+                pass
+        if not isinstance(rendered, Mapping) or not rendered.get("id") or not rendered.get("type"):
+            return Err(ConfigValidationError(f"{ctx}: aiometadata.extraCatalogs[{i}]: recipe must render id + type"))
+        extras.append(
+            ExtraCatalog(str(rendered["id"]), str(rendered["type"]), e.enabled, e.show_in_home, definition=dict(rendered))
+        )
+
     return Ok(
         CompiledProfile(
             resolved=resolved,
@@ -98,6 +115,7 @@ def compile_profile(
             badges=docs["badges"],
             meta=docs["meta"],
             settings=docs["settings"],
+            extra_catalogs=tuple(extras),
         )
     )
 
@@ -124,7 +142,7 @@ def derive_instance_catalogs(
     names = tuple(cp.name for cp in on_instance)
     raw_catalogs = instance_doc.get("catalogs")
     existing: list[Mapping[str, Any]] = [c for c in raw_catalogs if isinstance(c, Mapping)] if isinstance(raw_catalogs, list) else []
-    contributing = [cp for cp in on_instance if cp.collections is not None or cp.resolved.profile.extra_catalogs]
+    contributing = [cp for cp in on_instance if cp.collections is not None or cp.extra_catalogs]
     if not contributing:
         return Ok(InstanceCatalogPlan(instance_name=instance_name, profiles=names, catalogs=[dict(c) for c in existing]))
 
@@ -132,11 +150,16 @@ def derive_instance_catalogs(
     extras: list[ExtraCatalog] = []
     for cp in contributing:
         uses.extend(cp.catalog_uses)
-        extras.extend(
-            ExtraCatalog(catalog_id=e.catalog_id, type=e.type, enabled=e.enabled, show_in_home=e.show_in_home)
-            for e in cp.resolved.profile.extra_catalogs
+        extras.extend(cp.extra_catalogs)
+    modes = {cp.resolved.profile.home_rows for cp in contributing}
+    if len(modes) > 1:
+        return Err(
+            ConfigValidationError(
+                f"aiometadata/{instance_name}: profiles {', '.join(names)} disagree on aiometadata.homeRows ({sorted(modes)}); "
+                "profiles sharing an instance must use the same mode"
+            )
         )
-    match derive_catalogs(existing, uses, extras):
+    match derive_catalogs(existing, uses, extras, home_rows=modes.pop()):
         case Err(err):
             return Err(ConfigValidationError(f"aiometadata/{instance_name}: {err.message}"))
         case Ok(derived):
