@@ -60,10 +60,7 @@
       }
     },
     {
-      "ref": "col-streaming-services",
-      "with": {
-        "pinToTop": false
-      }
+      "ref": "col-streaming-services"
     },
     {
       "ref": "col-discover"
