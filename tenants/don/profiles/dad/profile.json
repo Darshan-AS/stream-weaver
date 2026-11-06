@@ -62,19 +62,7 @@
     {
       "ref": "col-streaming-services",
       "with": {
-        "services": [
-          "fld-netflix",
-          "fld-prime-video",
-          "fld-apple-tv",
-          "fld-hbo-max",
-          "fld-disney-plus",
-          "fld-hulu",
-          "fld-paramount-plus",
-          "fld-peacock",
-          "fld-jiohotstar",
-          "fld-sonyliv",
-          "fld-zee5"
-        ]
+        "pinToTop": false
       }
     },
     {

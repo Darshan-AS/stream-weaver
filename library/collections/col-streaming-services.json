@@ -17,6 +17,10 @@
         "fld-paramount-plus",
         "fld-peacock"
       ]
+    },
+    "pinToTop": {
+      "type": "bool",
+      "default": true
     }
   },
   "collection": {
@@ -31,7 +35,7 @@
         }
       }
     ],
-    "pinToTop": true,
+    "pinToTop": "${pinToTop}",
     "viewMode": "TABBED_GRID",
     "showAllTab": true,
     "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
