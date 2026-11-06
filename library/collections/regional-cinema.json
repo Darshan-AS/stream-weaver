@@ -52,6 +52,10 @@
     "backdropImageUrl": {
       "type": "string",
       "default": ""
+    },
+    "pinToTop": {
+      "type": "bool",
+      "default": true
     }
   },
   "collection": {
@@ -81,7 +85,7 @@
         }
       }
     ],
-    "pinToTop": false,
+    "pinToTop": "${pinToTop}",
     "viewMode": "TABBED_GRID",
     "showAllTab": true,
     "backdropImageUrl": "${backdropImageUrl}",
