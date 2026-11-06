@@ -217,4 +217,4 @@ flowchart LR
 | Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `don` | Don | `default` | `default` | `don` → 6139337e… | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs` | `bingecat`, `cinemeta` |
-| `dad` | Dad | `default` | `dad` | `don` → 0dfcbb7e… | — | `regional-cinema`, `regional-cinema`, `col-discover`, `col-streaming-services` | `cinemeta` |
+| `dad` | Dad | `default` | `dad` | `don` → 0dfcbb7e… | — | `regional-cinema`, `regional-cinema`, `col-streaming-services`, `col-discover` | `cinemeta` |
