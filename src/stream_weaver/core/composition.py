@@ -452,12 +452,15 @@ class ExtraCatalog:
     type: str
     enabled: bool = True
     show_in_home: bool = False
+    definition: Mapping[str, Any] | None = None  # rendered catalog recipe (materialised if absent)
 
 
 def derive_catalogs(
     instance_catalogs: Sequence[Mapping[str, Any]],
     uses: Sequence[CatalogUse],
     extras: Sequence[ExtraCatalog] = (),
+    *,
+    home_rows: str = "all",
 ) -> Result[list[JsonDict], ConfigValidationError]:
     """
     Rewrites an AIOMetadata instance's `catalogs` so that: referenced catalogs are enabled + shown
@@ -482,10 +485,13 @@ def derive_catalogs(
         else:
             used_by_pos.setdefault(pos, u)
     extra_by_pos: dict[int, ExtraCatalog] = {}
+    missing_extras: list[ExtraCatalog] = []
     for key, e in extra_by_key.items():
         pos = index.get(key)
         if pos is not None:
             extra_by_pos.setdefault(pos, e)
+        elif e.definition:
+            missing_extras.append(e)
 
     out: list[JsonDict] = []
     for pos, entry in enumerate(entries):
@@ -497,9 +503,13 @@ def derive_catalogs(
                     if k not in ("enabled", "showInHome"):
                         new[k] = copy.deepcopy(v)
             new["enabled"] = True
-            new["showInHome"] = True
+            new["showInHome"] = home_rows == "all"
         elif pos in extra_by_pos:
             e = extra_by_pos[pos]
+            if e.definition:
+                for k, v in e.definition.items():
+                    if k not in ("enabled", "showInHome"):
+                        new[k] = copy.deepcopy(v)
             new["enabled"] = e.enabled
             new["showInHome"] = e.show_in_home
         else:
@@ -515,6 +525,17 @@ def derive_catalogs(
             )
         new = copy.deepcopy(dict(u.definition))
         new["enabled"] = True
-        new["showInHome"] = True
+        new["showInHome"] = home_rows == "all"
         out.append(new)
+    for e in missing_extras:
+        assert e.definition is not None
+        new = copy.deepcopy(dict(e.definition))
+        new["enabled"] = e.enabled
+        new["showInHome"] = e.show_in_home
+        out.append(new)
+    if home_rows == "extras":
+        order = {(e.catalog_id, e.type): n for n, e in enumerate(extras) if e.show_in_home}
+        home = sorted((c for c in out if c.get("showInHome")), key=lambda c: order.get((str(c["id"]), str(c["type"])), 10**6))
+        rest = [c for c in out if not c.get("showInHome")]
+        out = home + rest
     return Ok(out)

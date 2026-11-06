@@ -71,12 +71,17 @@ class Appearance:
 
 @dataclass(frozen=True, slots=True)
 class ExtraCatalogSpec:
-    """A catalog kept enabled on the profile's AIOMetadata instance without any collection using it."""
+    """
+    A catalog enabled on the profile's AIOMetadata instance without any collection using it — e.g. a
+    loose Home row. Either names an existing instance catalog (`catalog_id` + `type`) or a library
+    catalog recipe (`recipe` = `{"ref", "with"}`) that is rendered and materialised at compile time.
+    """
 
-    catalog_id: str
-    type: str
+    catalog_id: str = ""
+    type: str = ""
     enabled: bool = True
     show_in_home: bool = False
+    recipe: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +100,9 @@ class Profile:
     meta: Any = None
     settings: Any = None
     extra_catalogs: tuple[ExtraCatalogSpec, ...] = ()
+    home_rows: str = "all"
+    """`all`: collection catalogs are Home rows too, instance order kept (Stremio boards).
+    `extras`: Home rows are exactly `extraCatalogs`, moved first in declared order; collection catalogs are off Home."""
     version: int = PROFILE_SCHEMA_VERSION
 
     @property
@@ -257,16 +265,27 @@ def parse_profile(doc: Mapping[str, Any]) -> Result[Profile, ConfigValidationErr
         return _err("`aiometadata` must be an object")
     extra_catalogs: list[ExtraCatalogSpec] = []
     for i, item in enumerate(raw_meta_cfg.get("extraCatalogs", []) or []):
-        if not is_json_mapping(item) or not isinstance(item.get("id"), str) or not isinstance(item.get("type"), str):
-            return _err(f"`aiometadata.extraCatalogs[{i}]` needs string `id` and `type`")
+        if not is_json_mapping(item):
+            return _err(f"`aiometadata.extraCatalogs[{i}]` must be an object")
+        recipe = item.get("catalog")
+        if recipe is not None:
+            if not is_json_mapping(recipe) or not isinstance(recipe.get("ref"), str):
+                return _err(f"`aiometadata.extraCatalogs[{i}].catalog` must be `{{\"ref\": id, \"with\": {{…}}}}`")
+        elif not isinstance(item.get("id"), str) or not isinstance(item.get("type"), str):
+            return _err(f"`aiometadata.extraCatalogs[{i}]` needs string `id` and `type`, or a `catalog` recipe ref")
         extra_catalogs.append(
             ExtraCatalogSpec(
-                catalog_id=item["id"],
-                type=item["type"],
+                catalog_id=str(item.get("id") or ""),
+                type=str(item.get("type") or ""),
                 enabled=bool(item.get("enabled", True)),
                 show_in_home=bool(item.get("showInHome", False)),
+                recipe=dict(recipe) if recipe is not None else None,
             )
         )
+
+    home_rows = raw_meta_cfg.get("homeRows", "all")
+    if home_rows not in ("all", "extras"):
+        return _err("`aiometadata.homeRows` must be `all` or `extras`")
 
     raw_app = doc.get("appearance", {})
     if not is_json_mapping(raw_app):
@@ -293,6 +312,7 @@ def parse_profile(doc: Mapping[str, Any]) -> Result[Profile, ConfigValidationErr
             meta=taste_docs["meta"],
             settings=taste_docs["settings"],
             extra_catalogs=tuple(extra_catalogs),
+            home_rows=str(home_rows),
         )
     )
 
@@ -339,13 +359,18 @@ def profile_to_doc(profile: Profile) -> JsonDict:
     for key, val in (("badges", profile.badges), ("meta", profile.meta), ("settings", profile.settings)):
         if val is not None:
             doc[key] = copy.deepcopy(val)
-    if profile.extra_catalogs:
-        doc["aiometadata"] = {
-            "extraCatalogs": [
-                {"id": e.catalog_id, "type": e.type, "enabled": e.enabled, "showInHome": e.show_in_home}
+    if profile.extra_catalogs or profile.home_rows != "all":
+        doc["aiometadata"] = {}
+        if profile.home_rows != "all":
+            doc["aiometadata"]["homeRows"] = profile.home_rows
+        doc["aiometadata"]["extraCatalogs"] = [
+                (
+                    {"catalog": copy.deepcopy(dict(e.recipe)), "enabled": e.enabled, "showInHome": e.show_in_home}
+                    if e.recipe is not None
+                    else {"id": e.catalog_id, "type": e.type, "enabled": e.enabled, "showInHome": e.show_in_home}
+                )
                 for e in profile.extra_catalogs
             ]
-        }
     appearance: JsonDict = {}
     if profile.appearance.emoji:
         appearance["emoji"] = profile.appearance.emoji
