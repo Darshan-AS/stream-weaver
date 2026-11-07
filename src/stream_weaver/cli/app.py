@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import os
 import sys
+import urllib.parse
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -34,6 +35,7 @@ from stream_weaver.core.aiomanager_accounts import (
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
 from stream_weaver.core.compile import CompiledProfile, compile_profile, derive_instance_catalogs
+from stream_weaver.core.composition import config_catalog_keys
 from stream_weaver.core.crypto import decrypt_envelope
 from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.instances import (
@@ -2457,6 +2459,80 @@ def cmd_config_diagram(
             else:
                 rel_paths = ", ".join(str(p.relative_to(root_dir)) for p in paths)
                 console.print(f"🗺️  [diagram] Compiled LikeC4 model & docs: {rel_paths}")
+
+
+@config_app.command("probe")
+@app.command("probe")
+def cmd_config_probe(
+    profile: ProfileNameOption = None,
+    min_items: Annotated[int, typer.Option("--min-items", help="Rows with fewer items are flagged")] = 6,
+    workers: Annotated[int, typer.Option("--workers", "-w", help="Concurrent catalog requests")] = 6,
+    exit_code: Annotated[bool, typer.Option("--exit-code", help="Exit 1 if any row is empty or thin")] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Fetch every Home row of each profile's AIOMetadata instance and report how many items it returns."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    all_compiled = _compile_all(ctx)
+    _, chosen = _scope_to_profile(ctx, all_compiled, profile)
+
+    seen_instances: set[str] = set()
+    any_bad = False
+    with HttpxClient() as http_client:
+        for cp in chosen:
+            binding = cp.resolved.instances.get("aiometadata")
+            if binding is None or not binding.configured_for_pull() or binding.name in seen_instances:
+                continue
+            seen_instances.add(binding.name)
+            doc_path = _service_doc_path(ctx.paths.docs_dir, "aiometadata", binding.name)
+            match derive_instance_catalogs(binding.name, _load_optional_json(doc_path), all_compiled):
+                case Err(derive_err):
+                    err_console.print(f"❌ {derive_err}")
+                    raise typer.Exit(code=1)
+                case Ok(plan):
+                    pass
+            home = [c for c in plan.catalogs if c.get("showInHome")]
+            base = f"{binding.base_url}/stremio/{binding.uuid}"
+            owners = ", ".join(plan.profiles)
+
+            def _fetch(entry: JsonDict, base: str = base) -> tuple[JsonDict, int | None, str]:
+                # manifest-side id: streaming.x → streaming.x_<type>; anime → displayType
+                keys = config_catalog_keys(entry)
+                cid, ctype = keys[1] if str(entry.get("source")) == "streaming" or entry.get("type") == "anime" else keys[0]
+                url = f"{base}/catalog/{urllib.parse.quote(ctype, safe='.:_-')}/{urllib.parse.quote(cid, safe='.:_-')}.json"
+                match http_client.request_json("GET", url, timeout=20.0):
+                    case Ok(resp) if resp.status_code == 200 and isinstance(resp.data, dict):
+                        metas = resp.data.get("metas")
+                        return entry, (len(metas) if isinstance(metas, list) else 0), ""
+                    case Ok(resp):
+                        return entry, None, f"HTTP {resp.status_code}"
+                    case Err(net_err):
+                        return entry, None, str(net_err)[:80]
+
+            table = Table(
+                title=f"Home rows — aiometadata/{binding.name} (profiles: {owners})", box=box.ROUNDED, header_style="bold"
+            )
+            for col in ("#", "Row", "Catalog", "Items", "Status"):
+                table.add_column(col, overflow="fold")
+            with (
+                console.status(f"🔎 Probing {len(home)} Home rows on aiometadata/{binding.name}..."),
+                concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as pool,
+            ):
+                results = list(pool.map(_fetch, home))
+            for n, (entry, count, note) in enumerate(results, 1):
+                if count is None:
+                    status, flag = f"❌ {note}", True
+                elif count == 0:
+                    status, flag = "❌ empty", True
+                elif count < min_items:
+                    status, flag = f"⚠️  thin (<{min_items})", True
+                else:
+                    status, flag = "✅", False
+                any_bad = any_bad or flag
+                table.add_row(str(n), str(entry.get("name")), f"{entry.get('id')} ({entry.get('type')})", "—" if count is None else str(count), status)
+            console.print(table)
+    if exit_code and any_bad:
+        raise typer.Exit(code=1)
 
 
 @config_app.command("warm")

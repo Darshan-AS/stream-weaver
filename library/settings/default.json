@@ -3,6 +3,25 @@
   "version": 1,
   "kind": "settings",
   "id": "default",
+  "params": {
+    "subtitlePreferred": {
+      "type": "string",
+      "default": "en"
+    },
+    "subtitleSecondary": {
+      "type": "string",
+      "nullable": true,
+      "default": null
+    },
+    "subtitleSizeSp": {
+      "type": "int",
+      "default": 18
+    },
+    "tvSubtitleSizePercent": {
+      "type": "int",
+      "default": 100
+    }
+  },
   "settings": {
     "version": "1.0.0",
     "platforms": [
@@ -91,8 +110,8 @@
       }
     },
     "subtitles": {
-      "preferredLanguage": "en",
-      "secondaryLanguage": null,
+      "preferredLanguage": "${subtitlePreferred}",
+      "secondaryLanguage": "${subtitleSecondary}",
       "useForced": true,
       "showOnlyPreferredLanguages": false,
       "stripSdh": true,
@@ -106,11 +125,11 @@
           "width": 2
         },
         "bold": false,
-        "sizeSp": 18,
+        "sizeSp": "${subtitleSizeSp}",
         "bottomOffset": 20
       },
       "tv": {
-        "sizePercent": 100,
+        "sizePercent": "${tvSubtitleSizePercent}",
         "verticalOffsetPercent": 5,
         "organizationMode": "byLanguage",
         "hdrStyle": {

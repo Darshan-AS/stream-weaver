@@ -122,11 +122,34 @@
           "params": {
             "with_original_language": "kn",
             "sort_by": "vote_average.desc",
-            "vote_count.gte": 20
+            "vote_count.gte": 10
           }
         }
       },
       "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.kannada_golden_movies",
+      "type": "movie",
+      "name": "Kannada Classics — Golden Era (pre-1980)",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "kn",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1979-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 1
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
     },
     {
       "id": "tmdb.discover.kannada_80s_movies",
@@ -140,10 +163,10 @@
           "mediaType": "movie",
           "params": {
             "with_original_language": "kn",
-            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.gte": "1980-01-01",
             "primary_release_date.lte": "1989-12-31",
             "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
+            "vote_count.gte": 1
           }
         }
       },
@@ -166,7 +189,7 @@
             "primary_release_date.gte": "1990-01-01",
             "primary_release_date.lte": "1999-12-31",
             "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
+            "vote_count.gte": 1
           }
         }
       },
@@ -189,7 +212,7 @@
             "primary_release_date.gte": "2000-01-01",
             "primary_release_date.lte": "2009-12-31",
             "sort_by": "vote_count.desc",
-            "vote_count.gte": 5
+            "vote_count.gte": 1
           }
         }
       },
@@ -231,7 +254,7 @@
             "with_original_language": "kn",
             "first_air_date.lte": "2009-12-31",
             "sort_by": "vote_count.desc",
-            "vote_count.gte": 3
+            "vote_count.gte": 0
           }
         }
       },
@@ -302,6 +325,29 @@
       "showInHome": true
     },
     {
+      "id": "tmdb.discover.hindi_golden_movies",
+      "type": "movie",
+      "name": "Hindi Classics — Golden Era (pre-1980)",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_original_language": "hi",
+            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.lte": "1979-12-31",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
       "id": "tmdb.discover.hindi_80s_movies",
       "type": "movie",
       "name": "Hindi Classics — 80s",
@@ -313,7 +359,7 @@
           "mediaType": "movie",
           "params": {
             "with_original_language": "hi",
-            "primary_release_date.gte": "1900-01-01",
+            "primary_release_date.gte": "1980-01-01",
             "primary_release_date.lte": "1989-12-31",
             "sort_by": "vote_count.desc",
             "vote_count.gte": 5
@@ -409,6 +455,49 @@
         }
       },
       "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.trending_india_movies",
+      "type": "movie",
+      "name": "Trending in India — Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "region": "IN",
+            "with_origin_country": "IN",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 21600,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.trending_india_series",
+      "type": "series",
+      "name": "Trending in India — Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_origin_country": "IN",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 5
+          }
+        }
+      },
+      "cacheTTL": 21600,
       "enabled": true,
       "showInHome": true
     },

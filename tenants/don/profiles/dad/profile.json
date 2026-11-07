@@ -38,7 +38,13 @@
     "ref": "default"
   },
   "settings": {
-    "ref": "default"
+    "ref": "default",
+    "with": {
+      "subtitlePreferred": "en",
+      "subtitleSecondary": "hi",
+      "subtitleSizeSp": 22,
+      "tvSubtitleSizePercent": 125
+    }
   },
   "appearance": {
     "emoji": "👨",
@@ -78,7 +84,25 @@
           "with": {
             "language": "kn",
             "slug": "kannada",
-            "label": "Kannada"
+            "label": "Kannada",
+            "minVotes": 10
+          }
+        },
+        "enabled": true,
+        "showInHome": true
+      },
+      {
+        "catalog": {
+          "ref": "regional-decade-movies",
+          "with": {
+            "language": "kn",
+            "slug": "kannada",
+            "label": "Kannada",
+            "decade": "golden",
+            "decadeLabel": "Golden Era (pre-1980)",
+            "from": "1900-01-01",
+            "to": "1979-12-31",
+            "minVotes": 1
           }
         },
         "enabled": true,
@@ -93,8 +117,9 @@
             "label": "Kannada",
             "decade": "80s",
             "decadeLabel": "80s",
-            "from": "1900-01-01",
-            "to": "1989-12-31"
+            "from": "1980-01-01",
+            "to": "1989-12-31",
+            "minVotes": 1
           }
         },
         "enabled": true,
@@ -110,7 +135,8 @@
             "decade": "90s",
             "decadeLabel": "90s",
             "from": "1990-01-01",
-            "to": "1999-12-31"
+            "to": "1999-12-31",
+            "minVotes": 1
           }
         },
         "enabled": true,
@@ -126,7 +152,8 @@
             "decade": "2000s",
             "decadeLabel": "2000s",
             "from": "2000-01-01",
-            "to": "2009-12-31"
+            "to": "2009-12-31",
+            "minVotes": 1
           }
         },
         "enabled": true,
@@ -150,7 +177,8 @@
           "with": {
             "language": "kn",
             "slug": "kannada",
-            "label": "Kannada"
+            "label": "Kannada",
+            "minVotes": 0
           }
         },
         "enabled": true,
@@ -187,7 +215,24 @@
           "with": {
             "language": "hi",
             "slug": "hindi",
-            "label": "Hindi"
+            "label": "Hindi",
+            "minVotes": 20
+          }
+        },
+        "enabled": true,
+        "showInHome": true
+      },
+      {
+        "catalog": {
+          "ref": "regional-decade-movies",
+          "with": {
+            "language": "hi",
+            "slug": "hindi",
+            "label": "Hindi",
+            "decade": "golden",
+            "decadeLabel": "Golden Era (pre-1980)",
+            "from": "1900-01-01",
+            "to": "1979-12-31"
           }
         },
         "enabled": true,
@@ -202,7 +247,7 @@
             "label": "Hindi",
             "decade": "80s",
             "decadeLabel": "80s",
-            "from": "1900-01-01",
+            "from": "1980-01-01",
             "to": "1989-12-31"
           }
         },
@@ -261,6 +306,20 @@
             "slug": "hindi",
             "label": "Hindi"
           }
+        },
+        "enabled": true,
+        "showInHome": true
+      },
+      {
+        "catalog": {
+          "ref": "tmdb-discover-trending-india-movies"
+        },
+        "enabled": true,
+        "showInHome": true
+      },
+      {
+        "catalog": {
+          "ref": "tmdb-discover-trending-india-series"
         },
         "enabled": true,
         "showInHome": true

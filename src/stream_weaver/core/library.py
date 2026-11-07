@@ -124,6 +124,8 @@ def recipe_to_doc(recipe: Recipe) -> JsonDict:
             spec: JsonDict = {"type": p.type}
             if p.type == "list" and p.items != "string":
                 spec["items"] = p.items
+            if p.nullable:
+                spec["nullable"] = True
             if p.has_default:
                 spec["default"] = p.default
             params[p.name] = spec
