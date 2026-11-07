@@ -25,6 +25,9 @@
   },
   "collections": [
     {
+      "ref": "col-einthusan"
+    },
+    {
       "ref": "col-streaming-services"
     },
     {

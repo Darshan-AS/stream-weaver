@@ -1,0 +1,20 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-einthusan",
+  "collection": {
+    "id": "col-einthusan",
+    "title": "Ready to Play",
+    "folders": [
+      {
+        "ref": "fld-einthusan-kannada"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp",
+    "focusGlowEnabled": true
+  }
+}

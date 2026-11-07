@@ -32,7 +32,7 @@ flowchart LR
     end
 
     subgraph Clients["📺 Streaming Clients"]
-        Nuvio["Nuvio App\n(6 Home Collections)"]
+        Nuvio["Nuvio App\n(7 Home Collections)"]
         Stremio["Stremio App"]
     end
 
@@ -41,7 +41,7 @@ flowchart LR
     end
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
-        AS["AIOStreams\n(23 Active Plugins)"]
+        AS["AIOStreams\n(24 Active Plugins)"]
         AM["AIOMetadata\n(61 Active Catalogs, 45 Home)"]
         BC["BingeCat AI Assistant"]
         CB["Contraband Static Addon\n(Peterson Academy)"]
@@ -95,6 +95,7 @@ flowchart LR
             P_hdh["HD Hub (hdh)"]
             P_wst["WebStreamr (wst)"]
             P_etv["EinthusanTV Kannada (etv)"]
+            P_eth["EinthusanTV Hindi (eth)"]
         end
         subgraph Subs["Subtitle Addons"]
             P_osb["OpenSubtitles V3 Pro (osb)"]
@@ -138,7 +139,8 @@ flowchart LR
 | `soo` | **Sootio** | `sootio` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `hdh` | **HD Hub** | `hdhub` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `wst` | **WebStreamr** | `webstreamr` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
-| `etv` | **EinthusanTV Kannada** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
+| `etv` | **EinthusanTV Kannada** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream, catalog` | Direct HTTP Providers |
+| `eth` | **EinthusanTV Hindi** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `osb` | **OpenSubtitles V3 Pro** | `opensubtitles-v3-plus` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
 | `osv` | **OpenSubtitles v3 (Fallback)** | `opensubtitles` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
 | `ssc` | **SubSource** | `subsource` | Subtitles / Utility | `subtitles` | SubSource API (`SECRET_SUBSOURCE_API_KEY`) |
@@ -190,6 +192,7 @@ flowchart LR
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |
 | `col-courses-docs` | **Courses & Documentaries** (3) | Peterson Academy, Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata, AIOStreams |
+| `col-einthusan` | **Ready to Play** (1) | Kannada on EinthusanTV | AIOStreams |
 | `col-discover` | **Discover** (2) | Trending & Popular, Top Rated All-Time | AIOMetadata |
 
 ---
@@ -215,4 +218,4 @@ flowchart LR
 | Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `don` | Don | `default` | `default` | `don` → 6139337e… | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs` | `bingecat`, `cinemeta` |
-| `dad` | Dad | `default` | `dad` | `don` → 0dfcbb7e… | — | `col-streaming-services`, `col-discover` | — |
+| `dad` | Dad | `default` | `dad` | `don` → 0dfcbb7e… | — | `col-einthusan`, `col-streaming-services`, `col-discover` | — |

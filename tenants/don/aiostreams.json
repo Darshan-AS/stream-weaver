@@ -191,7 +191,8 @@
           "hdh",
           "soo",
           "wst",
-          "etv"
+          "etv",
+          "eth"
         ],
         "condition": "count(cached(totalStreams)) < 3"
       }
@@ -334,7 +335,8 @@
       "hdh",
       "soo",
       "wst",
-      "etv"
+      "etv",
+      "eth"
     ]
   },
   "seasonEpisodeMatching": {
@@ -685,7 +687,25 @@
       "options": {
         "name": "EinthusanTV Kannada",
         "manifestUrl": "https://einthusan.asaddon.com/kannada/manifest.json",
-        "timeout": 7500,
+        "timeout": 20000,
+        "resources": [
+          "stream",
+          "catalog"
+        ],
+        "mediaTypes": [
+          "movie"
+        ]
+      },
+      "category": "HTTP"
+    },
+    {
+      "type": "custom",
+      "instanceId": "eth",
+      "enabled": true,
+      "options": {
+        "name": "EinthusanTV Hindi",
+        "manifestUrl": "https://einthusan.asaddon.com/hindi/manifest.json",
+        "timeout": 20000,
         "resources": [
           "stream"
         ],
@@ -845,6 +865,22 @@
       "showOnHome": false,
       "disableSearch": true,
       "enabled": false
+    },
+    {
+      "id": "etve3b0.kannada_board",
+      "type": "movie",
+      "name": "EinthusanTV - Latest - Kannada",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": true
+    },
+    {
+      "id": "etve3b0.kannada",
+      "type": "movie",
+      "name": "EinthusanTV - Search - Kannada",
+      "showOnHome": false,
+      "disableSearch": false,
+      "enabled": true
     }
   ],
   "mergedCatalogs": [],

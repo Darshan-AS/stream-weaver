@@ -3029,9 +3029,9 @@
             "_debug": {
               "language": "en-US",
               "configVersion": 1793346046280,
-              "timestamp": "2026-11-06T21:44:50.998Z"
+              "timestamp": "2026-11-07T06:05:30.736Z"
             },
-            "_timestamp": 1794001490998
+            "_timestamp": 1794031530736
           },
           "flags": {
             "official": false,
@@ -3895,6 +3895,43 @@
               "showInHome": true
             },
             {
+              "id": "tmdb.discover.kannada_golden_movies",
+              "type": "movie",
+              "name": "Kannada Classics — Golden Era (pre-1980)",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.discover.kannada_80s_movies",
               "type": "movie",
               "name": "Kannada Classics — 80s",
@@ -4185,6 +4222,43 @@
               "showInHome": true
             },
             {
+              "id": "tmdb.discover.hindi_golden_movies",
+              "type": "movie",
+              "name": "Hindi Classics — Golden Era (pre-1980)",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
               "id": "tmdb.discover.hindi_80s_movies",
               "type": "movie",
               "name": "Hindi Classics — 80s",
@@ -4333,6 +4407,77 @@
               "id": "tmdb.discover.hindi_classic_series",
               "type": "series",
               "name": "Hindi Classic Series",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action & Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Kids",
+                    "Mystery",
+                    "News",
+                    "Reality",
+                    "Sci-Fi & Fantasy",
+                    "Soap",
+                    "Talk",
+                    "War & Politics",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.trending_india_movies",
+              "type": "movie",
+              "name": "Trending in India — Movies",
+              "pageSize": 50,
+              "extra": [
+                {
+                  "name": "genre",
+                  "options": [
+                    "Action",
+                    "Adventure",
+                    "Animation",
+                    "Comedy",
+                    "Crime",
+                    "Documentary",
+                    "Drama",
+                    "Family",
+                    "Fantasy",
+                    "History",
+                    "Horror",
+                    "Music",
+                    "Mystery",
+                    "Romance",
+                    "Science Fiction",
+                    "TV Movie",
+                    "Thriller",
+                    "War",
+                    "Western"
+                  ],
+                  "isRequired": false
+                },
+                {
+                  "name": "skip"
+                }
+              ],
+              "showInHome": true
+            },
+            {
+              "id": "tmdb.discover.trending_india_series",
+              "type": "series",
+              "name": "Trending in India — Series",
               "pageSize": 50,
               "extra": [
                 {
@@ -5374,14 +5519,14 @@
               ]
             }
           ],
-          "configVersion": 1793993648188,
+          "configVersion": 1794026525197,
           "language": "en-US",
           "_debug": {
             "language": "en-US",
-            "configVersion": 1793993648188,
-            "timestamp": "2026-11-06T21:44:51.005Z"
+            "configVersion": 1794026525197,
+            "timestamp": "2026-11-07T06:05:30.727Z"
           },
-          "_timestamp": 1794001491005
+          "_timestamp": 1794031530727
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",
@@ -5462,6 +5607,28 @@
               "type": "series",
               "id": "itoe3b0.itsout.released",
               "name": "ItsOut! — Released Series"
+            },
+            {
+              "type": "movie",
+              "id": "etve3b0.kannada_board",
+              "name": "EinthusanTV - Latest - Kannada",
+              "extra": [
+                {
+                  "name": "skip",
+                  "isRequired": false
+                }
+              ]
+            },
+            {
+              "type": "movie",
+              "id": "etve3b0.kannada",
+              "name": "EinthusanTV - Search - Kannada",
+              "extra": [
+                {
+                  "name": "search",
+                  "isRequired": true
+                }
+              ]
             }
           ],
           "resources": [
@@ -5733,16 +5900,15 @@
                     "Thriller",
                     "Animation",
                     "Comedy",
-                    "Crime",
-                    "Biography",
-                    "Family",
                     "History",
-                    "Mystery",
                     "Horror",
-                    "War",
-                    "Documentary",
+                    "Crime",
+                    "Mystery",
                     "Romance",
-                    "Sport",
+                    "War",
+                    "Biography",
+                    "Documentary",
+                    "Family",
                     "Western"
                   ],
                   "optionsLimit": 1
@@ -5768,17 +5934,16 @@
                     "Action",
                     "Fantasy",
                     "Animation",
-                    "Comedy",
                     "Sci-Fi",
+                    "Comedy",
                     "Drama",
                     "Family",
                     "Mystery",
-                    "Crime",
                     "Horror",
                     "Thriller",
+                    "Crime",
                     "Romance",
-                    "Sport",
-                    "History"
+                    "Sport"
                   ],
                   "optionsLimit": 1
                 },
@@ -5796,37 +5961,15 @@
             {
               "extra": [
                 {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
                   "isRequired": false,
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_352798",
-              "name": "Japanese Drama",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_352804",
-              "name": "Mystery Thrillers",
+              "id": "aicat_list_for_you_352800",
+              "name": "Hindi Crime & Thrillers",
               "pageSize": 50,
               "showInHome": true,
-              "type": "series"
+              "type": "movie"
             },
             {
               "extra": [
@@ -5857,68 +6000,24 @@
                   "name": "skip"
                 }
               ],
-              "id": "aicat_list_for_you_352803",
-              "name": "Fantasy Anime",
-              "pageSize": 50,
-              "showInHome": true,
-              "type": "movie"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_352800",
-              "name": "Hindi Crime & Thrillers",
-              "pageSize": 50,
-              "showInHome": false,
-              "type": "movie"
-            },
-            {
-              "extra": [
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
-              "id": "aicat_list_for_you_352805",
-              "name": "Manga Adaptations",
-              "pageSize": 50,
-              "showInHome": true,
-              "type": "series"
-            },
-            {
-              "extra": [
-                {
-                  "default": "None",
-                  "isRequired": true,
-                  "name": "genre",
-                  "options": [
-                    "None"
-                  ],
-                  "optionsLimit": 1
-                },
-                {
-                  "isRequired": false,
-                  "name": "skip"
-                }
-              ],
               "id": "aicat_list_for_you_352801",
               "name": "Hindi Dramas",
               "pageSize": 50,
-              "showInHome": false,
+              "showInHome": true,
               "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352798",
+              "name": "Japanese Drama",
+              "pageSize": 50,
+              "showInHome": true,
+              "type": "series"
             },
             {
               "extra": [
@@ -5941,6 +6040,72 @@
               "pageSize": 50,
               "showInHome": false,
               "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352803",
+              "name": "Fantasy Anime",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "movie"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352804",
+              "name": "Mystery Thrillers",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
+            },
+            {
+              "extra": [
+                {
+                  "default": "None",
+                  "isRequired": true,
+                  "name": "genre",
+                  "options": [
+                    "None"
+                  ],
+                  "optionsLimit": 1
+                },
+                {
+                  "isRequired": false,
+                  "name": "skip"
+                }
+              ],
+              "id": "aicat_list_for_you_352805",
+              "name": "Manga Adaptations",
+              "pageSize": 50,
+              "showInHome": false,
+              "type": "series"
             }
           ],
           "description": "AI-generated movie and series catalogs personalized for you",
