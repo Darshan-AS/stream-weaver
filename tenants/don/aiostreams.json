@@ -801,7 +801,7 @@
       "id": "swce3b0.peterson_academy",
       "type": "series",
       "name": "Peterson Academy",
-      "showOnHome": true,
+      "showOnHome": false,
       "disableSearch": false,
       "enabled": true
     },
@@ -809,7 +809,7 @@
       "id": "lib791b.aiostreams::library.torbox",
       "type": "library",
       "name": "TorBox Cloud Library",
-      "showOnHome": true,
+      "showOnHome": false,
       "disableSearch": false,
       "enabled": true,
       "overrideType": "movie"
