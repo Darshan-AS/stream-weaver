@@ -21,20 +21,7 @@
     }
   },
   "addons": {
-    "extra": [
-      {
-        "name": "cinemeta",
-        "transportUrl": "https://v3-cinemeta.strem.io",
-        "customName": "Cinemeta",
-        "metadata": {
-          "cinemetaConfig": {
-            "removeSearch": true,
-            "removeStandardCatalogs": true,
-            "removeMeta": false
-          }
-        }
-      }
-    ]
+    "extra": []
   },
   "collections": [
     {

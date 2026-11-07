@@ -3029,9 +3029,9 @@
             "_debug": {
               "language": "en-US",
               "configVersion": 1793346046280,
-              "timestamp": "2026-11-06T19:34:10.318Z"
+              "timestamp": "2026-11-06T21:44:50.998Z"
             },
-            "_timestamp": 1793993650318
+            "_timestamp": 1794001490998
           },
           "flags": {
             "official": false,
@@ -3256,28 +3256,6 @@
             "_deduped": true
           },
           "manifestId": "aiostreamsfortheweebsstable.midnightignite.me.6d639290-199:2.37.0"
-        },
-        {
-          "transportUrl": "https://v3-cinemeta.strem.io",
-          "transportName": "",
-          "flags": {
-            "enabled": true
-          },
-          "metadata": {
-            "customName": "Cinemeta",
-            "cinemetaConfig": {
-              "removeSearch": true,
-              "removeStandardCatalogs": true,
-              "removeMeta": false
-            }
-          },
-          "manifest": {
-            "id": "com.linvo.cinemeta",
-            "version": "3.0.14",
-            "name": "Cinemeta",
-            "_deduped": true
-          },
-          "manifestId": "com.linvo.cinemeta:3.0.14"
         }
       ],
       "connections": [
@@ -5401,9 +5379,9 @@
           "_debug": {
             "language": "en-US",
             "configVersion": 1793993648188,
-            "timestamp": "2026-11-06T19:34:10.212Z"
+            "timestamp": "2026-11-06T21:44:51.005Z"
           },
-          "_timestamp": 1793993650212
+          "_timestamp": 1794001491005
         },
         "tags": [],
         "profileId": "58d89fcf-53d4-4db6-932c-ebed5416c7f4",

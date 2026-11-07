@@ -244,10 +244,10 @@ model {
     }
     subsystem acc_dad 'Account Profile: Dad' {
       #enabled
-      description '3 enabled addons synced across 1 client connections'
+      description '2 enabled addons synced across 1 client connections'
       technology 'AIOManager Profile'
       metadata {
-        installed_addons 'AIOMetadata, AIOStreams, Cinemeta'
+        installed_addons 'AIOMetadata, AIOStreams'
         connections '1'
       }
     }
@@ -981,7 +981,6 @@ model {
   }
   aiomanager.acc_dad -> aiometadata 'Manages & monitors addon manifest'
   aiomanager.acc_dad -> aiostreams 'Manages & monitors addon manifest'
-  aiomanager.acc_dad -> cinemeta 'Applies Cinemeta catalog/search overrides'
   aiomanager.nuvio_collections.col_for_you_discovery -> nuvio 'Renders 5 tabbed folders'
   aiomanager.nuvio_collections.col_for_you_discovery -> aiometadata 'Pulls catalog rows for For You & Discovery' {
     #catalog
