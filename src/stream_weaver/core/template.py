@@ -52,6 +52,7 @@ class ParamSpec:
     default: JsonValue = None
     has_default: bool = False
     items: str = "string"  # element type for lists (informational)
+    nullable: bool = False  # accepts / defaults to null (rendered as JSON null when used as an exact `${x}`)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +83,8 @@ def parse_param_schema(raw: Any, *, context: str = "recipe") -> Result[ParamSche
             return _err(f"{context}: param `{name}` has unsupported type {ptype!r} (allowed: {', '.join(PARAM_TYPES)})")
         has_default = "default" in spec
         default = spec.get("default")
-        if has_default:
+        nullable = bool(spec.get("nullable", False))
+        if has_default and not (nullable and default is None):
             match _check_type(default, ptype):
                 case Err(e):
                     return _err(f"{context}: param `{name}` default {e.message}")
@@ -95,6 +97,7 @@ def parse_param_schema(raw: Any, *, context: str = "recipe") -> Result[ParamSche
                 default=default,
                 has_default=has_default,
                 items=str(spec.get("items", "string")),
+                nullable=nullable,
             )
         )
     return Ok(ParamSchema(tuple(specs)))
@@ -122,11 +125,12 @@ def bind_params(
     bound: dict[str, JsonValue] = {}
     for name, spec in specs.items():
         if name in given:
-            match _check_type(given[name], spec.type):
-                case Err(e):
-                    return _err(f"{context}: param `{name}` {e.message}")
-                case Ok():
-                    pass
+            if not (spec.nullable and given[name] is None):
+                match _check_type(given[name], spec.type):
+                    case Err(e):
+                        return _err(f"{context}: param `{name}` {e.message}")
+                    case Ok():
+                        pass
             bound[name] = given[name]
         elif spec.has_default:
             bound[name] = spec.default

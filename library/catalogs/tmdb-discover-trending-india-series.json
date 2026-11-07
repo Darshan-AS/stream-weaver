@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb-discover-trending-india-series",
+  "catalog": {
+    "id": "tmdb.discover.trending_india_series",
+    "type": "series",
+    "name": "Trending in India — Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_origin_country": "IN",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 5
+        }
+      }
+    },
+    "cacheTTL": 21600
+  }
+}

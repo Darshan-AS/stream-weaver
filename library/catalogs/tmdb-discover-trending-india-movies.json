@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb-discover-trending-india-movies",
+  "catalog": {
+    "id": "tmdb.discover.trending_india_movies",
+    "type": "movie",
+    "name": "Trending in India — Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "region": "IN",
+          "with_origin_country": "IN",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 5
+        }
+      }
+    },
+    "cacheTTL": 21600
+  }
+}
