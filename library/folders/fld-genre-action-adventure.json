@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-action-adventure",
+  "folder": {
+    "id": "fld-genre-action-adventure",
+    "title": "Action & Adventure",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Action & Adventure Movies",
+        "catalog": {
+          "ref": "tmdb.discover.action_adventure_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Action & Adventure Series",
+        "catalog": {
+          "ref": "tmdb.discover.action_adventure_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg",
+    "focusGifEnabled": false
+  }
+}

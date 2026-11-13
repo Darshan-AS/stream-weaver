@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.action_adventure_movies",
+  "catalog": {
+    "id": "tmdb.discover.action_adventure_movies",
+    "type": "movie",
+    "name": "Action & Adventure Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "28,12",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 6.8,
+          "vote_count.gte": 1500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.mcu_series",
+  "catalog": {
+    "id": "tmdb.discover.mcu_series",
+    "type": "series",
+    "name": "MCU Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_keywords": "180547",
+          "sort_by": "first_air_date.desc",
+          "vote_count.gte": 30
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

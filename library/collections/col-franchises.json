@@ -1,0 +1,29 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-franchises",
+  "collection": {
+    "id": "col-franchises",
+    "title": "Franchises & Universes",
+    "folders": [
+      {
+        "ref": "fld-franchise-mcu"
+      },
+      {
+        "ref": "fld-franchise-star-wars"
+      },
+      {
+        "ref": "fld-franchise-dc"
+      },
+      {
+        "ref": "fld-franchise-ghibli"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://image.tmdb.org/t/p/w1280/9BBTo63ANSmhC4e6r62OJFuK2GL.jpg",
+    "focusGlowEnabled": true
+  }
+}

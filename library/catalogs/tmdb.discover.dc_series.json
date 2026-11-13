@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.dc_series",
+  "catalog": {
+    "id": "tmdb.discover.dc_series",
+    "type": "series",
+    "name": "DC Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_companies": "9993|128064|184898|429",
+          "sort_by": "vote_count.desc",
+          "vote_count.gte": 100
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

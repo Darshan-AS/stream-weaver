@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.lucasfilm_movies",
+  "catalog": {
+    "id": "tmdb.discover.lucasfilm_movies",
+    "type": "movie",
+    "name": "Lucasfilm Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_companies": "1",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 200
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-comedy",
+  "folder": {
+    "id": "fld-genre-comedy",
+    "title": "Comedy",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Comedy Movies",
+        "catalog": {
+          "ref": "tmdb.discover.comedy_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Comedy Series",
+        "catalog": {
+          "ref": "tmdb.discover.comedy_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/5bzPWQ2dFUl2aZKkp7ILJVVkRed.jpg",
+    "focusGifEnabled": false
+  }
+}

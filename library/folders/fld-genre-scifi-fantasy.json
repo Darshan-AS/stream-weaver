@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-scifi-fantasy",
+  "folder": {
+    "id": "fld-genre-scifi-fantasy",
+    "title": "Sci-Fi & Fantasy",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Sci-Fi Movies",
+        "catalog": {
+          "ref": "tmdb.discover.scifi_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Sci-Fi & Fantasy Series",
+        "catalog": {
+          "ref": "tmdb.discover.scifi_fantasy_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg",
+    "focusGifEnabled": false
+  }
+}

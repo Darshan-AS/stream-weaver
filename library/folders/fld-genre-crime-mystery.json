@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-crime-mystery",
+  "folder": {
+    "id": "fld-genre-crime-mystery",
+    "title": "Crime & Mystery Thrillers",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Crime Thriller Movies",
+        "catalog": {
+          "ref": "tmdb.discover.crime_thriller_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Crime & Mystery Series",
+        "catalog": {
+          "ref": "tmdb.discover.crime_mystery_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/jwBs4djVIe9Kz3Vu9rsI9aEEKWU.jpg",
+    "focusGifEnabled": false
+  }
+}

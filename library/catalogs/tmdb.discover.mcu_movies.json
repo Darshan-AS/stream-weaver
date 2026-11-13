@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.mcu_movies",
+  "catalog": {
+    "id": "tmdb.discover.mcu_movies",
+    "type": "movie",
+    "name": "MCU Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_keywords": "180547",
+          "sort_by": "primary_release_date.desc",
+          "vote_count.gte": 50
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}
