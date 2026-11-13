@@ -3,6 +3,20 @@
   "version": 1,
   "kind": "meta",
   "id": "default",
+  "params": {
+    "watchProgressSource": {
+      "type": "string",
+      "default": "trakt"
+    },
+    "librarySource": {
+      "type": "string",
+      "default": "trakt"
+    },
+    "moreLikeThisSource": {
+      "type": "string",
+      "default": "trakt"
+    }
+  },
   "meta": {
     "version": "1.0.0",
     "platforms": [
@@ -28,6 +42,7 @@
       "enabled": true,
       "apiKey": "{{SECRET_TMDB_API_KEY}}",
       "language": "en-US",
+      "modernHome": true,
       "modules": {
         "trailers": true,
         "artwork": true,
@@ -46,9 +61,9 @@
     "traktComments": true,
     "episodeRatings": "show",
     "tracking": {
-      "watchProgressSource": "trakt",
-      "librarySource": "trakt",
-      "moreLikeThisSource": "trakt",
+      "watchProgressSource": "${watchProgressSource}",
+      "librarySource": "${librarySource}",
+      "moreLikeThisSource": "${moreLikeThisSource}",
       "simklAnimeId": "imdb",
       "continueWatchingDays": 60
     },
