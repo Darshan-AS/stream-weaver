@@ -26,7 +26,8 @@
     ],
     "hideTitle": false,
     "tileShape": "LANDSCAPE",
-    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/5bzPWQ2dFUl2aZKkp7ILJVVkRed.jpg",
-    "focusGifEnabled": false
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/comedy/v2/comedy-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/comedy/v2/comedy-cover.png",
+    "focusGifEnabled": true
   }
 }
