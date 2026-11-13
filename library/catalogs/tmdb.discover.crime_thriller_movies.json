@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.crime_thriller_movies",
+  "catalog": {
+    "id": "tmdb.discover.crime_thriller_movies",
+    "type": "movie",
+    "name": "Crime Thriller Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "80,53",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.2,
+          "vote_count.gte": 1500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

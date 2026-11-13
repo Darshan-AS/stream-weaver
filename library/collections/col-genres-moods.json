@@ -1,0 +1,35 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-genres-moods",
+  "collection": {
+    "id": "col-genres-moods",
+    "title": "Genres & Moods",
+    "folders": [
+      {
+        "ref": "fld-genre-scifi-fantasy"
+      },
+      {
+        "ref": "fld-genre-crime-mystery"
+      },
+      {
+        "ref": "fld-genre-action-adventure"
+      },
+      {
+        "ref": "fld-genre-comedy"
+      },
+      {
+        "ref": "fld-genre-animation"
+      },
+      {
+        "ref": "fld-genre-romance"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg",
+    "focusGlowEnabled": true
+  }
+}

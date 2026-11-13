@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-romance",
+  "folder": {
+    "id": "fld-genre-romance",
+    "title": "Romance",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Romance Movies",
+        "catalog": {
+          "ref": "tmdb.discover.romance_movies"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/sCzcYW9h55WcesOqA12cgEr9Exw.jpg",
+    "focusGifEnabled": false
+  }
+}

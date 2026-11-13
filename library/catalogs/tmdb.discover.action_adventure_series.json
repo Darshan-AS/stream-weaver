@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.action_adventure_series",
+  "catalog": {
+    "id": "tmdb.discover.action_adventure_series",
+    "type": "series",
+    "name": "Action & Adventure Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "10759",
+          "without_genres": "16",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.8,
+          "vote_count.gte": 500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

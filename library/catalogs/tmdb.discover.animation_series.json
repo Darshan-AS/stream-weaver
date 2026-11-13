@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.animation_series",
+  "catalog": {
+    "id": "tmdb.discover.animation_series",
+    "type": "series",
+    "name": "Animated Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "16",
+          "with_original_language": "en",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.8,
+          "vote_count.gte": 300
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

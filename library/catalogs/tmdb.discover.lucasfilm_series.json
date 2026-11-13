@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.lucasfilm_series",
+  "catalog": {
+    "id": "tmdb.discover.lucasfilm_series",
+    "type": "series",
+    "name": "Star Wars Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_companies": "1",
+          "sort_by": "vote_count.desc",
+          "vote_count.gte": 30
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

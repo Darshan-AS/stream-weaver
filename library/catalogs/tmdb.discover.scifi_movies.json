@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.scifi_movies",
+  "catalog": {
+    "id": "tmdb.discover.scifi_movies",
+    "type": "movie",
+    "name": "Sci-Fi Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "878",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.2,
+          "vote_count.gte": 2000
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}
