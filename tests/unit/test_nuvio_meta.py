@@ -609,3 +609,25 @@ def test_card_and_continue_watching_sync_preserves_desktop_hover_and_dismissed_k
         {"tv": merged_tv, "desktop": merged_desktop, "mobile": unpushed_mobile}, []
     )
     assert compute_config_diff(norm, drifted, target="nuvio_meta").in_sync is False
+
+
+def test_tmdb_modern_home_is_tv_only_optional_and_roundtrips() -> None:
+    # Omitted: never emitted, so the device-side toggle is preserved by the overlay merge.
+    plain = build_platform_meta_features(_normalized(FULL_DOC), platform="tv")
+    assert "tmdb_modern_home_enabled" not in plain["tmdb_settings"]
+
+    doc = {**FULL_DOC, "tmdbEnrichment": {**FULL_DOC["tmdbEnrichment"], "modernHome": True}}
+    norm = _normalized(doc)
+    tv = build_platform_meta_features(norm, platform="tv")
+    assert tv["tmdb_settings"]["tmdb_modern_home_enabled"] == {"type": "boolean", "value": True}
+    for plat in ("desktop", "mobile"):
+        feats = build_platform_meta_features(norm, platform=plat)
+        assert "tmdb_modern_home_enabled" not in feats["tmdb_settings"]
+
+    blobs = {
+        plat: {"version": 1, "features": build_platform_meta_features(norm, platform=plat)}
+        for plat in ("tv", "desktop", "mobile")
+    }
+    pulled = decompile_nuvio_meta(blobs)
+    assert pulled["tmdbEnrichment"]["modernHome"] is True
+    assert set(pulled["platforms"]) == {"tv", "desktop", "mobile"}

@@ -452,12 +452,17 @@ def _normalize_tmdb(raw: Any) -> JsonDict:
     src: Mapping[str, Any] = raw if isinstance(raw, Mapping) else {}
     raw_modules = src.get("modules")
     modules_src: Mapping[str, Any] = raw_modules if isinstance(raw_modules, Mapping) else {}
-    return {
+    out: JsonDict = {
         "enabled": _as_bool(src.get("enabled"), True),
         "apiKey": str(src.get("apiKey") or "").strip(),
         "language": str(src.get("language") or _DEFAULT_LANGUAGE).strip() or _DEFAULT_LANGUAGE,
         "modules": {name: _as_bool(modules_src.get(name), True) for name, _ in TMDB_MODULES},
     }
+    # TV-only and optional: NuvioTV skips TMDB enrichment of the Modern Home hero and focused
+    # cards unless `tmdb_modern_home_enabled` is set. Omitted = leave the device value alone.
+    if src.get("modernHome") is not None:
+        out["modernHome"] = _as_bool(src.get("modernHome"), False)
+    return out
 
 
 def _normalize_meta_screen(raw: Any) -> Result[JsonDict | None, ConfigValidationError]:
@@ -963,6 +968,8 @@ def build_platform_meta_features(
             if name in TV_UNSUPPORTED_TMDB_MODULES:
                 continue
             tm[f"tmdb_use_{suffix}"] = _encode_sync_bool(bool(modules.get(name, True)))
+        if tmdb.get("modernHome") is not None:
+            tm["tmdb_modern_home_enabled"] = _encode_sync_bool(bool(tmdb["modernHome"]))
         out[TMDB_SETTINGS_FEATURE] = tm
 
         trakt_feat: JsonDict = {"show_meta_comments": _encode_sync_bool(trakt_comments)}
@@ -1326,6 +1333,10 @@ def _decode_platform_view(
         "tvTrailer": tv_trailer,
         "metaScreen": meta_screen,
     }
+    if platform == "tv":
+        modern_home = _decode_sync_bool(tm_feat, "tmdb_modern_home_enabled")
+        if modern_home is not None:
+            view["tmdbEnrichment"]["modernHome"] = modern_home
     if poster_card_style is not None:
         view["posterCardStyle"] = poster_card_style
     if card_depth is not None:
@@ -1360,6 +1371,7 @@ def _comparable_platform_view(doc: Mapping[str, Any], *, platform: str) -> JsonD
         "tracking": copy.deepcopy(doc.get("tracking")),
     }
     if platform == "tv":
+        view["tmdbEnrichment"]["modernHome"] = tmdb.get("modernHome")
         view["episodeRatings"] = str(doc.get("episodeRatings") or "show")
         view["tvTrailer"] = copy.deepcopy(doc.get("tvTrailer"))
     else:
@@ -1432,6 +1444,11 @@ def decompile_nuvio_meta(
     tv_view = views.get("tv") or {}
     consensus["episodeRatings"] = tv_view.get("episodeRatings") or "show"
     consensus["tvTrailer"] = copy.deepcopy(tv_view.get("tvTrailer"))
+    tv_modern_home = (tv_view.get("tmdbEnrichment") or {}).get("modernHome")
+    if tv_modern_home is None:
+        consensus["tmdbEnrichment"].pop("modernHome", None)
+    else:
+        consensus["tmdbEnrichment"]["modernHome"] = tv_modern_home
     consensus["ratings"]["apiKey"] = mdb_key
     consensus["tmdbEnrichment"]["apiKey"] = tmdb_key
 
