@@ -18,7 +18,8 @@
     ],
     "hideTitle": false,
     "tileShape": "LANDSCAPE",
-    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/sCzcYW9h55WcesOqA12cgEr9Exw.jpg",
-    "focusGifEnabled": false
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/romance/v2/romance-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/romance/v2/romance-cover.png",
+    "focusGifEnabled": true
   }
 }

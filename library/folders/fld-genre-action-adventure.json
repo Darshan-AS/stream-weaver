@@ -26,7 +26,8 @@
     ],
     "hideTitle": false,
     "tileShape": "LANDSCAPE",
-    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/gqrnQA6Xppdl8vIb2eJc58VC1tW.jpg",
-    "focusGifEnabled": false
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/action/v2/action-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/action/v2/action-cover.png",
+    "focusGifEnabled": true
   }
 }

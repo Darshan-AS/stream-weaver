@@ -26,7 +26,8 @@
     ],
     "hideTitle": false,
     "tileShape": "LANDSCAPE",
-    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/jwBs4djVIe9Kz3Vu9rsI9aEEKWU.jpg",
-    "focusGifEnabled": false
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/crime/v2/crime-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/crime/v2/crime-cover.png",
+    "focusGifEnabled": true
   }
 }
