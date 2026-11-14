@@ -34,4 +34,5 @@ dist/
 build/
 *.egg-info/
 
-
+# Personal watch-history exports, Trakt import manifests and undo logs (scripts/trakt_spread.py)
+takeout/

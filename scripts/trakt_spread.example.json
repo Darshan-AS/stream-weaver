@@ -1,0 +1,8 @@
+[
+  { "title": "Naruto", "year": 2002, "from": "2023-09-17", "to": "2023-11-10" },
+  { "id": "tt2560140", "only": ["S1-S3", "S4E1-16"], "from": "2021-05-20", "to": "2021-06-12" },
+  { "title": "Loki", "year": 2021, "only": ["S2"], "when": "released" },
+  { "title": "House", "year": 2004, "exact": { "2023-10-29": ["S1E1|Pilot", "S1E2|Paternity", "S1E3"] } },
+  { "title": "Code Geass", "only": ["S2"], "from": "2025-12-29", "to": "2026-03-15", "rewatch": true },
+  { "type": "movie", "title": "Tenet", "year": 2020, "on": "2021-04-01" }
+]
