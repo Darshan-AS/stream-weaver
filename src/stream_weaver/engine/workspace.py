@@ -1009,6 +1009,14 @@ def apply_studio_mutation(
             else:
                 updated_prof = replace(updated_prof, stremio=None)
 
+        if "bingecatEnabled" in prof_mut:
+            bc_on = bool(prof_mut["bingecatEnabled"])
+            new_extras = [
+                replace(a, enabled=bc_on) if a.name == "bingecat" else a
+                for a in updated_prof.extra_addons
+            ]
+            updated_prof = replace(updated_prof, extra_addons=tuple(new_extras))
+
         if isinstance(prof_mut.get("nuvio"), Mapping) and updated_prof.nuvio is not None:
             n_mut = prof_mut["nuvio"]
             pid = str(n_mut.get("profileId", "")).strip() or None if "profileId" in n_mut else updated_prof.nuvio.profile_id
