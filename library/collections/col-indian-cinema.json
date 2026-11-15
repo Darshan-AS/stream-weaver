@@ -31,7 +31,7 @@
     "pinToTop": true,
     "viewMode": "TABBED_GRID",
     "showAllTab": true,
-    "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/assets/nuvio/indian_cinema_backdrop.webp",
+    "backdropImageUrl": "https://raw.githubusercontent.com/Darshan-AS/stream-weaver/main/assets/nuvio/indian_cinema_backdrop.webp",
     "focusGlowEnabled": true
   }
 }
