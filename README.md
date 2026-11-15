@@ -95,6 +95,7 @@ A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<
 > Prefer a visual browser configurator with live Nuvio folder cover previews, Debrid/pack switches, and a one-click **Save & Push to Nuvio** button? After `uv sync`, run:
 > * **Local GitOps Studio:** `uv run sw init tenants/<you> --from examples/home && uv run sw studio --tenant <you>`
 > * **Zero-Disk Hosted / Stateless Studio:** `uv run sw studio --stateless` *(keys stay in browser `localStorage`; includes 1-click **Export Repo (.zip)**)*
+> * **Curated Catalog Beyond Starter Defaults:** Mix and match **A24 / Pixar / 70s–90s Cinema Classics**, **K-Drama & Global Hits**, **My Trakt Hub** (no BingeCat/ItsOut needed), **Horror / Prestige Drama / Kids & Family / War & History / Stand-Up**, **Crunchyroll / MUBI / Shudder / BBC**, **80s–2000s Classic Anime**, **10+ Regional Cinema** languages, **19-language Strelingo dual-subtitle pairs**, **2160p/1080p/720p + Cached-Only** stream policies, and all **12 Nuvio themes** + **Auto-Play / Layout / Spoiler** controls—unused catalogs stay disabled in AIOMetadata automatically.
 
 > **Do I need AIOManager or `aio_contraband`?**
 > * **AIOManager is optional:** `sw push` syncs addons, Home Collections, stream badges, details-page enrichment, and app settings **directly to Nuvio** whenever `AIOMANAGER_UUID` is left blank.
