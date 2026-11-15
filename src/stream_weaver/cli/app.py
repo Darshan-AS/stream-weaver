@@ -117,6 +117,7 @@ from stream_weaver.providers.services.nuvio_session import (
     password_grant,
     resolve_nuvio_anon_key,
 )
+from stream_weaver.studio import StudioDispatcher, serve_studio
 
 app = typer.Typer(
     name="sw",
@@ -2916,6 +2917,61 @@ def cmd_config_warm(
     ):
         warmed, total = warm_home_catalogs(injected_cfg, http_client, max_workers=workers)
     console.print(f"🔥 [warm] Pre-warmed {warmed}/{total} Home catalog rows")
+
+
+@app.command("studio")
+def cmd_studio(
+    host: Annotated[str, typer.Option("--host", help="Bind address (use 0.0.0.0 for LAN/hosted)")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", help="HTTP port to listen on")] = 8787,
+    stateless: Annotated[
+        bool,
+        typer.Option(
+            "--stateless",
+            help="Stateless browser mode: never reads/writes a local tenant; keys stay in browser localStorage",
+        ),
+    ] = False,
+    template_dir: Annotated[
+        Path | None,
+        typer.Option("--template", help="Starter template directory for --stateless mode"),
+    ] = None,
+    no_open: Annotated[
+        bool,
+        typer.Option("--no-open", help="Do not automatically open a browser tab on launch"),
+    ] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Launch the visual Stream Weaver Studio Web UI (customize collections, packs, keys & click Push)."""
+    repo_root = Path(__file__).resolve().parents[3]
+    shared_lib = repo_root / "library"
+    if stateless:
+        tpl = (template_dir.expanduser().resolve() if template_dir else (repo_root / "examples" / "home"))
+        if not tpl.is_dir():
+            err_console.print(f"❌ Starter template directory not found: {tpl} (pass --template <dir>)")
+            raise typer.Exit(code=1)
+        dispatcher = StudioDispatcher(
+            tenant_paths=None,
+            template_root=tpl,
+            shared_library_root=shared_lib if shared_lib.is_dir() else None,
+        )
+        mode_desc = f"Stateless Browser Mode (template: {tpl.name})"
+    else:
+        paths = _resolve_tenant(workspace_dir, tenant)
+        dispatcher = StudioDispatcher(
+            tenant_paths=paths,
+            shared_library_root=shared_lib if shared_lib.is_dir() else None,
+        )
+        mode_desc = f"Local GitOps Mode (tenant: {paths.root})"
+
+    serve_studio(
+        dispatcher,
+        host=host,
+        port=port,
+        open_browser=not no_open,
+        on_listen=lambda url: console.print(
+            f"🧶 Stream Weaver Studio running at {url}  [{mode_desc}]  (Ctrl+C to stop)"
+        ),
+    )
 
 
 def main() -> None:
