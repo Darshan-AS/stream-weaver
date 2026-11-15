@@ -25,10 +25,16 @@ from stream_weaver.cli.nuvio import (
 from stream_weaver.core.aiomanager_accounts import ResolvedProfile, apply_managed_accounts
 from stream_weaver.core.aiostreams_packs import (
     DEBRID_PROVIDERS,
+    RESOLUTION_CAPS,
+    STRELINGO_LANGUAGES,
     active_debrid_provider,
     apply_aiostreams_packs,
     apply_debrid_provider,
+    apply_dual_subtitle_pairs,
+    apply_stream_preferences,
     inspect_aiostreams_packs,
+    inspect_dual_subtitle_pairs,
+    inspect_stream_preferences,
     prepare_aiostreams_for_push,
     required_aiostreams_secrets,
     sync_aiomanager_cached_debrid_catalog,
@@ -482,6 +488,8 @@ def inspect_tenant_state(
     meta_service_doc = _load_optional_json(paths.doc("aiometadata"))
     debrid_id = active_debrid_provider(streams_doc)
     pack_statuses = inspect_aiostreams_packs(streams_doc)
+    stream_prefs = inspect_stream_preferences(streams_doc)
+    dual_pairs = inspect_dual_subtitle_pairs(streams_doc)
 
     local_lib_root = (paths.root / "library").resolve()
     lib_collections: list[JsonDict] = []
@@ -659,6 +667,18 @@ def inspect_tenant_state(
                 }
                 for st in pack_statuses
             ],
+            "streamPreferences": {
+                "maxResolution": stream_prefs.max_resolution,
+                "cachedOnly": stream_prefs.cached_only,
+                "resolutionOptions": list(RESOLUTION_CAPS),
+            },
+            "dualSubtitles": {
+                "pairs": [[m, t] for m, t in dual_pairs],
+                "languages": [
+                    {"code": s.code3, "short": s.code2, "label": s.label}
+                    for s in STRELINGO_LANGUAGES
+                ],
+            },
             "libraryCollections": lib_collections,
             "metaParams": _serialize_param_schema(meta_recipe.params) if meta_recipe else [],
             "settingsParams": _serialize_param_schema(settings_recipe.params) if settings_recipe else [],
@@ -690,10 +710,17 @@ def apply_studio_mutation(
                 case Ok():
                     pass
 
-    # 2. Update Debrid provider & AIOStreams packs
+    # 2. Update Debrid provider, AIOStreams packs, stream preferences & dual-subtitle pairs
     debrid_val = mutation.get("debrid") if isinstance(mutation.get("debrid"), str) else None
     packs_val = mutation.get("enabledPacks") if isinstance(mutation.get("enabledPacks"), list) else None
-    if debrid_val is not None or packs_val is not None:
+    stream_prefs_mut = mutation.get("streamPreferences") if isinstance(mutation.get("streamPreferences"), Mapping) else None
+    dual_pairs_mut = mutation.get("dualSubtitlePairs") if isinstance(mutation.get("dualSubtitlePairs"), list) else None
+    if (
+        debrid_val is not None
+        or packs_val is not None
+        or stream_prefs_mut is not None
+        or dual_pairs_mut is not None
+    ):
         streams_path = paths.doc("aiostreams")
         if streams_path.is_file():
             match read_json_file(streams_path):
@@ -707,10 +734,39 @@ def apply_studio_mutation(
                         return Err(StreamWeaverError(str(d_err)))
                     case Ok(streams_doc):
                         pass
+            if dual_pairs_mut is not None:
+                parsed_pairs: list[list[str]] = [
+                    [str(x) for x in row]
+                    for row in dual_pairs_mut
+                    if isinstance(row, Sequence) and not isinstance(row, (str, bytes))
+                ]
+                match apply_dual_subtitle_pairs(streams_doc, parsed_pairs):
+                    case Err(ds_err):
+                        return Err(StreamWeaverError(str(ds_err)))
+                    case Ok(streams_doc):
+                        pass
             if packs_val is not None:
                 match apply_aiostreams_packs(streams_doc, [str(x) for x in packs_val]):
                     case Err(p_err):
                         return Err(StreamWeaverError(str(p_err)))
+                    case Ok(streams_doc):
+                        pass
+            if stream_prefs_mut is not None:
+                max_res = (
+                    str(stream_prefs_mut["maxResolution"])
+                    if isinstance(stream_prefs_mut.get("maxResolution"), str)
+                    else None
+                )
+                cached_only = (
+                    bool(stream_prefs_mut["cachedOnly"])
+                    if "cachedOnly" in stream_prefs_mut and stream_prefs_mut["cachedOnly"] is not None
+                    else None
+                )
+                match apply_stream_preferences(
+                    streams_doc, max_resolution=max_res, cached_only=cached_only
+                ):
+                    case Err(sp_err):
+                        return Err(StreamWeaverError(str(sp_err)))
                     case Ok(streams_doc):
                         pass
             match write_json_file(streams_path, streams_doc):

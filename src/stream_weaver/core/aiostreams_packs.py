@@ -14,9 +14,10 @@ from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote, unquote
 
 from stream_weaver.core.errors import ConfigValidationError
 from stream_weaver.core.result import Err, Ok, Result
@@ -122,7 +123,7 @@ AIOSTREAMS_PACKS: tuple[AddonPackSpec, ...] = (
     AddonPackSpec(
         id="dual_subtitles",
         title="SubSource & Strelingo Dual-Subtitles",
-        description="SubSource community subtitles plus bilingual dual-subtitle tracks (JA→EN, EN→KN, HI→KN).",
+        description="SubSource community subtitles plus customizable bilingual Strelingo dual-subtitle tracks.",
         preset_ids=("ssc", "sl1", "sl2", "sl3"),
         group_index=None,
         required_secrets=("SECRET_SUBSOURCE_API_KEY",),
@@ -131,6 +132,58 @@ AIOSTREAMS_PACKS: tuple[AddonPackSpec, ...] = (
 
 PACKS_BY_ID: Mapping[str, AddonPackSpec] = {p.id: p for p in AIOSTREAMS_PACKS}
 
+RESOLUTION_CAPS: tuple[str, ...] = ("2160p", "1080p", "720p")
+_CAPPED_HIGH_RESOLUTIONS: Mapping[str, tuple[str, ...]] = {
+    "2160p": (),
+    "1080p": ("2160p", "1440p"),
+    "720p": ("2160p", "1440p", "1080p"),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class StreamPreferences:
+    max_resolution: str
+    cached_only: bool
+
+
+@dataclass(frozen=True, slots=True)
+class StrelingoLanguageSpec:
+    code3: str
+    code2: str
+    label: str
+
+
+STRELINGO_LANGUAGES: tuple[StrelingoLanguageSpec, ...] = (
+    StrelingoLanguageSpec("eng", "EN", "English"),
+    StrelingoLanguageSpec("jpn", "JA", "Japanese"),
+    StrelingoLanguageSpec("kor", "KO", "Korean"),
+    StrelingoLanguageSpec("spa", "ES", "Spanish"),
+    StrelingoLanguageSpec("fra", "FR", "French"),
+    StrelingoLanguageSpec("deu", "DE", "German"),
+    StrelingoLanguageSpec("por", "PT", "Portuguese"),
+    StrelingoLanguageSpec("ita", "IT", "Italian"),
+    StrelingoLanguageSpec("zho", "ZH", "Chinese"),
+    StrelingoLanguageSpec("ara", "AR", "Arabic"),
+    StrelingoLanguageSpec("rus", "RU", "Russian"),
+    StrelingoLanguageSpec("tur", "TR", "Turkish"),
+    StrelingoLanguageSpec("hin", "HI", "Hindi"),
+    StrelingoLanguageSpec("kan", "KN", "Kannada"),
+    StrelingoLanguageSpec("tam", "TA", "Tamil"),
+    StrelingoLanguageSpec("tel", "TE", "Telugu"),
+    StrelingoLanguageSpec("mal", "ML", "Malayalam"),
+    StrelingoLanguageSpec("ben", "BN", "Bengali"),
+    StrelingoLanguageSpec("mar", "MR", "Marathi"),
+)
+
+STRELINGO_BY_CODE: Mapping[str, StrelingoLanguageSpec] = {
+    **{s.code3: s for s in STRELINGO_LANGUAGES},
+    **{s.code2.lower(): s for s in STRELINGO_LANGUAGES},
+}
+
+_STRELINGO_PRESET_ID_RE = re.compile(r"^sl\d+$")
+_STRELINGO_LANG_EXTRACT_RE = re.compile(
+    r'"mainLang"\s*:\s*"[^"]*\[([a-z]{3})\]".*?"transLang"\s*:\s*"[^"]*\[([a-z]{3})\]"'
+)
 _LIBRARY_CAT_RE = re.compile(r"aiostreams::library\.([a-z0-9_]+)")
 
 _ITSOUT_WATCHLIST_SOURCES: tuple[JsonDict, ...] = (
@@ -175,13 +228,19 @@ def inspect_aiostreams_packs(aiostreams_doc: Mapping[str, Any]) -> tuple[PackSta
     """Inspects which addon packs are currently enabled in `aiostreams_doc`."""
     presets = aiostreams_doc.get("presets")
     by_id: dict[str, bool] = {}
+    ordered_ids: list[str] = []
     if isinstance(presets, list):
         for p in presets:
             if isinstance(p, Mapping) and isinstance(p.get("instanceId"), str):
-                by_id[p["instanceId"]] = bool(p.get("enabled", True))
+                pid = p["instanceId"]
+                by_id[pid] = bool(p.get("enabled", True))
+                ordered_ids.append(pid)
     out: list[PackStatus] = []
     for spec in AIOSTREAMS_PACKS:
-        present = tuple(pid for pid in spec.preset_ids if pid in by_id)
+        if spec.id == "dual_subtitles":
+            present = tuple(pid for pid in ordered_ids if pid == "ssc" or _STRELINGO_PRESET_ID_RE.match(pid))
+        else:
+            present = tuple(pid for pid in spec.preset_ids if pid in by_id)
         enabled = tuple(pid for pid in present if by_id[pid])
         is_on = bool(enabled) if present else False
         out.append(PackStatus(spec=spec, enabled=is_on, present_presets=present, enabled_presets=enabled))
@@ -260,13 +319,16 @@ def apply_aiostreams_packs(
 
     raw_presets = out.get("presets")
     present_ids: set[str] = set()
+    dual_state = "dual_subtitles" in wanted
     if isinstance(raw_presets, list):
         for preset in raw_presets:
             if not isinstance(preset, dict):
                 continue
             pid = str(preset.get("instanceId") or "")
             present_ids.add(pid)
-            if pid in managed_preset_state:
+            if pid == "ssc" or _STRELINGO_PRESET_ID_RE.match(pid):
+                preset["enabled"] = dual_state
+            elif pid in managed_preset_state:
                 preset["enabled"] = managed_preset_state[pid]
 
     groups = out.get("groups")
@@ -287,6 +349,189 @@ def apply_aiostreams_packs(
                         existing_addons.append(pid)
             groupings[g_idx]["addons"] = existing_addons
 
+    return Ok(out)
+
+
+def inspect_stream_preferences(aiostreams_doc: Mapping[str, Any]) -> StreamPreferences:
+    """Inspects Max Resolution cap and Instant-Play Cached-Only policy in `aiostreams_doc`."""
+    raw_excl_res = aiostreams_doc.get("excludedResolutions")
+    excl_res = {str(x) for x in raw_excl_res if isinstance(x, str)} if isinstance(raw_excl_res, list) else set()
+    if "1080p" in excl_res:
+        max_res = "720p"
+    elif "2160p" in excl_res:
+        max_res = "1080p"
+    else:
+        max_res = "2160p"
+
+    raw_uncached = aiostreams_doc.get("excludeUncachedFromStreamTypes")
+    uncached = {str(x) for x in raw_uncached if isinstance(x, str)} if isinstance(raw_uncached, list) else set()
+    return StreamPreferences(max_resolution=max_res, cached_only="debrid" in uncached)
+
+
+def apply_stream_preferences(
+    aiostreams_doc: Mapping[str, Any],
+    *,
+    max_resolution: str | None = None,
+    cached_only: bool | None = None,
+) -> Result[JsonDict, ConfigValidationError]:
+    """Applies Max Resolution (`2160p`/`1080p`/`720p`) and/or Cached-Only (`debrid`) stream filtering."""
+    out: JsonDict = copy.deepcopy(dict(aiostreams_doc))
+    if max_resolution is not None:
+        cap = max_resolution.strip().lower()
+        if cap not in _CAPPED_HIGH_RESOLUTIONS:
+            return Err(
+                ConfigValidationError(
+                    f"Unsupported max resolution `{max_resolution}` (choose from: {', '.join(RESOLUTION_CAPS)})"
+                )
+            )
+        raw_existing = out.get("excludedResolutions")
+        other_excl = (
+            [str(x) for x in raw_existing if isinstance(x, str) and str(x) not in ("2160p", "1440p", "1080p")]
+            if isinstance(raw_existing, list)
+            else []
+        )
+        out["excludedResolutions"] = [*_CAPPED_HIGH_RESOLUTIONS[cap], *other_excl]
+
+    if cached_only is not None:
+        raw_unc = out.get("excludeUncachedFromStreamTypes")
+        existing_unc = [str(x) for x in raw_unc if isinstance(x, str)] if isinstance(raw_unc, list) else []
+        if cached_only:
+            if "debrid" not in existing_unc:
+                existing_unc.append("debrid")
+        else:
+            existing_unc = [x for x in existing_unc if x != "debrid"]
+        out["excludeUncachedFromStreamTypes"] = existing_unc
+
+    return Ok(out)
+
+
+def inspect_dual_subtitle_pairs(aiostreams_doc: Mapping[str, Any]) -> tuple[tuple[str, str], ...]:
+    """Extracts `(main_code3, trans_code3)` pairs from `sl*` Strelingo presets in `aiostreams_doc`."""
+    raw_presets = aiostreams_doc.get("presets")
+    if not isinstance(raw_presets, list):
+        return ()
+    pairs: list[tuple[str, str]] = []
+    for preset in raw_presets:
+        if not isinstance(preset, Mapping):
+            continue
+        pid = str(preset.get("instanceId") or "")
+        if not _STRELINGO_PRESET_ID_RE.match(pid):
+            continue
+        opts = preset.get("options")
+        manifest_url = str(opts.get("manifestUrl") or "") if isinstance(opts, Mapping) else ""
+        decoded = unquote(manifest_url)
+        m = _STRELINGO_LANG_EXTRACT_RE.search(decoded)
+        if m:
+            pairs.append((m.group(1).lower(), m.group(2).lower()))
+    return tuple(pairs)
+
+
+def _build_strelingo_preset(
+    instance_id: str,
+    main_spec: StrelingoLanguageSpec,
+    trans_spec: StrelingoLanguageSpec,
+    *,
+    enabled: bool,
+) -> JsonDict:
+    main_enc = quote(f"{main_spec.label} [{main_spec.code3}]", safe="")
+    trans_enc = quote(f"{trans_spec.label} [{trans_spec.code3}]", safe="")
+    url = (
+        "https://strelingo.pronouncetube.com/"
+        f"%7B%22mainLang%22%3A%22{main_enc}%22%2C"
+        f"%22transLang%22%3A%22{trans_enc}%22%2C"
+        "%22subsourceApiKey%22%3A%22{{SECRET_SUBSOURCE_API_KEY}}%22%2C"
+        "%22optionalProviderMode%22%3A%22Fallback%20%28only%20if%20defaults%20empty%29%20%5Bfallback%5D%22%7D"
+        "/manifest.json"
+    )
+    return {
+        "type": "custom",
+        "instanceId": instance_id,
+        "enabled": enabled,
+        "options": {
+            "name": f"Strelingo ({main_spec.code2} → {trans_spec.code2})",
+            "manifestUrl": url,
+            "timeout": 12000,
+            "resources": ["subtitles"],
+        },
+    }
+
+
+def apply_dual_subtitle_pairs(
+    aiostreams_doc: Mapping[str, Any],
+    pairs: Sequence[Sequence[str]],
+) -> Result[JsonDict, ConfigValidationError]:
+    """
+    Rebuilds `sl1..slN` Strelingo dual-subtitle presets from `(main_lang, trans_lang)` pairs and
+    syncs SubSource (`ssc`) `options.language` so every referenced subtitle language is enabled.
+    """
+    resolved_pairs: list[tuple[StrelingoLanguageSpec, StrelingoLanguageSpec]] = []
+    seen_codes: set[tuple[str, str]] = set()
+    for idx, raw_pair in enumerate(pairs):
+        if len(raw_pair) != 2:
+            return Err(ConfigValidationError(f"dualSubtitles[{idx}] must be a [mainLang, transLang] pair"))
+        m_spec = STRELINGO_BY_CODE.get(str(raw_pair[0]).strip().lower())
+        t_spec = STRELINGO_BY_CODE.get(str(raw_pair[1]).strip().lower())
+        if m_spec is None:
+            return Err(ConfigValidationError(f"Unknown Strelingo language `{raw_pair[0]}`"))
+        if t_spec is None:
+            return Err(ConfigValidationError(f"Unknown Strelingo language `{raw_pair[1]}`"))
+        if m_spec.code3 == t_spec.code3:
+            return Err(
+                ConfigValidationError(
+                    f"Strelingo pair cannot translate `{m_spec.label}` into itself"
+                )
+            )
+        key = (m_spec.code3, t_spec.code3)
+        if key not in seen_codes:
+            seen_codes.add(key)
+            resolved_pairs.append((m_spec, t_spec))
+
+    out: JsonDict = copy.deepcopy(dict(aiostreams_doc))
+    raw_presets = out.get("presets")
+    if not isinstance(raw_presets, list):
+        raw_presets = []
+        out["presets"] = raw_presets
+
+    dual_status = next((s for s in inspect_aiostreams_packs(out) if s.spec.id == "dual_subtitles"), None)
+    is_enabled = dual_status.enabled if (dual_status and dual_status.present_presets) else True
+
+    new_sl_presets = [
+        _build_strelingo_preset(f"sl{i}", m_sp, t_sp, enabled=is_enabled)
+        for i, (m_sp, t_sp) in enumerate(resolved_pairs, start=1)
+    ]
+
+    # Insert new `sl*` presets at the location of the first existing `sl*` (or right after `ssc`)
+    insert_idx: int | None = None
+    ssc_idx: int | None = None
+    kept_presets: list[Any] = []
+    for preset in raw_presets:
+        if isinstance(preset, dict):
+            pid = str(preset.get("instanceId") or "")
+            if _STRELINGO_PRESET_ID_RE.match(pid):
+                if insert_idx is None:
+                    insert_idx = len(kept_presets)
+                continue
+            if pid == "ssc":
+                ssc_idx = len(kept_presets)
+                opts = preset.get("options")
+                if isinstance(opts, dict):
+                    pair_labels: list[str] = []
+                    for m_sp, t_sp in resolved_pairs:
+                        for lbl in (m_sp.label, t_sp.label):
+                            if lbl not in pair_labels:
+                                pair_labels.append(lbl)
+                    wanted_set = set(pair_labels) | {"English"}
+                    existing_langs = [str(x) for x in opts.get("language", []) if isinstance(x, str)]
+                    merged_langs = [x for x in existing_langs if x in wanted_set]
+                    for lbl in ["English", *pair_labels]:
+                        if lbl in wanted_set and lbl not in merged_langs:
+                            merged_langs.append(lbl)
+                    opts["language"] = merged_langs
+        kept_presets.append(preset)
+
+    if insert_idx is None:
+        insert_idx = (ssc_idx + 1) if ssc_idx is not None else len(kept_presets)
+    out["presets"] = [*kept_presets[:insert_idx], *new_sl_presets, *kept_presets[insert_idx:]]
     return Ok(out)
 
 

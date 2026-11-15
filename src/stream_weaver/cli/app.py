@@ -35,10 +35,15 @@ from stream_weaver.core.aiomanager_accounts import (
 )
 from stream_weaver.core.aiostreams_packs import (
     DEBRID_PROVIDERS,
+    STRELINGO_BY_CODE,
     active_debrid_provider,
     apply_aiostreams_packs,
     apply_debrid_provider,
+    apply_dual_subtitle_pairs,
+    apply_stream_preferences,
     inspect_aiostreams_packs,
+    inspect_dual_subtitle_pairs,
+    inspect_stream_preferences,
     prepare_aiostreams_for_push,
     sync_aiomanager_cached_debrid_catalog,
     sync_watchlist_folder_recipe,
@@ -1294,8 +1299,11 @@ def _apply_debrid_and_packs_to_tenant(
     *,
     debrid: str | None = None,
     enabled_packs: Sequence[str] | None = None,
+    max_resolution: str | None = None,
+    cached_only: bool | None = None,
+    dual_subtitle_pairs: Sequence[Sequence[str]] | None = None,
 ) -> Result[None]:
-    """Applies Debrid provider and/or AIOStreams pack toggles to a tenant's documents on disk."""
+    """Applies Debrid provider, pack toggles, stream filters, and dual-sub pairs to a tenant's docs."""
     streams_path = paths.doc("aiostreams")
     if not streams_path.is_file():
         return Err(StreamWeaverError("aiostreams.json not found in tenant directory"))
@@ -1311,8 +1319,22 @@ def _apply_debrid_and_packs_to_tenant(
                 return err
             case Ok(streams_doc):
                 pass
+    if dual_subtitle_pairs is not None:
+        match apply_dual_subtitle_pairs(streams_doc, dual_subtitle_pairs):
+            case Err() as err:
+                return err
+            case Ok(streams_doc):
+                pass
     if enabled_packs is not None:
         match apply_aiostreams_packs(streams_doc, enabled_packs):
+            case Err() as err:
+                return err
+            case Ok(streams_doc):
+                pass
+    if max_resolution is not None or cached_only is not None:
+        match apply_stream_preferences(
+            streams_doc, max_resolution=max_resolution, cached_only=cached_only
+        ):
             case Err() as err:
                 return err
             case Ok(streams_doc):
@@ -1387,7 +1409,16 @@ def cmd_packs_list(
     debrid_id = active_debrid_provider(streams_doc)
     debrid_spec = DEBRID_PROVIDERS.get(debrid_id)
     debrid_label = f"{debrid_spec.label} ({debrid_spec.secret_key})" if debrid_spec else debrid_id
+    prefs = inspect_stream_preferences(streams_doc)
+    pairs = inspect_dual_subtitle_pairs(streams_doc)
+    pairs_label = ", ".join(
+        f"{STRELINGO_BY_CODE[m].code2 if m in STRELINGO_BY_CODE else m}→{STRELINGO_BY_CODE[t].code2 if t in STRELINGO_BY_CODE else t}"
+        for m, t in pairs
+    ) or "none"
     console.print(f"⚡ Active Debrid Provider: {debrid_label}")
+    console.print(
+        f"🎞️  Stream Policy: Max {prefs.max_resolution} · {'Cached Only' if prefs.cached_only else 'Cached + Uncached'} · Dual-Subs: {pairs_label}"
+    )
 
     table = Table(title=f"AIOStreams Addon Packs — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
     for col in ("Pack", "Title", "Enabled", "Presets", "Extra Secrets"):
@@ -1417,10 +1448,28 @@ def cmd_packs_set(
         list[str] | None,
         typer.Option("--disable", "-d", help="Disable an AIOStreams pack (repeatable)"),
     ] = None,
+    max_resolution: Annotated[
+        str | None,
+        typer.Option("--max-resolution", help="Cap stream resolution (2160p | 1080p | 720p)"),
+    ] = None,
+    cached_only: Annotated[
+        bool | None,
+        typer.Option(
+            "--cached-only/--allow-uncached",
+            help="Require instant-play cached Debrid streams only, or allow uncached torrents",
+        ),
+    ] = None,
+    dual_subs: Annotated[
+        str | None,
+        typer.Option(
+            "--dual-subs",
+            help="Comma-separated Strelingo pairs as MAIN:TRANS (e.g. 'jpn:eng,kor:eng,spa:eng')",
+        ),
+    ] = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
-    """Switch Debrid provider and/or enable/disable AIOStreams addon packs."""
+    """Switch Debrid provider, toggle packs, set stream filters, or configure Strelingo dual-sub pairs."""
     paths = _resolve_tenant(workspace_dir, tenant)
     match read_json_file(paths.doc("aiostreams")):
         case Err(read_err):
@@ -1436,7 +1485,24 @@ def cmd_packs_set(
         current -= {p.strip().lower() for p in (disable or []) if p.strip()}
         next_packs = sorted(current)
 
-    match _apply_debrid_and_packs_to_tenant(paths, debrid=debrid, enabled_packs=next_packs):
+    parsed_pairs: list[tuple[str, str]] | None = None
+    if dual_subs is not None:
+        parsed_pairs = []
+        for token in (t.strip() for t in dual_subs.split(",") if t.strip()):
+            if ":" not in token:
+                err_console.print(f"❌ Invalid --dual-subs token `{token}` (expected MAIN:TRANS, e.g. jpn:eng)")
+                raise typer.Exit(code=1)
+            m_code, _, t_code = token.partition(":")
+            parsed_pairs.append((m_code.strip(), t_code.strip()))
+
+    match _apply_debrid_and_packs_to_tenant(
+        paths,
+        debrid=debrid,
+        enabled_packs=next_packs,
+        max_resolution=max_resolution,
+        cached_only=cached_only,
+        dual_subtitle_pairs=parsed_pairs,
+    ):
         case Err(pack_err):
             err_console.print(f"❌ {pack_err}")
             raise typer.Exit(code=1)
