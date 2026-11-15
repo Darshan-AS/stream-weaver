@@ -151,21 +151,56 @@ def test_sw_init_scaffolds_tenant_and_preserves_env(tmp_path: Path) -> None:
 
 
 def test_sw_init_from_template_copies_documents(tmp_path: Path) -> None:
+    import re
+
     example = Path(__file__).resolve().parents[2] / "examples" / "home"
+    shared_library = example.parents[1] / "library"
     target = tmp_path / "from-template"
     res = runner.invoke(app, ["init", str(target), "--from", str(example)])
     assert res.exit_code == 0, res.output
     for doc in ("aiostreams", "aiometadata", "aiomanager"):
         assert (target / f"{doc}.json").is_file(), doc
-    assert (target / "profiles" / "don" / "profile.json").is_file()
+    prof_file = target / "profiles" / "don" / "profile.json"
+    assert prof_file.is_file()
+    prof_doc = json.loads(prof_file.read_text(encoding="utf-8"))
+    # All 7 curated collections ship in the template, and Nuvio defaults cleanly to profile index 1
+    assert [c["ref"] for c in prof_doc["collections"]] == [
+        "col-for-you-discovery",
+        "col-streaming-services",
+        "col-indian-cinema",
+        "col-anime-japanese",
+        "col-courses-docs",
+        "col-genres-moods",
+        "col-franchises",
+    ]
+    assert prof_doc["clients"]["nuvio"]["profile"] == {}
     assert (target / "library" / "collections").is_dir()  # tenant-local recipes travel with the template
     libs = json.loads((target / TENANT_FILE).read_text())["libraries"]
     assert libs[0] == "library"
-    assert (target / libs[1]).resolve() == (example.parents[1] / "library").resolve()  # shared library re-anchored
-    # template documents must carry no identity
+    assert (target / libs[1]).resolve() == shared_library.resolve()  # shared library re-anchored
+    # template documents must carry no identity or stale personal vault/account placeholders
     blob = "".join(p.read_text(encoding="utf-8") for p in target.glob("*.json"))
     assert "midnightignite" not in blob
     assert "swce3b0" not in blob
+    for stale_marker in (
+        "SECRET_ACCOUNT_AUTH_KEY",
+        "SECRET_AIOMANAGER_APIKEY",
+        "SECRET_VAULT_",
+        "SECRET_WATCHLY_TOKEN",
+        "AIOMANAGER_URL",
+        "SECRET_GEMINI_API_KEY",
+    ):
+        assert stale_marker not in blob, stale_marker
+    # Every {{...}} placeholder in the scaffolded tenant + shared library must exist in the seeded .env
+    placeholders: set[str] = set()
+    for p in (*target.rglob("*.json"), *shared_library.rglob("*.json")):
+        placeholders.update(re.findall(r"\{\{([A-Za-z0-9_]+)\}\}", p.read_text(encoding="utf-8")))
+    env_keys = {
+        ln.split("=", 1)[0].strip()
+        for ln in (target / ".env").read_text(encoding="utf-8").splitlines()
+        if "=" in ln and not ln.lstrip().startswith("#")
+    }
+    assert not (placeholders - env_keys), f"Seeded .env is missing keys: {sorted(placeholders - env_keys)}"
 
 
 def test_commands_fail_cleanly_outside_a_tenant(tmp_path: Path, monkeypatch: object) -> None:

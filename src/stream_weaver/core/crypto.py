@@ -194,7 +194,7 @@ def decrypt_field(enc_val: str, password: str, salt_b64: str) -> str:
     If the value is already plaintext (e.g. a JWT starting with `eyJ` or unencrypted token),
     returns it unchanged.
     """
-    if not enc_val or enc_val.startswith("eyJ") or not salt_b64:
+    if not enc_val or enc_val.startswith("eyJ") or not salt_b64 or not password:
         return enc_val
 
     match derive_aes_key(password, salt_b64):

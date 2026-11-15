@@ -210,16 +210,16 @@ model {
     }
     subsystem nuvio_collections 'Nuvio Home Collections Compiler' {
       #enabled #catalog
-      description '5 Curated Collections (23 Tabbed Folders) synced to Nuvio'
+      description '7 Curated Collections (32 Tabbed Folders) synced to Nuvio'
       technology 'nuvio_collections.json'
-      plugin col_for_you_discovery 'For You & Discovery (5 folders)' {
+      plugin col_for_you_discovery 'For You & Discovery (4 folders)' {
         #enabled #catalog
-        description 'Folders: AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
+        description 'Folders: AI Picks For You, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
         technology 'View: TABBED_GRID'
         metadata {
           collection_id 'col-for-you-discovery'
-          folder_count '5'
-          folders 'AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
+          folder_count '4'
+          folders 'AI Picks For You, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts'
           upstream_addons 'aiometadata, aiostreams, bingecat'
         }
       }
@@ -267,6 +267,28 @@ model {
           upstream_addons 'aiometadata'
         }
       }
+      plugin col_genres_moods 'Genres & Moods (6 folders)' {
+        #enabled #catalog
+        description 'Folders: Sci-Fi & Fantasy, Crime & Mystery Thrillers, Action & Adventure, Comedy, Animation, Romance'
+        technology 'View: TABBED_GRID'
+        metadata {
+          collection_id 'col-genres-moods'
+          folder_count '6'
+          folders 'Sci-Fi & Fantasy, Crime & Mystery Thrillers, Action & Adventure, Comedy, Animation, Romance'
+          upstream_addons 'aiometadata'
+        }
+      }
+      plugin col_franchises 'Franchises & Universes (4 folders)' {
+        #enabled #catalog
+        description 'Folders: Marvel Cinematic Universe, Star Wars & Lucasfilm, DC, Studio Ghibli'
+        technology 'View: TABBED_GRID'
+        metadata {
+          collection_id 'col-franchises'
+          folder_count '4'
+          folders 'Marvel Cinematic Universe, Star Wars & Lucasfilm, DC, Studio Ghibli'
+          upstream_addons 'aiometadata'
+        }
+      }
     }
     subsystem nuvio_badges 'Nuvio Stream Badges Compiler' {
       #enabled
@@ -278,11 +300,6 @@ model {
         show_in_player 'true'
         imports 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/badges.json'
       }
-    }
-    subsystem key_vault 'Encrypted API Key Vault' {
-      #enabled #secret
-      description 'Stores 5 tracked provider keys: AIOStreams · aiostreams.example.com · 00000000, TVDB, TMDB, RPDB, Gemini AI'
-      technology 'AES-256-GCM Vault'
     }
     subsystem autopilot 'Autopilot Health & Failover Engine' {
       #disabled
@@ -484,7 +501,7 @@ model {
     }
     subsystem group2_fallback 'Group 2: Conditional HTTP Fallback Scrapers' {
       #enabled #fallback
-      description 'Triggered only when count(cached(totalStreams)) < 3 (4 HTTP scrapers)'
+      description 'Triggered only when count(cached(totalStreams)) < 3 (5 HTTP scrapers)'
       technology 'Sequential Group 2 (HTTP Streams)'
       plugin preset_soo_sootio 'Sootio [soo]' {
         #enabled
@@ -511,27 +528,39 @@ model {
           media_types 'all'
         }
       }
-      plugin preset_wst_webstreamr 'WebStreamr [wst]' {
-        #enabled
-        description 'Group 2 Fallback — Resources: stream'
-        technology 'Preset: webstreamr'
-        metadata {
-          instance_id 'wst'
-          preset_type 'webstreamr'
-          resources 'stream'
-          timeout_ms '7500'
-          media_types 'all'
-        }
-      }
-      plugin preset_etv_einthusantv_kannada 'EinthusanTV Kannada [etv]' {
+      plugin preset_plv_plaviohd 'PlavioHD [plv]' {
         #enabled
         description 'Group 2 Fallback — Resources: stream'
         technology 'Preset: custom'
         metadata {
-          instance_id 'etv'
+          instance_id 'plv'
           preset_type 'custom'
           resources 'stream'
-          timeout_ms '7500'
+          timeout_ms '20000'
+          media_types 'movie, series'
+        }
+      }
+      plugin preset_etv_einthusantv_kannada 'EinthusanTV Kannada [etv]' {
+        #enabled
+        description 'Group 2 Fallback — Resources: stream, catalog'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'etv'
+          preset_type 'custom'
+          resources 'stream, catalog'
+          timeout_ms '20000'
+          media_types 'movie'
+        }
+      }
+      plugin preset_eth_einthusantv_hindi 'EinthusanTV Hindi [eth]' {
+        #enabled
+        description 'Group 2 Fallback — Resources: stream'
+        technology 'Preset: custom'
+        metadata {
+          instance_id 'eth'
+          preset_type 'custom'
+          resources 'stream'
+          timeout_ms '20000'
           media_types 'movie'
         }
       }
@@ -622,11 +651,11 @@ model {
   // ==========================================================================
   aggregator aiometadata 'AIOMetadata' {
     #enabled #metadata
-    description 'Serves 61 active catalogs (45 on Home), canonical metadata, search & rating posters'
+    description 'Serves 79 active catalogs (63 on Home), canonical metadata, search & rating posters'
     technology 'AIOMetadata (Configured Instance)'
     metadata {
-      active_catalogs '61'
-      home_catalogs '45'
+      active_catalogs '79'
+      home_catalogs '63'
       language 'en-US'
       timezone 'Asia/Kolkata'
       trakt_watch_tracking 'False'
@@ -684,13 +713,13 @@ model {
         sample_catalogs 'Netflix (movie), Netflix (series), Prime Video (movie), Prime Video (series), JioHotstar (movie), JioHotstar (series), HBO Max (movie), HBO Max (series)'
       }
     }
-    plugin cat_src_tmdb 'TMDB Discover Catalogs (22)' {
+    plugin cat_src_tmdb 'TMDB Discover Catalogs (40)' {
       #enabled #catalog
-      description '22 active (16 Home): TMDB Popular, TMDB Popular, TMDB Top Rated, TMDB Top Rated, Hindi Movies, New Hindi Releases'
+      description '40 active (34 Home): TMDB Popular, TMDB Popular, TMDB Top Rated, TMDB Top Rated, Hindi Movies, New Hindi Releases'
       technology 'Source: tmdb'
       metadata {
-        active_count '22'
-        home_count '16'
+        active_count '40'
+        home_count '34'
         sample_catalogs 'TMDB Popular (movie), TMDB Popular (series), TMDB Top Rated (movie), TMDB Top Rated (series), Hindi Movies (movie), New Hindi Releases (movie), Hindi Series (series), Kannada Movies (movie)'
       }
     }
@@ -709,11 +738,6 @@ model {
   // ==========================================================================
   // 7. Declarative Secrets & API Keys (.env Placeholders)
   // ==========================================================================
-  secretKey sec_aiomanager_url 'AIOMANAGER_URL' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
   secretKey sec_aiometadata_url 'AIOMETADATA_URL' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
@@ -734,27 +758,12 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
-  secretKey sec_secret_account_auth_key 'SECRET_ACCOUNT_AUTH_KEY' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
-  secretKey sec_secret_aiomanager_apikey_7d210008 'SECRET_AIOMANAGER_APIKEY_7D210008' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
   secretKey sec_secret_aiostreams_encrypted_password 'SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
   secretKey sec_secret_bingecat_token 'SECRET_BINGECAT_TOKEN' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
-  secretKey sec_secret_gemini_api_key 'SECRET_GEMINI_API_KEY' {
     #secret
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
@@ -824,16 +833,6 @@ model {
     description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
     technology 'Environment Variable'
   }
-  secretKey sec_secret_vault_aiostreams_35c658 'SECRET_VAULT_AIOSTREAMS_35C658' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
-  secretKey sec_secret_watchly_token 'SECRET_WATCHLY_TOKEN' {
-    #secret
-    description 'Scrubbed via SecretLens into .env ({{SECRET_*}})'
-    technology 'Environment Variable'
-  }
 
   // ==========================================================================
   // 8. Cross-Component Relationships
@@ -889,7 +888,7 @@ model {
   aiomanager.acc_demo -> aiostreams 'Manages & monitors addon manifest'
   aiomanager.acc_demo -> bingecat 'Manages & monitors addon manifest'
   aiomanager.acc_demo -> cinemeta 'Applies Cinemeta catalog/search overrides'
-  aiomanager.nuvio_collections.col_for_you_discovery -> nuvio 'Renders 5 tabbed folders'
+  aiomanager.nuvio_collections.col_for_you_discovery -> nuvio 'Renders 4 tabbed folders'
   aiomanager.nuvio_collections.col_for_you_discovery -> aiometadata 'Pulls catalog rows for For You & Discovery' {
     #catalog
   }
@@ -913,6 +912,14 @@ model {
   }
   aiomanager.nuvio_collections.col_courses_docs -> nuvio 'Renders 2 tabbed folders'
   aiomanager.nuvio_collections.col_courses_docs -> aiometadata 'Pulls catalog rows for Courses & Documentaries' {
+    #catalog
+  }
+  aiomanager.nuvio_collections.col_genres_moods -> nuvio 'Renders 6 tabbed folders'
+  aiomanager.nuvio_collections.col_genres_moods -> aiometadata 'Pulls catalog rows for Genres & Moods' {
+    #catalog
+  }
+  aiomanager.nuvio_collections.col_franchises -> nuvio 'Renders 4 tabbed folders'
+  aiomanager.nuvio_collections.col_franchises -> aiometadata 'Pulls catalog rows for Franchises & Universes' {
     #catalog
   }
   aiomanager.nuvio_badges -> nuvio 'Syncs Stream & Player Badges (tv, desktop, mobile)' {
@@ -1015,7 +1022,7 @@ model {
     #catalog
   }
   aiometadata.cat_src_streaming -> aiometadata.poster_engine 'Decorates catalog items with rating posters'
-  aiometadata.cat_src_tmdb -> tmdb_srv 'Fetches 22 tmdb catalogs' {
+  aiometadata.cat_src_tmdb -> tmdb_srv 'Fetches 40 tmdb catalogs' {
     #catalog
   }
   aiometadata.cat_src_tmdb -> aiometadata.poster_engine 'Decorates catalog items with rating posters'
@@ -1029,15 +1036,6 @@ model {
   sec_secret_bingecat_token -> bingecat 'Profile UUID Token' {
     #secret
   }
-  sec_secret_gemini_api_key -> aiometadata.gemini_search 'Authenticates Gemini AI semantic search' {
-    #secret
-  }
-  sec_secret_gemini_api_key -> aiomanager.key_vault 'Stored in AIOManager Key Vault' {
-    #secret
-  }
-  sec_secret_gemini_api_key -> gemini_srv 'Google AI Studio Key' {
-    #secret
-  }
   sec_secret_nuvio_access_token -> aiomanager 'Authenticates Nuvio Supabase addon/collection sync' {
     #secret
   }
@@ -1048,9 +1046,6 @@ model {
     #secret
   }
   sec_secret_rpdb_api_key -> aiostreams.sel_engine 'Authenticates RPDB poster redirect API' {
-    #secret
-  }
-  sec_secret_rpdb_api_key -> aiomanager.key_vault 'Stored in AIOManager Key Vault' {
     #secret
   }
   sec_secret_rpdb_api_key -> rpdb_srv 'RPDB Tier Key' {
@@ -1074,9 +1069,6 @@ model {
   sec_secret_tmdb_api_key -> aiostreams 'Authenticates title/year matching' {
     #secret
   }
-  sec_secret_tmdb_api_key -> aiomanager.key_vault 'Stored in AIOManager Key Vault' {
-    #secret
-  }
   sec_secret_tmdb_api_key -> tmdb_srv 'REST API Key' {
     #secret
   }
@@ -1096,9 +1088,6 @@ model {
     #secret
   }
   sec_secret_tvdb_api_key -> aiostreams 'Authenticates TVDB episode matching' {
-    #secret
-  }
-  sec_secret_tvdb_api_key -> aiomanager.key_vault 'Stored in AIOManager Key Vault' {
     #secret
   }
   sec_secret_tvdb_api_key -> tvdb_srv 'v4 API Key' {
@@ -1154,7 +1143,7 @@ views {
   // 3. Nuvio Home Collections Drill-Down View
   view nuvio_collections_view of aiomanager.nuvio_collections {
     title '3. Nuvio Home Collections — Curated Categories & Upstream Addon Sources'
-    description 'Drill-down into the 5 Nuvio Home Collections (23 Tabbed Folders) and which addons feed each collection'
+    description 'Drill-down into the 7 Nuvio Home Collections (32 Tabbed Folders) and which addons feed each collection'
     include
       *,
       aiomanager.nuvio_collections.*,
@@ -1215,7 +1204,6 @@ views {
     include
       element.tag = #secret,
       aiomanager,
-      aiomanager.key_vault,
       aiostreams,
       aiostreams.sel_engine,
       aiometadata,
@@ -1258,9 +1246,9 @@ views {
     stream_weaver -> aiostreams '1. Injects {{SECRET_*}} keys & pushes aiostreams.json (PUT /api/v1/user)'
     stream_weaver -> aiometadata '2. Injects {{SECRET_*}} keys & pushes aiometadata.json (PUT /api/config)'
     stream_weaver -> aiomanager '3. Rehydrates manifests, compiles Nuvio collections & pushes AES-256-GCM envelope'
-    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 5 tabbed Home Collections'
+    stream_weaver -> nuvio '4. Directly reconciles Nuvio addons & 7 tabbed Home Collections'
     stream_weaver -> stremio '5. Directly reconciles Stremio addon collection via AuthKey'
-    stream_weaver -> aiometadata '6. Concurrently pre-warms 45+ Home catalog endpoints (sw warm)'
+    stream_weaver -> aiometadata '6. Concurrently pre-warms 63+ Home catalog endpoints (sw warm)'
 
     autoLayout TopBottom
   }

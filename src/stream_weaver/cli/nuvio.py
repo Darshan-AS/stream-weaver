@@ -71,16 +71,9 @@ def nuvio_targets(
 ) -> Result[list[NuvioTarget], StreamWeaverError]:
     """Resolves the Nuvio connection for every profile with a Nuvio client, via the managed account."""
     password = env.get("AIOMANAGER_SYNC_PASSWORD", "")
-    if not password:
-        return Err(StreamWeaverError("AIOMANAGER_SYNC_PASSWORD is not set in .env"))
     managed = apply_managed_accounts(scrubbed_aiomanager, tenant_name, [cp.resolved for cp in compiled_profiles]).state
-    match inject_secrets(managed, env):
-        case Err(err):
-            return Err(StreamWeaverError(str(err)))
-        case Ok(injected):
-            pass
-    salt_b64 = str(injected.get("salt") or "")
-    accounts = {str(a.get("id")): a for a in injected.get("accounts", []) if isinstance(a, dict)}
+    salt_b64 = str(managed.get("salt") or "")
+    accounts = {str(a.get("id")): a for a in managed.get("accounts", []) if isinstance(a, dict)}
     out: list[NuvioTarget] = []
     for cp in compiled_profiles:
         profile = cp.resolved.profile
@@ -92,11 +85,21 @@ def nuvio_targets(
         acc = accounts.get(account_id)
         if acc is None:
             return Err(StreamWeaverError(f"profile `{profile.name}`: no managed account found for its Nuvio client"))
-        conn = next(
+        raw_conn = next(
             (c for c in acc.get("connections", []) if isinstance(c, dict) and c.get("platform") == "nuvio"), None
         )
-        if conn is None:
+        if raw_conn is None:
             return Err(StreamWeaverError(f"profile `{profile.name}`: account has no Nuvio connection"))
+        match inject_secrets(raw_conn, env):
+            case Err(err):
+                return Err(
+                    StreamWeaverError(
+                        f"profile `{profile.name}`: {err} "
+                        f"(run `sw login nuvio --login {profile.nuvio.login}`)"
+                    )
+                )
+            case Ok(conn):
+                pass
         out.append(
             NuvioTarget(
                 compiled=cp,
@@ -154,6 +157,9 @@ def push_nuvio(
                 continue
             match inject_secrets(doc, working):
                 case Err(doc_sec_err):
+                    if kind == "meta" and len(docs) > 1:
+                        messages.append(f"[{t.name}] meta: skipped ({doc_sec_err})")
+                        continue
                     return Err(StreamWeaverError(f"[{t.name}] {kind}: {doc_sec_err}"))
                 case Ok(inj_doc):
                     pass

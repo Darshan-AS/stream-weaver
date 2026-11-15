@@ -239,6 +239,92 @@ class AIOMetadataService:
                 )
 
 
+def _norm_addon_url(url: str) -> str:
+    return url.strip().removesuffix("/manifest.json").rstrip("/")
+
+
+def refresh_addon_manifests(http_client: HttpClientProtocol, state: JsonDict) -> JsonDict:
+    """Concurrently fetches fresh `manifest.json` for all enabled HTTP(S) addons in AIOManager state."""
+    updated = copy.deepcopy(state)
+    accounts = updated.get("accounts")
+    if not isinstance(accounts, list):
+        return updated
+
+    refresh_targets: list[tuple[dict[str, Any], str, str, str]] = []
+    unique_urls: list[str] = []
+    seen_urls: set[str] = set()
+
+    for acc in accounts:
+        if not isinstance(acc, dict) or not isinstance(acc.get("addons"), list):
+            continue
+        for a in acc["addons"]:
+            if not isinstance(a, dict):
+                continue
+            flags = a.get("flags")
+            if isinstance(flags, dict) and not flags.get("enabled", True):
+                continue
+            raw_mf = a.get("manifest")
+            mf_existing: dict[str, Any] = raw_mf if isinstance(raw_mf, dict) else {}
+            mid = str(mf_existing.get("id", ""))
+            if mid == "com.linvo.cinemeta":
+                continue
+            t_url = str(a.get("transportUrl", "")).strip().rstrip("/")
+            if not t_url.startswith(("http://", "https://")) or "{{" in t_url:
+                continue
+            m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
+            refresh_targets.append((a, mid, _norm_addon_url(t_url), m_url))
+            if m_url not in seen_urls:
+                seen_urls.add(m_url)
+                unique_urls.append(m_url)
+
+    if not unique_urls:
+        return updated
+
+    def _fetch_manifest(url: str) -> tuple[str, dict[str, Any] | None]:
+        match http_client.request_json("GET", url, timeout=15.0):
+            case Ok(resp) if (
+                resp.status_code == 200
+                and isinstance(resp.data, dict)
+                and resp.data.get("id")
+            ):
+                return url, dict(resp.data)
+            case _:
+                return url, None
+
+    fetched_by_url: dict[str, dict[str, Any]] = {}
+    max_workers = min(6, len(unique_urls))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+        for url, mf_data in pool.map(_fetch_manifest, unique_urls):
+            if mf_data is not None:
+                fetched_by_url[url] = mf_data
+
+    for a, mid, norm_url, m_url in refresh_targets:
+        raw_fetched = fetched_by_url.get(m_url)
+        if raw_fetched is None:
+            continue
+        mf = sanitize_manifest_home_catalogs(copy.deepcopy(raw_fetched))
+        if mid == "com.linvo.cinemeta":
+            mf["catalogs"] = []
+        a["manifest"] = mf
+        ver = str(mf.get("version", "1.0.0"))
+        manifest_id = f"{mf['id']}:{ver}"
+        a["manifestId"] = manifest_id
+        manifests_dict = updated.setdefault("manifests", {})
+        if isinstance(manifests_dict, dict):
+            manifests_dict[manifest_id] = mf
+        addons_sec = updated.get("addons")
+        if isinstance(addons_sec, dict) and isinstance(addons_sec.get("savedAddons"), list):
+            for sa in addons_sec["savedAddons"]:
+                if not isinstance(sa, dict):
+                    continue
+                sa_mf = sa.get("manifest")
+                same_id = isinstance(sa_mf, dict) and sa_mf.get("id") == mf["id"]
+                same_url = bool(sa.get("installUrl")) and _norm_addon_url(str(sa["installUrl"])) == norm_url
+                if same_id or same_url:
+                    sa["manifest"] = copy.deepcopy(mf)
+    return updated
+
+
 class AIOManagerService:
     """Manages pulling, dehydrating, rehydrating, encrypting, and pushing AIOManager state."""
 
@@ -301,83 +387,7 @@ class AIOManagerService:
 
     def _refresh_manifests(self, state: JsonDict) -> JsonDict:
         """Concurrently fetches fresh `manifest.json` for all enabled HTTP(S) addons in AIOManager."""
-        updated = copy.deepcopy(state)
-        accounts = updated.get("accounts")
-        if not isinstance(accounts, list):
-            return updated
-
-        refresh_targets: list[tuple[dict[str, Any], str, str]] = []
-        unique_urls: list[str] = []
-        seen_urls: set[str] = set()
-
-        for acc in accounts:
-            if not isinstance(acc, dict) or not isinstance(acc.get("addons"), list):
-                continue
-            for a in acc["addons"]:
-                if not isinstance(a, dict):
-                    continue
-                flags = a.get("flags")
-                if isinstance(flags, dict) and not flags.get("enabled", True):
-                    continue
-                raw_mf = a.get("manifest")
-                mf_existing: dict[str, Any] = raw_mf if isinstance(raw_mf, dict) else {}
-                mid = str(mf_existing.get("id", ""))
-                if mid == "com.linvo.cinemeta":
-                    continue
-                t_url = str(a.get("transportUrl", "")).strip().rstrip("/")
-                if not t_url.startswith(("http://", "https://")):
-                    continue
-                m_url = t_url if t_url.endswith("/manifest.json") else f"{t_url}/manifest.json"
-                refresh_targets.append((a, mid, m_url))
-                if m_url not in seen_urls:
-                    seen_urls.add(m_url)
-                    unique_urls.append(m_url)
-
-        if not unique_urls:
-            return updated
-
-        def _fetch_manifest(url: str) -> tuple[str, dict[str, Any] | None]:
-            match self._http.request_json("GET", url, timeout=15.0):
-                case Ok(resp) if (
-                    resp.status_code == 200
-                    and isinstance(resp.data, dict)
-                    and resp.data.get("id")
-                ):
-                    return url, dict(resp.data)
-                case _:
-                    return url, None
-
-        fetched_by_url: dict[str, dict[str, Any]] = {}
-        max_workers = min(6, len(unique_urls))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-            for url, mf_data in pool.map(_fetch_manifest, unique_urls):
-                if mf_data is not None:
-                    fetched_by_url[url] = mf_data
-
-        for a, mid, m_url in refresh_targets:
-            raw_fetched = fetched_by_url.get(m_url)
-            if raw_fetched is None:
-                continue
-            mf = sanitize_manifest_home_catalogs(copy.deepcopy(raw_fetched))
-            if mid == "com.linvo.cinemeta":
-                mf["catalogs"] = []
-            a["manifest"] = mf
-            ver = str(mf.get("version", "1.0.0"))
-            manifest_id = f"{mf['id']}:{ver}"
-            a["manifestId"] = manifest_id
-            manifests_dict = updated.setdefault("manifests", {})
-            if isinstance(manifests_dict, dict):
-                manifests_dict[manifest_id] = mf
-            addons_sec = updated.get("addons")
-            if isinstance(addons_sec, dict) and isinstance(addons_sec.get("savedAddons"), list):
-                for sa in addons_sec["savedAddons"]:
-                    if (
-                        isinstance(sa, dict)
-                        and isinstance(sa.get("manifest"), dict)
-                        and sa["manifest"].get("id") == mf["id"]
-                    ):
-                        sa["manifest"] = copy.deepcopy(mf)
-        return updated
+        return refresh_addon_manifests(self._http, state)
 
     def push_remote(
         self,

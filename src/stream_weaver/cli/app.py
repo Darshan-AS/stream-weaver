@@ -1,6 +1,7 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
 import concurrent.futures
+import copy
 import json
 import os
 import sys
@@ -33,7 +34,11 @@ from stream_weaver.core.aiomanager_accounts import (
     derive_profile_from_account,
 )
 from stream_weaver.core.architecture import compile_architecture_bundle
-from stream_weaver.core.coercions import compute_config_diff, normalize_service_config
+from stream_weaver.core.coercions import (
+    compute_config_diff,
+    dehydrate_aiomanager,
+    normalize_service_config,
+)
 from stream_weaver.core.compile import CompiledProfile, compile_profile, derive_instance_catalogs
 from stream_weaver.core.composition import config_catalog_keys
 from stream_weaver.core.crypto import decrypt_envelope
@@ -63,7 +68,7 @@ from stream_weaver.core.profiles import (
     profile_to_doc,
 )
 from stream_weaver.core.result import Err, Ok, Result
-from stream_weaver.core.secrets import harvest_and_scrub, inject_secrets
+from stream_weaver.core.secrets import SECRET_PLACEHOLDER_RE, harvest_and_scrub, inject_secrets
 from stream_weaver.core.tenant import (
     ENV_DIR_OVERRIDE,
     TENANT_FILE,
@@ -92,8 +97,16 @@ from stream_weaver.effects.storage import (
     write_text_file,
 )
 from stream_weaver.providers.protocols import ConfigServiceProtocol
-from stream_weaver.providers.services import build_config_services, warm_home_catalogs
-from stream_weaver.providers.services.nuvio_session import NuvioSessionPool, password_grant
+from stream_weaver.providers.services import (
+    build_config_services,
+    refresh_addon_manifests,
+    warm_home_catalogs,
+)
+from stream_weaver.providers.services.nuvio_session import (
+    NuvioSessionPool,
+    password_grant,
+    resolve_nuvio_anon_key,
+)
 
 app = typer.Typer(
     name="sw",
@@ -179,6 +192,8 @@ SECRET_TMDB_ACCESS_TOKEN=
 SECRET_TVDB_API_KEY=
 SECRET_RPDB_API_KEY=
 SECRET_MDBLIST_API_KEY=
+SECRET_ANIMESKIP_CLIENT_ID=
+SECRET_INTRODB_API_KEY=
 SECRET_TRAKT_TOKEN_ID=
 SECRET_GEMINI_API_KEY=
 SECRET_BINGECAT_TOKEN=
@@ -499,7 +514,11 @@ def _profiles_summary(ctx: _Context) -> list[JsonDict]:
         pr = rp.profile
         nuvio = None
         if pr.nuvio:
-            target = pr.nuvio.profile_id[:8] + "…" if pr.nuvio.profile_id else f"name={pr.nuvio.profile_name}"
+            target = (
+                pr.nuvio.profile_id[:8] + "…"
+                if pr.nuvio.profile_id
+                else (f"name={pr.nuvio.profile_name}" if pr.nuvio.profile_name else "index 1")
+            )
             nuvio = f"`{pr.nuvio.login}` → {target}"
         rows.append(
             {
@@ -516,11 +535,15 @@ def _profiles_summary(ctx: _Context) -> list[JsonDict]:
     return rows
 
 
-def _nuvio_targets_or_exit(ctx: _Context, compiled: Sequence[CompiledProfile]) -> list[NuvioTarget]:
+def _nuvio_targets_or_exit(
+    ctx: _Context,
+    compiled: Sequence[CompiledProfile],
+    env_override: Mapping[str, str] | None = None,
+) -> list[NuvioTarget]:
     match nuvio_targets(
         tenant_name=ctx.manifest.name,
         scrubbed_aiomanager=_read_scrubbed_aiomanager(ctx.paths),
-        env=ctx.env,
+        env=dict(env_override) if env_override is not None else ctx.env,
         compiled_profiles=compiled,
     ):
         case Err(t_err):
@@ -539,6 +562,68 @@ def _save_env_or_exit(env_path: Path, env: Mapping[str, str]) -> None:
             pass
 
 
+def _refresh_manifests_and_recompile(
+    ctx: _Context,
+    working_env: dict[str, str],
+    http_client: HttpClientProtocol,
+    *,
+    instance: str = DEFAULT_INSTANCE,
+) -> tuple[_Context, list[CompiledProfile], dict[str, str]]:
+    """
+    Fetches live `manifest.json` for enabled HTTP(S) addons whose URL placeholders resolve in
+    `working_env`, updates `aiomanager.json`'s cached manifests on disk when present, and
+    recompiles all profiles so BingeCat / AIOStreams catalog IDs are current on first push.
+    """
+    mgr_path = ctx.paths.doc("aiomanager")
+    mgr_doc = _read_scrubbed_aiomanager(ctx.paths)
+    if mgr_doc:
+        managed_doc = apply_managed_accounts(mgr_doc, ctx.manifest.name, ctx.profiles).state
+
+        def _resolve_url_placeholders(url: str) -> str:
+            return SECRET_PLACEHOLDER_RE.sub(
+                lambda m: working_env.get(m.group(1), "") or m.group(0),
+                url,
+            )
+
+        probe_state = copy.deepcopy(managed_doc)
+        orig_acc_urls: dict[tuple[int, int], str] = {}
+        for i, acc in enumerate(probe_state.get("accounts", [])):
+            if not isinstance(acc, dict) or not isinstance(acc.get("addons"), list):
+                continue
+            for j, addon in enumerate(acc["addons"]):
+                if isinstance(addon, dict) and isinstance(addon.get("transportUrl"), str):
+                    orig_acc_urls[(i, j)] = addon["transportUrl"]
+                    addon["transportUrl"] = _resolve_url_placeholders(addon["transportUrl"])
+        orig_saved_urls: dict[int, str] = {}
+        addons_sec = probe_state.get("addons")
+        if isinstance(addons_sec, dict) and isinstance(addons_sec.get("savedAddons"), list):
+            for k, sa in enumerate(addons_sec["savedAddons"]):
+                if isinstance(sa, dict) and isinstance(sa.get("installUrl"), str):
+                    orig_saved_urls[k] = sa["installUrl"]
+                    sa["installUrl"] = _resolve_url_placeholders(sa["installUrl"])
+
+        refreshed = refresh_addon_manifests(http_client, probe_state)
+        if refreshed != probe_state:
+            for (i, j), raw_url in orig_acc_urls.items():
+                refreshed["accounts"][i]["addons"][j]["transportUrl"] = raw_url
+            if isinstance(refreshed.get("addons"), dict) and isinstance(refreshed["addons"].get("savedAddons"), list):
+                for k, raw_url in orig_saved_urls.items():
+                    refreshed["addons"]["savedAddons"][k]["installUrl"] = raw_url
+            match dehydrate_aiomanager(refreshed):
+                case Ok(dehydrated):
+                    scrubbed_mgr, working_env = harvest_and_scrub("aiomanager", dehydrated, working_env)
+                    canonical_mgr = apply_managed_accounts(
+                        scrubbed_mgr, ctx.manifest.name, ctx.profiles
+                    ).state
+                    if mgr_path.exists():
+                        _ = write_json_file(mgr_path, canonical_mgr)
+                case Err():
+                    pass
+
+    refreshed_ctx = _resolve_context(ctx.paths.root, instance=instance)
+    return refreshed_ctx, _compile_all(refreshed_ctx), working_env
+
+
 def _push_nuvio_from_profiles(
     ctx: _Context,
     compiled: Sequence[CompiledProfile],
@@ -546,7 +631,7 @@ def _push_nuvio_from_profiles(
     working_env: dict[str, str],
     http_client: HttpClientProtocol,
 ) -> dict[str, str]:
-    targets = _nuvio_targets_or_exit(ctx, compiled)
+    targets = _nuvio_targets_or_exit(ctx, compiled, env_override=working_env)
     if not targets:
         console.print("⏭️  [nuvio] No profile has a Nuvio client; nothing to push")
         return working_env
@@ -828,7 +913,15 @@ def _push_service(
         for acc in scrubbed_cfg.get("accounts", []):
             cp = payload_by_id.get(str(acc.get("id"))) or payload_by_name.get(str(acc.get("name")))
             if cp is not None:
-                acc.update(cp.account_payload())
+                acc_payload = cp.account_payload()
+                if "nuvioMeta" in acc_payload:
+                    match inject_secrets(acc_payload["nuvioMeta"], env):
+                        case Err(meta_sec_err):
+                            console.print(f"⚠️  [{cp.name}] meta: skipped ({meta_sec_err})")
+                            acc_payload.pop("nuvioMeta", None)
+                        case Ok():
+                            pass
+                acc.update(acc_payload)
 
     derived_catalogs_changed = False
     if service_id == "aiometadata" and compiled_profiles:
@@ -844,8 +937,21 @@ def _push_service(
                     )
 
     match inject_secrets(scrubbed_cfg, env):
-        case Err() as err:
-            return err
+        case Err(sec_err):
+            if service_id == "aiomanager" and any(k.startswith("SECRET_STREMIO") for k in sec_err.missing_keys):
+                return Err(
+                    StreamWeaverError(
+                        f"{sec_err} (run `sw login stremio --login <name>`, or remove `clients.stremio` "
+                        "from profile.json if you only use Nuvio)"
+                    )
+                )
+            if service_id == "aiomanager" and any(k.startswith("SECRET_NUVIO") for k in sec_err.missing_keys):
+                return Err(
+                    StreamWeaverError(
+                        f"{sec_err} (run `sw login nuvio --login <name>`)"
+                    )
+                )
+            return Err(sec_err)
         case Ok(injected_cfg):
             pass
 
@@ -1089,10 +1195,20 @@ def cmd_config_init(
             case Ok():
                 created.append(rel_name)
 
+    env_seed_text = _INIT_ENV_TEMPLATE
+    if template_dir is not None:
+        tpl_env_example = template_dir.expanduser().resolve() / ".env.example"
+        if tpl_env_example.is_file():
+            match read_text_file(tpl_env_example):
+                case Ok(tpl_env_text):
+                    env_seed_text = tpl_env_text
+                case Err():
+                    pass
+
     _emit(TENANT_FILE, lambda d: write_json_file(d, manifest_doc), force)
     _emit(".gitignore", lambda d: write_text_file(d, _INIT_GITIGNORE_TEMPLATE), force)
-    _emit(".env.example", lambda d: write_text_file(d, _INIT_ENV_TEMPLATE), force)
-    _emit(".env", lambda d: write_text_file(d, _INIT_ENV_TEMPLATE), False)
+    _emit(".env.example", lambda d: write_text_file(d, env_seed_text), force)
+    _emit(".env", lambda d: write_text_file(d, env_seed_text), False)
 
     if template_dir is not None:
         src_root = template_dir.expanduser().resolve()
@@ -1385,7 +1501,7 @@ def cmd_profile_nuvio_list(
         case Ok(lb):
             pass
     with HttpxClient() as http_client:
-        pool = NuvioSessionPool(http_client, ctx.env.get("NUVIO_SUPABASE_ANON_KEY", ""))
+        pool = NuvioSessionPool(http_client, resolve_nuvio_anon_key(ctx.env))
         match pool.acquire(
             access_token=lb.credentials.get("accessToken", ""),
             refresh_token=lb.credentials.get("refreshToken", ""),
@@ -1809,14 +1925,13 @@ def cmd_login_nuvio(
 ) -> None:
     """Sign in to Nuvio (Supabase password grant) and store tokens as SECRET_<PREFIX>_* for this login."""
     paths = _resolve_tenant(workspace_dir, tenant)
+    manifest = _load_tenant_manifest(paths)
     env = load_env_file(paths.env_file)
-    anon_key = env.get("NUVIO_SUPABASE_ANON_KEY", "")
-    if not anon_key:
-        err_console.print("❌ NUVIO_SUPABASE_ANON_KEY is not set in .env")
-        raise typer.Exit(code=1)
+    anon_key = resolve_nuvio_anon_key(env)
 
     login_name = login.strip().lower()
-    env_prefix = (prefix or f"NUVIO_{login_name.upper().replace('-', '_')}").strip()
+    registered_prefix = manifest.logins.get("nuvio", {}).get(login_name)
+    env_prefix = (prefix or registered_prefix or f"NUVIO_{login_name.upper().replace('-', '_')}").strip()
     email_val = (email or typer.prompt("Nuvio email")).strip()
     password_val = password or typer.prompt("Nuvio password", hide_input=True)
 
@@ -1857,8 +1972,10 @@ def cmd_login_stremio(
 ) -> None:
     """Sign in to Stremio and store its authKey as SECRET_<PREFIX>_AUTH_KEY for this login."""
     paths = _resolve_tenant(workspace_dir, tenant)
+    manifest = _load_tenant_manifest(paths)
     login_name = login.strip().lower()
-    env_prefix = (prefix or f"STREMIO_{login_name.upper().replace('-', '_')}").strip()
+    registered_prefix = manifest.logins.get("stremio", {}).get(login_name)
+    env_prefix = (prefix or registered_prefix or f"STREMIO_{login_name.upper().replace('-', '_')}").strip()
     email_val = (email or typer.prompt("Stremio email")).strip()
     password_val = password or typer.prompt("Stremio password", hide_input=True)
 
@@ -2215,25 +2332,44 @@ def cmd_config_push(
 
     with HttpxClient() as http_client:
         services = build_config_services(http_client)
+        aiomanager_pushed = False
         for phase in (phase1_targets, phase2_targets):
             if not phase:
                 continue
+            if phase == phase2_targets:
+                ctx, all_compiled, working_env = _refresh_manifests_and_recompile(
+                    ctx, working_env, http_client, instance=instance
+                )
+                ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
+                bindings = ctx.bindings
             if len(phase) > 1:
+                phase_env = dict(working_env)
+                phase_bindings = bindings
+                phase_tenant = ctx.manifest.name
+                phase_profiles = ctx.profiles
+                phase_compiled = all_compiled
+
                 def _run_push(
                     sid: ServiceId,
+                    *,
+                    _env: dict[str, str] = phase_env,
+                    _bindings: dict[ServiceId, InstanceBinding] = phase_bindings,
+                    _tenant: str = phase_tenant,
+                    _profiles: list[ResolvedProfile] = phase_profiles,
+                    _compiled: list[CompiledProfile] = phase_compiled,
                 ) -> tuple[ServiceId, Result[tuple[ServicePushOutcome | None, dict[str, str]]]]:
                     return (
                         sid,
                         _push_service(
                             sid,
-                            dict(working_env),
+                            dict(_env),
                             env_path=env_path,
                             configs_dir=configs_dir,
                             services=services,
-                            bindings=bindings,
-                            tenant_name=ctx.manifest.name,
-                            resolved_profiles=ctx.profiles,
-                            compiled_profiles=all_compiled,
+                            bindings=_bindings,
+                            tenant_name=_tenant,
+                            resolved_profiles=_profiles,
+                            compiled_profiles=_compiled,
                             create=create,
                         ),
                     )
@@ -2274,6 +2410,8 @@ def cmd_config_push(
                     case Ok((outcome, new_env)):
                         working_env.update(new_env)
                         assert outcome is not None
+                        if svc_id == "aiomanager":
+                            aiomanager_pushed = True
                         if outcome.created:
                             console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
                             if outcome.install_url:
@@ -2286,7 +2424,19 @@ def cmd_config_push(
                             console.print(f"✅ {client_msg}")
 
         nuvio_docs = _nuvio_docs_for_target(target, implicit_all=False)
+        if not nuvio_docs and target.strip().lower() == "all" and not aiomanager_pushed:
+            has_configured_nuvio = any(
+                (lb := cp.resolved.logins.get("nuvio")) is not None and lb.configured()
+                for cp in compiled
+            )
+            if has_configured_nuvio:
+                nuvio_docs = ALL_NUVIO_DOCS
         if nuvio_docs:
+            if "collections" in nuvio_docs and not aiomanager_pushed:
+                ctx, all_compiled, working_env = _refresh_manifests_and_recompile(
+                    ctx, working_env, http_client, instance=instance
+                )
+                ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
             working_env = _push_nuvio_from_profiles(ctx, compiled, nuvio_docs, working_env, http_client)
 
     match _sync_diagrams_for_ctx(ctx):
