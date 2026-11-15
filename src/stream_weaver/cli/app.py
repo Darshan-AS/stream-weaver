@@ -33,6 +33,16 @@ from stream_weaver.core.aiomanager_accounts import (
     apply_managed_accounts,
     derive_profile_from_account,
 )
+from stream_weaver.core.aiostreams_packs import (
+    DEBRID_PROVIDERS,
+    active_debrid_provider,
+    apply_aiostreams_packs,
+    apply_debrid_provider,
+    inspect_aiostreams_packs,
+    prepare_aiostreams_for_push,
+    sync_aiomanager_cached_debrid_catalog,
+    sync_watchlist_folder_recipe,
+)
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import (
     compute_config_diff,
@@ -936,7 +946,10 @@ def _push_service(
                         f"🧮 [aiometadata/{binding.name}] catalogs derived from profile(s) {', '.join(plan.profiles)}"
                     )
 
-    match inject_secrets(scrubbed_cfg, env):
+    payload_to_inject = (
+        prepare_aiostreams_for_push(scrubbed_cfg, env) if service_id == "aiostreams" else scrubbed_cfg
+    )
+    match inject_secrets(payload_to_inject, env):
         case Err(sec_err):
             if service_id == "aiomanager" and any(k.startswith("SECRET_STREMIO") for k in sec_err.missing_keys):
                 return Err(
@@ -1144,6 +1157,14 @@ def cmd_config_init(
         bool,
         typer.Option("--force", help="Overwrite tenant.json, .env.example, .gitignore and template documents if present"),
     ] = False,
+    debrid: Annotated[
+        str | None,
+        typer.Option("--debrid", help="Primary Debrid provider for aiostreams.json (torbox | realdebrid | alldebrid | premiumize)"),
+    ] = None,
+    packs: Annotated[
+        str | None,
+        typer.Option("--packs", help="Comma-separated AIOStreams addon packs to enable (e.g. core_debrid,core_subtitles)"),
+    ] = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -1238,6 +1259,15 @@ def cmd_config_init(
                     case Ok(text):
                         _emit(str(rel), lambda d, t=text: write_text_file(d, t), force)
 
+    if debrid is not None or packs is not None:
+        pack_list = [p.strip() for p in packs.split(",") if p.strip()] if packs is not None else None
+        match _apply_debrid_and_packs_to_tenant(paths, debrid=debrid, enabled_packs=pack_list):
+            case Err(pack_err):
+                err_console.print(f"❌ {pack_err}")
+                raise typer.Exit(code=1)
+            case Ok():
+                pass
+
     match _try_context(paths):
         case Ok(init_ctx):
             diag_res = _sync_diagrams_for_ctx(init_ctx)
@@ -1256,6 +1286,169 @@ def cmd_config_init(
     if preserved:
         console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
     console.print("   💡 Next: fill in instance URLs & credentials in .env, then run `sw pull` or `sw push --create`.")
+
+
+def _apply_debrid_and_packs_to_tenant(
+    paths: TenantPaths,
+    *,
+    debrid: str | None = None,
+    enabled_packs: Sequence[str] | None = None,
+) -> Result[None]:
+    """Applies Debrid provider and/or AIOStreams pack toggles to a tenant's documents on disk."""
+    streams_path = paths.doc("aiostreams")
+    if not streams_path.is_file():
+        return Err(StreamWeaverError("aiostreams.json not found in tenant directory"))
+    match read_json_file(streams_path):
+        case Err() as err:
+            return err
+        case Ok(streams_doc):
+            pass
+
+    if debrid is not None:
+        match apply_debrid_provider(streams_doc, debrid):
+            case Err() as err:
+                return err
+            case Ok(streams_doc):
+                pass
+    if enabled_packs is not None:
+        match apply_aiostreams_packs(streams_doc, enabled_packs):
+            case Err() as err:
+                return err
+            case Ok(streams_doc):
+                pass
+
+    match write_json_file(streams_path, streams_doc):
+        case Err() as err:
+            return err
+        case Ok():
+            pass
+
+    cur_debrid = active_debrid_provider(streams_doc)
+    pack_states = {st.spec.id: st.enabled for st in inspect_aiostreams_packs(streams_doc)}
+
+    mgr_path = paths.doc("aiomanager")
+    if debrid is not None and mgr_path.is_file():
+        match read_json_file(mgr_path):
+            case Ok(mgr_doc):
+                updated_mgr = sync_aiomanager_cached_debrid_catalog(mgr_doc, cur_debrid)
+                match write_json_file(mgr_path, updated_mgr):
+                    case Err() as err:
+                        return err
+                    case Ok():
+                        pass
+            case Err():
+                pass
+
+    watchlist_path = paths.root / "library" / "folders" / "fld-watchlist-library.json"
+    if watchlist_path.is_file():
+        match read_json_file(watchlist_path):
+            case Ok(wl_doc):
+                synced_wl = sync_watchlist_folder_recipe(
+                    wl_doc,
+                    debrid_provider=cur_debrid,
+                    release_alerts_enabled=pack_states.get("release_alerts", True),
+                    core_debrid_enabled=pack_states.get("core_debrid", True),
+                )
+                match write_json_file(watchlist_path, synced_wl):
+                    case Err() as err:
+                        return err
+                    case Ok():
+                        pass
+            case Err():
+                pass
+
+    return Ok(None)
+
+
+# ============================================================================
+# `sw packs` — modular Debrid provider & AIOStreams addon pack toggles
+# ============================================================================
+
+packs_app = typer.Typer(help="Inspect and toggle AIOStreams Debrid providers and modular addon packs.")
+app.add_typer(packs_app, name="packs")
+
+
+@packs_app.command("list")
+def cmd_packs_list(
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """List the active Debrid provider and every toggleable AIOStreams addon pack."""
+    ctx = _resolve_context(workspace_dir, tenant)
+    streams_path = ctx.paths.doc("aiostreams")
+    match read_json_file(streams_path):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(streams_doc):
+            pass
+
+    debrid_id = active_debrid_provider(streams_doc)
+    debrid_spec = DEBRID_PROVIDERS.get(debrid_id)
+    debrid_label = f"{debrid_spec.label} ({debrid_spec.secret_key})" if debrid_spec else debrid_id
+    console.print(f"⚡ Active Debrid Provider: {debrid_label}")
+
+    table = Table(title=f"AIOStreams Addon Packs — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
+    for col in ("Pack", "Title", "Enabled", "Presets", "Extra Secrets"):
+        table.add_column(col, overflow="fold")
+    for st in inspect_aiostreams_packs(streams_doc):
+        table.add_row(
+            st.spec.id,
+            st.spec.title,
+            "✅" if st.enabled else "—",
+            ", ".join(st.present_presets) or "—",
+            ", ".join(st.spec.required_secrets) or "—",
+        )
+    console.print(table)
+
+
+@packs_app.command("set")
+def cmd_packs_set(
+    debrid: Annotated[
+        str | None,
+        typer.Option("--debrid", help="Switch Debrid provider (torbox | realdebrid | alldebrid | premiumize)"),
+    ] = None,
+    enable: Annotated[
+        list[str] | None,
+        typer.Option("--enable", "-e", help="Enable an AIOStreams pack (repeatable)"),
+    ] = None,
+    disable: Annotated[
+        list[str] | None,
+        typer.Option("--disable", "-d", help="Disable an AIOStreams pack (repeatable)"),
+    ] = None,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Switch Debrid provider and/or enable/disable AIOStreams addon packs."""
+    paths = _resolve_tenant(workspace_dir, tenant)
+    match read_json_file(paths.doc("aiostreams")):
+        case Err(read_err):
+            err_console.print(f"❌ {read_err}")
+            raise typer.Exit(code=1)
+        case Ok(streams_doc):
+            pass
+
+    next_packs: list[str] | None = None
+    if enable or disable:
+        current = {st.spec.id for st in inspect_aiostreams_packs(streams_doc) if st.enabled}
+        current |= {p.strip().lower() for p in (enable or []) if p.strip()}
+        current -= {p.strip().lower() for p in (disable or []) if p.strip()}
+        next_packs = sorted(current)
+
+    match _apply_debrid_and_packs_to_tenant(paths, debrid=debrid, enabled_packs=next_packs):
+        case Err(pack_err):
+            err_console.print(f"❌ {pack_err}")
+            raise typer.Exit(code=1)
+        case Ok():
+            pass
+
+    ctx = _resolve_context(paths.root)
+    match _sync_diagrams_for_ctx(ctx):
+        case Ok():
+            pass
+        case Err(diag_err):
+            err_console.print(f"⚠️  [diagram] {diag_err}")
+    console.print("✅ Updated AIOStreams Debrid/packs configuration and regenerated architecture docs.")
 
 
 def _validate_tenant(paths: TenantPaths) -> list[str]:
