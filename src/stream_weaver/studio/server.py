@@ -31,11 +31,13 @@ from stream_weaver.effects.http import HttpClientProtocol
 from stream_weaver.effects.storage import save_env_updates
 from stream_weaver.engine import (
     apply_studio_mutation,
+    build_custom_folder_sources,
     diff_workspace,
     export_tenant_zip_bytes,
     inspect_tenant_state,
     login_nuvio_and_list_profiles,
     provision_instances,
+    pull_workspace,
     push_workspace,
 )
 
@@ -307,6 +309,51 @@ class StudioDispatcher:
                         if self.is_stateless:
                             out["bundle"] = _serialize_bundle(paths)
                         return _json_resp(200, out)
+
+        if method == "POST" and clean_path == "/api/pull":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            target = str(payload.get("target") or "all")
+            prof = str(payload["profile"]) if isinstance(payload.get("profile"), str) and payload["profile"] else None
+            with self._workspace_paths(payload) as paths:
+                match pull_workspace(
+                    paths,
+                    target=target,
+                    profile=prof,
+                    extra_library_roots=self._extra_libs(),
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(report):
+                        out = {
+                            "ok": True,
+                            "steps": list(report.steps),
+                            "state": report.snapshot,
+                        }
+                        if self.is_stateless:
+                            out["bundle"] = _serialize_bundle(paths)
+                        return _json_resp(200, out)
+
+        if method == "POST" and clean_path == "/api/build-row":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            raw_spec = payload.get("spec")
+            spec: Mapping[str, Any] = raw_spec if isinstance(raw_spec, Mapping) else payload
+            pending_env = payload.get("pendingEnv") if isinstance(payload.get("pendingEnv"), Mapping) else None
+            with self._workspace_paths(payload) as paths:
+                match build_custom_folder_sources(
+                    paths,
+                    spec,
+                    pending_env=pending_env,
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(built):
+                        return _json_resp(200, {"ok": True, **built})
 
         if method == "POST" and clean_path == "/api/diff":
             payload = self._parse_json_body(body)

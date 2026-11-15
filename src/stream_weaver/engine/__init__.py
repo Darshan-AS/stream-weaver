@@ -6,11 +6,13 @@ from stream_weaver.engine.workspace import (
     EnvKeySpec,
     PushReport,
     apply_studio_mutation,
+    build_custom_folder_sources,
     diff_workspace,
     export_tenant_zip_bytes,
     inspect_tenant_state,
     login_nuvio_and_list_profiles,
     provision_instances,
+    pull_workspace,
     push_workspace,
 )
 
@@ -20,10 +22,12 @@ __all__ = [
     "KNOWN_ENV_KEYS",
     "PushReport",
     "apply_studio_mutation",
+    "build_custom_folder_sources",
     "diff_workspace",
     "export_tenant_zip_bytes",
     "inspect_tenant_state",
     "login_nuvio_and_list_profiles",
     "provision_instances",
+    "pull_workspace",
     "push_workspace",
 ]
