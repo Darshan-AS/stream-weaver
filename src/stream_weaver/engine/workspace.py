@@ -37,7 +37,9 @@ from stream_weaver.core.aiostreams_packs import (
     inspect_aiostreams_packs,
     inspect_dual_subtitle_pairs,
     inspect_stream_preferences,
+    prepare_aiometadata_for_push,
     prepare_aiostreams_for_push,
+    required_aiometadata_secrets,
     required_aiostreams_secrets,
     sync_aiomanager_cached_debrid_catalog,
     sync_watchlist_folder_recipe,
@@ -636,7 +638,7 @@ def inspect_tenant_state(
     meta_recipe = ws.library.recipes.get(("meta", "default"))
     settings_recipe = ws.library.recipes.get(("settings", "default"))
 
-    # Compute exact required secrets across enabled packs, metadata, and active profile collections
+    # Compute exact required secrets across enabled packs, derived metadata catalogs, and active collections
     required_keys: set[str] = {
         "AIOSTREAMS_URL",
         "AIOSTREAMS_PASSWORD",
@@ -644,11 +646,14 @@ def inspect_tenant_state(
         "AIOMETADATA_PASSWORD",
     }
     required_keys.update(required_aiostreams_secrets(streams_doc))
-    api_keys_cfg = meta_service_doc.get("apiKeys")
-    if isinstance(api_keys_cfg, Mapping):
-        for v in api_keys_cfg.values():
-            if isinstance(v, str):
-                required_keys.update(m.group(1) for m in SECRET_PLACEHOLDER_RE.finditer(v))
+    effective_meta_doc: Mapping[str, Any] = meta_service_doc
+    if ws.compiled and meta_service_doc:
+        match derive_instance_catalogs(DEFAULT_INSTANCE, meta_service_doc, ws.compiled):
+            case Ok(plan):
+                effective_meta_doc = {**meta_service_doc, "catalogs": plan.catalogs}
+            case Err():
+                pass
+    required_keys.update(required_aiometadata_secrets(effective_meta_doc))
 
     compiled_by_name = {cp.name: cp for cp in ws.compiled}
     profiles_out: list[JsonDict] = []
@@ -785,13 +790,24 @@ def inspect_tenant_state(
             }
         )
 
+    streams_base = (ws.env.get("AIOSTREAMS_URL") or "https://aiostreams.elfhosted.com").rstrip("/")
+    streams_uuid = ws.env.get("AIOSTREAMS_UUID", "").strip()
+    meta_base = (ws.env.get("AIOMETADATA_URL") or "https://aiometadata.elfhosted.com").rstrip("/")
+    meta_uuid = ws.env.get("AIOMETADATA_UUID", "").strip()
+
     return Ok(
         {
             "tenant": {
                 "name": ws.manifest.name,
                 "root": str(paths.root),
-                "aiostreamsProvisioned": bool(ws.env.get("AIOSTREAMS_UUID")),
-                "aiometadataProvisioned": bool(ws.env.get("AIOMETADATA_UUID")),
+                "aiostreamsProvisioned": bool(streams_uuid),
+                "aiometadataProvisioned": bool(meta_uuid),
+                "aiostreamsUuid": streams_uuid,
+                "aiometadataUuid": meta_uuid,
+                "aiostreamsConfigureUrl": f"{streams_base}/stremio/configure",
+                "aiometadataConfigureUrl": (
+                    f"{meta_base}/stremio/{meta_uuid}/configure" if meta_uuid else f"{meta_base}/configure"
+                ),
             },
             "debrid": {
                 "active": debrid_id,
@@ -1224,7 +1240,15 @@ def provision_instances(
                     case Ok(plan):
                         if plan.changed:
                             scrubbed_cfg = {**scrubbed_cfg, "catalogs": plan.catalogs}
-            payload = prepare_aiostreams_for_push(scrubbed_cfg, working) if svc_id == "aiostreams" else scrubbed_cfg
+            payload = (
+                prepare_aiostreams_for_push(scrubbed_cfg, working)
+                if svc_id == "aiostreams"
+                else (
+                    prepare_aiometadata_for_push(scrubbed_cfg, working)
+                    if svc_id == "aiometadata"
+                    else scrubbed_cfg
+                )
+            )
             match inject_secrets(payload, working):
                 case Err(sec_err):
                     return Err(StreamWeaverError(f"[{svc_id}] {sec_err}"))
@@ -1394,7 +1418,15 @@ def push_workspace(
                             scrubbed_cfg = {**scrubbed_cfg, "catalogs": plan.catalogs}
                             _ = write_json_file(cfg_path, scrubbed_cfg)
 
-            payload = prepare_aiostreams_for_push(scrubbed_cfg, working) if svc_id == "aiostreams" else scrubbed_cfg
+            payload = (
+                prepare_aiostreams_for_push(scrubbed_cfg, working)
+                if svc_id == "aiostreams"
+                else (
+                    prepare_aiometadata_for_push(scrubbed_cfg, working)
+                    if svc_id == "aiometadata"
+                    else scrubbed_cfg
+                )
+            )
             match inject_secrets(payload, working):
                 case Err(sec_err):
                     return Err(StreamWeaverError(f"[{svc_id}] {sec_err}"))
