@@ -44,6 +44,7 @@ from stream_weaver.core.aiostreams_packs import (
     inspect_aiostreams_packs,
     inspect_dual_subtitle_pairs,
     inspect_stream_preferences,
+    prepare_aiometadata_for_push,
     prepare_aiostreams_for_push,
     sync_aiomanager_cached_debrid_catalog,
     sync_watchlist_folder_recipe,
@@ -953,7 +954,13 @@ def _push_service(
                     )
 
     payload_to_inject = (
-        prepare_aiostreams_for_push(scrubbed_cfg, env) if service_id == "aiostreams" else scrubbed_cfg
+        prepare_aiostreams_for_push(scrubbed_cfg, env)
+        if service_id == "aiostreams"
+        else (
+            prepare_aiometadata_for_push(scrubbed_cfg, env)
+            if service_id == "aiometadata"
+            else scrubbed_cfg
+        )
     )
     match inject_secrets(payload_to_inject, env):
         case Err(sec_err):

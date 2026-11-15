@@ -21,7 +21,7 @@ from urllib.parse import quote, unquote
 
 from stream_weaver.core.errors import ConfigValidationError
 from stream_weaver.core.result import Err, Ok, Result
-from stream_weaver.core.secrets import inject_secrets
+from stream_weaver.core.secrets import SECRET_PLACEHOLDER_RE, inject_secrets
 from stream_weaver.core.types import EnvMap, JsonDict
 
 
@@ -279,16 +279,44 @@ def inspect_aiostreams_packs(aiostreams_doc: Mapping[str, Any]) -> tuple[PackSta
 
 
 def required_aiostreams_secrets(aiostreams_doc: Mapping[str, Any]) -> tuple[str, ...]:
-    """Returns only the `SECRET_*` keys required by *enabled* services and presets in `aiostreams_doc`."""
+    """Returns only the `SECRET_*` keys strictly required by *enabled* services and presets."""
     keys: set[str] = {"SECRET_TMDB_API_KEY", "SECRET_TMDB_ACCESS_TOKEN", "SECRET_TVDB_API_KEY"}
-    if aiostreams_doc.get("posterService") == "rpdb" and aiostreams_doc.get("rpdbApiKey"):
-        keys.add("SECRET_RPDB_API_KEY")
     debrid = active_debrid_provider(aiostreams_doc)
     if debrid in DEBRID_PROVIDERS:
         keys.add(DEBRID_PROVIDERS[debrid].secret_key)
     for st in inspect_aiostreams_packs(aiostreams_doc):
         if st.enabled:
             keys.update(st.spec.required_secrets)
+    return tuple(sorted(keys))
+
+
+def required_aiometadata_secrets(aiometadata_doc: Mapping[str, Any]) -> tuple[str, ...]:
+    """
+    Returns only the `SECRET_*` keys strictly required by active features and *enabled* catalogs
+    in `aiometadata_doc` (unused `traktTokenId`, `mdblist`, and `rpdb` keys stay optional).
+    """
+    keys: set[str] = {"SECRET_TMDB_API_KEY", "SECRET_TVDB_API_KEY"}
+    if aiometadata_doc.get("posterRatingProvider") == "rpdb":
+        keys.add("SECRET_RPDB_API_KEY")
+    if aiometadata_doc.get("traktWatchTracking") or aiometadata_doc.get("hideWatchedTrakt"):
+        keys.add("SECRET_TRAKT_TOKEN_ID")
+    if aiometadata_doc.get("mdblistWatchTracking") or aiometadata_doc.get("hideWatchedMdblist"):
+        keys.add("SECRET_MDBLIST_API_KEY")
+    search_sec = aiometadata_doc.get("search")
+    if isinstance(search_sec, Mapping) and search_sec.get("ai_enabled"):
+        keys.add("SECRET_GEMINI_API_KEY")
+
+    raw_cats = aiometadata_doc.get("catalogs")
+    if isinstance(raw_cats, list):
+        for cat in raw_cats:
+            if not isinstance(cat, Mapping) or not cat.get("enabled"):
+                continue
+            cid = str(cat.get("id") or "")
+            src = str(cat.get("source") or "")
+            if src == "trakt" or cid.startswith("trakt."):
+                keys.add("SECRET_TRAKT_TOKEN_ID")
+            elif src == "mdblist" or cid.startswith("mdblist."):
+                keys.add("SECRET_MDBLIST_API_KEY")
     return tuple(sorted(keys))
 
 
@@ -672,12 +700,17 @@ def sync_aiomanager_cached_debrid_catalog(
 
 def prepare_aiostreams_for_push(aiostreams_doc: Mapping[str, Any], env: EnvMap) -> JsonDict:
     """
-    Strips `enabled: false` presets whose `{{SECRET_*}}` placeholders are unset in `env` before
-    secret injection, so disabling an optional pack (`release_alerts`, `dual_subtitles`) never
-    forces the user to populate unused API keys—while preserving disabled presets that have no
-    missing secrets (zero diff drift on fully-keyed tenants).
+    Strips `enabled: false` presets whose `{{SECRET_*}}` placeholders are unset in `env` and
+    gracefully disables optional RPDB posters when `SECRET_RPDB_API_KEY` is blank—preserving all
+    fields byte-for-byte when keys are present (zero diff drift on fully-keyed tenants).
     """
     out: JsonDict = copy.deepcopy(dict(aiostreams_doc))
+    raw_rpdb = out.get("rpdbApiKey")
+    if isinstance(raw_rpdb, str) and "SECRET_RPDB_API_KEY" in raw_rpdb and not env.get("SECRET_RPDB_API_KEY", "").strip():
+        out["rpdbApiKey"] = ""
+        if out.get("posterService") == "rpdb":
+            out["posterService"] = "none"
+
     raw_presets = out.get("presets")
     if not isinstance(raw_presets, list):
         return out
@@ -716,4 +749,30 @@ def prepare_aiostreams_for_push(aiostreams_doc: Mapping[str, Any], env: EnvMap) 
                 and any(str(m.get("id") or "").startswith(pid) for pid in dropped_ids)
             )
         ]
+    return out
+
+
+def prepare_aiometadata_for_push(aiometadata_doc: Mapping[str, Any], env: EnvMap) -> JsonDict:
+    """
+    Blanks optional `apiKeys.*` placeholders (`traktTokenId`, `mdblist`, `rpdb`, etc.) that are
+    neither required by any enabled catalog/feature nor set in `env`—so new users can provision and
+    push AIOMetadata without being forced through Trakt OAuth or MDBList/RPDB signups on Day 1,
+    while keeping fully-keyed tenants 100% unchanged.
+    """
+    out: JsonDict = copy.deepcopy(dict(aiometadata_doc))
+    api_keys = out.get("apiKeys")
+    if not isinstance(api_keys, dict):
+        return out
+    strictly_needed = set(required_aiometadata_secrets(out))
+    for field_name, raw_val in list(api_keys.items()):
+        if not isinstance(raw_val, str):
+            continue
+        placeholders = [m.group(1) for m in SECRET_PLACEHOLDER_RE.finditer(raw_val)]
+        if not placeholders:
+            continue
+        if any(ph in strictly_needed for ph in placeholders):
+            continue
+        if all(bool(env.get(ph, "").strip()) for ph in placeholders):
+            continue
+        api_keys[field_name] = ""
     return out

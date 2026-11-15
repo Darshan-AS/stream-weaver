@@ -18,7 +18,9 @@ from stream_weaver.core.aiostreams_packs import (
     inspect_aiostreams_packs,
     inspect_dual_subtitle_pairs,
     inspect_stream_preferences,
+    prepare_aiometadata_for_push,
     prepare_aiostreams_for_push,
+    required_aiometadata_secrets,
     required_aiostreams_secrets,
 )
 from stream_weaver.core.result import Err, Ok
@@ -42,15 +44,15 @@ def test_pack_toggle_is_lossless_and_drops_unused_secret_requirements() -> None:
     assert "SECRET_ITSOUT_TOKEN" not in required_aiostreams_secrets(minimal)
     assert "SECRET_SUBSOURCE_API_KEY" not in required_aiostreams_secrets(minimal)
 
-    # `prepare_aiostreams_for_push` strips disabled unkeyed presets so `inject_secrets` succeeds cleanly
+    # `prepare_aiostreams_for_push` strips disabled unkeyed presets AND optional unset RPDB
     core_env = {
         "SECRET_TORBOX_API_KEY": "tb-123",
         "SECRET_TMDB_API_KEY": "tmdb-123",
         "SECRET_TMDB_ACCESS_TOKEN": "tmdb-jwt",
         "SECRET_TVDB_API_KEY": "tvdb-123",
-        "SECRET_RPDB_API_KEY": "t0-free-rpdb",
     }
     prepared = prepare_aiostreams_for_push(minimal, core_env)
+    assert prepared["posterService"] == "none"
     injected = inject_secrets(prepared, core_env)
     assert isinstance(injected, Ok), injected
 
@@ -62,10 +64,38 @@ def test_pack_toggle_is_lossless_and_drops_unused_secret_requirements() -> None:
     # On a fully-keyed config (even with `tdb` disabled), `prepare_aiostreams_for_push` is a no-op
     full_env = {
         **core_env,
+        "SECRET_RPDB_API_KEY": "t0-free-rpdb",
         "SECRET_ITSOUT_TOKEN": "ito-123",
         "SECRET_SUBSOURCE_API_KEY": "sub-123",
     }
     assert prepare_aiostreams_for_push(raw, full_env) == raw
+
+
+def test_prepare_aiometadata_for_push_unblocks_day_one_without_trakt_or_mdblist() -> None:
+    meta_raw = json.loads((EXAMPLE / "aiometadata.json").read_text(encoding="utf-8"))
+    # Disable all `trakt.*` and `mdblist.*` catalogs (simulating a user without Trakt/MDBList)
+    no_trakt = json.loads(json.dumps(meta_raw))
+    for cat in no_trakt["catalogs"]:
+        if cat.get("source") in ("trakt", "mdblist") or str(cat.get("id", "")).startswith(("trakt.", "mdblist.")):
+            cat["enabled"] = False
+            cat["showInHome"] = False
+
+    assert required_aiometadata_secrets(no_trakt) == ("SECRET_TMDB_API_KEY", "SECRET_TVDB_API_KEY")
+    minimal_meta_env = {"SECRET_TMDB_API_KEY": "tmdb-k", "SECRET_TVDB_API_KEY": "tvdb-k"}
+    prepared_meta = prepare_aiometadata_for_push(no_trakt, minimal_meta_env)
+    assert prepared_meta["apiKeys"]["traktTokenId"] == ""
+    assert prepared_meta["apiKeys"]["mdblist"] == ""
+    assert prepared_meta["apiKeys"]["rpdb"] == ""
+    assert isinstance(inject_secrets(prepared_meta, minimal_meta_env), Ok)
+
+    # Fully-keyed tenant preserves every `apiKeys` placeholder untouched
+    full_meta_env = {
+        **minimal_meta_env,
+        "SECRET_TRAKT_TOKEN_ID": "trakt-tok",
+        "SECRET_MDBLIST_API_KEY": "mdb-k",
+        "SECRET_RPDB_API_KEY": "t0-free-rpdb",
+    }
+    assert prepare_aiometadata_for_push(meta_raw, full_meta_env) == meta_raw
 
 
 def test_debrid_switch_and_sw_packs_cli_validate_cleanly(tmp_path: Path) -> None:
@@ -89,7 +119,6 @@ def test_debrid_switch_and_sw_packs_cli_validate_cleanly(tmp_path: Path) -> None
     assert active_debrid_provider(streams_doc) == "realdebrid"
     assert required_aiostreams_secrets(streams_doc) == (
         "SECRET_RD_API_KEY",
-        "SECRET_RPDB_API_KEY",
         "SECRET_TMDB_ACCESS_TOKEN",
         "SECRET_TMDB_API_KEY",
         "SECRET_TVDB_API_KEY",
