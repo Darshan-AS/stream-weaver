@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.war_history_series",
+  "catalog": {
+    "id": "tmdb.discover.war_history_series",
+    "type": "series",
+    "name": "War & Historical Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "10768",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.6,
+          "vote_count.gte": 400
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

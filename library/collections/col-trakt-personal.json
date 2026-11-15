@@ -1,0 +1,31 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-trakt-personal",
+  "ui": {
+    "title": "My Trakt Hub (No BingeCat Required)",
+    "description": "Native Trakt Up Next, Watchlist, Personalized Recommendations, and Airing Calendar via AIOMetadata.",
+    "category": "personal"
+  },
+  "collection": {
+    "id": "col-trakt-personal",
+    "title": "My Trakt & Calendar",
+    "folders": [
+      {
+        "ref": "fld-trakt-watchlist"
+      },
+      {
+        "ref": "fld-trakt-recommendations"
+      },
+      {
+        "ref": "fld-trakt-calendar"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
+    "focusGlowEnabled": true
+  }
+}

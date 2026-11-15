@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.shudder_movies",
+  "catalog": {
+    "id": "tmdb.discover.shudder_movies",
+    "type": "movie",
+    "name": "Shudder Cult & Horror",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "watch_region": "US",
+          "with_watch_providers": "99",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 80
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

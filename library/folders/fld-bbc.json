@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-bbc",
+  "folder": {
+    "id": "fld-bbc",
+    "title": "BBC & British Originals",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "BBC & British Prestige Series",
+        "catalog": {
+          "ref": "tmdb.discover.bbc_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/dce3256c.webp",
+    "focusGifEnabled": false
+  }
+}

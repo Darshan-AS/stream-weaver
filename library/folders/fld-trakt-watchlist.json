@@ -1,0 +1,34 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-trakt-watchlist",
+  "folder": {
+    "id": "fld-trakt-watchlist",
+    "title": "Watchlist & Up Next",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.upnext",
+        "title": "Trakt Up Next"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "trakt.watchlist.movies",
+        "title": "Watchlist — Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.watchlist.series",
+        "title": "Watchlist — Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/49c41ea9.webp",
+    "focusGifEnabled": false
+  }
+}

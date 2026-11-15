@@ -326,6 +326,9 @@ def _infer_secrets(node: Any, library: Library, seen_refs: set[tuple[str, str]])
         for field_name, val in _SYMBOLIC_SECRET_HINTS:
             if node.get(field_name) == val:
                 secrets.add(_SYMBOLIC_SECRET_HINTS[(field_name, val)])
+        cat_id = node.get("catalogId")
+        if isinstance(cat_id, str) and cat_id.startswith("trakt."):
+            secrets.add("SECRET_TRAKT_TOKEN_ID")
         ref = node.get("ref")
         if isinstance(ref, str) and "${" not in ref:
             for k in ("folder", "catalog"):

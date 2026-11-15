@@ -4,25 +4,42 @@
   "kind": "collection",
   "id": "col-franchises",
   "ui": {
-    "title": "Franchises & Universes",
-    "description": "Marvel Cinematic Universe, Star Wars & Lucasfilm, DC Universe, and Studio Ghibli.",
-    "category": "discovery"
+    "title": "Franchises, Studios & Classics",
+    "description": "MCU, Star Wars & Lucasfilm, DC, Studio Ghibli, plus optional A24, Pixar & DreamWorks, and 70s–90s Cinema Classics tabs.",
+    "category": "studios"
+  },
+  "params": {
+    "franchises": {
+      "type": "list",
+      "items": "string",
+      "label": "Included Studio & Universe Folders",
+      "options": [
+        { "label": "Marvel Cinematic Universe", "value": "fld-franchise-mcu" },
+        { "label": "Star Wars & Lucasfilm", "value": "fld-franchise-star-wars" },
+        { "label": "DC", "value": "fld-franchise-dc" },
+        { "label": "Studio Ghibli", "value": "fld-franchise-ghibli" },
+        { "label": "A24", "value": "fld-studio-a24" },
+        { "label": "Pixar & DreamWorks", "value": "fld-studio-pixar" },
+        { "label": "70s–90s Cinema Classics", "value": "fld-cinema-classics" }
+      ],
+      "default": [
+        "fld-franchise-mcu",
+        "fld-franchise-star-wars",
+        "fld-franchise-dc",
+        "fld-franchise-ghibli"
+      ]
+    }
   },
   "collection": {
     "id": "col-franchises",
     "title": "Franchises & Universes",
     "folders": [
       {
-        "ref": "fld-franchise-mcu"
-      },
-      {
-        "ref": "fld-franchise-star-wars"
-      },
-      {
-        "ref": "fld-franchise-dc"
-      },
-      {
-        "ref": "fld-franchise-ghibli"
+        "for": "f",
+        "in": "${franchises}",
+        "item": {
+          "ref": "${f}"
+        }
       }
     ],
     "pinToTop": true,

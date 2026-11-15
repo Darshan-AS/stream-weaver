@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-studio-a24",
+  "folder": {
+    "id": "fld-studio-a24",
+    "title": "A24",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "A24 Films",
+        "catalog": {
+          "ref": "tmdb.discover.a24_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "A24 Series",
+        "catalog": {
+          "ref": "tmdb.discover.a24_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg",
+    "focusGifEnabled": false
+  }
+}

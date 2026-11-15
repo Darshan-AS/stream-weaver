@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-british-tv",
+  "folder": {
+    "id": "fld-british-tv",
+    "title": "British Crime & Drama",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "British Crime & Mystery",
+        "catalog": {
+          "ref": "tmdb.discover.british_crime_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/jwBs4djVIe9Kz3Vu9rsI9aEEKWU.jpg",
+    "focusGifEnabled": false
+  }
+}

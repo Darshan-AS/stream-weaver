@@ -1,0 +1,28 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-trakt-recommendations",
+  "folder": {
+    "id": "fld-trakt-recommendations",
+    "title": "Trakt Picks For You",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "catalogId": "trakt.recommendations.movies",
+        "title": "Recommended Movies"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.recommendations.shows",
+        "title": "Recommended Series"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/d8b14f4f.webp",
+    "focusGifEnabled": false
+  }
+}

@@ -21,7 +21,11 @@
         { "label": "Disney+", "value": "fld-disney-plus" },
         { "label": "Hulu", "value": "fld-hulu" },
         { "label": "Paramount+", "value": "fld-paramount-plus" },
-        { "label": "Peacock", "value": "fld-peacock" }
+        { "label": "Peacock", "value": "fld-peacock" },
+        { "label": "Crunchyroll", "value": "fld-crunchyroll" },
+        { "label": "MUBI Arthouse", "value": "fld-mubi" },
+        { "label": "Shudder Horror", "value": "fld-shudder" },
+        { "label": "BBC & British Originals", "value": "fld-bbc" }
       ],
       "default": [
         "fld-netflix",

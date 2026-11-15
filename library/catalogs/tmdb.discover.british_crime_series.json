@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.british_crime_series",
+  "catalog": {
+    "id": "tmdb.discover.british_crime_series",
+    "type": "series",
+    "name": "British Crime & Mystery",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_origin_country": "GB",
+          "with_genres": "80|9648|18",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.6,
+          "vote_count.gte": 200
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

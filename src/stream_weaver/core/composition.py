@@ -432,7 +432,10 @@ def config_catalog_keys(entry: Mapping[str, Any]) -> tuple[tuple[str, str], ...]
     cid = str(entry.get("id") or "")
     ctype = str(entry.get("type") or "")
     display = str(entry.get("displayType") or ctype)
-    return ((cid, ctype), (f"{cid}_{ctype}", display))
+    keys: list[tuple[str, str]] = [(cid, ctype), (f"{cid}_{ctype}", display)]
+    if ctype == "anime" and display != "series":
+        keys.append((f"{cid}_anime", "series"))
+    return tuple(keys)
 
 
 def config_catalog_index(entries: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], int]:

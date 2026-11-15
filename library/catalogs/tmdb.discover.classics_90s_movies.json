@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.classics_90s_movies",
+  "catalog": {
+    "id": "tmdb.discover.classics_90s_movies",
+    "type": "movie",
+    "name": "90s Cinema Masterpieces",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "primary_release_date.gte": "1990-01-01",
+          "primary_release_date.lte": "1999-12-31",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.7,
+          "vote_count.gte": 3500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

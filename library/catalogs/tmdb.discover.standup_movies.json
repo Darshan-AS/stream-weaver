@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.standup_movies",
+  "catalog": {
+    "id": "tmdb.discover.standup_movies",
+    "type": "movie",
+    "name": "Stand-Up Comedy Specials",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_keywords": "9716",
+          "sort_by": "vote_count.desc",
+          "vote_average.gte": 7.0,
+          "vote_count.gte": 80
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

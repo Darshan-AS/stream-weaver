@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-standup",
+  "folder": {
+    "id": "fld-genre-standup",
+    "title": "Stand-Up Specials",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Stand-Up Comedy Specials",
+        "catalog": {
+          "ref": "tmdb.discover.standup_movies"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/1934d756.webp",
+    "focusGifEnabled": false
+  }
+}

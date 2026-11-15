@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.kdrama_series",
+  "catalog": {
+    "id": "tmdb.discover.kdrama_series",
+    "type": "series",
+    "name": "Top K-Dramas",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_original_language": "ko",
+          "without_genres": "16",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.6,
+          "vote_count.gte": 150
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

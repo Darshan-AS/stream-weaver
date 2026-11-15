@@ -1,0 +1,32 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-cinema-classics",
+  "folder": {
+    "id": "fld-cinema-classics",
+    "title": "70s–90s Cinema Classics",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "70s & 80s Masterpieces",
+        "catalog": {
+          "ref": "tmdb.discover.classics_70s_80s_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "90s Masterpieces",
+        "catalog": {
+          "ref": "tmdb.discover.classics_90s_movies"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg",
+    "focusGifEnabled": false
+  }
+}

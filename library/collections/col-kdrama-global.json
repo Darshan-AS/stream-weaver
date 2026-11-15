@@ -1,0 +1,31 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-kdrama-global",
+  "ui": {
+    "title": "K-Drama & Global Series",
+    "description": "Acclaimed Korean dramas & thrillers, British crime miniseries, and European noir.",
+    "category": "regional"
+  },
+  "collection": {
+    "id": "col-kdrama-global",
+    "title": "K-Drama & Global TV",
+    "folders": [
+      {
+        "ref": "fld-kdrama"
+      },
+      {
+        "ref": "fld-british-tv"
+      },
+      {
+        "ref": "fld-euro-thrillers"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://image.tmdb.org/t/p/w1280/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg",
+    "focusGlowEnabled": true
+  }
+}
