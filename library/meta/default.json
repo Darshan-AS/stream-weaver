@@ -25,7 +25,7 @@
       "options": [
         { "label": "Trakt", "value": "trakt" },
         { "label": "Simkl", "value": "simkl" },
-        { "label": "Nuvio Cloud", "value": "nuvio" }
+        { "label": "Nuvio Local", "value": "local" }
       ]
     },
     "moreLikeThisSource": {
@@ -36,6 +36,21 @@
         { "label": "Trakt", "value": "trakt" },
         { "label": "TMDB", "value": "tmdb" }
       ]
+    },
+    "episodeRatings": {
+      "type": "string",
+      "label": "Per-Episode IMDb Ratings (TV)",
+      "default": "show",
+      "options": [
+        { "label": "Show All", "value": "show" },
+        { "label": "Hide on Unwatched Episodes", "value": "hideUnwatched" },
+        { "label": "Hide All", "value": "hide" }
+      ]
+    },
+    "blurUnwatchedEpisodes": {
+      "type": "bool",
+      "label": "Blur Unwatched Episode Thumbnails (Desktop/Mobile)",
+      "default": false
     }
   },
   "meta": {
@@ -80,7 +95,7 @@
       }
     },
     "traktComments": true,
-    "episodeRatings": "show",
+    "episodeRatings": "${episodeRatings}",
     "tracking": {
       "watchProgressSource": "${watchProgressSource}",
       "librarySource": "${librarySource}",
@@ -98,7 +113,7 @@
       "heroTrailerPlayback": true,
       "tabLayout": false,
       "episodeCardStyle": "horizontal",
-      "blurUnwatchedEpisodes": false,
+      "blurUnwatchedEpisodes": "${blurUnwatchedEpisodes}",
       "sections": [
         {
           "key": "ACTIONS",

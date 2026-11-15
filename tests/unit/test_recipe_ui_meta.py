@@ -145,3 +145,66 @@ def test_expanded_library_collections_compile_and_derive_catalogs_cleanly() -> N
     # MAL decade & upcoming catalogs updated in-place with displayType="series" (no duplicate entries)
     assert by_id_type[("mal.90sDecade", "anime")]["displayType"] == "series"
     assert sum(1 for c in derived.value if c["id"] == "mal.90sDecade") == 1
+
+
+def test_settings_and_meta_recipe_params_zero_drift_and_every_option_normalizes() -> None:
+    from stream_weaver.core.composition import compile_doc
+    from stream_weaver.core.nuvio_meta import normalize_nuvio_meta_doc
+    from stream_weaver.core.nuvio_settings import normalize_nuvio_settings_doc
+
+    lib = Library.load((EXAMPLE_LIB, SHARED_LIB))
+    assert not lib.errors, lib.errors
+
+    default_settings = compile_doc({"ref": "default"}, "settings", lib)
+    assert isinstance(default_settings, Ok), default_settings
+    assert default_settings.value is not None
+    assert default_settings.value["appearance"]["theme"] == "ocean"
+    assert default_settings.value["appearance"]["amoledBlack"] is True
+    assert default_settings.value["playback"]["streamSelection"]["mode"] == "manual"
+    assert default_settings.value["audio"]["preferredLanguage"] == "original"
+    assert default_settings.value["subtitles"]["preferredLanguage"] == "en"
+    assert default_settings.value["subtitles"]["secondaryLanguage"] is None
+    assert default_settings.value["tvLayout"]["homeLayout"] == "modern"
+    assert default_settings.value["tvLayout"]["details"]["blurUnwatchedEpisodes"] is False
+    assert isinstance(normalize_nuvio_settings_doc(default_settings.value), Ok)
+
+    default_meta = compile_doc({"ref": "default"}, "meta", lib)
+    assert isinstance(default_meta, Ok), default_meta
+    assert default_meta.value is not None
+    assert default_meta.value["episodeRatings"] == "show"
+    assert default_meta.value["tracking"]["watchProgressSource"] == "trakt"
+    assert default_meta.value["tracking"]["librarySource"] == "trakt"
+    assert default_meta.value["metaScreen"]["blurUnwatchedEpisodes"] is False
+    assert isinstance(normalize_nuvio_meta_doc(default_meta.value), Ok)
+
+    # Every advertised option in `settings/default` normalizes cleanly
+    settings_recipe = lib.get("settings", "default")
+    assert isinstance(settings_recipe, Ok)
+    for spec in settings_recipe.value.params.params:
+        for opt in spec.options:
+            rendered = compile_doc({"ref": "default", "with": {spec.name: opt.value}}, "settings", lib)
+            assert isinstance(rendered, Ok), (spec.name, opt.value, rendered)
+            norm = normalize_nuvio_settings_doc(rendered.value)
+            assert isinstance(norm, Ok), (spec.name, opt.value, norm)
+        if spec.type == "bool":
+            for bval in (True, False):
+                rendered = compile_doc({"ref": "default", "with": {spec.name: bval}}, "settings", lib)
+                assert isinstance(rendered, Ok), (spec.name, bval, rendered)
+                norm = normalize_nuvio_settings_doc(rendered.value)
+                assert isinstance(norm, Ok), (spec.name, bval, norm)
+
+    # Every advertised option in `meta/default` normalizes cleanly
+    meta_recipe = lib.get("meta", "default")
+    assert isinstance(meta_recipe, Ok)
+    for spec in meta_recipe.value.params.params:
+        for opt in spec.options:
+            rendered = compile_doc({"ref": "default", "with": {spec.name: opt.value}}, "meta", lib)
+            assert isinstance(rendered, Ok), (spec.name, opt.value, rendered)
+            norm = normalize_nuvio_meta_doc(rendered.value)
+            assert isinstance(norm, Ok), (spec.name, opt.value, norm)
+        if spec.type == "bool":
+            for bval in (True, False):
+                rendered = compile_doc({"ref": "default", "with": {spec.name: bval}}, "meta", lib)
+                assert isinstance(rendered, Ok), (spec.name, bval, rendered)
+                norm = normalize_nuvio_meta_doc(rendered.value)
+                assert isinstance(norm, Ok), (spec.name, bval, norm)
