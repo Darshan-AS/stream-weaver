@@ -1,0 +1,33 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-family",
+  "folder": {
+    "id": "fld-genre-family",
+    "title": "Kids & Family",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Kids & Family Movies",
+        "catalog": {
+          "ref": "tmdb.discover.family_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Kids & Family Series",
+        "catalog": {
+          "ref": "tmdb.discover.family_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/family/v2/family-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/family/v2/family-cover.png",
+    "focusGifEnabled": true
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-crunchyroll",
+  "folder": {
+    "id": "fld-crunchyroll",
+    "title": "Crunchyroll",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Crunchyroll Simulcasts & Originals",
+        "catalog": {
+          "ref": "tmdb.discover.crunchyroll_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/692aa010.webp",
+    "focusGifEnabled": false
+  }
+}

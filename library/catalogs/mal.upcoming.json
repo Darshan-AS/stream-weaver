@@ -1,0 +1,13 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "mal.upcoming",
+  "catalog": {
+    "id": "mal.upcoming",
+    "type": "anime",
+    "name": "Upcoming Anime Season",
+    "displayType": "series",
+    "source": "mal"
+  }
+}

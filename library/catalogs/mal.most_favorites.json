@@ -1,0 +1,13 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "mal.most_favorites",
+  "catalog": {
+    "id": "mal.most_favorites",
+    "type": "anime",
+    "name": "MAL Fan Favorites",
+    "displayType": "series",
+    "source": "mal"
+  }
+}

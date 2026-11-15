@@ -1,0 +1,28 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-trakt-calendar",
+  "folder": {
+    "id": "fld-trakt-calendar",
+    "title": "Airing Calendar",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.calendar",
+        "title": "Upcoming Episodes"
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "trakt.unwatched",
+        "title": "Recently Aired Unwatched"
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/6671230f.webp",
+    "focusGifEnabled": false
+  }
+}

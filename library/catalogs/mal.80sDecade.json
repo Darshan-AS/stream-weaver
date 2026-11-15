@@ -1,0 +1,13 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "mal.80sDecade",
+  "catalog": {
+    "id": "mal.80sDecade",
+    "type": "anime",
+    "name": "Best of 80s Anime",
+    "displayType": "series",
+    "source": "mal"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.a24_movies",
+  "catalog": {
+    "id": "tmdb.discover.a24_movies",
+    "type": "movie",
+    "name": "A24 Films",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_companies": "41077",
+          "sort_by": "popularity.desc",
+          "vote_count.gte": 100
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

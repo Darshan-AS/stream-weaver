@@ -5,30 +5,47 @@
   "id": "col-genres-moods",
   "ui": {
     "title": "Genres & Moods",
-    "description": "Sci-Fi & Fantasy, Crime & Mystery Thrillers, Action & Adventure, Comedy, Animation, and Romance.",
+    "description": "Customizable genre tabs across Sci-Fi, Crime, Action, Comedy, Animation, Romance, Horror, Prestige Drama, Family, War/History, and Stand-Up.",
     "category": "discovery"
+  },
+  "params": {
+    "genres": {
+      "type": "list",
+      "items": "string",
+      "label": "Included Genre Folders",
+      "options": [
+        { "label": "Sci-Fi & Fantasy", "value": "fld-genre-scifi-fantasy" },
+        { "label": "Crime & Mystery Thrillers", "value": "fld-genre-crime-mystery" },
+        { "label": "Action & Adventure", "value": "fld-genre-action-adventure" },
+        { "label": "Comedy", "value": "fld-genre-comedy" },
+        { "label": "Animation", "value": "fld-genre-animation" },
+        { "label": "Romance", "value": "fld-genre-romance" },
+        { "label": "Horror & Supernatural", "value": "fld-genre-horror" },
+        { "label": "Prestige Drama", "value": "fld-genre-drama" },
+        { "label": "Kids & Family", "value": "fld-genre-family" },
+        { "label": "War & History", "value": "fld-genre-war-history" },
+        { "label": "Stand-Up Specials", "value": "fld-genre-standup" }
+      ],
+      "default": [
+        "fld-genre-scifi-fantasy",
+        "fld-genre-crime-mystery",
+        "fld-genre-action-adventure",
+        "fld-genre-comedy",
+        "fld-genre-animation",
+        "fld-genre-romance"
+      ]
+    }
   },
   "collection": {
     "id": "col-genres-moods",
     "title": "Genres & Moods",
     "folders": [
       {
-        "ref": "fld-genre-scifi-fantasy"
-      },
-      {
-        "ref": "fld-genre-crime-mystery"
-      },
-      {
-        "ref": "fld-genre-action-adventure"
-      },
-      {
-        "ref": "fld-genre-comedy"
-      },
-      {
-        "ref": "fld-genre-animation"
-      },
-      {
-        "ref": "fld-genre-romance"
+        "for": "g",
+        "in": "${genres}",
+        "item": {
+          "ref": "${g}"
+        }
       }
     ],
     "pinToTop": true,

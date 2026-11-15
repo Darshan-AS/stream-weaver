@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.family_movies",
+  "catalog": {
+    "id": "tmdb.discover.family_movies",
+    "type": "movie",
+    "name": "Kids & Family Movies",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "10751",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.0,
+          "vote_count.gte": 1000
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

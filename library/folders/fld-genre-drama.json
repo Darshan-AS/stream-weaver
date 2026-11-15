@@ -1,0 +1,33 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-drama",
+  "folder": {
+    "id": "fld-genre-drama",
+    "title": "Prestige Drama",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Acclaimed Drama Films",
+        "catalog": {
+          "ref": "tmdb.discover.drama_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Prestige Drama Series",
+        "catalog": {
+          "ref": "tmdb.discover.drama_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/v2/drama-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/drama/v2/drama-cover.png",
+    "focusGifEnabled": true
+  }
+}

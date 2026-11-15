@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.war_history_movies",
+  "catalog": {
+    "id": "tmdb.discover.war_history_movies",
+    "type": "movie",
+    "name": "War & Historical Epics",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "10752|36",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.4,
+          "vote_count.gte": 1500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

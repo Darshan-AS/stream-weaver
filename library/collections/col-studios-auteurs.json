@@ -1,0 +1,31 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.collection.v1.json",
+  "version": 1,
+  "kind": "collection",
+  "id": "col-studios-auteurs",
+  "ui": {
+    "title": "Studios, Indie & Cinema Classics",
+    "description": "A24 indie essentials, Pixar & DreamWorks animation, and 70s–90s cinema masterpieces.",
+    "category": "studios"
+  },
+  "collection": {
+    "id": "col-studios-auteurs",
+    "title": "Studios & Cinema Classics",
+    "folders": [
+      {
+        "ref": "fld-studio-a24"
+      },
+      {
+        "ref": "fld-studio-pixar"
+      },
+      {
+        "ref": "fld-cinema-classics"
+      }
+    ],
+    "pinToTop": true,
+    "viewMode": "TABBED_GRID",
+    "showAllTab": true,
+    "backdropImageUrl": "https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg",
+    "focusGlowEnabled": true
+  }
+}

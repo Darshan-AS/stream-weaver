@@ -90,3 +90,58 @@ def test_invalid_ui_preset_or_option_type_is_rejected() -> None:
         source=Path("bad.json"),
     )
     assert isinstance(bad_option, Err)
+
+
+def test_expanded_library_collections_compile_and_derive_catalogs_cleanly() -> None:
+    import json
+
+    from stream_weaver.core.composition import (
+        AddonInfo,
+        AddonResolver,
+        compile_collections,
+        derive_catalogs,
+    )
+
+    lib = Library.load((EXAMPLE_LIB, SHARED_LIB))
+    assert not lib.errors, lib.errors
+
+    # Trakt hub infers SECRET_TRAKT_TOKEN_ID without needing BingeCat or ItsOut
+    trakt_col = lib.get("collection", "col-trakt-personal")
+    assert isinstance(trakt_col, Ok)
+    trakt_summary = describe_recipe(trakt_col.value, lib)
+    assert trakt_summary.required_secrets == ("SECRET_TRAKT_TOKEN_ID",)
+
+    resolver = AddonResolver(addons={"aiometadata": AddonInfo(name="aiometadata", addon_id="aio-metadata")})
+    items = [
+        {"ref": "col-trakt-personal"},
+        {"ref": "col-kdrama-global"},
+        {"ref": "col-studios-auteurs"},
+        {
+            "ref": "col-genres-moods",
+            "with": {"genres": ["fld-genre-horror", "fld-genre-drama", "fld-genre-family", "fld-genre-war-history", "fld-genre-standup"]},
+        },
+        {
+            "ref": "col-streaming-services",
+            "with": {"services": ["fld-netflix", "fld-crunchyroll", "fld-mubi", "fld-shudder", "fld-bbc"]},
+        },
+        {
+            "ref": "col-anime-japanese",
+            "with": {"tabs": ["fld-anime-upcoming-favorites", "fld-anime-golden-era"]},
+        },
+    ]
+    comp = compile_collections(items, lib, resolver)
+    assert isinstance(comp, Ok), comp
+
+    base_meta = json.loads((REPO / "examples" / "home" / "aiometadata.json").read_text(encoding="utf-8"))
+    derived = derive_catalogs(base_meta["catalogs"], comp.value.catalog_uses)
+    assert isinstance(derived, Ok), derived
+
+    by_id_type = {(c["id"], c["type"]): c for c in derived.value if c["enabled"]}
+    assert ("tmdb.discover.horror_movies", "movie") in by_id_type
+    assert ("tmdb.discover.a24_movies", "movie") in by_id_type
+    assert ("tmdb.discover.kdrama_series", "series") in by_id_type
+    assert ("tmdb.discover.crunchyroll_series", "series") in by_id_type
+    assert ("trakt.watchlist.movies", "movie") in by_id_type
+    # MAL decade & upcoming catalogs updated in-place with displayType="series" (no duplicate entries)
+    assert by_id_type[("mal.90sDecade", "anime")]["displayType"] == "series"
+    assert sum(1 for c in derived.value if c["id"] == "mal.90sDecade") == 1

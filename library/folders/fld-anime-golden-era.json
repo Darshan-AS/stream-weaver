@@ -1,0 +1,43 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-anime-golden-era",
+  "folder": {
+    "id": "fld-anime-golden-era",
+    "title": "80s–2000s Classic Anime",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.90sDecade_anime",
+        "title": "90s Golden-Age Anime",
+        "catalog": {
+          "ref": "mal.90sDecade"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.00sDecade_anime",
+        "title": "2000s Classic Anime",
+        "catalog": {
+          "ref": "mal.00sDecade"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "catalogId": "mal.80sDecade_anime",
+        "title": "80s Retro Anime",
+        "catalog": {
+          "ref": "mal.80sDecade"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://imkaptain.github.io/nuvio-assets/assets/images/7cb9fcdf.webp",
+    "focusGifEnabled": false
+  }
+}

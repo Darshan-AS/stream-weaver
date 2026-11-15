@@ -1,0 +1,24 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-studio-pixar",
+  "folder": {
+    "id": "fld-studio-pixar",
+    "title": "Pixar & DreamWorks",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Pixar & DreamWorks Films",
+        "catalog": {
+          "ref": "tmdb.discover.pixar_dreamworks_movies"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "coverImageUrl": "https://image.tmdb.org/t/p/w1280/g7CHF8gTLGooTbP4GznIGwaqAGL.jpg",
+    "focusGifEnabled": false
+  }
+}

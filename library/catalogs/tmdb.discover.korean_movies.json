@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.korean_movies",
+  "catalog": {
+    "id": "tmdb.discover.korean_movies",
+    "type": "movie",
+    "name": "Korean Thrillers & Cinema",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_original_language": "ko",
+          "sort_by": "vote_count.desc",
+          "vote_average.gte": 7.2,
+          "vote_count.gte": 400
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

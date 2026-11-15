@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.drama_series",
+  "catalog": {
+    "id": "tmdb.discover.drama_series",
+    "type": "series",
+    "name": "Prestige Drama Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "18",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 8.0,
+          "vote_count.gte": 1000
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

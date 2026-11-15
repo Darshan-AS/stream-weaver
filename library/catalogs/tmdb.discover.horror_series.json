@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.horror_series",
+  "catalog": {
+    "id": "tmdb.discover.horror_series",
+    "type": "series",
+    "name": "Horror & Supernatural Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_keywords": "315058|6152|10224",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.0,
+          "vote_count.gte": 250
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

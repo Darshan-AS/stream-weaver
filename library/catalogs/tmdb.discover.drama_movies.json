@@ -1,0 +1,27 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.drama_movies",
+  "catalog": {
+    "id": "tmdb.discover.drama_movies",
+    "type": "movie",
+    "name": "Acclaimed Drama Films",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_genres": "18",
+          "without_genres": "10749,27",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.7,
+          "vote_count.gte": 3000
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

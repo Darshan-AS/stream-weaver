@@ -1,0 +1,25 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.pixar_dreamworks_movies",
+  "catalog": {
+    "id": "tmdb.discover.pixar_dreamworks_movies",
+    "type": "movie",
+    "name": "Pixar & DreamWorks Films",
+    "displayType": "movie",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "movie",
+        "params": {
+          "with_companies": "3|521",
+          "sort_by": "vote_count.desc",
+          "vote_count.gte": 500
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

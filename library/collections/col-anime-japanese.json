@@ -5,21 +5,38 @@
   "id": "col-anime-japanese",
   "ui": {
     "title": "Anime & Japanese",
-    "description": "MyAnimeList airing & top-rated anime plus Japanese live-action cinema and drama.",
+    "description": "MyAnimeList airing & top-rated anime, Japanese cinema, plus optional Upcoming Season, Fan Favorites, and 80s–2000s Classic Anime tabs.",
     "category": "anime"
+  },
+  "params": {
+    "tabs": {
+      "type": "list",
+      "items": "string",
+      "label": "Included Anime & Japanese Folders",
+      "options": [
+        { "label": "Airing & Popular Anime", "value": "fld-airing-popular-anime" },
+        { "label": "Top Rated Anime", "value": "fld-top-rated-anime" },
+        { "label": "Japanese Cinema & Drama", "value": "fld-japanese-cinema" },
+        { "label": "Upcoming & Fan Favorites", "value": "fld-anime-upcoming-favorites" },
+        { "label": "80s–2000s Classic Anime", "value": "fld-anime-golden-era" }
+      ],
+      "default": [
+        "fld-airing-popular-anime",
+        "fld-top-rated-anime",
+        "fld-japanese-cinema"
+      ]
+    }
   },
   "collection": {
     "id": "col-anime-japanese",
     "title": "Anime & Japanese",
     "folders": [
       {
-        "ref": "fld-airing-popular-anime"
-      },
-      {
-        "ref": "fld-top-rated-anime"
-      },
-      {
-        "ref": "fld-japanese-cinema"
+        "for": "t",
+        "in": "${tabs}",
+        "item": {
+          "ref": "${t}"
+        }
       }
     ],
     "pinToTop": true,

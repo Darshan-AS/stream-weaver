@@ -1,0 +1,33 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.folder.v1.json",
+  "version": 1,
+  "kind": "folder",
+  "id": "fld-genre-horror",
+  "folder": {
+    "id": "fld-genre-horror",
+    "title": "Horror & Supernatural",
+    "sources": [
+      {
+        "addon": "aiometadata",
+        "type": "movie",
+        "title": "Horror Movies",
+        "catalog": {
+          "ref": "tmdb.discover.horror_movies"
+        }
+      },
+      {
+        "addon": "aiometadata",
+        "type": "series",
+        "title": "Horror & Supernatural Series",
+        "catalog": {
+          "ref": "tmdb.discover.horror_series"
+        }
+      }
+    ],
+    "hideTitle": false,
+    "tileShape": "LANDSCAPE",
+    "focusGifUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/horror/v2/horror-hover.gif",
+    "coverImageUrl": "https://raw.githubusercontent.com/ImKaptain/nuvio-art/main/art/genres/horror/v2/horror-cover.png",
+    "focusGifEnabled": true
+  }
+}

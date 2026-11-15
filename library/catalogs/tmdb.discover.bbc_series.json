@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.bbc_series",
+  "catalog": {
+    "id": "tmdb.discover.bbc_series",
+    "type": "series",
+    "name": "BBC & British Prestige Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_networks": "4|493",
+          "sort_by": "vote_average.desc",
+          "vote_average.gte": 7.6,
+          "vote_count.gte": 200
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}

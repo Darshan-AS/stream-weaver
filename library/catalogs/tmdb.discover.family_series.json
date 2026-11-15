@@ -1,0 +1,26 @@
+{
+  "$schema": "https://stream-weaver.dev/schemas/recipe.catalog.v1.json",
+  "version": 1,
+  "kind": "catalog",
+  "id": "tmdb.discover.family_series",
+  "catalog": {
+    "id": "tmdb.discover.family_series",
+    "type": "series",
+    "name": "Kids & Family Series",
+    "displayType": "series",
+    "source": "tmdb",
+    "metadata": {
+      "discover": {
+        "version": 1,
+        "mediaType": "tv",
+        "params": {
+          "with_genres": "10751|10762",
+          "sort_by": "popularity.desc",
+          "vote_average.gte": 7.2,
+          "vote_count.gte": 300
+        }
+      }
+    },
+    "cacheTTL": 86400
+  }
+}
