@@ -190,7 +190,7 @@
         "addons": [
           "hdh",
           "soo",
-          "wst",
+          "plv",
           "etv",
           "eth"
         ],
@@ -334,7 +334,7 @@
     "addons": [
       "hdh",
       "soo",
-      "wst",
+      "plv",
       "etv",
       "eth"
     ]
@@ -659,24 +659,20 @@
       "category": "HTTP"
     },
     {
-      "type": "webstreamr",
-      "instanceId": "wst",
+      "type": "custom",
+      "instanceId": "plv",
       "enabled": true,
       "options": {
-        "name": "WebStreamr",
-        "timeout": 7500,
+        "name": "PlavioHD",
+        "manifestUrl": "https://hd.plavio.site/%7B%22multi%22%3A%22on%22%2C%22en%22%3A%22on%22%2C%22hi%22%3A%22on%22%2C%22kn%22%3A%22on%22%7D/manifest.json",
+        "timeout": 20000,
         "resources": [
           "stream"
         ],
-        "url": "https://87d6a6ef6b58-webstreamrmbg.baby-beamup.club",
-        "mediaTypes": [],
-        "providers": [
-          "multi",
-          "en",
-          "hi"
-        ],
-        "includeExternalUrls": false,
-        "showErrors": false
+        "mediaTypes": [
+          "movie",
+          "series"
+        ]
       },
       "category": "HTTP"
     },
