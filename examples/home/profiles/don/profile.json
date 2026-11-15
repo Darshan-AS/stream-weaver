@@ -10,9 +10,7 @@
   "clients": {
     "nuvio": {
       "login": "don",
-      "profile": {
-        "id": "00000000-0000-4000-8000-000000000008"
-      },
+      "profile": {},
       "platforms": [
         "tv",
         "desktop",
@@ -59,6 +57,12 @@
     },
     {
       "ref": "col-courses-docs"
+    },
+    {
+      "ref": "col-genres-moods"
+    },
+    {
+      "ref": "col-franchises"
     }
   ],
   "badges": {

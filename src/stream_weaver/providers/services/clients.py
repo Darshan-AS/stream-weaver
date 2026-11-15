@@ -39,7 +39,7 @@ from stream_weaver.core.nuvio_settings import (
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.types import EnvMap, JsonDict
 from stream_weaver.effects.http import HttpClientProtocol
-from stream_weaver.providers.services.nuvio_session import NuvioSessionPool
+from stream_weaver.providers.services.nuvio_session import NuvioSessionPool, resolve_nuvio_anon_key
 
 
 def compile_nuvio_collections(
@@ -344,7 +344,7 @@ class NuvioClientSync:
     def _session_pool(self, env: EnvMap) -> NuvioSessionPool:
         """Lazily creates the per-run pool (callers may inject a shared one via the constructor)."""
         if self._pool is None:
-            self._pool = NuvioSessionPool(self._http, env.get("NUVIO_SUPABASE_ANON_KEY", ""))
+            self._pool = NuvioSessionPool(self._http, resolve_nuvio_anon_key(env))
         return self._pool
 
     def pull_collections(

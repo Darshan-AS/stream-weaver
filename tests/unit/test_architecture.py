@@ -326,3 +326,45 @@ def test_refresh_manifests_updates_custom_addons_and_skips_cinemeta() -> None:
     assert custom_addon["manifest"]["version"] == "2.4.0"
     assert refreshed["addons"]["savedAddons"][0]["manifest"]["version"] == "2.4.0"
 
+
+def test_refresh_manifests_matches_saved_addons_by_install_url_when_manifest_id_changes() -> None:
+    """When bootstrapping from `examples/home`, the user's real AIOStreams manifest id differs from the template's."""
+    live_url = "https://streams.newuser.org/stremio/u-new/enc/manifest.json"
+    stub_http = _StubManifestHttpClient(
+        {
+            live_url: {
+                "id": "streams.newuser.org.u-new",
+                "name": "AIOStreams",
+                "version": "2.38.0",
+                "catalogs": [{"type": "movie", "id": "itof123.itsout.released", "name": "ItsOut"}],
+            }
+        }
+    )
+    svc = AIOManagerService(stub_http)
+    state: dict[str, Any] = {
+        "accounts": [
+            {
+                "name": "Demo",
+                "addons": [
+                    {
+                        "flags": {"enabled": True},
+                        "transportUrl": "https://streams.newuser.org/stremio/u-new/enc",
+                        "manifest": {"id": "aiostreams.example.com.00000000-000", "version": "2.37.0"},
+                    }
+                ],
+            }
+        ],
+        "addons": {
+            "savedAddons": [
+                {
+                    "installUrl": "https://streams.newuser.org/stremio/u-new/enc",
+                    "manifest": {"id": "aiostreams.example.com.00000000-000", "version": "2.37.0", "catalogs": []},
+                }
+            ]
+        },
+    }
+    refreshed = svc._refresh_manifests(state)
+    saved_mf = refreshed["addons"]["savedAddons"][0]["manifest"]
+    assert saved_mf["id"] == "streams.newuser.org.u-new"
+    assert saved_mf["catalogs"][0]["id"] == "itof123.itsout.released"
+

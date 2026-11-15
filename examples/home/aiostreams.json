@@ -25,12 +25,7 @@
     "144p",
     "Unknown"
   ],
-  "excludedQualities": [
-    "CAM",
-    "SCR",
-    "TS",
-    "TC"
-  ],
+  "excludedQualities": [],
   "includedQualities": [],
   "requiredQualities": [],
   "preferredQualities": [
@@ -42,7 +37,11 @@
     "HC HD-Rip",
     "DVDRip",
     "HDTV",
-    "Unknown"
+    "Unknown",
+    "CAM",
+    "TS",
+    "TC",
+    "SCR"
   ],
   "excludedLanguages": [],
   "includedLanguages": [],
@@ -190,8 +189,9 @@
         "addons": [
           "hdh",
           "soo",
-          "wst",
-          "etv"
+          "plv",
+          "etv",
+          "eth"
         ],
         "condition": "count(cached(totalStreams)) < 3"
       }
@@ -216,11 +216,11 @@
         "direction": "desc"
       },
       {
-        "key": "resolution",
+        "key": "quality",
         "direction": "desc"
       },
       {
-        "key": "quality",
+        "key": "resolution",
         "direction": "desc"
       },
       {
@@ -250,11 +250,11 @@
         "direction": "desc"
       },
       {
-        "key": "resolution",
+        "key": "quality",
         "direction": "desc"
       },
       {
-        "key": "quality",
+        "key": "resolution",
         "direction": "desc"
       },
       {
@@ -333,8 +333,9 @@
     "addons": [
       "hdh",
       "soo",
-      "wst",
-      "etv"
+      "plv",
+      "etv",
+      "eth"
     ]
   },
   "seasonEpisodeMatching": {
@@ -641,24 +642,20 @@
       "category": "HTTP"
     },
     {
-      "type": "webstreamr",
-      "instanceId": "wst",
+      "type": "custom",
+      "instanceId": "plv",
       "enabled": true,
       "options": {
-        "name": "WebStreamr",
-        "timeout": 7500,
+        "name": "PlavioHD",
+        "manifestUrl": "https://hd.plavio.site/%7B%22multi%22%3A%22on%22%2C%22en%22%3A%22on%22%2C%22hi%22%3A%22on%22%2C%22kn%22%3A%22on%22%7D/manifest.json",
+        "timeout": 20000,
         "resources": [
           "stream"
         ],
-        "url": "https://87d6a6ef6b58-webstreamrmbg.baby-beamup.club",
-        "mediaTypes": [],
-        "providers": [
-          "multi",
-          "en",
-          "hi"
-        ],
-        "includeExternalUrls": false,
-        "showErrors": false
+        "mediaTypes": [
+          "movie",
+          "series"
+        ]
       },
       "category": "HTTP"
     },
@@ -669,7 +666,25 @@
       "options": {
         "name": "EinthusanTV Kannada",
         "manifestUrl": "https://einthusan.asaddon.com/kannada/manifest.json",
-        "timeout": 7500,
+        "timeout": 20000,
+        "resources": [
+          "stream",
+          "catalog"
+        ],
+        "mediaTypes": [
+          "movie"
+        ]
+      },
+      "category": "HTTP"
+    },
+    {
+      "type": "custom",
+      "instanceId": "eth",
+      "enabled": true,
+      "options": {
+        "name": "EinthusanTV Hindi",
+        "manifestUrl": "https://einthusan.asaddon.com/hindi/manifest.json",
+        "timeout": 20000,
         "resources": [
           "stream"
         ],
@@ -785,7 +800,7 @@
       "id": "lib791b.aiostreams::library.torbox",
       "type": "library",
       "name": "TorBox Cloud Library",
-      "showOnHome": true,
+      "showOnHome": false,
       "disableSearch": false,
       "enabled": true,
       "overrideType": "movie"
@@ -821,6 +836,22 @@
       "showOnHome": false,
       "disableSearch": true,
       "enabled": false
+    },
+    {
+      "id": "etve3b0.kannada_board",
+      "type": "movie",
+      "name": "EinthusanTV - Latest - Kannada",
+      "showOnHome": false,
+      "disableSearch": true,
+      "enabled": true
+    },
+    {
+      "id": "etve3b0.kannada",
+      "type": "movie",
+      "name": "EinthusanTV - Search - Kannada",
+      "showOnHome": false,
+      "disableSearch": false,
+      "enabled": true
     }
   ],
   "mergedCatalogs": [],

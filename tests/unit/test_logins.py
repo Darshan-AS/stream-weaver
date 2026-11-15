@@ -22,7 +22,12 @@ from stream_weaver.core.logins import (
 from stream_weaver.core.result import Err, Ok, Result
 from stream_weaver.core.tenant import default_tenant_manifest, parse_tenant_manifest
 from stream_weaver.effects.http import HttpResponse
-from stream_weaver.providers.services.nuvio_session import NuvioSessionPool, password_grant
+from stream_weaver.providers.services.nuvio_session import (
+    DEFAULT_NUVIO_SUPABASE_ANON_KEY,
+    NuvioSessionPool,
+    password_grant,
+    resolve_nuvio_anon_key,
+)
 
 runner = CliRunner()
 
@@ -208,6 +213,8 @@ def test_pool_requires_anon_key_and_access_token() -> None:
     assert isinstance(
         NuvioSessionPool(http, "anon").acquire(access_token="", refresh_token="r", env={}), Err
     )
+    assert resolve_nuvio_anon_key({}) == DEFAULT_NUVIO_SUPABASE_ANON_KEY
+    assert resolve_nuvio_anon_key({"NUVIO_SUPABASE_ANON_KEY": "custom-anon"}) == "custom-anon"
 
 
 def test_password_grant() -> None:
@@ -255,3 +262,112 @@ def test_sw_login_adopt_registers_existing_keys(tmp_path: Path) -> None:
     )
     assert conflict.exit_code == 1
     assert "already registered" in conflict.output
+
+
+def test_sw_login_nuvio_uses_default_anon_key_and_reuses_template_prefix(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    example = Path(__file__).resolve().parents[2] / "examples" / "home"
+    t = tmp_path / "t"
+    assert runner.invoke(app, ["init", str(t), "--from", str(example)]).exit_code == 0
+    # Leave NUVIO_SUPABASE_ANON_KEY blank and omit --prefix; `don -> NUVIO` in tenant.json is reused.
+    monkeypatch.setattr("stream_weaver.cli.app.HttpxClient", lambda: _FakeClientCtx(_FakeNuvioHttp()))
+    res = runner.invoke(
+        app,
+        [
+            "login",
+            "nuvio",
+            "--login",
+            "don",
+            "--email",
+            "cloner@example.com",
+            "--password",
+            "pw",
+            "--dir",
+            str(t),
+        ],
+    )
+    assert res.exit_code == 0, res.output
+    env_text = (t / ".env").read_text(encoding="utf-8")
+    assert "SECRET_NUVIO_ACCESS_TOKEN=a-pw" in env_text
+    assert "SECRET_NUVIO_REFRESH_TOKEN=r-pw" in env_text
+    assert "SECRET_NUVIO_EMAIL=cloner@example.com" in env_text
+
+
+def test_nuvio_targets_work_without_aiomanager_or_stremio_and_skip_missing_meta_key(
+    tmp_path: Path,
+) -> None:
+    from stream_weaver.cli.app import _compile_all_result, _try_context
+    from stream_weaver.cli.nuvio import nuvio_targets, push_nuvio
+    from stream_weaver.core.tenant import TenantPaths
+
+    example = Path(__file__).resolve().parents[2] / "examples" / "home"
+    t = tmp_path / "t"
+    assert runner.invoke(app, ["init", str(t), "--from", str(example)]).exit_code == 0
+    # Nuvio-only cloner: NO AIOMANAGER_SYNC_PASSWORD, NO SECRET_STREMIO_AUTH_KEY, NO SECRET_MDBLIST_API_KEY
+    (t / ".env").write_text(
+        "AIOSTREAMS_URL=https://aiostreams.example.com\n"
+        "AIOSTREAMS_UUID=00000000-0000-4000-8000-000000000001\n"
+        "SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD=enc-pw\n"
+        "AIOMETADATA_URL=https://aiometadata.example.com\n"
+        "AIOMETADATA_UUID=00000000-0000-4000-8000-000000000002\n"
+        "SECRET_BINGECAT_TOKEN=bc-tok\n"
+        "SECRET_TMDB_API_KEY=tmdb-k\n"
+        "SECRET_NUVIO_ACCESS_TOKEN=eyJvalid\n"
+        "SECRET_NUVIO_REFRESH_TOKEN=r-valid\n"
+        "SECRET_NUVIO_EMAIL=cloner@example.com\n",
+        encoding="utf-8",
+    )
+    ctx_res = _try_context(TenantPaths(t))
+    assert isinstance(ctx_res, Ok), ctx_res
+    comp_res = _compile_all_result(ctx_res.value)
+    assert isinstance(comp_res, Ok), comp_res
+    targets_res = nuvio_targets(
+        tenant_name=ctx_res.value.manifest.name,
+        scrubbed_aiomanager=json.loads((t / "aiomanager.json").read_text(encoding="utf-8")),
+        env=ctx_res.value.env,
+        compiled_profiles=comp_res.value,
+    )
+    assert isinstance(targets_res, Ok), targets_res
+    assert len(targets_res.value) == 1
+    assert targets_res.value[0].master_password == ""
+
+    # Multi-doc push skips `meta` with a message when SECRET_MDBLIST_API_KEY is missing; single-doc `meta` errors
+    multi_res = push_nuvio(targets_res.value, ("meta", "settings"), ctx_res.value.env, _NoopNuvioSettingsHttp())
+    assert isinstance(multi_res, Ok), multi_res
+    msgs, _ = multi_res.value
+    assert any("meta: skipped" in m and "SECRET_MDBLIST_API_KEY" in m for m in msgs)
+    single_res = push_nuvio(targets_res.value, ("meta",), ctx_res.value.env, _NoopNuvioSettingsHttp())
+    assert isinstance(single_res, Err)
+
+
+class _FakeClientCtx:
+    def __init__(self, client: Any) -> None:
+        self._client = client
+
+    def __enter__(self) -> Any:
+        return self._client
+
+    def __exit__(self, *_: Any) -> None:
+        return None
+
+
+class _NoopNuvioSettingsHttp:
+    def request_json(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        json_body: Any | None = None,
+        raw_body: bytes | None = None,
+        timeout: float = 30.0,
+    ) -> Result[HttpResponse, NetworkError]:
+        _ = method, headers, json_body, raw_body, timeout
+        if url.endswith("sync_pull_profiles"):
+            return Ok(HttpResponse(status_code=200, data=[{"id": "p1", "name": "Main", "profile_index": 1}], text=""))
+        if url.endswith("sync_pull_profile_settings_blob"):
+            return Ok(HttpResponse(status_code=200, data={}, text="{}"))
+        if url.endswith("sync_push_profile_settings_blob"):
+            return Ok(HttpResponse(status_code=200, data={"ok": True}, text="{}"))
+        raise AssertionError(f"unexpected url {url}")

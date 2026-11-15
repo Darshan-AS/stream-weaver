@@ -54,7 +54,7 @@
     }
   },
   "apiKeys": {
-    "gemini": "{{SECRET_GEMINI_API_KEY}}",
+    "gemini": "",
     "tmdb": "{{SECRET_TMDB_API_KEY}}",
     "tvdb": "{{SECRET_TVDB_API_KEY}}",
     "fanart": "",
@@ -1113,6 +1113,402 @@
       "enabled": false,
       "showInHome": false,
       "cacheTTL": 86400
+    },
+    {
+      "id": "tmdb.discover.scifi_movies",
+      "type": "movie",
+      "name": "Sci-Fi Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "878",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.2,
+            "vote_count.gte": 2000
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.scifi_fantasy_series",
+      "type": "series",
+      "name": "Sci-Fi & Fantasy Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "10765",
+            "without_genres": "16",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.8,
+            "vote_count.gte": 500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.crime_thriller_movies",
+      "type": "movie",
+      "name": "Crime Thriller Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "80,53",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.2,
+            "vote_count.gte": 1500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.crime_mystery_series",
+      "type": "series",
+      "name": "Crime & Mystery Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "80,9648",
+            "without_genres": "16",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.8,
+            "vote_count.gte": 300
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.action_adventure_movies",
+      "type": "movie",
+      "name": "Action & Adventure Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "28,12",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 6.8,
+            "vote_count.gte": 1500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.action_adventure_series",
+      "type": "series",
+      "name": "Action & Adventure Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "10759",
+            "without_genres": "16",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.8,
+            "vote_count.gte": 500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.comedy_movies",
+      "type": "movie",
+      "name": "Comedy Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "35",
+            "without_genres": "16",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.2,
+            "vote_count.gte": 1500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.comedy_series",
+      "type": "series",
+      "name": "Comedy Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "35",
+            "without_genres": "16",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.8,
+            "vote_count.gte": 300
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.animation_movies",
+      "type": "movie",
+      "name": "Animated Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "16",
+            "with_original_language": "en",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.2,
+            "vote_count.gte": 1000
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.animation_series",
+      "type": "series",
+      "name": "Animated Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_genres": "16",
+            "with_original_language": "en",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.8,
+            "vote_count.gte": 300
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.romance_movies",
+      "type": "movie",
+      "name": "Romance Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_genres": "10749",
+            "sort_by": "popularity.desc",
+            "vote_average.gte": 7.2,
+            "vote_count.gte": 1500
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.mcu_movies",
+      "type": "movie",
+      "name": "MCU Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_keywords": "180547",
+            "sort_by": "primary_release_date.desc",
+            "vote_count.gte": 50
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.mcu_series",
+      "type": "series",
+      "name": "MCU Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_keywords": "180547",
+            "sort_by": "first_air_date.desc",
+            "vote_count.gte": 30
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.lucasfilm_movies",
+      "type": "movie",
+      "name": "Lucasfilm Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_companies": "1",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 200
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.lucasfilm_series",
+      "type": "series",
+      "name": "Star Wars Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_companies": "1",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 30
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.dc_movies",
+      "type": "movie",
+      "name": "DC Movies",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_companies": "9993|128064|184898|429",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 200
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.dc_series",
+      "type": "series",
+      "name": "DC Series",
+      "displayType": "series",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "tv",
+          "params": {
+            "with_companies": "9993|128064|184898|429",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 100
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
+    },
+    {
+      "id": "tmdb.discover.ghibli_movies",
+      "type": "movie",
+      "name": "Studio Ghibli Films",
+      "displayType": "movie",
+      "source": "tmdb",
+      "metadata": {
+        "discover": {
+          "version": 1,
+          "mediaType": "movie",
+          "params": {
+            "with_companies": "10342",
+            "sort_by": "vote_count.desc",
+            "vote_count.gte": 100
+          }
+        }
+      },
+      "cacheTTL": 86400,
+      "enabled": true,
+      "showInHome": true
     }
   ],
   "language": "en-US",
@@ -1185,16 +1581,5 @@
   "hideWatchedMdblist": false,
   "catalogModeOnly": false,
   "configHash": "18ebafe1bf145ac0",
-  "managerAccounts": [
-    {
-      "id": "00000000-0000-4000-8000-000000000004",
-      "managerId": "aiomanager",
-      "label": "Demo AIOManager",
-      "instanceUrl": "{{AIOMANAGER_URL}}",
-      "keyId": "00000000-0000-4000-8000-000000000005",
-      "profileTags": [],
-      "autoSync": true,
-      "lastSyncedAt": "2026-10-15T19:48:51.535Z"
-    }
-  ]
+  "managerAccounts": []
 }

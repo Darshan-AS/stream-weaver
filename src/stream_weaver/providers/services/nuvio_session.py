@@ -25,6 +25,17 @@ from stream_weaver.effects.http import HttpClientProtocol
 NUVIO_API = "https://api.nuvio.tv"
 NUVIO_PROFILES_RPC = f"{NUVIO_API}/rest/v1/rpc/sync_pull_profiles"
 NUVIO_TOKEN_URL = f"{NUVIO_API}/auth/v1/token"
+# Public Supabase `anon` client key shipped in Nuvio clients (RLS is enforced via user Bearer JWTs).
+DEFAULT_NUVIO_SUPABASE_ANON_KEY = (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+    "eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzgxNTIxMzQ2LCJleHAiOjE5MzkyMDEzNDZ9."
+    "tmQaj682pwzehpqlgCDMnySOqiUvpgRbrE43T4VJpDI"
+)
+
+
+def resolve_nuvio_anon_key(env: EnvMap) -> str:
+    """Returns `NUVIO_SUPABASE_ANON_KEY` from `env`, falling back to Nuvio's public client key."""
+    return env.get("NUVIO_SUPABASE_ANON_KEY", "").strip() or DEFAULT_NUVIO_SUPABASE_ANON_KEY
 
 
 @dataclass(frozen=True, slots=True)

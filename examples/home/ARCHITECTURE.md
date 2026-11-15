@@ -32,7 +32,7 @@ flowchart LR
     end
 
     subgraph Clients["📺 Streaming Clients"]
-        Nuvio["Nuvio App\n(5 Home Collections)"]
+        Nuvio["Nuvio App\n(7 Home Collections)"]
         Stremio["Stremio App"]
     end
 
@@ -41,8 +41,8 @@ flowchart LR
     end
 
     subgraph Aggregators["⚡ Core AIO Aggregators"]
-        AS["AIOStreams\n(22 Active Plugins)"]
-        AM["AIOMetadata\n(61 Active Catalogs, 45 Home)"]
+        AS["AIOStreams\n(23 Active Plugins)"]
+        AM["AIOMetadata\n(79 Active Catalogs, 63 Home)"]
         BC["BingeCat AI Assistant"]
         CM["Cinemeta (IMDb Fallback)"]
     end
@@ -90,8 +90,9 @@ flowchart LR
         subgraph G2["Group 2: HTTP Fallback (count(cached(totalStreams)) < 3)"]
             P_soo["Sootio (soo)"]
             P_hdh["HD Hub (hdh)"]
-            P_wst["WebStreamr (wst)"]
+            P_plv["PlavioHD (plv)"]
             P_etv["EinthusanTV Kannada (etv)"]
+            P_eth["EinthusanTV Hindi (eth)"]
         end
         subgraph Subs["Subtitle Addons"]
             P_osb["OpenSubtitles V3 Pro (osb)"]
@@ -131,8 +132,9 @@ flowchart LR
 | `bso` | **BasedOn** | `custom` | Group 1 (Primary) | `stream` | Info Card / Release Alert Addon |
 | `soo` | **Sootio** | `sootio` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `hdh` | **HD Hub** | `hdhub` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
-| `wst` | **WebStreamr** | `webstreamr` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
-| `etv` | **EinthusanTV Kannada** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
+| `plv` | **PlavioHD** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
+| `etv` | **EinthusanTV Kannada** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream, catalog` | Direct HTTP Providers |
+| `eth` | **EinthusanTV Hindi** | `custom` | Group 2 (`count(cached(totalStreams)) < 3`) | `stream` | Direct HTTP Providers |
 | `osb` | **OpenSubtitles V3 Pro** | `opensubtitles-v3-plus` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
 | `osv` | **OpenSubtitles v3 (Fallback)** | `opensubtitles` | Subtitles / Utility | `subtitles` | OpenSubtitles API |
 | `ssc` | **SubSource** | `subsource` | Subtitles / Utility | `subtitles` | SubSource API (`SECRET_SUBSOURCE_API_KEY`) |
@@ -150,7 +152,7 @@ flowchart LR
         MR["Metadata Router\nMovie/Series: TMDB | Anime: TVDB + KITSU"]
         SR["Search Engine\n(8 Active Engines)"]
         CAT_TRAKT["Trakt Catalogs\n(8 active, 2 Home)"]
-        CAT_TMDB["TMDB Discover\n(22 active, 16 Home)"]
+        CAT_TMDB["TMDB Discover\n(40 active, 34 Home)"]
         CAT_MAL["MAL Anime Catalogs\n(7 active, 3 Home)"]
         CAT_STR["Streaming Platforms\n(24 active, 24 Home)"]
         ART["Poster Engine\npostersplus.slokker.cc + RPDB"]
@@ -179,11 +181,13 @@ flowchart LR
 
 | Collection ID | Title | Tabbed Folders | Upstream Addons |
 | :--- | :--- | :--- | :--- |
-| `col-for-you-discovery` | **For You & Discovery** (5) | AI Picks For You, Because You Watched, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts | AIOMetadata, AIOStreams, BingeCat |
+| `col-for-you-discovery` | **For You & Discovery** (4) | AI Picks For You, Trending & Popular, Top Rated All-Time, Cloud Library & Release Alerts | AIOMetadata, AIOStreams, BingeCat |
 | `col-streaming-services` | **Streaming Services** (8) | Netflix, Prime Video, Apple TV+, HBO Max, Disney+, Hulu, Paramount+, Peacock | AIOMetadata |
 | `col-indian-cinema` | **Indian Cinema & Regional OTT** (5) | Kannada Cinema, Hindi Cinema & Series, JioHotstar, Sony LIV, ZEE5 | AIOMetadata |
 | `col-anime-japanese` | **Anime & Japanese** (3) | Airing & Popular Anime, Top Rated Anime, Japanese Cinema & Drama | AIOMetadata |
 | `col-courses-docs` | **Courses & Documentaries** (2) | Curiosity Stream, Top Documentaries & Docuseries | AIOMetadata |
+| `col-genres-moods` | **Genres & Moods** (6) | Sci-Fi & Fantasy, Crime & Mystery Thrillers, Action & Adventure, Comedy, Animation, Romance | AIOMetadata |
+| `col-franchises` | **Franchises & Universes** (4) | Marvel Cinematic Universe, Star Wars & Lucasfilm, DC, Studio Ghibli | AIOMetadata |
 
 ---
 
@@ -207,4 +211,4 @@ flowchart LR
 
 | Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `don` | Demo | `default` | `default` | `don` → 00000000… | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs` | `bingecat`, `cinemeta` |
+| `don` | Demo | `default` | `default` | `don` → index 1 | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs`, `col-genres-moods`, `col-franchises` | `bingecat`, `cinemeta` |
