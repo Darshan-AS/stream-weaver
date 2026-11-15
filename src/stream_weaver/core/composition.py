@@ -243,6 +243,9 @@ def _compile_folder(
             definition = rendered
             src_map["catalog"] = rendered
             src_map.setdefault("type", rendered.get("type"))
+        elif is_json_mapping(cat) and cat.get("id"):
+            definition = cat
+            src_map.setdefault("type", cat.get("type"))
         match compile_source(src_map, resolver, context=src_ctx):
             case Err() as err:
                 return err
@@ -348,8 +351,13 @@ def eject_collections(
             case _:
                 return None
 
-    def _inline_collection(col: Mapping[str, Any]) -> JsonDict:
+    def _inline_collection(col: Mapping[str, Any], prev_item: Any = None) -> JsonDict:
         out = copy.deepcopy(dict(col))
+        prev_folders_by_id: dict[str, Mapping[str, Any]] = {}
+        if is_json_mapping(prev_item) and is_json_list(prev_item.get("folders")):
+            for pf in prev_item["folders"]:
+                if is_json_mapping(pf) and not _is_ref(pf) and pf.get("id"):
+                    prev_folders_by_id[str(pf["id"])] = pf
         folders: list[Any] = []
         for f in col.get("folders", []) or []:
             if not is_json_mapping(f):
@@ -358,6 +366,14 @@ def eject_collections(
             if origin is not None:
                 folders.append(dict(origin))
                 continue
+            prev_f = prev_folders_by_id.get(str(f.get("id") or ""))
+            if prev_f is not None:
+                match _compile_folder(prev_f, library, resolver, context="eject", uses=[]):
+                    case Ok(rc) if rc == dict(f):
+                        folders.append(copy.deepcopy(dict(prev_f)))
+                        continue
+                    case _:
+                        pass
             inline = copy.deepcopy(dict(f))
             inline["sources"] = [symbolic_source(s, resolver) for s in f.get("sources", []) if is_json_mapping(s)]
             folders.append(inline)
@@ -373,7 +389,7 @@ def eject_collections(
         if local is not None and dict(rc) == local:
             result.append(item_by_id[cid])
         else:
-            result.append(_inline_collection(rc))
+            result.append(_inline_collection(rc, item_by_id.get(cid)))
     return result
 
 
