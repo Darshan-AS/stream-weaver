@@ -279,3 +279,35 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
         exported_prof = json.loads(zf.read("home/profiles/don/profile.json").decode("utf-8"))
         assert exported_prof["displayName"] == "BrowserUser"
         assert "home/.env" not in zf.namelist()
+
+    # 4. Zero-visit minimal newcomer flow: provisions BOTH AIOStreams & AIOMetadata WITHOUT Trakt, MDBList, or RPDB keys
+    r4 = dispatcher.dispatch(
+        "POST",
+        "/api/provision",
+        json.dumps(
+            {
+                "bundle": d2["bundle"],
+                "mutation": {
+                    "envUpdates": {
+                        "AIOSTREAMS_PASSWORD": "new-user-pw",
+                        "AIOMETADATA_PASSWORD": "new-user-pw",
+                        "SECRET_TMDB_API_KEY": "tmdb-v3",
+                        "SECRET_TMDB_ACCESS_TOKEN": "tmdb-v4",
+                        "SECRET_TVDB_API_KEY": "tvdb-v4",
+                    },
+                    "profile": {
+                        "name": "don",
+                        "meta": {"enabled": False},
+                        "collections": [{"ref": "col-streaming-services"}, {"ref": "col-genres-moods"}],
+                    },
+                },
+            }
+        ).encode("utf-8"),
+    )
+    assert r4.status == 200, r4.body
+    d4 = json.loads(r4.body)
+    assert d4["state"]["tenant"]["aiostreamsProvisioned"] is True
+    assert d4["state"]["tenant"]["aiometadataProvisioned"] is True
+    assert d4["state"]["tenant"]["aiometadataConfigureUrl"].endswith(
+        "/stremio/00000000-0000-4000-8000-000000000072/configure"
+    )

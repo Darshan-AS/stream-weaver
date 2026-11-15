@@ -309,7 +309,7 @@ def required_aiometadata_secrets(aiometadata_doc: Mapping[str, Any]) -> tuple[st
     raw_cats = aiometadata_doc.get("catalogs")
     if isinstance(raw_cats, list):
         for cat in raw_cats:
-            if not isinstance(cat, Mapping) or not cat.get("enabled"):
+            if not isinstance(cat, Mapping) or not cat.get("enabled") or not cat.get("showInHome", True):
                 continue
             cid = str(cat.get("id") or "")
             src = str(cat.get("source") or "")
@@ -755,15 +755,31 @@ def prepare_aiostreams_for_push(aiostreams_doc: Mapping[str, Any], env: EnvMap) 
 def prepare_aiometadata_for_push(aiometadata_doc: Mapping[str, Any], env: EnvMap) -> JsonDict:
     """
     Blanks optional `apiKeys.*` placeholders (`traktTokenId`, `mdblist`, `rpdb`, etc.) that are
-    neither required by any enabled catalog/feature nor set in `env`—so new users can provision and
-    push AIOMetadata without being forced through Trakt OAuth or MDBList/RPDB signups on Day 1,
-    while keeping fully-keyed tenants 100% unchanged.
+    neither required by any enabled Home catalog/feature nor set in `env` (also disabling hidden
+    Discover-only `showInHome: false` catalogs for unset optional providers)—so new users can
+    provision and push AIOMetadata without being forced through Trakt OAuth or MDBList/RPDB signups
+    on Day 1, while keeping fully-keyed tenants 100% unchanged.
     """
     out: JsonDict = copy.deepcopy(dict(aiometadata_doc))
+    strictly_needed = set(required_aiometadata_secrets(out))
+
+    trakt_unset = "SECRET_TRAKT_TOKEN_ID" not in strictly_needed and not env.get("SECRET_TRAKT_TOKEN_ID", "").strip()
+    mdb_unset = "SECRET_MDBLIST_API_KEY" not in strictly_needed and not env.get("SECRET_MDBLIST_API_KEY", "").strip()
+    raw_cats = out.get("catalogs")
+    if (trakt_unset or mdb_unset) and isinstance(raw_cats, list):
+        for cat in raw_cats:
+            if not isinstance(cat, dict) or not cat.get("enabled"):
+                continue
+            cid = str(cat.get("id") or "")
+            src = str(cat.get("source") or "")
+            if (trakt_unset and (src == "trakt" or cid.startswith("trakt."))) or (
+                mdb_unset and (src == "mdblist" or cid.startswith("mdblist."))
+            ):
+                cat["enabled"] = False
+
     api_keys = out.get("apiKeys")
     if not isinstance(api_keys, dict):
         return out
-    strictly_needed = set(required_aiometadata_secrets(out))
     for field_name, raw_val in list(api_keys.items()):
         if not isinstance(raw_val, str):
             continue

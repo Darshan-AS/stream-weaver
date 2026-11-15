@@ -312,6 +312,7 @@
   </div>
 
   <main>
+    <div id="onboarding-banner" style="display:none;margin-bottom:18px"></div>
     <div id="log-drawer" class="drawer" style="display:none"></div>
     <div id="view-root"></div>
   </main>
@@ -326,6 +327,7 @@
     let selectedColIdx = 0;
     let selectedFolderIdx = 0;
     let showAllEnv = false;
+    let dismissOnboarding = false;
     let pendingEnvEdits = {};
     let nuvioProfilesCache = [];
     let dirty = false;
@@ -418,6 +420,7 @@
           name: p.name,
           displayName: p.displayName,
           stremioEnabled: p.stremioEnabled,
+          bingecatEnabled: p.bingecatEnabled,
           nuvio: p.nuvio ? {
             profileId: p.nuvio.profileId || "",
             profileName: p.nuvio.profileName || "",
@@ -485,6 +488,73 @@
         b.onclick = () => { activeProfileIdx = idx; selectedColIdx = 0; selectedFolderIdx = 0; render(); };
         pBar.appendChild(b);
       });
+
+      renderOnboardingBanner(reqEnv, readyCount, allProv);
+    }
+
+    function renderOnboardingBanner(reqEnv, readyCount, allProv) {
+      const banner = document.getElementById("onboarding-banner");
+      const p = currentProfile();
+      const nuvioReady = Boolean(p && p.nuvio && p.nuvio.loginReady);
+      if (dismissOnboarding || (allProv && nuvioReady && readyCount === reqEnv.length)) {
+        banner.style.display = "none";
+        return;
+      }
+      banner.style.display = "block";
+      banner.className = "card";
+      banner.style.borderColor = "var(--border-strong)";
+      banner.innerHTML = "";
+
+      const top = document.createElement("div");
+      top.className = "row-between";
+      top.style.marginBottom = "12px";
+      top.innerHTML = `<div>
+          <h2 style="font-size:15px">🚀 New Here? Zero-Visit Setup in 3 Steps</h2>
+          <p class="sub" style="margin:2px 0 0">You do <strong>not</strong> need to visit AIOStreams or AIOMetadata first—Studio creates and configures both instances directly via API.</p>
+        </div>`;
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "icon-btn";
+      closeBtn.textContent = "✕ Dismiss";
+      closeBtn.onclick = () => { dismissOnboarding = true; renderHeader(); };
+      top.appendChild(closeBtn);
+      banner.appendChild(top);
+
+      const stepsGrid = document.createElement("div");
+      stepsGrid.className = "cards-grid";
+
+      const step1Done = readyCount === reqEnv.length && nuvioReady;
+      const s1 = document.createElement("div");
+      s1.className = "pack-card" + (step1Done ? " on" : "");
+      s1.innerHTML = `<div class="row-between"><strong>1. Enter Keys & Nuvio Login</strong><span class="pill ${step1Done ? "ok" : "warn"}">${step1Done ? "Done" : `${readyCount}/${reqEnv.length} Keys`}</span></div>
+        <div style="font-size:12px;color:var(--muted)">Choose any password for AIOStreams & AIOMetadata, paste your Debrid + TMDB + TVDB keys, and sign in to Nuvio.</div>`;
+      if (activeTab !== "keys") {
+        const goKeys = document.createElement("button");
+        goKeys.className = "accent-outline";
+        goKeys.textContent = "🔑 Open Keys & Sign-In →";
+        goKeys.onclick = () => { activeTab = "keys"; render(); };
+        s1.appendChild(goKeys);
+      }
+
+      const s2 = document.createElement("div");
+      s2.className = "pack-card" + (allProv ? " on" : "");
+      s2.innerHTML = `<div class="row-between"><strong>2. Auto-Provision Instances</strong><span class="pill ${allProv ? "ok" : "warn"}">${allProv ? "Provisioned" : "1 Click"}</span></div>
+        <div style="font-size:12px;color:var(--muted)">Click <strong>✨ Provision New UUIDs</strong> in the top bar. Studio creates both AIOStreams & AIOMetadata instances and saves their UUIDs automatically.</div>`;
+
+      const s3 = document.createElement("div");
+      s3.className = "pack-card";
+      s3.innerHTML = `<div class="row-between"><strong>3. Customize & Push to Nuvio</strong><span class="pill">Final Step</span></div>
+        <div style="font-size:12px;color:var(--muted)">Pick collections (or paste MDBList / TMDB filters), set your audio/subtitle languages & theme, then click <strong>🚀 Save & Push to Nuvio</strong>.</div>`;
+
+      stepsGrid.append(s1, s2, s3);
+      banner.appendChild(stepsGrid);
+    }
+
+    function copyText(val, label) {
+      if (!val) return;
+      navigator.clipboard.writeText(val).then(
+        () => showLog(`Copied ${label} (${val}) to clipboard.`, []),
+        () => showLog(`${label}: ${val}`, [])
+      );
     }
 
     function renderHomeTab(root) {
@@ -1304,6 +1374,40 @@
         dsCard.appendChild(builderRow);
         root.appendChild(dsCard);
       }
+
+      // 5. Advanced AIOStreams Escape-Hatch Card
+      const advStreams = document.createElement("div");
+      advStreams.className = "card";
+      advStreams.style.marginTop = "18px";
+      const sUrl = (state.tenant && state.tenant.aiostreamsConfigureUrl) || "https://aiostreams.elfhosted.com/stremio/configure";
+      const sUuid = (state.tenant && state.tenant.aiostreamsUuid) || "";
+      advStreams.innerHTML = `<div class="row-between" style="flex-wrap:wrap">
+          <div>
+            <h2>5. Want Usenet, Custom Scrapers, Proxy, or Another Stream Card Formatter?</h2>
+            <p class="sub" style="margin-bottom:0">Studio covers ~90% of stream preferences above. For deep customization (Easynews/Usenet, Torznab/Prowlarr, MediaFlow Proxy, custom SEL formulas, or Prism/GDrive card formatters), open your AIOStreams instance directly, save there, then click <strong>⬇️ Pull from Live</strong> in the top bar—Studio scrubs new secrets and preserves your custom scrapers.</p>
+          </div>
+        </div>`;
+      const advBtns = document.createElement("div");
+      advBtns.style.display = "flex";
+      advBtns.style.gap = "8px";
+      advBtns.style.flexWrap = "wrap";
+      advBtns.style.marginTop = "12px";
+      if (sUuid) {
+        const cpBtn = document.createElement("button");
+        cpBtn.textContent = `📋 Copy AIOStreams UUID (${sUuid.slice(0, 8)}…)`;
+        cpBtn.onclick = () => copyText(sUuid, "AIOStreams UUID");
+        advBtns.appendChild(cpBtn);
+      }
+      const openAioLink = document.createElement("a");
+      openAioLink.className = "btn accent-outline";
+      openAioLink.style.textDecoration = "none";
+      openAioLink.href = sUrl;
+      openAioLink.target = "_blank";
+      openAioLink.rel = "noreferrer";
+      openAioLink.textContent = sUuid ? "🔧 Open My AIOStreams Editor ↗" : "🔧 Open AIOStreams Configure Page ↗";
+      advBtns.appendChild(openAioLink);
+      advStreams.appendChild(advBtns);
+      root.appendChild(advStreams);
     }
 
     function renderNuvioTab(root) {
@@ -1318,9 +1422,11 @@
       c1.innerHTML = `<h2>Stream Badges & Client Sync</h2>
         <p class="sub">Declarative logo packs and client connections for profile <strong>${escapeHtml(p.displayName)}</strong>.</p>`;
       const bToggle = makeSwitch("Enable Elite-Badges (Stream Cards + Paused Player)", p.badgesEnabled, v => { p.badgesEnabled = v; saveSection("profile", true); });
+      const bcToggle = makeSwitch("Enable BingeCat AI Recommendations Addon", p.bingecatEnabled, v => { p.bingecatEnabled = v; saveSection("profile", true); });
+      bcToggle.style.marginTop = "12px";
       const sToggle = makeSwitch("Also Sync Addons to Stremio Account", p.stremioEnabled, v => { p.stremioEnabled = v; saveSection("profile", true); });
       sToggle.style.marginTop = "12px";
-      c1.append(bToggle, sToggle);
+      c1.append(bToggle, bcToggle, sToggle);
 
       // Card 2: Details Page Enrichment (`meta`)
       const c2 = document.createElement("div");
@@ -1490,6 +1596,69 @@
       });
       eCard.appendChild(eGrid);
       root.appendChild(eCard);
+
+      // 3. Advanced Upstream Editors & Trakt/Simkl OAuth Card
+      const upCard = document.createElement("div");
+      upCard.className = "card";
+      upCard.style.marginTop = "18px";
+      upCard.innerHTML = `<h2>3. Advanced Upstream Editors & One-Time OAuth (Optional)</h2>
+        <p class="sub">You never need to visit AIOStreams or AIOMetadata to create instances—<strong>✨ Provision New UUIDs</strong> does that automatically. Only open these pages if you want Trakt/Simkl OAuth or advanced upstream tweaks, then click <strong>⬇️ Pull from Live</strong> here.</p>`;
+      const upGrid = document.createElement("div");
+      upGrid.className = "cards-grid";
+
+      const sUuid = (state.tenant && state.tenant.aiostreamsUuid) || "";
+      const sUrl = (state.tenant && state.tenant.aiostreamsConfigureUrl) || "https://aiostreams.elfhosted.com/stremio/configure";
+      const mUuid = (state.tenant && state.tenant.aiometadataUuid) || "";
+      const mUrl = (state.tenant && state.tenant.aiometadataConfigureUrl) || "https://aiometadata.elfhosted.com/configure";
+
+      const makeInstanceBox = (title, isProv, uuid, url, descText) => {
+        const box = document.createElement("div");
+        box.className = "pack-card" + (isProv ? " on" : "");
+        box.innerHTML = `<div class="row-between">
+            <strong>${escapeHtml(title)}</strong>
+            <span class="pill ${isProv ? "ok" : "warn"}">${isProv ? `UUID ${escapeHtml(uuid.slice(0, 8))}…` : "Not Provisioned Yet"}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">${descText}</div>`;
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.gap = "8px";
+        row.style.flexWrap = "wrap";
+        if (uuid) {
+          const cp = document.createElement("button");
+          cp.textContent = "📋 Copy UUID";
+          cp.onclick = () => copyText(uuid, `${title} UUID`);
+          row.appendChild(cp);
+        }
+        const a = document.createElement("a");
+        a.className = "btn accent-outline";
+        a.style.textDecoration = "none";
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noreferrer";
+        a.textContent = `Open ${title} ↗`;
+        row.appendChild(a);
+        box.appendChild(row);
+        return box;
+      };
+
+      upGrid.append(
+        makeInstanceBox(
+          "AIOMetadata Configure Page",
+          Boolean(mUuid),
+          mUuid,
+          mUrl,
+          "Use once if you want <strong>Trakt / Simkl / AniList OAuth</strong> (to generate <code>SECRET_TRAKT_TOKEN_ID</code>), switch poster providers (TopPosters / Fanart.tv), or change global metadata title language."
+        ),
+        makeInstanceBox(
+          "AIOStreams Configure Page",
+          Boolean(sUuid),
+          sUuid,
+          sUrl,
+          "Use if you want to add <strong>Usenet / Easynews / Torznab</strong> scrapers, configure MediaFlow Proxy, or pick a different stream card formatter—then click <strong>⬇️ Pull from Live</strong>."
+        )
+      );
+      upCard.appendChild(upGrid);
+      root.appendChild(upCard);
     }
 
     function makeSwitch(label, checked, onChange) {
