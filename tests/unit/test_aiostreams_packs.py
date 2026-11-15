@@ -117,10 +117,16 @@ def test_stream_preferences_and_strelingo_pair_builder_round_trip(tmp_path: Path
     prefs = inspect_stream_preferences(raw)
     assert prefs.max_resolution == "2160p"
     assert prefs.cached_only is False
+    assert prefs.audio_languages == ("English", "Kannada", "Hindi", "Japanese")
     default_pairs = inspect_dual_subtitle_pairs(raw)
     assert default_pairs == (("jpn", "eng"), ("eng", "kan"), ("hin", "kan"))
 
-    same_prefs = apply_stream_preferences(raw, max_resolution="2160p", cached_only=False)
+    same_prefs = apply_stream_preferences(
+        raw,
+        max_resolution="2160p",
+        cached_only=False,
+        audio_languages=prefs.audio_languages,
+    )
     assert isinstance(same_prefs, Ok)
     assert same_prefs.value == raw
 
@@ -128,15 +134,39 @@ def test_stream_preferences_and_strelingo_pair_builder_round_trip(tmp_path: Path
     assert isinstance(same_pairs, Ok)
     assert same_pairs.value == raw
 
-    # Cap at 1080p + Cached-only
-    capped_res = apply_stream_preferences(raw, max_resolution="1080p", cached_only=True)
+    # Cap at 1080p + Cached-only + Custom Stream Audio Languages
+    capped_res = apply_stream_preferences(
+        raw,
+        max_resolution="1080p",
+        cached_only=True,
+        audio_languages=["English", "Spanish", "German", "Korean"],
+    )
     assert isinstance(capped_res, Ok)
     capped = capped_res.value
     assert capped["excludedResolutions"] == ["2160p", "1440p"]
     assert capped["excludeUncachedFromStreamTypes"] == ["debrid"]
+    assert capped["requiredLanguages"] == [
+        "Original",
+        "English",
+        "Spanish",
+        "German",
+        "Korean",
+        "Dual Audio",
+        "Multi",
+        "Dubbed",
+        "Unknown",
+    ]
     assert inspect_stream_preferences(capped).max_resolution == "1080p"
     assert inspect_stream_preferences(capped).cached_only is True
+    assert inspect_stream_preferences(capped).audio_languages == (
+        "English",
+        "Spanish",
+        "German",
+        "Korean",
+    )
     assert isinstance(apply_stream_preferences(raw, max_resolution="480p"), Err)
+    assert isinstance(apply_stream_preferences(raw, audio_languages=[]), Err)
+    assert isinstance(apply_stream_preferences(raw, audio_languages=["Klingon"]), Err)
 
     # Custom 4-pair Strelingo setup + SubSource language sync + secret scrubbing round-trip
     custom_pairs = [("kor", "eng"), ("spa", "eng"), ("fra", "deu"), ("ara", "eng")]
@@ -186,6 +216,8 @@ def test_stream_preferences_and_strelingo_pair_builder_round_trip(tmp_path: Path
             "--max-resolution",
             "720p",
             "--cached-only",
+            "--audio-langs",
+            "English,Spanish",
             "--dual-subs",
             "kor:eng,spa:eng",
             "--dir",
@@ -196,5 +228,6 @@ def test_stream_preferences_and_strelingo_pair_builder_round_trip(tmp_path: Path
     list_res = runner.invoke(app, ["packs", "list", "--dir", str(t)], env={"COLUMNS": "200"})
     assert "Max 720p" in list_res.output
     assert "Cached Only" in list_res.output
+    assert "Audio: English, Spanish" in list_res.output
     assert "KO→EN, ES→EN" in list_res.output
     assert runner.invoke(app, ["validate", "--dir", str(t)]).exit_code == 0

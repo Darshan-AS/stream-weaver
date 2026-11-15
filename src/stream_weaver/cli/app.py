@@ -1301,6 +1301,7 @@ def _apply_debrid_and_packs_to_tenant(
     enabled_packs: Sequence[str] | None = None,
     max_resolution: str | None = None,
     cached_only: bool | None = None,
+    audio_languages: Sequence[str] | None = None,
     dual_subtitle_pairs: Sequence[Sequence[str]] | None = None,
 ) -> Result[None]:
     """Applies Debrid provider, pack toggles, stream filters, and dual-sub pairs to a tenant's docs."""
@@ -1331,9 +1332,12 @@ def _apply_debrid_and_packs_to_tenant(
                 return err
             case Ok(streams_doc):
                 pass
-    if max_resolution is not None or cached_only is not None:
+    if max_resolution is not None or cached_only is not None or audio_languages is not None:
         match apply_stream_preferences(
-            streams_doc, max_resolution=max_resolution, cached_only=cached_only
+            streams_doc,
+            max_resolution=max_resolution,
+            cached_only=cached_only,
+            audio_languages=audio_languages,
         ):
             case Err() as err:
                 return err
@@ -1417,7 +1421,7 @@ def cmd_packs_list(
     ) or "none"
     console.print(f"⚡ Active Debrid Provider: {debrid_label}")
     console.print(
-        f"🎞️  Stream Policy: Max {prefs.max_resolution} · {'Cached Only' if prefs.cached_only else 'Cached + Uncached'} · Dual-Subs: {pairs_label}"
+        f"🎞️  Stream Policy: Max {prefs.max_resolution} · {'Cached Only' if prefs.cached_only else 'Cached + Uncached'} · Audio: {', '.join(prefs.audio_languages)} · Dual-Subs: {pairs_label}"
     )
 
     table = Table(title=f"AIOStreams Addon Packs — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
@@ -1459,6 +1463,13 @@ def cmd_packs_set(
             help="Require instant-play cached Debrid streams only, or allow uncached torrents",
         ),
     ] = None,
+    audio_langs: Annotated[
+        str | None,
+        typer.Option(
+            "--audio-langs",
+            help="Comma-separated stream audio languages (e.g. 'English,Spanish,Japanese')",
+        ),
+    ] = None,
     dual_subs: Annotated[
         str | None,
         typer.Option(
@@ -1495,12 +1506,19 @@ def cmd_packs_set(
             m_code, _, t_code = token.partition(":")
             parsed_pairs.append((m_code.strip(), t_code.strip()))
 
+    parsed_audio: list[str] | None = (
+        [t.strip() for t in audio_langs.split(",") if t.strip()]
+        if audio_langs is not None
+        else None
+    )
+
     match _apply_debrid_and_packs_to_tenant(
         paths,
         debrid=debrid,
         enabled_packs=next_packs,
         max_resolution=max_resolution,
         cached_only=cached_only,
+        audio_languages=parsed_audio,
         dual_subtitle_pairs=parsed_pairs,
     ):
         case Err(pack_err):

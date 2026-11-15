@@ -139,11 +139,42 @@ _CAPPED_HIGH_RESOLUTIONS: Mapping[str, tuple[str, ...]] = {
     "720p": ("2160p", "1440p", "1080p"),
 }
 
+STREAM_AUDIO_LANGUAGES: tuple[str, ...] = (
+    "English",
+    "Japanese",
+    "Korean",
+    "Spanish",
+    "French",
+    "German",
+    "Portuguese",
+    "Italian",
+    "Chinese",
+    "Russian",
+    "Arabic",
+    "Turkish",
+    "Polish",
+    "Dutch",
+    "Hindi",
+    "Kannada",
+    "Tamil",
+    "Telugu",
+    "Malayalam",
+    "Bengali",
+    "Marathi",
+)
+_AUDIO_LANG_BY_LOWER: Mapping[str, str] = {lang.lower(): lang for lang in STREAM_AUDIO_LANGUAGES}
+_STRUCTURAL_AUDIO_TAGS_HEAD: tuple[str, ...] = ("Original",)
+_STRUCTURAL_AUDIO_TAGS_TAIL: tuple[str, ...] = ("Dual Audio", "Multi", "Dubbed", "Unknown")
+_STRUCTURAL_AUDIO_SET: frozenset[str] = frozenset(
+    (*_STRUCTURAL_AUDIO_TAGS_HEAD, *_STRUCTURAL_AUDIO_TAGS_TAIL)
+)
+
 
 @dataclass(frozen=True, slots=True)
 class StreamPreferences:
     max_resolution: str
     cached_only: bool
+    audio_languages: tuple[str, ...] = ("English",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -353,7 +384,7 @@ def apply_aiostreams_packs(
 
 
 def inspect_stream_preferences(aiostreams_doc: Mapping[str, Any]) -> StreamPreferences:
-    """Inspects Max Resolution cap and Instant-Play Cached-Only policy in `aiostreams_doc`."""
+    """Inspects Max Resolution cap, Cached-Only policy, and wanted Stream Audio Languages."""
     raw_excl_res = aiostreams_doc.get("excludedResolutions")
     excl_res = {str(x) for x in raw_excl_res if isinstance(x, str)} if isinstance(raw_excl_res, list) else set()
     if "1080p" in excl_res:
@@ -365,7 +396,19 @@ def inspect_stream_preferences(aiostreams_doc: Mapping[str, Any]) -> StreamPrefe
 
     raw_uncached = aiostreams_doc.get("excludeUncachedFromStreamTypes")
     uncached = {str(x) for x in raw_uncached if isinstance(x, str)} if isinstance(raw_uncached, list) else set()
-    return StreamPreferences(max_resolution=max_res, cached_only="debrid" in uncached)
+
+    raw_langs = aiostreams_doc.get("preferredLanguages") or aiostreams_doc.get("requiredLanguages")
+    audio_langs: list[str] = []
+    if isinstance(raw_langs, list):
+        for item in raw_langs:
+            if isinstance(item, str) and item not in _STRUCTURAL_AUDIO_SET and item not in audio_langs:
+                audio_langs.append(item)
+
+    return StreamPreferences(
+        max_resolution=max_res,
+        cached_only="debrid" in uncached,
+        audio_languages=tuple(audio_langs),
+    )
 
 
 def apply_stream_preferences(
@@ -373,8 +416,9 @@ def apply_stream_preferences(
     *,
     max_resolution: str | None = None,
     cached_only: bool | None = None,
+    audio_languages: Sequence[str] | None = None,
 ) -> Result[JsonDict, ConfigValidationError]:
-    """Applies Max Resolution (`2160p`/`1080p`/`720p`) and/or Cached-Only (`debrid`) stream filtering."""
+    """Applies Max Resolution, Cached-Only (`debrid`), and/or Stream Audio Languages filtering."""
     out: JsonDict = copy.deepcopy(dict(aiostreams_doc))
     if max_resolution is not None:
         cap = max_resolution.strip().lower()
@@ -401,6 +445,27 @@ def apply_stream_preferences(
         else:
             existing_unc = [x for x in existing_unc if x != "debrid"]
         out["excludeUncachedFromStreamTypes"] = existing_unc
+
+    if audio_languages is not None:
+        chosen: list[str] = []
+        for raw_lang in audio_languages:
+            tok = str(raw_lang).strip()
+            if not tok or tok in _STRUCTURAL_AUDIO_SET:
+                continue
+            canon = _AUDIO_LANG_BY_LOWER.get(tok.lower())
+            if canon is None:
+                return Err(
+                    ConfigValidationError(
+                        f"Unknown stream audio language `{tok}` (choose from: {', '.join(STREAM_AUDIO_LANGUAGES)})"
+                    )
+                )
+            if canon not in chosen:
+                chosen.append(canon)
+        if not chosen:
+            return Err(ConfigValidationError("Select at least one stream audio language (e.g. English)"))
+        full_list = [*_STRUCTURAL_AUDIO_TAGS_HEAD, *chosen, *_STRUCTURAL_AUDIO_TAGS_TAIL]
+        out["requiredLanguages"] = list(full_list)
+        out["preferredLanguages"] = list(full_list)
 
     return Ok(out)
 
