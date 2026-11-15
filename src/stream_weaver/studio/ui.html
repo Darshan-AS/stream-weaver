@@ -293,6 +293,7 @@
     </div>
     <div class="actions">
       <button id="btn-export" title="Download portable GitOps tenant zip">📦 Export Repo (.zip)</button>
+      <button id="btn-pull" title="Pull live changes from AIOStreams, AIOMetadata & Nuvio (auto-scrubs secrets)">⬇️ Pull from Live</button>
       <button id="btn-diff">🔍 Check Drift</button>
       <button id="btn-provision" class="accent-outline">✨ Provision New UUIDs</button>
       <button id="btn-save">💾 Save</button>
@@ -328,6 +329,25 @@
     let pendingEnvEdits = {};
     let nuvioProfilesCache = [];
     let dirty = false;
+    let diyMode = "mdblist";
+    let catalogSearchQuery = "";
+    let changedSections = {
+      debrid: false,
+      packs: false,
+      streamPreferences: false,
+      dualSubtitlePairs: false,
+      profile: false,
+    };
+
+    function resetChangedSections() {
+      changedSections = {
+        debrid: false,
+        packs: false,
+        streamPreferences: false,
+        dualSubtitlePairs: false,
+        profile: false,
+      };
+    }
 
     function loadSavedBundle() {
       try {
@@ -374,22 +394,26 @@
 
     function buildMutationPayload() {
       const p = currentProfile();
-      const enabledPacks = state.packs.filter(pk => pk.enabled).map(pk => pk.id);
       const mut = {
-        debrid: state.debrid.active,
-        enabledPacks,
         envUpdates: { ...pendingEnvEdits },
       };
-      if (state.streamPreferences) {
+      if (changedSections.debrid) {
+        mut.debrid = state.debrid.active;
+      }
+      if (changedSections.packs) {
+        mut.enabledPacks = state.packs.filter(pk => pk.enabled).map(pk => pk.id);
+      }
+      if (changedSections.streamPreferences && state.streamPreferences) {
         mut.streamPreferences = {
           maxResolution: state.streamPreferences.maxResolution,
           cachedOnly: Boolean(state.streamPreferences.cachedOnly),
+          audioLanguages: state.streamPreferences.audioLanguages || ["English"],
         };
       }
-      if (state.dualSubtitles && Array.isArray(state.dualSubtitles.pairs)) {
+      if (changedSections.dualSubtitlePairs && state.dualSubtitles && Array.isArray(state.dualSubtitles.pairs)) {
         mut.dualSubtitlePairs = state.dualSubtitles.pairs;
       }
-      if (p) {
+      if (changedSections.profile && p) {
         mut.profile = {
           name: p.name,
           displayName: p.displayName,
@@ -408,11 +432,17 @@
       return mut;
     }
 
+    async function saveSection(section, quiet = true) {
+      if (section) changedSections[section] = true;
+      await saveChanges(quiet);
+    }
+
     async function saveChanges(quiet = false) {
       try {
         const mut = buildMutationPayload();
         await api("/api/mutate", { mutation: mut });
         pendingEnvEdits = {};
+        resetChangedSections();
         dirty = false;
         if (!quiet) showLog("Saved configuration & synchronized AIOMetadata catalogs + diagrams.", []);
         render();
@@ -491,7 +521,7 @@
           e.stopPropagation();
           [p.collections[idx - 1], p.collections[idx]] = [p.collections[idx], p.collections[idx - 1]];
           selectedColIdx = idx - 1;
-          saveChanges(true);
+          saveSection("profile", true);
         };
         const dn = document.createElement("button");
         dn.className = "icon-btn"; dn.textContent = "↓"; dn.disabled = idx === p.collections.length - 1;
@@ -499,7 +529,7 @@
           e.stopPropagation();
           [p.collections[idx + 1], p.collections[idx]] = [p.collections[idx], p.collections[idx + 1]];
           selectedColIdx = idx + 1;
-          saveChanges(true);
+          saveSection("profile", true);
         };
         const rm = document.createElement("button");
         rm.className = "icon-btn danger"; rm.textContent = "✕";
@@ -507,7 +537,7 @@
           e.stopPropagation();
           p.collections.splice(idx, 1);
           selectedColIdx = Math.max(0, selectedColIdx - 1);
-          saveChanges(true);
+          saveSection("profile", true);
         };
         ctrls.append(up, dn, rm);
         item.append(info, ctrls);
@@ -515,12 +545,45 @@
       });
       left.appendChild(list);
 
+      // DIY Custom Collection Button
+      const diyBar = document.createElement("div");
+      diyBar.style.marginTop = "14px";
+      const newColBtn = document.createElement("button");
+      newColBtn.className = "accent-outline";
+      newColBtn.style.width = "100%";
+      newColBtn.style.justifyContent = "center";
+      newColBtn.textContent = "✨ + Create Custom Collection (MDBList / TMDB / Any Addon)";
+      newColBtn.onclick = async () => {
+        const defaultSrc = await api("/api/build-row", {
+          spec: { kind: "tmdb", title: "My Top Picks", media: "movie", genre: "scifi", sort: "vote_average.desc" },
+          pendingEnv: pendingEnvEdits,
+        });
+        const uid = Date.now().toString(36).slice(-5);
+        const rawCol = {
+          id: `col-custom-${uid}`,
+          title: "My Custom Collection",
+          folders: [
+            {
+              id: `fld-custom-${uid}`,
+              title: defaultSrc.title,
+              sources: defaultSrc.sources,
+            },
+          ],
+        };
+        p.collections.push({ ref: null, raw: rawCol, title: rawCol.title, folders: [] });
+        selectedColIdx = p.collections.length - 1;
+        selectedFolderIdx = 0;
+        await saveSection("profile", true);
+      };
+      diyBar.appendChild(newColBtn);
+      left.appendChild(diyBar);
+
       // Add Collection Picker (grouped by interest category)
       const addSec = document.createElement("div");
-      addSec.style.marginTop = "18px";
+      addSec.style.marginTop = "16px";
       addSec.style.borderTop = "1px solid var(--border)";
       addSec.style.paddingTop = "14px";
-      addSec.innerHTML = `<h2 style="font-size:13.5px">➕ Add Curated Collection</h2>`;
+      addSec.innerHTML = `<h2 style="font-size:13.5px">➕ Add Curated Starter Collection</h2>`;
 
       const usedRefs = new Set(p.collections.filter(c => c.ref).map(c => c.ref));
       const standardCols = state.libraryCollections.filter(lc => (!lc.presets || lc.presets.length === 0) && !usedRefs.has(lc.id));
@@ -557,7 +620,7 @@
           btn.onclick = () => {
             p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
             selectedColIdx = p.collections.length - 1;
-            saveChanges(true);
+            saveSection("profile", true);
           };
           addChips.appendChild(btn);
         });
@@ -586,30 +649,91 @@
           const chosen = regRecipe.presets[Number(sel.value)];
           p.collections.push({ ref: "regional-cinema", with: { ...chosen.with }, title: chosen.label, folders: [] });
           selectedColIdx = p.collections.length - 1;
-          saveChanges(true);
+          saveSection("profile", true);
         };
         regRow.append(sel, addRegBtn);
         addSec.appendChild(regRow);
       }
       left.appendChild(addSec);
 
-      // Right column: Live Nuvio Collection & Folder Preview
+      // Right column: Live Nuvio Collection & Folder Preview + DIY Builder
       const right = document.createElement("div");
       right.className = "card";
       if (!selCol) {
-        right.innerHTML = `<h2>Live Nuvio Home Preview</h2><p class="sub">Add a collection on the left to preview its folders and rows.</p>`;
+        right.innerHTML = `<h2>Live Nuvio Home Preview</h2><p class="sub">Add or create a collection on the left to preview and customize its folders.</p>`;
       } else {
         const libMeta = state.libraryCollections.find(lc => lc.id === selCol.ref);
+        const isInline = !selCol.ref && selCol.raw;
         const hero = document.createElement("div");
         hero.className = "hero-preview";
         if (selCol.backdropUrl) hero.style.backgroundImage = `url('${selCol.backdropUrl}')`;
-        hero.innerHTML = `<div class="pill" style="width:fit-content;margin-bottom:8px">Nuvio Tabbed Grid Preview</div>
-          <h3>${escapeHtml(selCol.title)}</h3>
-          <div class="meta">${escapeHtml((libMeta && libMeta.description) || `${(selCol.folders || []).length} folders configured`)}</div>`;
+        const heroTop = document.createElement("div");
+        heroTop.className = "row-between";
+        heroTop.style.marginBottom = "8px";
+        heroTop.innerHTML = `<span class="pill">${isInline ? "Custom DIY Collection" : "Curated Recipe Collection"}</span>`;
+        if (!isInline && selCol.inlineTemplate) {
+          const unlockBtn = document.createElement("button");
+          unlockBtn.className = "icon-btn accent-outline";
+          unlockBtn.textContent = "✏️ Unlock to Add Custom Tabs / Edit Art";
+          unlockBtn.onclick = () => {
+            selCol.raw = JSON.parse(JSON.stringify(selCol.inlineTemplate));
+            selCol.ref = null;
+            selCol.with = {};
+            saveSection("profile", true);
+          };
+          heroTop.appendChild(unlockBtn);
+        }
+        hero.appendChild(heroTop);
+        const hTitle = document.createElement("h3");
+        hTitle.textContent = selCol.title;
+        const hMeta = document.createElement("div");
+        hMeta.className = "meta";
+        hMeta.textContent = (libMeta && libMeta.description) || `${(selCol.folders || []).length} tabbed folder(s) configured`;
+        hero.append(hTitle, hMeta);
         right.appendChild(hero);
 
+        // Inline Collection Title & Backdrop Editor
+        if (isInline) {
+          const metaBar = document.createElement("div");
+          metaBar.className = "rows-box";
+          metaBar.style.marginTop = "0";
+          metaBar.style.marginBottom = "16px";
+          metaBar.style.display = "grid";
+          metaBar.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
+          metaBar.style.gap = "10px";
+
+          const cTitleLbl = document.createElement("label");
+          cTitleLbl.className = "field";
+          cTitleLbl.textContent = "Collection Title";
+          const cTitleIn = document.createElement("input");
+          cTitleIn.type = "text";
+          cTitleIn.value = selCol.raw.title || "";
+          cTitleIn.onchange = () => {
+            selCol.raw.title = cTitleIn.value.trim() || "Custom Collection";
+            saveSection("profile", true);
+          };
+          cTitleLbl.appendChild(cTitleIn);
+
+          const cBgLbl = document.createElement("label");
+          cBgLbl.className = "field";
+          cBgLbl.textContent = "Collection Backdrop Image URL (Optional)";
+          const cBgIn = document.createElement("input");
+          cBgIn.type = "text";
+          cBgIn.placeholder = "https://image.tmdb.org/t/p/original/…";
+          cBgIn.value = selCol.raw.backdropImageUrl || "";
+          cBgIn.onchange = () => {
+            const v = cBgIn.value.trim();
+            if (v) selCol.raw.backdropImageUrl = v;
+            else delete selCol.raw.backdropImageUrl;
+            saveSection("profile", true);
+          };
+          cBgLbl.appendChild(cBgIn);
+          metaBar.append(cTitleLbl, cBgLbl);
+          right.appendChild(metaBar);
+        }
+
         // Optional multi-select param editor (e.g., Streaming Services OTT checkboxes)
-        if (libMeta && libMeta.params) {
+        if (!isInline && libMeta && libMeta.params) {
           const listParam = libMeta.params.find(pr => pr.type === "list" && pr.options && pr.options.length > 0);
           if (listParam) {
             const paramBox = document.createElement("div");
@@ -634,7 +758,7 @@
                   .filter(v => v === opt.value ? chk.checked : currentVals.includes(v));
                 if (!next.length) { chk.checked = true; return; }
                 selCol.with = { ...(selCol.with || {}), [listParam.name]: next };
-                saveChanges(true);
+                saveSection("profile", true);
               };
               lbl.append(chk, document.createTextNode(opt.label));
               chkWrap.appendChild(lbl);
@@ -668,7 +792,72 @@
         if (activeFolder) {
           const rbox = document.createElement("div");
           rbox.className = "rows-box";
-          rbox.innerHTML = `<div style="font-size:13px;font-weight:600">📂 Catalog Rows inside "${escapeHtml(activeFolder.title)}"</div>`;
+          const rHead = document.createElement("div");
+          rHead.className = "row-between";
+          rHead.innerHTML = `<div style="font-size:13px;font-weight:600">📂 Catalog Rows inside "${escapeHtml(activeFolder.title)}"</div>`;
+          if (isInline && Array.isArray(selCol.raw.folders) && selCol.raw.folders[selectedFolderIdx]) {
+            const fCtrls = document.createElement("div");
+            fCtrls.className = "col-controls";
+            const fLeft = document.createElement("button");
+            fLeft.className = "icon-btn"; fLeft.textContent = "←"; fLeft.disabled = selectedFolderIdx === 0;
+            fLeft.onclick = () => {
+              const rf = selCol.raw.folders;
+              [rf[selectedFolderIdx - 1], rf[selectedFolderIdx]] = [rf[selectedFolderIdx], rf[selectedFolderIdx - 1]];
+              selectedFolderIdx -= 1;
+              saveSection("profile", true);
+            };
+            const fRight = document.createElement("button");
+            fRight.className = "icon-btn"; fRight.textContent = "→"; fRight.disabled = selectedFolderIdx >= selCol.raw.folders.length - 1;
+            fRight.onclick = () => {
+              const rf = selCol.raw.folders;
+              [rf[selectedFolderIdx + 1], rf[selectedFolderIdx]] = [rf[selectedFolderIdx], rf[selectedFolderIdx + 1]];
+              selectedFolderIdx += 1;
+              saveSection("profile", true);
+            };
+            const fDel = document.createElement("button");
+            fDel.className = "icon-btn danger"; fDel.textContent = "🗑 Remove Folder";
+            fDel.disabled = selCol.raw.folders.length <= 1;
+            fDel.onclick = () => {
+              selCol.raw.folders.splice(selectedFolderIdx, 1);
+              selectedFolderIdx = Math.max(0, selectedFolderIdx - 1);
+              saveSection("profile", true);
+            };
+            fCtrls.append(fLeft, fRight, fDel);
+            rHead.appendChild(fCtrls);
+          }
+          rbox.appendChild(rHead);
+
+          if (isInline && selCol.raw.folders && selCol.raw.folders[selectedFolderIdx]) {
+            const rawF = selCol.raw.folders[selectedFolderIdx];
+            const fEditGrid = document.createElement("div");
+            fEditGrid.style.display = "grid";
+            fEditGrid.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
+            fEditGrid.style.gap = "10px";
+            fEditGrid.style.marginTop = "10px";
+
+            const ftLbl = document.createElement("label");
+            ftLbl.className = "field"; ftLbl.textContent = "Folder Tab Name";
+            const ftIn = document.createElement("input");
+            ftIn.type = "text"; ftIn.value = rawF.title || "";
+            ftIn.onchange = () => { rawF.title = ftIn.value.trim() || "Folder"; saveSection("profile", true); };
+            ftLbl.appendChild(ftIn);
+
+            const fcLbl = document.createElement("label");
+            fcLbl.className = "field"; fcLbl.textContent = "Folder Cover Artwork URL (Optional)";
+            const fcIn = document.createElement("input");
+            fcIn.type = "text"; fcIn.placeholder = "https://image.tmdb.org/t/p/w780/…";
+            fcIn.value = rawF.coverImageUrl || "";
+            fcIn.onchange = () => {
+              const v = fcIn.value.trim();
+              if (v) rawF.coverImageUrl = v;
+              else delete rawF.coverImageUrl;
+              saveSection("profile", true);
+            };
+            fcLbl.appendChild(fcIn);
+            fEditGrid.append(ftLbl, fcLbl);
+            rbox.appendChild(fEditGrid);
+          }
+
           const chips = document.createElement("div");
           chips.className = "chip-row";
           (activeFolder.rows || []).forEach(r => {
@@ -680,10 +869,207 @@
           rbox.appendChild(chips);
           right.appendChild(rbox);
         }
+
+        // DIY Custom Folder / Catalog Builder (creates BOTH the AIOMetadata catalog & Nuvio folder in 1 step!)
+        if (isInline) {
+          right.appendChild(renderDiyFolderBuilder(selCol));
+        }
       }
 
       wrap.append(left, right);
       root.appendChild(wrap);
+    }
+
+    function renderDiyFolderBuilder(selCol) {
+      const box = document.createElement("div");
+      box.className = "rows-box";
+      box.style.borderColor = "var(--border-strong)";
+
+      const head = document.createElement("div");
+      head.className = "row-between";
+      head.style.flexWrap = "wrap";
+      head.innerHTML = `<div>
+          <div style="font-size:13.5px;font-weight:700">✨ Add Any Custom Folder / Row (1-Step — No Separate AIOMetadata Login)</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Creates both the AIOMetadata catalog definition and the Nuvio folder automatically in your profile.</div>
+        </div>`;
+      const modeTabs = document.createElement("div");
+      modeTabs.className = "tabs";
+      [
+        ["mdblist", "📋 MDBList URL / ID"],
+        ["tmdb", "🎬 TMDB Filter"],
+        ["catalog", "🔌 Any Addon Catalog"],
+      ].forEach(([mId, mLabel]) => {
+        const b = document.createElement("button");
+        b.className = "tab" + (diyMode === mId ? " active" : "");
+        b.style.padding = "6px 11px";
+        b.style.fontSize = "12px";
+        b.textContent = mLabel;
+        b.onclick = () => { diyMode = mId; render(); };
+        modeTabs.appendChild(b);
+      });
+      head.appendChild(modeTabs);
+      box.appendChild(head);
+
+      const form = document.createElement("div");
+      form.style.display = "grid";
+      form.style.gridTemplateColumns = "repeat(auto-fit, minmax(190px, 1fr))";
+      form.style.gap = "10px";
+      form.style.marginTop = "12px";
+      form.style.alignItems = "end";
+
+      const makeInput = (lblText, placeholder, val = "") => {
+        const l = document.createElement("label"); l.className = "field"; l.textContent = lblText;
+        const inp = document.createElement("input"); inp.type = "text"; inp.placeholder = placeholder; inp.value = val;
+        l.appendChild(inp);
+        return { l, inp };
+      };
+      const makeSelect = (lblText, opts) => {
+        const l = document.createElement("label"); l.className = "field"; l.textContent = lblText;
+        const sel = document.createElement("select");
+        opts.forEach(([v, txt]) => {
+          const o = document.createElement("option"); o.value = v; o.textContent = txt;
+          sel.appendChild(o);
+        });
+        l.appendChild(sel);
+        return { l, sel };
+      };
+
+      const appendFolder = async (folderTitle, coverUrl, sources, appendToCurrent = false) => {
+        if (!Array.isArray(selCol.raw.folders)) selCol.raw.folders = [];
+        if (appendToCurrent && selCol.raw.folders[selectedFolderIdx]) {
+          const curF = selCol.raw.folders[selectedFolderIdx];
+          curF.sources = [...(curF.sources || []), ...sources];
+        } else {
+          const uid = Date.now().toString(36).slice(-5);
+          const fObj = { id: `fld-custom-${uid}`, title: folderTitle, sources };
+          if (coverUrl && coverUrl.trim()) fObj.coverImageUrl = coverUrl.trim();
+          selCol.raw.folders.push(fObj);
+          selectedFolderIdx = selCol.raw.folders.length - 1;
+        }
+        await saveSection("profile", true);
+      };
+
+      if (diyMode === "mdblist") {
+        const urlCtrl = makeInput("MDBList URL or Numeric ID", "https://mdblist.com/lists/user/list-name  or  88434");
+        const titleCtrl = makeInput("Folder Title (Optional)", "Auto-filled from MDBList");
+        const mediaCtrl = makeSelect("Media Type (for numeric IDs)", [["movie", "Movies"], ["series", "Series"]]);
+        const coverCtrl = makeInput("Cover Artwork URL (Optional)", "https://image.tmdb.org/t/p/w780/…");
+        const addBtn = document.createElement("button");
+        addBtn.className = "primary";
+        addBtn.textContent = "+ Add MDBList Folder";
+        addBtn.onclick = async () => {
+          try {
+            addBtn.disabled = true;
+            const built = await api("/api/build-row", {
+              spec: {
+                kind: "mdblist",
+                input: urlCtrl.inp.value,
+                title: titleCtrl.inp.value,
+                media: mediaCtrl.sel.value,
+              },
+              pendingEnv: pendingEnvEdits,
+            });
+            await appendFolder(built.title, coverCtrl.inp.value, built.sources, false);
+          } catch (err) {
+            showLog(err.message, [], true);
+          } finally { addBtn.disabled = false; }
+        };
+        form.append(urlCtrl.l, titleCtrl.l, mediaCtrl.l, coverCtrl.l, addBtn);
+      } else if (diyMode === "tmdb") {
+        const meta = state.customBuilderMeta || { genres: [], languages: [], decades: [], sorts: [] };
+        const titleCtrl = makeInput("Folder Title", "e.g. 90s Sci-Fi Classics", "90s Sci-Fi Classics");
+        const mediaCtrl = makeSelect("Content Type", [["both", "Movies + Series"], ["movie", "Movies Only"], ["series", "Series Only"]]);
+        const genreCtrl = makeSelect("Genre", [["", "Any Genre"], ...meta.genres.map(g => [g.slug, g.label])]);
+        const langCtrl = makeSelect("Original Language", [["", "Any Language"], ...meta.languages.map(l => [l.code, l.label])]);
+        const decCtrl = makeSelect("Decade / Era", meta.decades.map(d => [d.id, d.label]));
+        const sortCtrl = makeSelect("Sort Order", meta.sorts.map(s => [s.id, s.label]));
+        const coverCtrl = makeInput("Cover Artwork URL (Optional)", "https://image.tmdb.org/t/p/w780/…");
+        const addBtn = document.createElement("button");
+        addBtn.className = "primary";
+        addBtn.textContent = "+ Add TMDB Folder";
+        addBtn.onclick = async () => {
+          try {
+            addBtn.disabled = true;
+            const built = await api("/api/build-row", {
+              spec: {
+                kind: "tmdb",
+                title: titleCtrl.inp.value,
+                media: mediaCtrl.sel.value,
+                genre: genreCtrl.sel.value,
+                language: langCtrl.sel.value,
+                decade: decCtrl.sel.value,
+                sort: sortCtrl.sel.value,
+              },
+              pendingEnv: pendingEnvEdits,
+            });
+            await appendFolder(built.title, coverCtrl.inp.value, built.sources, false);
+          } catch (err) {
+            showLog(err.message, [], true);
+          } finally { addBtn.disabled = false; }
+        };
+        form.append(titleCtrl.l, mediaCtrl.l, genreCtrl.l, langCtrl.l, decCtrl.l, sortCtrl.l, coverCtrl.l, addBtn);
+      } else {
+        const allCats = state.availableCatalogs || [];
+        const filterCtrl = makeInput("Filter Available Catalogs", "Type e.g. trakt, mal, bingecat, netflix…", catalogSearchQuery);
+        const qLower = catalogSearchQuery.trim().toLowerCase();
+        const filtered = qLower
+          ? allCats.filter(c => c.label.toLowerCase().includes(qLower) || c.key.toLowerCase().includes(qLower))
+          : allCats;
+        const catCtrl = makeSelect(
+          `Available Catalog (${filtered.length})`,
+          filtered.length ? filtered.map((c, idx) => [String(idx), c.label]) : [["", "No matching catalogs"]]
+        );
+        filterCtrl.inp.oninput = () => {
+          catalogSearchQuery = filterCtrl.inp.value;
+          const ql = catalogSearchQuery.trim().toLowerCase();
+          const nextList = ql
+            ? allCats.filter(c => c.label.toLowerCase().includes(ql) || c.key.toLowerCase().includes(ql))
+            : allCats;
+          catCtrl.sel.innerHTML = "";
+          nextList.forEach((c, i) => {
+            const o = document.createElement("option"); o.value = String(i); o.textContent = c.label;
+            catCtrl.sel.appendChild(o);
+          });
+          catCtrl.l.firstChild.textContent = `Available Catalog (${nextList.length})`;
+        };
+        const titleCtrl = makeInput("Folder Title (Optional)", "Defaults to catalog name");
+        const coverCtrl = makeInput("Cover Artwork URL (Optional)", "https://image.tmdb.org/t/p/w780/…");
+        const btnWrap = document.createElement("div");
+        btnWrap.style.display = "flex";
+        btnWrap.style.gap = "6px";
+        const newFBtn = document.createElement("button");
+        newFBtn.className = "primary";
+        newFBtn.textContent = "+ New Folder";
+        const getPicked = () => {
+          const ql = catalogSearchQuery.trim().toLowerCase();
+          const curList = ql
+            ? allCats.filter(c => c.label.toLowerCase().includes(ql) || c.key.toLowerCase().includes(ql))
+            : allCats;
+          return curList[Number(catCtrl.sel.value)] || null;
+        };
+        newFBtn.onclick = async () => {
+          const picked = getPicked();
+          if (!picked) return;
+          const src = JSON.parse(JSON.stringify(picked.sourceSpec));
+          const fTitle = titleCtrl.inp.value.trim() || picked.name;
+          await appendFolder(fTitle, coverCtrl.inp.value, [src], false);
+        };
+        const addRowBtn = document.createElement("button");
+        addRowBtn.className = "accent-outline";
+        addRowBtn.title = "Append this catalog as an extra row inside the currently selected folder";
+        addRowBtn.textContent = "+ Row to Folder";
+        addRowBtn.onclick = async () => {
+          const picked = getPicked();
+          if (!picked) return;
+          const src = JSON.parse(JSON.stringify(picked.sourceSpec));
+          await appendFolder(picked.name, "", [src], true);
+        };
+        btnWrap.append(newFBtn, addRowBtn);
+        form.append(filterCtrl.l, catCtrl.l, titleCtrl.l, coverCtrl.l, btnWrap);
+      }
+
+      box.appendChild(form);
+      return box;
     }
 
     function renderStreamsTab(root) {
@@ -699,7 +1085,7 @@
         const card = document.createElement("div");
         card.className = "pack-card" + (isAct ? " on" : "");
         card.style.cursor = "pointer";
-        card.onclick = () => { state.debrid.active = opt.id; saveChanges(true); };
+        card.onclick = () => { state.debrid.active = opt.id; saveSection("debrid", true); };
         card.innerHTML = `<div class="row-between">
             <strong>${escapeHtml(opt.label)}</strong>
             <span class="pill ${isAct ? "ok" : ""}">${isAct ? "Active" : opt.shortName}</span>
@@ -710,13 +1096,13 @@
       debCard.appendChild(debGrid);
       root.appendChild(debCard);
 
-      // 2. Stream Quality & Cache Policy
+      // 2. Stream Quality, Audio Languages & Cache Policy
       if (state.streamPreferences) {
         const spCard = document.createElement("div");
         spCard.className = "card";
         spCard.style.marginBottom = "18px";
-        spCard.innerHTML = `<h2>2. Stream Resolution & Instant-Play Cache Policy</h2>
-          <p class="sub">Cap maximum stream resolution for 1080p screens or mobile data saving, and optionally hide uncached torrents that require waiting.</p>`;
+        spCard.innerHTML = `<h2>2. Stream Resolution, Audio Languages & Instant-Play Policy</h2>
+          <p class="sub">Global playback policy across every folder: cap stream resolution, choose which dubbed/audio languages AIOStreams accepts and ranks, and optionally require instant-play cached torrents.</p>`;
         const spGrid = document.createElement("div");
         spGrid.className = "cards-grid";
 
@@ -738,7 +1124,7 @@
         });
         resSel.onchange = () => {
           state.streamPreferences.maxResolution = resSel.value;
-          saveChanges(true);
+          saveSection("streamPreferences", true);
         };
         resLbl.appendChild(resSel);
 
@@ -747,7 +1133,7 @@
         cacheBox.appendChild(makeSwitch(
           "Instant-Play Cached Debrid Streams Only",
           state.streamPreferences.cachedOnly,
-          v => { state.streamPreferences.cachedOnly = v; saveChanges(true); }
+          v => { state.streamPreferences.cachedOnly = v; saveSection("streamPreferences", true); }
         ));
         const cacheHint = document.createElement("div");
         cacheHint.style.fontSize = "12px";
@@ -757,6 +1143,37 @@
 
         spGrid.append(resLbl, cacheBox);
         spCard.appendChild(spGrid);
+
+        // Wanted Stream Audio Languages Multi-Select
+        if (Array.isArray(state.streamPreferences.audioLanguageOptions)) {
+          const audioBox = document.createElement("div");
+          audioBox.className = "rows-box";
+          const curAudio = state.streamPreferences.audioLanguages || ["English"];
+          audioBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:4px">🔊 Wanted Stream Audio Languages (Original + Multi-Audio are always allowed):</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Toggle every audio/dub language you want AIOStreams to allow and prioritize globally.</div>`;
+          const aChips = document.createElement("div");
+          aChips.className = "chip-row";
+          state.streamPreferences.audioLanguageOptions.forEach(lang => {
+            const lbl = document.createElement("label");
+            lbl.className = "switch chip";
+            const chk = document.createElement("input");
+            chk.type = "checkbox";
+            chk.checked = curAudio.includes(lang);
+            chk.onchange = () => {
+              const next = state.streamPreferences.audioLanguageOptions.filter(
+                l => l === lang ? chk.checked : curAudio.includes(l)
+              );
+              if (!next.length) { chk.checked = true; return; }
+              state.streamPreferences.audioLanguages = next;
+              saveSection("streamPreferences", true);
+            };
+            lbl.append(chk, document.createTextNode(lang));
+            aChips.appendChild(lbl);
+          });
+          audioBox.appendChild(aChips);
+          spCard.appendChild(audioBox);
+        }
+
         root.appendChild(spCard);
       }
 
@@ -764,7 +1181,7 @@
       packsCard.className = "card";
       packsCard.style.marginBottom = "18px";
       packsCard.innerHTML = `<h2>3. Modular AIOStreams Addon Packs</h2>
-        <p class="sub">Toggle scraper and subtitle packs on or off. Disabling an optional pack keeps its preset config saved locally while dropping its API key requirement at push time.</p>`;
+        <p class="sub">Toggle scraper and subtitle packs on or off. Disabling an optional pack keeps its preset config saved locally while dropping its API key requirement at push time. (Custom scrapers added in AIOStreams' own UI are preserved when you click Pull.)</p>`;
       const pGrid = document.createElement("div");
       pGrid.className = "cards-grid";
       state.packs.forEach(pk => {
@@ -777,7 +1194,7 @@
         const chk = document.createElement("input");
         chk.type = "checkbox";
         chk.checked = pk.enabled;
-        chk.onchange = () => { pk.enabled = chk.checked; saveChanges(true); };
+        chk.onchange = () => { pk.enabled = chk.checked; saveSection("packs", true); };
         lbl.append(chk, document.createTextNode(pk.title));
         top.appendChild(lbl);
 
@@ -813,7 +1230,7 @@
           const enableBtn = document.createElement("button");
           enableBtn.className = "accent-outline";
           enableBtn.textContent = "Enable Dual-Subtitles Pack";
-          enableBtn.onclick = () => { dualPack.enabled = true; saveChanges(true); };
+          enableBtn.onclick = () => { dualPack.enabled = true; saveSection("packs", true); };
           notice.innerHTML = `<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">The <strong>SubSource & Strelingo Dual-Subtitles</strong> pack is currently disabled.</div>`;
           notice.appendChild(enableBtn);
           dsCard.appendChild(notice);
@@ -839,7 +1256,7 @@
           rmBtn.textContent = "✕";
           rmBtn.onclick = () => {
             state.dualSubtitles.pairs.splice(idx, 1);
-            saveChanges(true);
+            saveSection("dualSubtitlePairs", true);
           };
           pill.appendChild(rmBtn);
           activeChips.appendChild(pill);
@@ -881,7 +1298,7 @@
             return;
           }
           state.dualSubtitles.pairs.push([m, t]);
-          saveChanges(true);
+          saveSection("dualSubtitlePairs", true);
         };
         builderRow.append(mainCtrl.wrapLbl, transCtrl.wrapLbl, addPairBtn);
         dsCard.appendChild(builderRow);
@@ -900,8 +1317,8 @@
       c1.className = "card";
       c1.innerHTML = `<h2>Stream Badges & Client Sync</h2>
         <p class="sub">Declarative logo packs and client connections for profile <strong>${escapeHtml(p.displayName)}</strong>.</p>`;
-      const bToggle = makeSwitch("Enable Elite-Badges (Stream Cards + Paused Player)", p.badgesEnabled, v => { p.badgesEnabled = v; saveChanges(true); });
-      const sToggle = makeSwitch("Also Sync Addons to Stremio Account", p.stremioEnabled, v => { p.stremioEnabled = v; saveChanges(true); });
+      const bToggle = makeSwitch("Enable Elite-Badges (Stream Cards + Paused Player)", p.badgesEnabled, v => { p.badgesEnabled = v; saveSection("profile", true); });
+      const sToggle = makeSwitch("Also Sync Addons to Stremio Account", p.stremioEnabled, v => { p.stremioEnabled = v; saveSection("profile", true); });
       sToggle.style.marginTop = "12px";
       c1.append(bToggle, sToggle);
 
@@ -910,14 +1327,14 @@
       c2.className = "card";
       c2.innerHTML = `<h2>Details-Page Enrichment (<code>nuvio_meta</code>)</h2>
         <p class="sub">8-source MDBList rating strip (IMDb, TMDB, RT, Metacritic, Letterboxd, Trakt, MAL), TMDB Modern Home hero trailers, and Trakt comments.</p>`;
-      c2.appendChild(makeSwitch("Enable Details-Page Enrichment", p.meta.enabled, v => { p.meta.enabled = v; saveChanges(true); }));
+      c2.appendChild(makeSwitch("Enable Details-Page Enrichment", p.meta.enabled, v => { p.meta.enabled = v; saveSection("profile", true); }));
       if (p.meta.enabled && state.metaParams.length) {
         const fields = document.createElement("div");
         fields.style.display = "flex"; fields.style.flexDirection = "column"; fields.style.gap = "10px"; fields.style.marginTop = "14px";
         state.metaParams.forEach(param => {
           fields.appendChild(makeParamInput(param, p.meta.with, val => {
             p.meta.with = { ...(p.meta.with || {}), [param.name]: val };
-            saveChanges(true);
+            saveSection("profile", true);
           }));
         });
         c2.appendChild(fields);
@@ -928,14 +1345,14 @@
       c3.className = "card";
       c3.innerHTML = `<h2>App, Player & Subtitle Settings (<code>nuvio_settings</code>)</h2>
         <p class="sub">Ocean AMOLED theme, 24h Reuse Last Link, auto-skip intro/recap, Modern TV layout, and subtitle sizing across TV, Desktop, and Mobile.</p>`;
-      c3.appendChild(makeSwitch("Manage Portable App Settings", p.settings.enabled, v => { p.settings.enabled = v; saveChanges(true); }));
+      c3.appendChild(makeSwitch("Manage Portable App Settings", p.settings.enabled, v => { p.settings.enabled = v; saveSection("profile", true); }));
       if (p.settings.enabled && state.settingsParams.length) {
         const sFields = document.createElement("div");
         sFields.style.display = "flex"; sFields.style.flexDirection = "column"; sFields.style.gap = "10px"; sFields.style.marginTop = "14px";
         state.settingsParams.forEach(param => {
           sFields.appendChild(makeParamInput(param, p.settings.with, val => {
             p.settings.with = { ...(p.settings.with || {}), [param.name]: val };
-            saveChanges(true);
+            saveSection("profile", true);
           }));
         });
         c3.appendChild(sFields);
@@ -996,7 +1413,7 @@
         profSel.onchange = () => {
           p.nuvio.profileId = profSel.value;
           p.nuvio.profileName = "";
-          saveChanges(true);
+          saveSection("profile", true);
         };
         profLbl.appendChild(profSel);
 
@@ -1150,7 +1567,7 @@
       btn.disabled = true;
       try {
         const data = await api("/api/provision", { mutation: buildMutationPayload() });
-        pendingEnvEdits = {}; dirty = false;
+        pendingEnvEdits = {}; resetChangedSections(); dirty = false;
         showLog("Provisioning finished:", data.steps || []);
         render();
       } catch (err) {
@@ -1164,8 +1581,22 @@
       try {
         showLog("Pushing configuration to AIO instances & Nuvio…", []);
         const data = await api("/api/push", { target: "all", mutation: buildMutationPayload() });
-        pendingEnvEdits = {}; dirty = false;
+        pendingEnvEdits = {}; resetChangedSections(); dirty = false;
         showLog("Push complete!", data.steps || []);
+        render();
+      } catch (err) {
+        showLog(err.message, [], true);
+      } finally { btn.disabled = false; }
+    };
+
+    document.getElementById("btn-pull").onclick = async () => {
+      const btn = document.getElementById("btn-pull");
+      btn.disabled = true;
+      try {
+        if (dirty) await saveChanges(true);
+        showLog("Pulling live state from AIOStreams, AIOMetadata & Nuvio…", []);
+        const data = await api("/api/pull", { target: "all" });
+        showLog("Pulled live changes & scrubbed secrets into .env:", data.steps || []);
         render();
       } catch (err) {
         showLog(err.message, [], true);

@@ -78,6 +78,14 @@ class _FakeStudioUpstreamHttp:
                     text="",
                 )
             )
+        if "api.mdblist.com/lists/alice/cannes-winners" in url:
+            return Ok(
+                HttpResponse(
+                    status_code=200,
+                    data={"id": 88434, "name": "Cannes Winners", "mediatype": "movie"},
+                    text="",
+                )
+            )
         raise AssertionError(f"Unexpected Studio upstream URL: {url}")
 
 
@@ -102,12 +110,40 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
     assert init_data["mode"] == "local"
     assert len(init_data["state"]["profiles"][0]["collections"]) == 7
 
-    # 3. Mutates Debrid, packs, stream filters, dual-subs, expanded collections & Nuvio theme/playback settings
+    # 3. Builds custom MDBList & TMDB folders via `/api/build-row` and mutates Studio end-to-end
+    mdb_row_resp = dispatcher.dispatch(
+        "POST",
+        "/api/build-row",
+        json.dumps(
+            {
+                "spec": {"kind": "mdblist", "input": "https://mdblist.com/lists/alice/cannes-winners"},
+                "pendingEnv": {"SECRET_MDBLIST_API_KEY": "mdb-k"},
+            }
+        ).encode("utf-8"),
+    )
+    assert mdb_row_resp.status == 200, mdb_row_resp.body
+    mdb_built = json.loads(mdb_row_resp.body)
+    assert mdb_built["title"] == "Cannes Winners"
+
+    tmdb_row_resp = dispatcher.dispatch(
+        "POST",
+        "/api/build-row",
+        json.dumps(
+            {"spec": {"kind": "tmdb", "title": "80s Sci-Fi", "media": "movie", "genre": "scifi", "decade": "1980s"}}
+        ).encode("utf-8"),
+    )
+    assert tmdb_row_resp.status == 200, tmdb_row_resp.body
+    tmdb_built = json.loads(tmdb_row_resp.body)
+
     mut_payload = {
         "mutation": {
             "debrid": "realdebrid",
             "enabledPacks": ["core_debrid", "core_subtitles", "dual_subtitles"],
-            "streamPreferences": {"maxResolution": "1080p", "cachedOnly": True},
+            "streamPreferences": {
+                "maxResolution": "1080p",
+                "cachedOnly": True,
+                "audioLanguages": ["English", "Spanish", "Japanese"],
+            },
             "dualSubtitlePairs": [["kor", "eng"], ["spa", "eng"]],
             "envUpdates": {
                 "AIOSTREAMS_URL": "https://streams.example.org",
@@ -126,6 +162,16 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
             "profile": {
                 "name": "don",
                 "collections": [
+                    {
+                        "raw": {
+                            "id": "col-custom-festivals",
+                            "title": "My DIY Shelf",
+                            "folders": [
+                                {"id": "fld-cannes", "title": mdb_built["title"], "sources": mdb_built["sources"]},
+                                {"id": "fld-80s-sf", "title": tmdb_built["title"], "sources": tmdb_built["sources"]},
+                            ],
+                        }
+                    },
                     {"ref": "col-trakt-personal"},
                     {"ref": "col-studios-auteurs"},
                     {"ref": "col-kdrama-global"},
@@ -153,7 +199,9 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
     mut_state = json.loads(mut_resp.body)["state"]
     assert mut_state["streamPreferences"]["maxResolution"] == "1080p"
     assert mut_state["streamPreferences"]["cachedOnly"] is True
+    assert mut_state["streamPreferences"]["audioLanguages"] == ["English", "Spanish", "Japanese"]
     assert mut_state["dualSubtitles"]["pairs"] == [["kor", "eng"], ["spa", "eng"]]
+    assert mut_state["profiles"][0]["collections"][0]["title"] == "My DIY Shelf"
     assert mut_state["profiles"][0]["settings"]["with"]["theme"] == "crimson"
     assert mut_state["profiles"][0]["settings"]["with"]["streamSelectionMode"] == "firstStream"
     assert runner.invoke(app, ["validate", "--dir", str(t)]).exit_code == 0
