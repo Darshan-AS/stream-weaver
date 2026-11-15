@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Tenant whose LikeC4 model is published to GitHub Pages.
-  PAGES_TENANT: don
+  # Optional repository variable override; auto-falls back to tenants/don, first tenant, or examples/home.
+  PAGES_TENANT: ${{ vars.PAGES_TENANT }}
 
 jobs:
   validate:
@@ -51,7 +51,21 @@ jobs:
           node-version: "22"
 
       - name: Build LikeC4 static architecture site
-        run: npx --yes likec4 build "tenants/${PAGES_TENANT}/architecture" --base /stream-weaver/ -o dist/architecture
+        run: |
+          if [[ -n "${PAGES_TENANT}" && -d "tenants/${PAGES_TENANT}/architecture" ]]; then
+            ARCH_DIR="tenants/${PAGES_TENANT}/architecture"
+          elif [[ -d "tenants/don/architecture" ]]; then
+            ARCH_DIR="tenants/don/architecture"
+          else
+            FIRST_TENANT="$(find tenants -mindepth 2 -maxdepth 2 -name tenant.json 2>/dev/null | sort | head -n 1 | xargs -r dirname || true)"
+            if [[ -n "${FIRST_TENANT}" && -d "${FIRST_TENANT}/architecture" ]]; then
+              ARCH_DIR="${FIRST_TENANT}/architecture"
+            else
+              ARCH_DIR="examples/home/architecture"
+            fi
+          fi
+          echo "Building LikeC4 site from ${ARCH_DIR}"
+          npx --yes likec4 build "${ARCH_DIR}" --base "/${GITHUB_REPOSITORY#*/}/" -o dist/architecture
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
