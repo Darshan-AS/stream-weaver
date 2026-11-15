@@ -3,22 +3,51 @@
   "version": 1,
   "kind": "settings",
   "id": "default",
+  "ui": {
+    "title": "Ocean AMOLED + Reuse Last Link",
+    "description": "Modern TV Home layout, 24h Reuse Last Link, auto-skip intro/recap, and HDR subtitle styling."
+  },
   "params": {
     "subtitlePreferred": {
       "type": "string",
-      "default": "en"
+      "label": "Preferred Subtitle Language",
+      "default": "en",
+      "options": [
+        { "label": "English", "value": "en" },
+        { "label": "Kannada", "value": "kn" },
+        { "label": "Hindi", "value": "hi" },
+        { "label": "Tamil", "value": "ta" },
+        { "label": "Telugu", "value": "te" },
+        { "label": "Malayalam", "value": "ml" },
+        { "label": "Japanese", "value": "ja" },
+        { "label": "Korean", "value": "ko" },
+        { "label": "Spanish", "value": "es" },
+        { "label": "French", "value": "fr" }
+      ]
     },
     "subtitleSecondary": {
       "type": "string",
+      "label": "Secondary Subtitle Language",
       "nullable": true,
-      "default": null
+      "default": null,
+      "options": [
+        { "label": "None", "value": null },
+        { "label": "English", "value": "en" },
+        { "label": "Kannada", "value": "kn" },
+        { "label": "Hindi", "value": "hi" },
+        { "label": "Tamil", "value": "ta" },
+        { "label": "Telugu", "value": "te" },
+        { "label": "Japanese", "value": "ja" }
+      ]
     },
     "subtitleSizeSp": {
       "type": "int",
+      "label": "Desktop/Mobile Subtitle Size (sp)",
       "default": 18
     },
     "tvSubtitleSizePercent": {
       "type": "int",
+      "label": "TV Subtitle Scale (%)",
       "default": 100
     }
   },

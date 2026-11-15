@@ -3,15 +3,36 @@
   "version": 1,
   "kind": "collection",
   "id": "regional-cinema",
+  "ui": {
+    "title": "Regional & World Cinema",
+    "description": "Parameterised Movies (New, Popular, Top Rated, 80s/90s/2000s Classics) and Series folders for any ISO language.",
+    "category": "regional",
+    "presets": [
+      { "label": "Kannada Cinema", "with": { "language": "kn", "slug": "kannada", "label": "Kannada" } },
+      { "label": "Hindi Cinema", "with": { "language": "hi", "slug": "hindi", "label": "Hindi" } },
+      { "label": "Tamil Cinema", "with": { "language": "ta", "slug": "tamil", "label": "Tamil" } },
+      { "label": "Telugu Cinema", "with": { "language": "te", "slug": "telugu", "label": "Telugu" } },
+      { "label": "Malayalam Cinema", "with": { "language": "ml", "slug": "malayalam", "label": "Malayalam" } },
+      { "label": "Bengali Cinema", "with": { "language": "bn", "slug": "bengali", "label": "Bengali" } },
+      { "label": "Marathi Cinema", "with": { "language": "mr", "slug": "marathi", "label": "Marathi" } },
+      { "label": "Korean Cinema & Drama", "with": { "language": "ko", "slug": "korean", "label": "Korean" } },
+      { "label": "Japanese Cinema & Drama", "with": { "language": "ja", "slug": "japanese", "label": "Japanese" } },
+      { "label": "French Cinema", "with": { "language": "fr", "slug": "french", "label": "French" } },
+      { "label": "Spanish Cinema", "with": { "language": "es", "slug": "spanish", "label": "Spanish" } }
+    ]
+  },
   "params": {
     "language": {
-      "type": "string"
+      "type": "string",
+      "label": "ISO-639-1 Language Code"
     },
     "slug": {
-      "type": "string"
+      "type": "string",
+      "label": "Catalog ID Slug"
     },
     "label": {
-      "type": "string"
+      "type": "string",
+      "label": "Display Label"
     },
     "decades": {
       "type": "list",

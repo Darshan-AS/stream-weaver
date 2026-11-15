@@ -46,6 +46,12 @@ PARAM_TYPES: tuple[str, ...] = ("string", "bool", "int", "list")
 
 
 @dataclass(frozen=True, slots=True)
+class ParamOption:
+    label: str
+    value: JsonValue
+
+
+@dataclass(frozen=True, slots=True)
 class ParamSpec:
     name: str
     type: str
@@ -53,6 +59,9 @@ class ParamSpec:
     has_default: bool = False
     items: str = "string"  # element type for lists (informational)
     nullable: bool = False  # accepts / defaults to null (rendered as JSON null when used as an exact `${x}`)
+    label: str = ""
+    description: str = ""
+    options: tuple[ParamOption, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +99,23 @@ def parse_param_schema(raw: Any, *, context: str = "recipe") -> Result[ParamSche
                     return _err(f"{context}: param `{name}` default {e.message}")
                 case Ok():
                     pass
+        raw_opts = spec.get("options")
+        parsed_opts: list[ParamOption] = []
+        if raw_opts is not None:
+            if not is_json_list(raw_opts):
+                return _err(f"{context}: param `{name}` `options` must be a list")
+            opt_type = str(spec.get("items", "string")) if ptype == "list" else str(ptype)
+            for idx, opt in enumerate(raw_opts):
+                if not is_json_mapping(opt) or not isinstance(opt.get("label"), str) or "value" not in opt:
+                    return _err(f"{context}: param `{name}` options[{idx}] must have string `label` and `value`")
+                ov = opt["value"]
+                if not (nullable and ov is None) and opt_type in PARAM_TYPES:
+                    match _check_type(ov, opt_type):
+                        case Err(e):
+                            return _err(f"{context}: param `{name}` options[{idx}].value {e.message}")
+                        case Ok():
+                            pass
+                parsed_opts.append(ParamOption(label=opt["label"], value=ov))
         specs.append(
             ParamSpec(
                 name=name,
@@ -98,6 +124,9 @@ def parse_param_schema(raw: Any, *, context: str = "recipe") -> Result[ParamSche
                 has_default=has_default,
                 items=str(spec.get("items", "string")),
                 nullable=nullable,
+                label=str(spec.get("label", "")) if isinstance(spec.get("label"), str) else "",
+                description=str(spec.get("description", "")) if isinstance(spec.get("description"), str) else "",
+                options=tuple(parsed_opts),
             )
         )
     return Ok(ParamSchema(tuple(specs)))

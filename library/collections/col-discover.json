@@ -3,6 +3,11 @@
   "version": 1,
   "kind": "collection",
   "id": "col-discover",
+  "ui": {
+    "title": "Discover",
+    "description": "Lightweight Trending & Popular and Top Rated All-Time tabs without BingeCat or release alerts.",
+    "category": "discovery"
+  },
   "params": {
     "backdropImageUrl": {
       "type": "string",

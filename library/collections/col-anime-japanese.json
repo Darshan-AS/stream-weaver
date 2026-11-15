@@ -3,6 +3,11 @@
   "version": 1,
   "kind": "collection",
   "id": "col-anime-japanese",
+  "ui": {
+    "title": "Anime & Japanese",
+    "description": "MyAnimeList airing & top-rated anime plus Japanese live-action cinema and drama.",
+    "category": "anime"
+  },
   "collection": {
     "id": "col-anime-japanese",
     "title": "Anime & Japanese",

@@ -3,6 +3,11 @@
   "version": 1,
   "kind": "collection",
   "id": "col-indian-cinema",
+  "ui": {
+    "title": "Indian Cinema & Regional OTT",
+    "description": "Kannada & Hindi cinema/series plus JioHotstar, Sony LIV, and ZEE5 streaming tabs.",
+    "category": "regional"
+  },
   "collection": {
     "id": "col-indian-cinema",
     "title": "Indian Cinema & Regional OTT",
