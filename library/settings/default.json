@@ -8,21 +8,93 @@
     "description": "Modern TV Home layout, 24h Reuse Last Link, auto-skip intro/recap, and HDR subtitle styling."
   },
   "params": {
+    "theme": {
+      "type": "string",
+      "label": "Accent Theme",
+      "default": "ocean",
+      "options": [
+        { "label": "Ocean", "value": "ocean" },
+        { "label": "Crimson", "value": "crimson" },
+        { "label": "Violet", "value": "violet" },
+        { "label": "Emerald", "value": "emerald" },
+        { "label": "Amber", "value": "amber" },
+        { "label": "Rose", "value": "rose" },
+        { "label": "Gold (TV/Desktop)", "value": "gold" },
+        { "label": "Jade (TV/Desktop)", "value": "jade" },
+        { "label": "Rose Gold (TV/Desktop)", "value": "rose_gold" },
+        { "label": "Arctic Blue (TV/Desktop)", "value": "arctic_blue" },
+        { "label": "Graphite (TV/Desktop)", "value": "graphite" },
+        { "label": "White", "value": "white" }
+      ]
+    },
+    "amoledBlack": {
+      "type": "bool",
+      "label": "AMOLED Pure Black",
+      "default": true
+    },
+    "homeLayout": {
+      "type": "string",
+      "label": "TV Home Layout",
+      "default": "modern",
+      "options": [
+        { "label": "Modern (Hero + Rows)", "value": "modern" },
+        { "label": "Grid", "value": "grid" },
+        { "label": "Classic", "value": "classic" }
+      ]
+    },
+    "streamSelectionMode": {
+      "type": "string",
+      "label": "Stream Selection Mode",
+      "default": "manual",
+      "options": [
+        { "label": "Manual Stream Picker", "value": "manual" },
+        { "label": "Auto-Play First Stream", "value": "firstStream" }
+      ]
+    },
+    "audioPreferred": {
+      "type": "string",
+      "label": "Preferred Audio Language",
+      "default": "original",
+      "options": [
+        { "label": "Original Track", "value": "original" },
+        { "label": "English", "value": "en" },
+        { "label": "Device Language", "value": "device" },
+        { "label": "Japanese", "value": "ja" },
+        { "label": "Korean", "value": "ko" },
+        { "label": "Hindi", "value": "hi" },
+        { "label": "Kannada", "value": "kn" },
+        { "label": "Tamil", "value": "ta" },
+        { "label": "Telugu", "value": "te" },
+        { "label": "Malayalam", "value": "ml" },
+        { "label": "Spanish", "value": "es" },
+        { "label": "French", "value": "fr" },
+        { "label": "German", "value": "de" },
+        { "label": "Portuguese", "value": "pt" }
+      ]
+    },
     "subtitlePreferred": {
       "type": "string",
       "label": "Preferred Subtitle Language",
       "default": "en",
       "options": [
         { "label": "English", "value": "en" },
-        { "label": "Kannada", "value": "kn" },
+        { "label": "Spanish", "value": "es" },
+        { "label": "French", "value": "fr" },
+        { "label": "German", "value": "de" },
+        { "label": "Portuguese", "value": "pt" },
+        { "label": "Italian", "value": "it" },
+        { "label": "Japanese", "value": "ja" },
+        { "label": "Korean", "value": "ko" },
+        { "label": "Chinese", "value": "zh" },
+        { "label": "Arabic", "value": "ar" },
+        { "label": "Turkish", "value": "tr" },
         { "label": "Hindi", "value": "hi" },
+        { "label": "Kannada", "value": "kn" },
         { "label": "Tamil", "value": "ta" },
         { "label": "Telugu", "value": "te" },
         { "label": "Malayalam", "value": "ml" },
-        { "label": "Japanese", "value": "ja" },
-        { "label": "Korean", "value": "ko" },
-        { "label": "Spanish", "value": "es" },
-        { "label": "French", "value": "fr" }
+        { "label": "Bengali", "value": "bn" },
+        { "label": "Marathi", "value": "mr" }
       ]
     },
     "subtitleSecondary": {
@@ -33,11 +105,23 @@
       "options": [
         { "label": "None", "value": null },
         { "label": "English", "value": "en" },
-        { "label": "Kannada", "value": "kn" },
+        { "label": "Spanish", "value": "es" },
+        { "label": "French", "value": "fr" },
+        { "label": "German", "value": "de" },
+        { "label": "Portuguese", "value": "pt" },
+        { "label": "Italian", "value": "it" },
+        { "label": "Japanese", "value": "ja" },
+        { "label": "Korean", "value": "ko" },
+        { "label": "Chinese", "value": "zh" },
+        { "label": "Arabic", "value": "ar" },
+        { "label": "Turkish", "value": "tr" },
         { "label": "Hindi", "value": "hi" },
+        { "label": "Kannada", "value": "kn" },
         { "label": "Tamil", "value": "ta" },
         { "label": "Telugu", "value": "te" },
-        { "label": "Japanese", "value": "ja" }
+        { "label": "Malayalam", "value": "ml" },
+        { "label": "Bengali", "value": "bn" },
+        { "label": "Marathi", "value": "mr" }
       ]
     },
     "subtitleSizeSp": {
@@ -49,6 +133,11 @@
       "type": "int",
       "label": "TV Subtitle Scale (%)",
       "default": 100
+    },
+    "blurUnwatchedEpisodes": {
+      "type": "bool",
+      "label": "Blur Unwatched Episode Spoilers (TV)",
+      "default": false
     }
   },
   "settings": {
@@ -59,8 +148,8 @@
       "mobile"
     ],
     "appearance": {
-      "theme": "ocean",
-      "amoledBlack": true,
+      "theme": "${theme}",
+      "amoledBlack": "${amoledBlack}",
       "navBarStyle": "adaptive",
       "desktopNavigation": "topBar",
       "tv": {
@@ -76,7 +165,7 @@
         "cacheHours": 24
       },
       "streamSelection": {
-        "mode": "manual",
+        "mode": "${streamSelectionMode}",
         "scope": "all",
         "allowedAddons": [],
         "regex": "",
@@ -132,7 +221,7 @@
       }
     },
     "audio": {
-      "preferredLanguage": "original",
+      "preferredLanguage": "${audioPreferred}",
       "secondaryLanguage": "en",
       "tv": {
         "skipSilence": false
@@ -170,7 +259,7 @@
       }
     },
     "tvLayout": {
-      "homeLayout": "modern",
+      "homeLayout": "${homeLayout}",
       "heroSection": true,
       "heroCatalogKeys": [],
       "heroFullScreenBackdrop": false,
@@ -221,7 +310,7 @@
       "details": {
         "trailerButton": true,
         "preferExternalMetaAddon": true,
-        "blurUnwatchedEpisodes": false,
+        "blurUnwatchedEpisodes": "${blurUnwatchedEpisodes}",
         "showFullReleaseDate": true,
         "episodeOptionsOverlay": "blur",
         "randomEpisodeShuffle": true
