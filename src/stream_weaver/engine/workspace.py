@@ -19,6 +19,7 @@ from stream_weaver.cli.nuvio import (
     NuvioDoc,
     local_nuvio_docs,
     nuvio_targets,
+    profile_doc_after_pull,
     pull_nuvio,
     push_nuvio,
 )
@@ -26,6 +27,7 @@ from stream_weaver.core.aiomanager_accounts import ResolvedProfile, apply_manage
 from stream_weaver.core.aiostreams_packs import (
     DEBRID_PROVIDERS,
     RESOLUTION_CAPS,
+    STREAM_AUDIO_LANGUAGES,
     STRELINGO_LANGUAGES,
     active_debrid_provider,
     apply_aiostreams_packs,
@@ -43,6 +45,13 @@ from stream_weaver.core.aiostreams_packs import (
 from stream_weaver.core.architecture import compile_architecture_bundle
 from stream_weaver.core.coercions import compute_config_diff, dehydrate_aiomanager
 from stream_weaver.core.compile import CompiledProfile, compile_profile, derive_instance_catalogs
+from stream_weaver.core.composition import symbolic_source
+from stream_weaver.core.custom_builder import (
+    build_mdblist_source,
+    build_tmdb_discover_sources,
+    custom_builder_metadata,
+    parse_mdblist_reference,
+)
 from stream_weaver.core.errors import StreamWeaverError
 from stream_weaver.core.instances import DEFAULT_INSTANCE, InstanceBinding, resolve_instance_binding
 from stream_weaver.core.library import Library, RecipeUiSummary, describe_recipe
@@ -471,6 +480,130 @@ def _sync_derived_files(ws: _LoadedWorkspace) -> Result[None, StreamWeaverError]
     return Ok(None)
 
 
+def _discover_available_catalogs(
+    meta_service_doc: Mapping[str, Any],
+    compiled_profiles: Sequence[CompiledProfile],
+) -> list[JsonDict]:
+    """
+    Enumerates every catalog available in `aiometadata.json` plus any cached addon manifests
+    (BingeCat, AIOStreams, custom Stremio addons) so Studio's DIY builder can wire any catalog.
+    """
+    out: list[JsonDict] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    raw_cats = meta_service_doc.get("catalogs")
+    if isinstance(raw_cats, list):
+        for entry in raw_cats:
+            if not isinstance(entry, Mapping) or not entry.get("id") or not entry.get("type"):
+                continue
+            cid = str(entry["id"])
+            ctype = str(entry["type"])
+            name = str(entry.get("name") or cid)
+            src_provider = str(entry.get("source") or "aiometadata")
+            if src_provider == "streaming":
+                manifest_cid = f"{cid}_{ctype}"
+                manifest_type = str(entry.get("displayType") or ctype)
+                src_spec: JsonDict = {
+                    "addon": "aiometadata",
+                    "catalogId": manifest_cid,
+                    "type": manifest_type,
+                    "title": name,
+                }
+            elif ctype == "anime":
+                manifest_cid = f"{cid}_anime"
+                manifest_type = "series"
+                cat_overlay = {
+                    k: v for k, v in entry.items() if k not in ("enabled", "showInHome")
+                }
+                cat_overlay["displayType"] = "series"
+                src_spec = {
+                    "addon": "aiometadata",
+                    "catalogId": manifest_cid,
+                    "type": "series",
+                    "title": name,
+                    "catalog": cat_overlay,
+                }
+            else:
+                manifest_cid = cid
+                manifest_type = ctype
+                src_spec = {
+                    "addon": "aiometadata",
+                    "catalogId": manifest_cid,
+                    "type": manifest_type,
+                    "title": name,
+                }
+            key = ("aiometadata", manifest_cid, manifest_type)
+            if key not in seen:
+                seen.add(key)
+                out.append(
+                    {
+                        "key": f"aiometadata::{manifest_cid}::{manifest_type}",
+                        "label": f"[{src_provider.upper()}] {name} ({manifest_type})",
+                        "name": name,
+                        "addon": "aiometadata",
+                        "type": manifest_type,
+                        "sourceSpec": src_spec,
+                    }
+                )
+
+    for cp in compiled_profiles:
+        for addon_name, info in cp.resolver.addons.items():
+            if addon_name == "aiometadata" or not info.catalogs:
+                continue
+            for cat in info.catalogs:
+                if not isinstance(cat, Mapping) or not cat.get("id") or not cat.get("type"):
+                    continue
+                raw_cid = str(cat["id"])
+                ctype = str(cat["type"])
+                cname = str(cat.get("name") or raw_cid)
+                sym = symbolic_source(
+                    {"addonId": info.addon_id, "catalogId": raw_cid, "type": ctype, "title": cname},
+                    cp.resolver,
+                )
+                key = (addon_name, raw_cid, ctype)
+                if key not in seen:
+                    seen.add(key)
+                    out.append(
+                        {
+                            "key": f"{addon_name}::{raw_cid}::{ctype}",
+                            "label": f"[{addon_name}] {cname} ({ctype})",
+                            "name": cname,
+                            "addon": addon_name,
+                            "type": ctype,
+                            "sourceSpec": sym,
+                        }
+                    )
+    return out
+
+
+def _inline_template_from_compiled(comp_col: Mapping[str, Any], cp: CompiledProfile) -> JsonDict:
+    """Converts a compiled Nuvio collection into an editable symbolic inline collection object."""
+    folders_out: list[JsonDict] = []
+    for f in comp_col.get("folders") or []:
+        if not isinstance(f, Mapping):
+            continue
+        f_doc: JsonDict = {
+            "id": str(f.get("id") or ""),
+            "title": str(f.get("title") or ""),
+            "sources": [
+                symbolic_source(s, cp.resolver)
+                for s in (f.get("sources") or [])
+                if isinstance(s, Mapping)
+            ],
+        }
+        if f.get("coverImageUrl"):
+            f_doc["coverImageUrl"] = str(f["coverImageUrl"])
+        folders_out.append(f_doc)
+    out: JsonDict = {
+        "id": str(comp_col.get("id") or "col-custom"),
+        "title": str(comp_col.get("title") or "Custom Collection"),
+        "folders": folders_out,
+    }
+    if comp_col.get("backdropImageUrl"):
+        out["backdropImageUrl"] = str(comp_col["backdropImageUrl"])
+    return out
+
+
 def inspect_tenant_state(
     paths: TenantPaths,
     *,
@@ -561,12 +694,29 @@ def inspect_tenant_state(
                     for f in (comp_col.get("folders") or [])
                     if isinstance(f, Mapping)
                 ]
+            for f_comp in comp_col.get("folders") or []:
+                if not isinstance(f_comp, Mapping):
+                    continue
+                for s_comp in f_comp.get("sources") or []:
+                    if not isinstance(s_comp, Mapping):
+                        continue
+                    s_cid = str(s_comp.get("catalogId") or "")
+                    if s_cid.startswith("mdblist."):
+                        required_keys.add("SECRET_MDBLIST_API_KEY")
+                    elif s_cid.startswith("trakt."):
+                        required_keys.add("SECRET_TRAKT_TOKEN_ID")
+            inline_tpl = (
+                copy.deepcopy(dict(raw_item))
+                if (ref_id is None and isinstance(raw_item, Mapping))
+                else _inline_template_from_compiled(comp_col, cp)
+            )
             active_cols.append(
                 {
                     "index": idx,
                     "ref": ref_id,
                     "with": dict(with_params),
-                    "raw": raw_item if ref_id is None else None,
+                    "raw": copy.deepcopy(dict(raw_item)) if (ref_id is None and isinstance(raw_item, Mapping)) else None,
+                    "inlineTemplate": inline_tpl,
                     "id": str(comp_col.get("id") or ref_id or idx),
                     "title": col_title,
                     "backdropUrl": backdrop,
@@ -670,7 +820,9 @@ def inspect_tenant_state(
             "streamPreferences": {
                 "maxResolution": stream_prefs.max_resolution,
                 "cachedOnly": stream_prefs.cached_only,
+                "audioLanguages": list(stream_prefs.audio_languages),
                 "resolutionOptions": list(RESOLUTION_CAPS),
+                "audioLanguageOptions": list(STREAM_AUDIO_LANGUAGES),
             },
             "dualSubtitles": {
                 "pairs": [[m, t] for m, t in dual_pairs],
@@ -679,6 +831,8 @@ def inspect_tenant_state(
                     for s in STRELINGO_LANGUAGES
                 ],
             },
+            "customBuilderMeta": custom_builder_metadata(),
+            "availableCatalogs": _discover_available_catalogs(meta_service_doc, ws.compiled),
             "libraryCollections": lib_collections,
             "metaParams": _serialize_param_schema(meta_recipe.params) if meta_recipe else [],
             "settingsParams": _serialize_param_schema(settings_recipe.params) if settings_recipe else [],
@@ -762,8 +916,16 @@ def apply_studio_mutation(
                     if "cachedOnly" in stream_prefs_mut and stream_prefs_mut["cachedOnly"] is not None
                     else None
                 )
+                audio_langs = (
+                    [str(x) for x in stream_prefs_mut["audioLanguages"] if str(x).strip()]
+                    if isinstance(stream_prefs_mut.get("audioLanguages"), list)
+                    else None
+                )
                 match apply_stream_preferences(
-                    streams_doc, max_resolution=max_res, cached_only=cached_only
+                    streams_doc,
+                    max_resolution=max_res,
+                    cached_only=cached_only,
+                    audio_languages=audio_langs,
                 ):
                     case Err(sp_err):
                         return Err(StreamWeaverError(str(sp_err)))
@@ -1397,6 +1559,237 @@ def diff_workspace(
         return _run(http_client)
     with HttpxClient() as live_client:
         return _run(live_client)
+
+
+def pull_workspace(
+    paths: TenantPaths,
+    *,
+    target: str = "all",
+    profile: str | None = None,
+    extra_library_roots: Sequence[Path] = (),
+    http_client: HttpClientProtocol | None = None,
+) -> Result[PushReport, StreamWeaverError]:
+    """
+    Pulls live configurations from remote AIOStreams, AIOMetadata, AIOManager, and Nuvio profiles,
+    harvests secrets into `.env`, scrubs JSON documents, ejects Nuvio changes into `profile.json`,
+    and returns the fresh workspace snapshot.
+    """
+    match _load_workspace(paths, extra_library_roots=extra_library_roots):
+        case Err() as err:
+            return err
+        case Ok(ws):
+            pass
+
+    cleaned = target.strip().lower()
+    svc_targets: tuple[ServiceId, ...] = (
+        ALL_SERVICES
+        if cleaned == "all"
+        else (() if cleaned in NUVIO_TARGET_ALIASES else (cleaned,))  # type: ignore[assignment]
+    )
+    nuvio_docs: tuple[NuvioDoc, ...] = (
+        ALL_NUVIO_DOCS if cleaned == "all" else NUVIO_TARGET_ALIASES.get(cleaned, ())
+    )
+
+    def _run(client: HttpClientProtocol) -> Result[PushReport, StreamWeaverError]:
+        nonlocal ws
+        services = build_config_services(client)
+        working = dict(ws.env)
+        steps: list[str] = []
+
+        for svc_id in svc_targets:
+            binding = ws.bindings.get(svc_id)
+            if profile:
+                chosen_cp = next((cp for cp in ws.compiled if cp.name == profile), None)
+                if chosen_cp and svc_id in chosen_cp.resolved.instances:
+                    binding = chosen_cp.resolved.instances[svc_id]
+            if binding is None or not binding.configured_for_pull():
+                steps.append(f"[{svc_id}] Skipped pull (not configured in .env)")
+                continue
+            match services[svc_id].pull_remote(binding):
+                case Err(net_err):
+                    return Err(StreamWeaverError(str(net_err)))
+                case Ok(remote_cfg):
+                    pass
+            if svc_id == "aiomanager":
+                match dehydrate_aiomanager(remote_cfg):
+                    case Err(d_err):
+                        return Err(StreamWeaverError(str(d_err)))
+                    case Ok(remote_cfg):
+                        pass
+            scrubbed_cfg, working = harvest_and_scrub(svc_id, remote_cfg, working)
+            cfg_path = paths.docs_dir / (
+                f"{svc_id}.json" if binding.name == DEFAULT_INSTANCE else f"{svc_id}.{binding.name}.json"
+            )
+            match write_json_file(cfg_path, scrubbed_cfg):
+                case Err(w_err):
+                    return Err(w_err)
+                case Ok():
+                    pass
+            _ = save_env_updates(paths.env_file, working)
+            _ = scaffold_env_keys(paths.env_example_file, list(working))
+            steps.append(f"[{svc_id}] Pulled & scrubbed UUID {binding.uuid}")
+
+        match _refresh_manifests_for_workspace(ws, working, client, extra_library_roots):
+            case Err() as err:
+                return err
+            case Ok((ws, working)):
+                pass
+
+        if nuvio_docs:
+            scoped_cps = [cp for cp in ws.compiled if profile is None or cp.name == profile]
+            if any((lb := cp.resolved.logins.get("nuvio")) is not None and lb.configured() for cp in scoped_cps):
+                match nuvio_targets(
+                    tenant_name=ws.manifest.name,
+                    scrubbed_aiomanager=_load_optional_json(paths.doc("aiomanager")),
+                    env=working,
+                    compiled_profiles=scoped_cps,
+                ):
+                    case Err(t_err):
+                        if cleaned != "all":
+                            return Err(t_err)
+                        steps.append(f"[nuvio] Skipped ({t_err})")
+                    case Ok(targets) if targets:
+                        match pull_nuvio(targets, nuvio_docs, working, client, ws.library):
+                            case Err(n_err):
+                                if cleaned != "all":
+                                    return Err(n_err)
+                                steps.append(f"[nuvio] Skipped ({n_err})")
+                            case Ok((pulled_list, refreshed)):
+                                if refreshed:
+                                    working.update(refreshed)
+                                    _ = save_env_updates(paths.env_file, working)
+                                for pulled in pulled_list:
+                                    if pulled.changed_docs:
+                                        pf = profile_file(paths, pulled.name)
+                                        _ = write_json_file(pf, profile_doc_after_pull(pulled))
+                                        steps.append(
+                                            f"[nuvio:{pulled.name}] Pulled changes in {', '.join(pulled.changed_docs)}"
+                                        )
+                                    else:
+                                        steps.append(f"[nuvio:{pulled.name}] Already in sync")
+                    case _:
+                        pass
+
+        match _load_workspace(paths, env_override=working, extra_library_roots=extra_library_roots):
+            case Err() as err:
+                return err
+            case Ok(ws):
+                pass
+        _ = _sync_derived_files(ws)
+        match inspect_tenant_state(paths, extra_library_roots=extra_library_roots):
+            case Err() as err:
+                return err
+            case Ok(snap):
+                return Ok(PushReport(steps=tuple(steps), snapshot=snap))
+
+    if http_client is not None:
+        return _run(http_client)
+    with HttpxClient() as live_client:
+        return _run(live_client)
+
+
+def build_custom_folder_sources(
+    paths: TenantPaths,
+    spec: Mapping[str, Any],
+    *,
+    pending_env: Mapping[str, str] | None = None,
+    http_client: HttpClientProtocol | None = None,
+) -> Result[JsonDict, StreamWeaverError]:
+    """
+    Resolves a Studio DIY folder creation request (`tmdb` filter or `mdblist` URL/ID) into
+    `{ "title": <folder_title>, "sources": [<symbolic_source_with_inline_catalog>, ...] }`.
+    """
+    kind = str(spec.get("kind") or "").strip().lower()
+    title_hint = str(spec.get("title") or "").strip()
+
+    if kind == "tmdb":
+        row_title = title_hint or "Custom Picks"
+        match build_tmdb_discover_sources(
+            row_title,
+            media=str(spec.get("media") or "both"),
+            genre=str(spec.get("genre") or ""),
+            language=str(spec.get("language") or ""),
+            decade=str(spec.get("decade") or "any"),
+            sort=str(spec.get("sort") or "popularity.desc"),
+        ):
+            case Err(t_err):
+                return Err(StreamWeaverError(str(t_err)))
+            case Ok(sources):
+                return Ok({"title": row_title, "sources": sources})
+
+    if kind == "mdblist":
+        raw_input = str(spec.get("input") or "").strip()
+        media_type = str(spec.get("media") or "movie").strip().lower()
+        match parse_mdblist_reference(raw_input):
+            case Err(p_err):
+                return Err(StreamWeaverError(str(p_err)))
+            case Ok(ref):
+                pass
+
+        if ref.list_id is not None:
+            resolved_title = title_hint or f"MDBList #{ref.list_id}"
+            match build_mdblist_source(ref.list_id, title=resolved_title, media_type=media_type):
+                case Err(b_err):
+                    return Err(StreamWeaverError(str(b_err)))
+                case Ok(src):
+                    return Ok({"title": resolved_title, "sources": [src]})
+
+        env = load_env_file(paths.env_file)
+        if pending_env:
+            env.update({str(k): str(v).strip() for k, v in pending_env.items() if str(v).strip()})
+        api_key = env.get("SECRET_MDBLIST_API_KEY", "").strip()
+        if not api_key:
+            return Err(
+                StreamWeaverError(
+                    "Set SECRET_MDBLIST_API_KEY in 'Keys & Sign-In' first to resolve MDBList URLs "
+                    "(or enter the numeric MDBList ID directly, e.g. 88434)."
+                )
+            )
+
+        url = f"https://api.mdblist.com/lists/{ref.username}/{ref.slug}?apikey={api_key}"
+
+        def _fetch(client: HttpClientProtocol) -> Result[JsonDict, StreamWeaverError]:
+            match client.request_json("GET", url, timeout=15.0):
+                case Err(net_err):
+                    return Err(StreamWeaverError(f"MDBList lookup failed: {net_err}"))
+                case Ok(resp):
+                    if resp.status_code >= 400:
+                        return Err(
+                            StreamWeaverError(
+                                f"MDBList returned HTTP {resp.status_code} for {ref.username}/{ref.slug}"
+                            )
+                        )
+                    data = resp.data
+            items = data if isinstance(data, list) else ([data] if isinstance(data, Mapping) else [])
+            valid_items = [it for it in items if isinstance(it, Mapping) and str(it.get("id") or "").isdigit()]
+            if not valid_items:
+                return Err(StreamWeaverError(f"MDBList list `{ref.username}/{ref.slug}` returned no list ID"))
+
+            first_name = str(valid_items[0].get("name") or ref.slug or "MDBList").strip()
+            folder_title = title_hint or first_name
+            out_sources: list[JsonDict] = []
+            for it in valid_items:
+                lid = str(it["id"])
+                raw_mt = str(it.get("mediatype") or "movie").lower()
+                st_type = "series" if raw_mt in ("show", "series", "tv", "shows") else "movie"
+                row_lbl = (
+                    f"{folder_title} — {'Series' if st_type == 'series' else 'Movies'}"
+                    if len(valid_items) > 1
+                    else folder_title
+                )
+                match build_mdblist_source(lid, title=row_lbl, media_type=st_type):
+                    case Err(b_err):
+                        return Err(StreamWeaverError(str(b_err)))
+                    case Ok(s_obj):
+                        out_sources.append(s_obj)
+            return Ok({"title": folder_title, "sources": out_sources})
+
+        if http_client is not None:
+            return _fetch(http_client)
+        with HttpxClient() as live_client:
+            return _fetch(live_client)
+
+    return Err(StreamWeaverError(f"Unsupported custom row builder kind `{kind}`"))
 
 
 def export_tenant_zip_bytes(paths: TenantPaths, *, include_env: bool = False) -> bytes:
