@@ -91,6 +91,11 @@ A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<
 
 ## 1. Quick Start: Replicate This Setup on Your Own Accounts
 
+> **Visual Web Studio (`sw studio`) or Terminal CLI — Your Choice!**
+> Prefer a visual browser configurator with live Nuvio folder cover previews, Debrid/pack switches, and a one-click **Save & Push to Nuvio** button? After `uv sync`, run:
+> * **Local GitOps Studio:** `uv run sw init tenants/<you> --from examples/home && uv run sw studio --tenant <you>`
+> * **Zero-Disk Hosted / Stateless Studio:** `uv run sw studio --stateless` *(keys stay in browser `localStorage`; includes 1-click **Export Repo (.zip)**)*
+
 > **Do I need AIOManager or `aio_contraband`?**
 > * **AIOManager is optional:** `sw push` syncs addons, Home Collections, stream badges, details-page enrichment, and app settings **directly to Nuvio** whenever `AIOMANAGER_UUID` is left blank.
 > * **`aio_contraband` is optional:** `examples/home` ships all 7 curated collections (30+ folders) out of the box without Contraband. To also add the **Peterson Academy** tab, see [Optional: Enable Contraband](#optional-enable-contraband-peterson-academy) below.

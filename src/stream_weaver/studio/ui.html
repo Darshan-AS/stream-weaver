@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream Weaver Studio — Nuvio & AIO Configurator</title>
+  <style>
+    :root {
+      --bg: #05080f;
+      --surface: #0d1322;
+      --surface-2: #131c31;
+      --surface-hover: #192540;
+      --border: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(56, 189, 248, 0.45);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #3b82f6;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 15% 0%, #0f203c 0%, var(--bg) 42%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(16px);
+      background: rgba(5, 8, 15, 0.84);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+    .pill {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pill.ok { color: #34d399; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.1); }
+    .pill.warn { color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.1); }
+    .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    button, .btn {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover:not(:disabled) { background: var(--surface-hover); border-color: rgba(148, 163, 184, 0.32); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #04101f;
+      border-color: transparent;
+      font-weight: 700;
+    }
+    button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+    button.accent-outline { border-color: var(--border-strong); color: var(--accent); }
+    button.icon-btn { padding: 5px 8px; font-size: 12px; border-radius: 8px; }
+    button.danger:hover:not(:disabled) { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+
+    .subbar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 24px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .tabs, .profile-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab {
+      padding: 8px 15px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+    }
+    .tab.active {
+      background: var(--surface);
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 18px 24px 64px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card {
+      background: rgba(13, 19, 34, 0.88);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card h2 { font-size: 15px; margin: 0 0 4px; }
+    .card p.sub { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; line-height: 1.45; }
+
+    .col-list { display: flex; flex-direction: column; gap: 8px; }
+    .col-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 11px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .col-item.selected { border-color: var(--border-strong); background: rgba(56, 189, 248, 0.09); }
+    .col-item-title { font-size: 13.5px; font-weight: 600; }
+    .col-item-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .col-controls { display: flex; gap: 4px; }
+
+    .hero-preview {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-height: 170px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background-color: #0b1324;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .hero-preview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(5,8,15,0.25) 0%, rgba(5,8,15,0.92) 100%);
+    }
+    .hero-preview > * { position: relative; z-index: 1; }
+    .hero-preview h3 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+    .hero-preview .meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+    .folders-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+      gap: 12px;
+    }
+    .folder-card {
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.14s ease, border-color 0.14s ease;
+    }
+    .folder-card:hover { transform: translateY(-2px); border-color: rgba(148, 163, 184, 0.35); }
+    .folder-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .folder-art {
+      aspect-ratio: 16 / 10;
+      width: 100%;
+      background: linear-gradient(135deg, #16223b, #0c1424);
+      object-fit: cover;
+      display: block;
+    }
+    .folder-body { padding: 9px 11px; }
+    .folder-title { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .folder-count { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .rows-box {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(19, 28, 49, 0.6);
+      border: 1px solid var(--border);
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+    .chip {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+    }
+    .pack-card {
+      padding: 15px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .pack-card.on { border-color: rgba(56, 189, 248, 0.42); }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      padding: 8px 11px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: #080d19;
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--muted); }
+    .env-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+    .env-card {
+      padding: 12px 14px;
+      border-radius: 11px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .env-card a { color: var(--accent); text-decoration: none; font-size: 11.5px; }
+    .env-card a:hover { text-decoration: underline; }
+
+    .drawer {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: #070b14;
+      border: 1px solid var(--border-strong);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .switch input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span style="font-size:22px">🧶</span>
+      <div>
+        <h1>Stream Weaver Studio</h1>
+        <div style="font-size:11.5px;color:var(--muted)" id="subtitle">Loading workspace…</div>
+      </div>
+      <span class="pill" id="mode-pill">…</span>
+      <span class="pill" id="env-ready-pill">…</span>
+    </div>
+    <div class="actions">
+      <button id="btn-export" title="Download portable GitOps tenant zip">📦 Export Repo (.zip)</button>
+      <button id="btn-diff">🔍 Check Drift</button>
+      <button id="btn-provision" class="accent-outline">✨ Provision New UUIDs</button>
+      <button id="btn-save">💾 Save</button>
+      <button id="btn-push" class="primary">🚀 Save & Push to Nuvio</button>
+    </div>
+  </header>
+
+  <div class="subbar">
+    <div class="tabs" id="nav-tabs">
+      <button class="tab active" data-tab="home">🏠 Home Screen & Collections</button>
+      <button class="tab" data-tab="streams">⚡ Streams, Debrid & Subtitles</button>
+      <button class="tab" data-tab="nuvio">🎛️ Nuvio Experience & Settings</button>
+      <button class="tab" data-tab="keys">🔑 Keys & Nuvio Sign-In</button>
+    </div>
+    <div class="profile-bar" id="profile-tabs"></div>
+  </div>
+
+  <main>
+    <div id="log-drawer" class="drawer" style="display:none"></div>
+    <div id="view-root"></div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "stream_weaver_studio_bundle_v1";
+    let appMode = "local";
+    let bundle = null;
+    let state = null;
+    let activeTab = "home";
+    let activeProfileIdx = 0;
+    let selectedColIdx = 0;
+    let selectedFolderIdx = 0;
+    let showAllEnv = false;
+    let pendingEnvEdits = {};
+    let nuvioProfilesCache = [];
+    let dirty = false;
+
+    function loadSavedBundle() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function persistBundle(b) {
+      if (!b) return;
+      bundle = b;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); } catch (_) {}
+    }
+
+    function showLog(title, lines, isError = false) {
+      const el = document.getElementById("log-drawer");
+      el.style.display = "block";
+      el.style.borderColor = isError ? "rgba(239,68,68,0.55)" : "rgba(56,189,248,0.45)";
+      el.textContent = (isError ? "❌ " : "✅ ") + title + (lines && lines.length ? "\n" + lines.join("\n") : "");
+    }
+
+    async function api(path, bodyObj = null) {
+      const opts = bodyObj === null
+        ? { method: "GET" }
+        : {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(appMode === "stateless" && bundle ? { ...bodyObj, bundle } : bodyObj),
+          };
+      const res = await fetch(path, opts);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
+      if (data.mode) appMode = data.mode;
+      if (data.bundle) persistBundle(data.bundle);
+      if (data.state) {
+        state = data.state;
+        if (activeProfileIdx >= state.profiles.length) activeProfileIdx = 0;
+      }
+      return data;
+    }
+
+    function currentProfile() {
+      return state && state.profiles[activeProfileIdx] ? state.profiles[activeProfileIdx] : null;
+    }
+
+    function buildMutationPayload() {
+      const p = currentProfile();
+      const enabledPacks = state.packs.filter(pk => pk.enabled).map(pk => pk.id);
+      const mut = {
+        debrid: state.debrid.active,
+        enabledPacks,
+        envUpdates: { ...pendingEnvEdits },
+      };
+      if (p) {
+        mut.profile = {
+          name: p.name,
+          displayName: p.displayName,
+          stremioEnabled: p.stremioEnabled,
+          nuvio: p.nuvio ? {
+            profileId: p.nuvio.profileId || "",
+            profileName: p.nuvio.profileName || "",
+            platforms: p.nuvio.platforms,
+          } : undefined,
+          collections: p.collections.map(c => c.ref ? { ref: c.ref, with: c.with || {} } : { raw: c.raw }),
+          badgesEnabled: p.badgesEnabled,
+          meta: p.meta,
+          settings: p.settings,
+        };
+      }
+      return mut;
+    }
+
+    async function saveChanges(quiet = false) {
+      try {
+        const mut = buildMutationPayload();
+        await api("/api/mutate", { mutation: mut });
+        pendingEnvEdits = {};
+        dirty = false;
+        if (!quiet) showLog("Saved configuration & synchronized AIOMetadata catalogs + diagrams.", []);
+        render();
+      } catch (err) {
+        showLog(err.message, [], true);
+      }
+    }
+
+    function markDirty() {
+      dirty = true;
+      renderHeader();
+    }
+
+    function renderHeader() {
+      if (!state) return;
+      document.getElementById("subtitle").textContent =
+        appMode === "stateless"
+          ? "Browser Studio · Keys stay in your browser localStorage"
+          : `Tenant: ${state.tenant.name} · ${state.tenant.root}`;
+      const modePill = document.getElementById("mode-pill");
+      modePill.textContent = appMode === "stateless" ? "Stateless Browser Mode" : "Local GitOps Mode";
+      modePill.className = "pill " + (appMode === "stateless" ? "warn" : "ok");
+
+      const reqEnv = state.env.filter(e => e.required);
+      const readyCount = reqEnv.filter(e => e.isSet || (pendingEnvEdits[e.key] && pendingEnvEdits[e.key].trim())).length;
+      const envPill = document.getElementById("env-ready-pill");
+      envPill.textContent = `Keys Ready: ${readyCount}/${reqEnv.length}` + (dirty ? " · Unsaved edits" : "");
+      envPill.className = "pill " + (readyCount === reqEnv.length && !dirty ? "ok" : "warn");
+
+      const provBtn = document.getElementById("btn-provision");
+      const allProv = state.tenant.aiostreamsProvisioned && state.tenant.aiometadataProvisioned;
+      provBtn.textContent = allProv ? "✅ Instances Provisioned" : "✨ Provision New UUIDs";
+
+      const pBar = document.getElementById("profile-tabs");
+      pBar.innerHTML = "";
+      state.profiles.forEach((p, idx) => {
+        const b = document.createElement("button");
+        b.className = "tab" + (idx === activeProfileIdx ? " active" : "");
+        b.textContent = `${p.emoji || "🎬"} ${p.displayName} (${p.name})`;
+        b.onclick = () => { activeProfileIdx = idx; selectedColIdx = 0; selectedFolderIdx = 0; render(); };
+        pBar.appendChild(b);
+      });
+    }
+
+    function renderHomeTab(root) {
+      const p = currentProfile();
+      if (!p) return;
+      if (selectedColIdx >= p.collections.length) selectedColIdx = Math.max(0, p.collections.length - 1);
+      const selCol = p.collections[selectedColIdx] || null;
+
+      const wrap = document.createElement("div");
+      wrap.className = "grid-2";
+
+      // Left column: Active Collections + Add Collection
+      const left = document.createElement("div");
+      left.className = "card";
+      left.innerHTML = `<h2>Active Home Collections (${p.collections.length})</h2>
+        <p class="sub">Order matches your Nuvio Home screen from top to bottom. Removing or adding a collection automatically enables/disables its catalogs in AIOMetadata.</p>`;
+      const list = document.createElement("div");
+      list.className = "col-list";
+
+      p.collections.forEach((col, idx) => {
+        const item = document.createElement("div");
+        item.className = "col-item" + (idx === selectedColIdx ? " selected" : "");
+        item.onclick = () => { selectedColIdx = idx; selectedFolderIdx = 0; render(); };
+
+        const info = document.createElement("div");
+        info.innerHTML = `<div class="col-item-title">${idx + 1}. ${escapeHtml(col.title)}</div>
+          <div class="col-item-meta">${(col.folders || []).length} tabbed folders · <code>${escapeHtml(col.ref || "inline")}</code></div>`;
+
+        const ctrls = document.createElement("div");
+        ctrls.className = "col-controls";
+        const up = document.createElement("button");
+        up.className = "icon-btn"; up.textContent = "↑"; up.disabled = idx === 0;
+        up.onclick = (e) => {
+          e.stopPropagation();
+          [p.collections[idx - 1], p.collections[idx]] = [p.collections[idx], p.collections[idx - 1]];
+          selectedColIdx = idx - 1;
+          saveChanges(true);
+        };
+        const dn = document.createElement("button");
+        dn.className = "icon-btn"; dn.textContent = "↓"; dn.disabled = idx === p.collections.length - 1;
+        dn.onclick = (e) => {
+          e.stopPropagation();
+          [p.collections[idx + 1], p.collections[idx]] = [p.collections[idx], p.collections[idx + 1]];
+          selectedColIdx = idx + 1;
+          saveChanges(true);
+        };
+        const rm = document.createElement("button");
+        rm.className = "icon-btn danger"; rm.textContent = "✕";
+        rm.onclick = (e) => {
+          e.stopPropagation();
+          p.collections.splice(idx, 1);
+          selectedColIdx = Math.max(0, selectedColIdx - 1);
+          saveChanges(true);
+        };
+        ctrls.append(up, dn, rm);
+        item.append(info, ctrls);
+        list.appendChild(item);
+      });
+      left.appendChild(list);
+
+      // Add Collection Picker
+      const addSec = document.createElement("div");
+      addSec.style.marginTop = "18px";
+      addSec.style.borderTop = "1px solid var(--border)";
+      addSec.style.paddingTop = "14px";
+      addSec.innerHTML = `<h2 style="font-size:13.5px">➕ Add Curated Collection</h2>`;
+
+      const usedRefs = new Set(p.collections.filter(c => c.ref && (!c.with || Object.keys(c.with).length === 0)).map(c => c.ref));
+      const standardCols = state.libraryCollections.filter(lc => (!lc.presets || lc.presets.length === 0) && !usedRefs.has(lc.id));
+      const addChips = document.createElement("div");
+      addChips.className = "chip-row";
+      standardCols.forEach(lc => {
+        const btn = document.createElement("button");
+        btn.textContent = `+ ${lc.title}`;
+        btn.title = lc.description || lc.id;
+        btn.onclick = () => {
+          p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
+          selectedColIdx = p.collections.length - 1;
+          saveChanges(true);
+        };
+        addChips.appendChild(btn);
+      });
+      addSec.appendChild(addChips);
+
+      // Regional Cinema Quick-Add Dropdown
+      const regRecipe = state.libraryCollections.find(lc => lc.id === "regional-cinema");
+      if (regRecipe && regRecipe.presets && regRecipe.presets.length) {
+        const regRow = document.createElement("div");
+        regRow.style.marginTop = "12px";
+        regRow.style.display = "flex";
+        regRow.style.gap = "8px";
+        const sel = document.createElement("select");
+        regRecipe.presets.forEach((pr, idx) => {
+          const opt = document.createElement("option");
+          opt.value = String(idx);
+          opt.textContent = `🌍 ${pr.label} (${pr.with.language})`;
+          sel.appendChild(opt);
+        });
+        const addRegBtn = document.createElement("button");
+        addRegBtn.className = "accent-outline";
+        addRegBtn.style.whiteSpace = "nowrap";
+        addRegBtn.textContent = "+ Add Language";
+        addRegBtn.onclick = () => {
+          const chosen = regRecipe.presets[Number(sel.value)];
+          p.collections.push({ ref: "regional-cinema", with: { ...chosen.with }, title: chosen.label, folders: [] });
+          selectedColIdx = p.collections.length - 1;
+          saveChanges(true);
+        };
+        regRow.append(sel, addRegBtn);
+        addSec.appendChild(regRow);
+      }
+      left.appendChild(addSec);
+
+      // Right column: Live Nuvio Collection & Folder Preview
+      const right = document.createElement("div");
+      right.className = "card";
+      if (!selCol) {
+        right.innerHTML = `<h2>Live Nuvio Home Preview</h2><p class="sub">Add a collection on the left to preview its folders and rows.</p>`;
+      } else {
+        const libMeta = state.libraryCollections.find(lc => lc.id === selCol.ref);
+        const hero = document.createElement("div");
+        hero.className = "hero-preview";
+        if (selCol.backdropUrl) hero.style.backgroundImage = `url('${selCol.backdropUrl}')`;
+        hero.innerHTML = `<div class="pill" style="width:fit-content;margin-bottom:8px">Nuvio Tabbed Grid Preview</div>
+          <h3>${escapeHtml(selCol.title)}</h3>
+          <div class="meta">${escapeHtml((libMeta && libMeta.description) || `${(selCol.folders || []).length} folders configured`)}</div>`;
+        right.appendChild(hero);
+
+        // Optional multi-select param editor (e.g., Streaming Services OTT checkboxes)
+        if (libMeta && libMeta.params) {
+          const listParam = libMeta.params.find(pr => pr.type === "list" && pr.options && pr.options.length > 0);
+          if (listParam) {
+            const paramBox = document.createElement("div");
+            paramBox.className = "rows-box";
+            paramBox.style.marginTop = "0";
+            paramBox.style.marginBottom = "16px";
+            const currentVals = Array.isArray((selCol.with || {})[listParam.name])
+              ? (selCol.with[listParam.name])
+              : (listParam.default || []);
+            paramBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Customize ${escapeHtml(listParam.label)}:</div>`;
+            const chkWrap = document.createElement("div");
+            chkWrap.className = "chip-row";
+            listParam.options.forEach(opt => {
+              const lbl = document.createElement("label");
+              lbl.className = "switch chip";
+              const chk = document.createElement("input");
+              chk.type = "checkbox";
+              chk.checked = currentVals.includes(opt.value);
+              chk.onchange = () => {
+                const next = listParam.options
+                  .map(o => o.value)
+                  .filter(v => v === opt.value ? chk.checked : currentVals.includes(v));
+                if (!next.length) { chk.checked = true; return; }
+                selCol.with = { ...(selCol.with || {}), [listParam.name]: next };
+                saveChanges(true);
+              };
+              lbl.append(chk, document.createTextNode(opt.label));
+              chkWrap.appendChild(lbl);
+            });
+            paramBox.appendChild(chkWrap);
+            right.appendChild(paramBox);
+          }
+        }
+
+        const folders = selCol.folders || [];
+        if (selectedFolderIdx >= folders.length) selectedFolderIdx = 0;
+        const grid = document.createElement("div");
+        grid.className = "folders-strip";
+        folders.forEach((f, fIdx) => {
+          const fc = document.createElement("div");
+          fc.className = "folder-card" + (fIdx === selectedFolderIdx ? " active" : "");
+          fc.onclick = () => { selectedFolderIdx = fIdx; render(); };
+          const img = f.coverUrl
+            ? `<img class="folder-art" src="${escapeHtml(f.coverUrl)}" alt="${escapeHtml(f.title)}" loading="lazy" />`
+            : `<div class="folder-art" style="display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted)">${escapeHtml(f.title)}</div>`;
+          fc.innerHTML = `${img}
+            <div class="folder-body">
+              <div class="folder-title">${escapeHtml(f.title)}</div>
+              <div class="folder-count">${(f.rows || []).length} catalog row(s)</div>
+            </div>`;
+          grid.appendChild(fc);
+        });
+        right.appendChild(grid);
+
+        const activeFolder = folders[selectedFolderIdx];
+        if (activeFolder) {
+          const rbox = document.createElement("div");
+          rbox.className = "rows-box";
+          rbox.innerHTML = `<div style="font-size:13px;font-weight:600">📂 Catalog Rows inside "${escapeHtml(activeFolder.title)}"</div>`;
+          const chips = document.createElement("div");
+          chips.className = "chip-row";
+          (activeFolder.rows || []).forEach(r => {
+            const c = document.createElement("span");
+            c.className = "chip";
+            c.textContent = r;
+            chips.appendChild(c);
+          });
+          rbox.appendChild(chips);
+          right.appendChild(rbox);
+        }
+      }
+
+      wrap.append(left, right);
+      root.appendChild(wrap);
+    }
+
+    function renderStreamsTab(root) {
+      const debCard = document.createElement("div");
+      debCard.className = "card";
+      debCard.style.marginBottom = "18px";
+      debCard.innerHTML = `<h2>1. Primary Debrid Service</h2>
+        <p class="sub">Powers instant cached 4K/1080p stream resolution and your Cloud Library folder. Switching providers automatically updates AIOStreams, cached manifests, and required API keys.</p>`;
+      const debGrid = document.createElement("div");
+      debGrid.className = "cards-grid";
+      state.debrid.options.forEach(opt => {
+        const isAct = state.debrid.active === opt.id;
+        const card = document.createElement("div");
+        card.className = "pack-card" + (isAct ? " on" : "");
+        card.style.cursor = "pointer";
+        card.onclick = () => { state.debrid.active = opt.id; saveChanges(true); };
+        card.innerHTML = `<div class="row-between">
+            <strong>${escapeHtml(opt.label)}</strong>
+            <span class="pill ${isAct ? "ok" : ""}">${isAct ? "Active" : opt.shortName}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Env Key: <code>${escapeHtml(opt.secretKey)}</code> · <a href="${escapeHtml(opt.signupUrl)}" target="_blank" rel="noreferrer" style="color:var(--accent)" onclick="event.stopPropagation()">Get Token ↗</a></div>`;
+        debGrid.appendChild(card);
+      });
+      debCard.appendChild(debGrid);
+      root.appendChild(debCard);
+
+      const packsCard = document.createElement("div");
+      packsCard.className = "card";
+      packsCard.innerHTML = `<h2>2. Modular AIOStreams Addon Packs</h2>
+        <p class="sub">Toggle scraper and subtitle packs on or off. Disabling an optional pack keeps its preset config saved locally while dropping its API key requirement at push time.</p>`;
+      const pGrid = document.createElement("div");
+      pGrid.className = "cards-grid";
+      state.packs.forEach(pk => {
+        const c = document.createElement("div");
+        c.className = "pack-card" + (pk.enabled ? " on" : "");
+        const top = document.createElement("div");
+        top.className = "row-between";
+        const lbl = document.createElement("label");
+        lbl.className = "switch";
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.checked = pk.enabled;
+        chk.onchange = () => { pk.enabled = chk.checked; saveChanges(true); };
+        lbl.append(chk, document.createTextNode(pk.title));
+        top.appendChild(lbl);
+
+        const desc = document.createElement("div");
+        desc.style.fontSize = "12.5px";
+        desc.style.color = "var(--muted)";
+        desc.textContent = pk.description;
+
+        const foot = document.createElement("div");
+        foot.style.fontSize = "11.5px";
+        foot.style.color = "var(--muted)";
+        foot.innerHTML = `Presets: <code>${escapeHtml(pk.presets.join(", ") || "—")}</code>` +
+          (pk.requiredSecrets.length ? `<br/>Requires: <code>${escapeHtml(pk.requiredSecrets.join(", "))}</code>` : "");
+        c.append(top, desc, foot);
+        pGrid.appendChild(c);
+      });
+      packsCard.appendChild(pGrid);
+      root.appendChild(packsCard);
+    }
+
+    function renderNuvioTab(root) {
+      const p = currentProfile();
+      if (!p) return;
+      const grid = document.createElement("div");
+      grid.className = "cards-grid";
+
+      // Card 1: Client & Badges
+      const c1 = document.createElement("div");
+      c1.className = "card";
+      c1.innerHTML = `<h2>Stream Badges & Client Sync</h2>
+        <p class="sub">Declarative logo packs and client connections for profile <strong>${escapeHtml(p.displayName)}</strong>.</p>`;
+      const bToggle = makeSwitch("Enable Elite-Badges (Stream Cards + Paused Player)", p.badgesEnabled, v => { p.badgesEnabled = v; saveChanges(true); });
+      const sToggle = makeSwitch("Also Sync Addons to Stremio Account", p.stremioEnabled, v => { p.stremioEnabled = v; saveChanges(true); });
+      sToggle.style.marginTop = "12px";
+      c1.append(bToggle, sToggle);
+
+      // Card 2: Details Page Enrichment (`meta`)
+      const c2 = document.createElement("div");
+      c2.className = "card";
+      c2.innerHTML = `<h2>Details-Page Enrichment (<code>nuvio_meta</code>)</h2>
+        <p class="sub">8-source MDBList rating strip (IMDb, TMDB, RT, Metacritic, Letterboxd, Trakt, MAL), TMDB Modern Home hero trailers, and Trakt comments.</p>`;
+      c2.appendChild(makeSwitch("Enable Details-Page Enrichment", p.meta.enabled, v => { p.meta.enabled = v; saveChanges(true); }));
+      if (p.meta.enabled && state.metaParams.length) {
+        const fields = document.createElement("div");
+        fields.style.display = "flex"; fields.style.flexDirection = "column"; fields.style.gap = "10px"; fields.style.marginTop = "14px";
+        state.metaParams.forEach(param => {
+          fields.appendChild(makeParamInput(param, p.meta.with, val => {
+            p.meta.with = { ...(p.meta.with || {}), [param.name]: val };
+            saveChanges(true);
+          }));
+        });
+        c2.appendChild(fields);
+      }
+
+      // Card 3: Playback, Theme & Subtitles (`settings`)
+      const c3 = document.createElement("div");
+      c3.className = "card";
+      c3.innerHTML = `<h2>App, Player & Subtitle Settings (<code>nuvio_settings</code>)</h2>
+        <p class="sub">Ocean AMOLED theme, 24h Reuse Last Link, auto-skip intro/recap, Modern TV layout, and subtitle sizing across TV, Desktop, and Mobile.</p>`;
+      c3.appendChild(makeSwitch("Manage Portable App Settings", p.settings.enabled, v => { p.settings.enabled = v; saveChanges(true); }));
+      if (p.settings.enabled && state.settingsParams.length) {
+        const sFields = document.createElement("div");
+        sFields.style.display = "flex"; sFields.style.flexDirection = "column"; sFields.style.gap = "10px"; sFields.style.marginTop = "14px";
+        state.settingsParams.forEach(param => {
+          sFields.appendChild(makeParamInput(param, p.settings.with, val => {
+            p.settings.with = { ...(p.settings.with || {}), [param.name]: val };
+            saveChanges(true);
+          }));
+        });
+        c3.appendChild(sFields);
+      }
+
+      grid.append(c1, c2, c3);
+      root.appendChild(grid);
+    }
+
+    function renderKeysTab(root) {
+      const p = currentProfile();
+
+      // Nuvio Sign-In & Target Profile Card
+      if (p && p.nuvio) {
+        const nCard = document.createElement("div");
+        nCard.className = "card";
+        nCard.style.marginBottom = "18px";
+        const statusBadge = p.nuvio.loginReady
+          ? `<span class="pill ok">Signed in ${escapeHtml(p.nuvio.email ? "· " + p.nuvio.email : "")}</span>`
+          : `<span class="pill warn">Not signed in yet</span>`;
+        nCard.innerHTML = `<div class="row-between">
+            <div>
+              <h2>1. Nuvio Cloud Sign-In (Login: <code>${escapeHtml(p.nuvio.login)}</code>)</h2>
+              <p class="sub" style="margin-bottom:0">Sign in once on each target device (TV / Desktop / Mobile) so Nuvio seeds its settings blob, then authenticate here to push directly.</p>
+            </div>
+            ${statusBadge}
+          </div>`;
+        const form = document.createElement("div");
+        form.style.display = "grid";
+        form.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
+        form.style.gap = "10px";
+        form.style.marginTop = "14px";
+        form.style.alignItems = "end";
+
+        const emLbl = document.createElement("label"); emLbl.className = "field"; emLbl.textContent = "Nuvio Email";
+        const emIn = document.createElement("input"); emIn.type = "text"; emIn.placeholder = p.nuvio.email || "you@example.com";
+        emLbl.appendChild(emIn);
+
+        const pwLbl = document.createElement("label"); pwLbl.className = "field"; pwLbl.textContent = "Nuvio Password";
+        const pwIn = document.createElement("input"); pwIn.type = "password"; pwIn.placeholder = "••••••••";
+        pwLbl.appendChild(pwIn);
+
+        const profLbl = document.createElement("label"); profLbl.className = "field"; profLbl.textContent = "Target Nuvio Profile";
+        const profSel = document.createElement("select");
+        const defOpt = document.createElement("option");
+        defOpt.value = "";
+        defOpt.textContent = p.nuvio.profileId
+          ? `UUID ${p.nuvio.profileId.slice(0, 8)}…`
+          : (p.nuvio.profileName ? `Match Name: ${p.nuvio.profileName}` : "Profile #1 (Default)");
+        profSel.appendChild(defOpt);
+        nuvioProfilesCache.forEach(np => {
+          const o = document.createElement("option");
+          o.value = np.id;
+          o.textContent = `#${np.index} · ${np.name} (${np.id.slice(0, 8)}…)`;
+          if (p.nuvio.profileId === np.id) o.selected = true;
+          profSel.appendChild(o);
+        });
+        profSel.onchange = () => {
+          p.nuvio.profileId = profSel.value;
+          p.nuvio.profileName = "";
+          saveChanges(true);
+        };
+        profLbl.appendChild(profSel);
+
+        const loginBtn = document.createElement("button");
+        loginBtn.className = "accent-outline";
+        loginBtn.textContent = p.nuvio.loginReady ? "🔄 Sign In / Load Profiles" : "🔐 Sign In to Nuvio";
+        loginBtn.onclick = async () => {
+          try {
+            loginBtn.disabled = true;
+            const res = await api("/api/nuvio-login", {
+              login: p.nuvio.login,
+              email: emIn.value,
+              password: pwIn.value,
+            });
+            nuvioProfilesCache = (res.nuvio && res.nuvio.profiles) || [];
+            pwIn.value = "";
+            showLog(`Authenticated Nuvio (${nuvioProfilesCache.length} profile(s) found).`, []);
+            render();
+          } catch (err) {
+            showLog(err.message, [], true);
+          } finally {
+            loginBtn.disabled = false;
+          }
+        };
+
+        form.append(emLbl, pwLbl, profLbl, loginBtn);
+        nCard.appendChild(form);
+        root.appendChild(nCard);
+      }
+
+      // Environment Keys Checklist Card
+      const eCard = document.createElement("div");
+      eCard.className = "card";
+      const topRow = document.createElement("div");
+      topRow.className = "row-between";
+      topRow.style.marginBottom = "12px";
+      topRow.innerHTML = `<div>
+          <h2>2. Instance URLs & API Keys</h2>
+          <p class="sub" style="margin-bottom:0">Secret values stay masked; leave a secret field blank to keep its existing value.</p>
+        </div>`;
+      topRow.appendChild(makeSwitch("Show Optional Keys Too", showAllEnv, v => { showAllEnv = v; render(); }));
+      eCard.appendChild(topRow);
+
+      const visibleEnv = state.env.filter(e => showAllEnv || e.required || e.key.endsWith("_UUID"));
+      const eGrid = document.createElement("div");
+      eGrid.className = "env-grid";
+      visibleEnv.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "env-card";
+        const pendingVal = pendingEnvEdits[item.key] || "";
+        const ready = item.isSet || Boolean(pendingVal.trim());
+        const badge = `<span class="pill ${ready ? "ok" : (item.required ? "warn" : "")}">${ready ? "Ready" : (item.required ? "Required" : "Optional")}</span>`;
+        const link = item.signupUrl ? `<a href="${escapeHtml(item.signupUrl)}" target="_blank" rel="noreferrer">Get Key ↗</a>` : "";
+        card.innerHTML = `<div class="row-between">
+            <strong style="font-size:12.5px">${escapeHtml(item.label)}</strong>
+            ${badge}
+          </div>
+          <div class="row-between" style="font-size:11px;color:var(--muted)">
+            <code>${escapeHtml(item.key)}</code>
+            ${link}
+          </div>`;
+        const inp = document.createElement("input");
+        inp.type = item.isSecret ? "password" : "text";
+        inp.value = pendingVal || (item.isSecret ? "" : (item.value || ""));
+        inp.placeholder = item.isSecret
+          ? (item.isSet ? `${item.masked} (saved — type to replace)` : (item.hint || "Paste secret…"))
+          : (item.hint || "Enter value…");
+        inp.oninput = () => {
+          pendingEnvEdits[item.key] = inp.value;
+          markDirty();
+        };
+        card.appendChild(inp);
+        eGrid.appendChild(card);
+      });
+      eCard.appendChild(eGrid);
+      root.appendChild(eCard);
+    }
+
+    function makeSwitch(label, checked, onChange) {
+      const lbl = document.createElement("label");
+      lbl.className = "switch";
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = Boolean(checked);
+      chk.onchange = () => onChange(chk.checked);
+      lbl.append(chk, document.createTextNode(label));
+      return lbl;
+    }
+
+    function makeParamInput(param, boundMap, onChange) {
+      const cur = (boundMap && param.name in boundMap) ? boundMap[param.name] : param.default;
+      const lbl = document.createElement("label");
+      lbl.className = "field";
+      lbl.textContent = param.label || param.name;
+      if (param.options && param.options.length) {
+        const sel = document.createElement("select");
+        param.options.forEach((opt, i) => {
+          const o = document.createElement("option");
+          o.value = String(i);
+          o.textContent = opt.label;
+          if (opt.value === cur) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.onchange = () => onChange(param.options[Number(sel.value)].value);
+        lbl.appendChild(sel);
+      } else if (param.type === "int") {
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.value = cur != null ? String(cur) : "";
+        inp.onchange = () => onChange(Number(inp.value));
+        lbl.appendChild(inp);
+      } else {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.value = cur != null ? String(cur) : "";
+        inp.onchange = () => onChange(inp.value);
+        lbl.appendChild(inp);
+      }
+      return lbl;
+    }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function render() {
+      if (!state) return;
+      renderHeader();
+      document.querySelectorAll("#nav-tabs .tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === activeTab);
+      });
+      const root = document.getElementById("view-root");
+      root.innerHTML = "";
+      if (activeTab === "home") renderHomeTab(root);
+      else if (activeTab === "streams") renderStreamsTab(root);
+      else if (activeTab === "nuvio") renderNuvioTab(root);
+      else if (activeTab === "keys") renderKeysTab(root);
+    }
+
+    document.querySelectorAll("#nav-tabs .tab").forEach(btn => {
+      btn.onclick = () => { activeTab = btn.dataset.tab; render(); };
+    });
+
+    document.getElementById("btn-save").onclick = () => saveChanges(false);
+
+    document.getElementById("btn-provision").onclick = async () => {
+      const btn = document.getElementById("btn-provision");
+      btn.disabled = true;
+      try {
+        const data = await api("/api/provision", { mutation: buildMutationPayload() });
+        pendingEnvEdits = {}; dirty = false;
+        showLog("Provisioning finished:", data.steps || []);
+        render();
+      } catch (err) {
+        showLog(err.message, [], true);
+      } finally { btn.disabled = false; }
+    };
+
+    document.getElementById("btn-push").onclick = async () => {
+      const btn = document.getElementById("btn-push");
+      btn.disabled = true;
+      try {
+        showLog("Pushing configuration to AIO instances & Nuvio…", []);
+        const data = await api("/api/push", { target: "all", mutation: buildMutationPayload() });
+        pendingEnvEdits = {}; dirty = false;
+        showLog("Push complete!", data.steps || []);
+        render();
+      } catch (err) {
+        showLog(err.message, [], true);
+      } finally { btn.disabled = false; }
+    };
+
+    document.getElementById("btn-diff").onclick = async () => {
+      const btn = document.getElementById("btn-diff");
+      btn.disabled = true;
+      try {
+        if (dirty) await saveChanges(true);
+        const data = await api("/api/diff", { target: "all" });
+        const lines = (data.outcomes || []).map(o =>
+          o.inSync
+            ? `✅ [${o.target}] In sync`
+            : `⚠️ [${o.target}] +${o.addedLines}/-${o.removedLines} (${(o.changedKeys || []).join(", ")})\n${o.unifiedDiff || ""}`
+        );
+        showLog(lines.length ? "Live drift check:" : "No remote instances configured yet for diff.", lines);
+      } catch (err) {
+        showLog(err.message, [], true);
+      } finally { btn.disabled = false; }
+    };
+
+    document.getElementById("btn-export").onclick = async () => {
+      try {
+        if (dirty) await saveChanges(true);
+        const opts = appMode === "stateless" && bundle
+          ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bundle }) }
+          : { method: "GET" };
+        const res = await fetch("/api/export-zip", opts);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(state && state.tenant && state.tenant.name) || "stream-weaver"}-gitops.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        showLog(err.message, [], true);
+      }
+    };
+
+    (async function boot() {
+      try {
+        const saved = loadSavedBundle();
+        const data = saved ? await api("/api/state", { bundle: saved }) : await api("/api/state");
+        if (data.mode !== "stateless") bundle = null;
+        render();
+      } catch (err) {
+        showLog("Failed to load Studio state: " + err.message, [], true);
+      }
+    })();
+  </script>
+</body>
+</html>
