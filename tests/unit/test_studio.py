@@ -102,11 +102,13 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
     assert init_data["mode"] == "local"
     assert len(init_data["state"]["profiles"][0]["collections"]) == 7
 
-    # 3. Mutates Debrid, packs, collections & keys — keeping on-disk GitOps files `sw validate`-clean
+    # 3. Mutates Debrid, packs, stream filters, dual-subs, expanded collections & Nuvio theme/playback settings
     mut_payload = {
         "mutation": {
             "debrid": "realdebrid",
-            "enabledPacks": ["core_debrid", "core_subtitles"],
+            "enabledPacks": ["core_debrid", "core_subtitles", "dual_subtitles"],
+            "streamPreferences": {"maxResolution": "1080p", "cachedOnly": True},
+            "dualSubtitlePairs": [["kor", "eng"], ["spa", "eng"]],
             "envUpdates": {
                 "AIOSTREAMS_URL": "https://streams.example.org",
                 "AIOSTREAMS_PASSWORD": "pw-streams",
@@ -119,19 +121,41 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
                 "SECRET_RPDB_API_KEY": "t0-free-rpdb",
                 "SECRET_MDBLIST_API_KEY": "mdb-k",
                 "SECRET_TRAKT_TOKEN_ID": "trakt-tok",
-                "SECRET_BINGECAT_TOKEN": "bc-tok",
+                "SECRET_SUBSOURCE_API_KEY": "sub-tok",
             },
             "profile": {
                 "name": "don",
                 "collections": [
-                    {"ref": "col-streaming-services"},
+                    {"ref": "col-trakt-personal"},
+                    {"ref": "col-studios-auteurs"},
+                    {"ref": "col-kdrama-global"},
+                    {"ref": "col-streaming-services", "with": {"services": ["fld-netflix", "fld-crunchyroll", "fld-mubi"]}},
                     {"ref": "regional-cinema", "with": {"language": "ml", "slug": "malayalam", "label": "Malayalam"}},
                 ],
+                "meta": {"enabled": True, "ref": "default", "with": {"episodeRatings": "hideUnwatched", "blurUnwatchedEpisodes": True}},
+                "settings": {
+                    "enabled": True,
+                    "ref": "default",
+                    "with": {
+                        "theme": "crimson",
+                        "amoledBlack": False,
+                        "homeLayout": "grid",
+                        "streamSelectionMode": "firstStream",
+                        "audioPreferred": "ja",
+                        "blurUnwatchedEpisodes": True,
+                    },
+                },
             },
         }
     }
     mut_resp = dispatcher.dispatch("POST", "/api/mutate", json.dumps(mut_payload).encode("utf-8"))
     assert mut_resp.status == 200, mut_resp.body
+    mut_state = json.loads(mut_resp.body)["state"]
+    assert mut_state["streamPreferences"]["maxResolution"] == "1080p"
+    assert mut_state["streamPreferences"]["cachedOnly"] is True
+    assert mut_state["dualSubtitles"]["pairs"] == [["kor", "eng"], ["spa", "eng"]]
+    assert mut_state["profiles"][0]["settings"]["with"]["theme"] == "crimson"
+    assert mut_state["profiles"][0]["settings"]["with"]["streamSelectionMode"] == "firstStream"
     assert runner.invoke(app, ["validate", "--dir", str(t)]).exit_code == 0
 
     # 4. Nuvio login + profile listing

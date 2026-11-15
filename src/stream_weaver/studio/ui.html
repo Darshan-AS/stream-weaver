@@ -380,6 +380,15 @@
         enabledPacks,
         envUpdates: { ...pendingEnvEdits },
       };
+      if (state.streamPreferences) {
+        mut.streamPreferences = {
+          maxResolution: state.streamPreferences.maxResolution,
+          cachedOnly: Boolean(state.streamPreferences.cachedOnly),
+        };
+      }
+      if (state.dualSubtitles && Array.isArray(state.dualSubtitles.pairs)) {
+        mut.dualSubtitlePairs = state.dualSubtitles.pairs;
+      }
       if (p) {
         mut.profile = {
           name: p.name,
@@ -506,29 +515,54 @@
       });
       left.appendChild(list);
 
-      // Add Collection Picker
+      // Add Collection Picker (grouped by interest category)
       const addSec = document.createElement("div");
       addSec.style.marginTop = "18px";
       addSec.style.borderTop = "1px solid var(--border)";
       addSec.style.paddingTop = "14px";
       addSec.innerHTML = `<h2 style="font-size:13.5px">➕ Add Curated Collection</h2>`;
 
-      const usedRefs = new Set(p.collections.filter(c => c.ref && (!c.with || Object.keys(c.with).length === 0)).map(c => c.ref));
+      const usedRefs = new Set(p.collections.filter(c => c.ref).map(c => c.ref));
       const standardCols = state.libraryCollections.filter(lc => (!lc.presets || lc.presets.length === 0) && !usedRefs.has(lc.id));
-      const addChips = document.createElement("div");
-      addChips.className = "chip-row";
+      const categoryLabels = {
+        personal: "Personal & Trackers",
+        platforms: "Streaming Platforms",
+        discovery: "Genres, Moods & Franchises",
+        cinema: "Studios & Cinema Classics",
+        regional: "K-Drama, Global & Regional",
+        anime: "Anime",
+      };
+      const grouped = {};
       standardCols.forEach(lc => {
-        const btn = document.createElement("button");
-        btn.textContent = `+ ${lc.title}`;
-        btn.title = lc.description || lc.id;
-        btn.onclick = () => {
-          p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
-          selectedColIdx = p.collections.length - 1;
-          saveChanges(true);
-        };
-        addChips.appendChild(btn);
+        const cat = lc.category || "other";
+        (grouped[cat] = grouped[cat] || []).push(lc);
       });
-      addSec.appendChild(addChips);
+      Object.entries(grouped).forEach(([cat, cols]) => {
+        const grpLbl = document.createElement("div");
+        grpLbl.style.fontSize = "11px";
+        grpLbl.style.fontWeight = "600";
+        grpLbl.style.textTransform = "uppercase";
+        grpLbl.style.letterSpacing = "0.04em";
+        grpLbl.style.color = "var(--muted)";
+        grpLbl.style.marginTop = "10px";
+        grpLbl.textContent = categoryLabels[cat] || "More Collections";
+        addSec.appendChild(grpLbl);
+
+        const addChips = document.createElement("div");
+        addChips.className = "chip-row";
+        cols.forEach(lc => {
+          const btn = document.createElement("button");
+          btn.textContent = `+ ${lc.title}`;
+          btn.title = lc.description || lc.id;
+          btn.onclick = () => {
+            p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
+            selectedColIdx = p.collections.length - 1;
+            saveChanges(true);
+          };
+          addChips.appendChild(btn);
+        });
+        addSec.appendChild(addChips);
+      });
 
       // Regional Cinema Quick-Add Dropdown
       const regRecipe = state.libraryCollections.find(lc => lc.id === "regional-cinema");
@@ -676,9 +710,60 @@
       debCard.appendChild(debGrid);
       root.appendChild(debCard);
 
+      // 2. Stream Quality & Cache Policy
+      if (state.streamPreferences) {
+        const spCard = document.createElement("div");
+        spCard.className = "card";
+        spCard.style.marginBottom = "18px";
+        spCard.innerHTML = `<h2>2. Stream Resolution & Instant-Play Cache Policy</h2>
+          <p class="sub">Cap maximum stream resolution for 1080p screens or mobile data saving, and optionally hide uncached torrents that require waiting.</p>`;
+        const spGrid = document.createElement("div");
+        spGrid.className = "cards-grid";
+
+        const resLbl = document.createElement("label");
+        resLbl.className = "field";
+        resLbl.textContent = "Maximum Stream Resolution";
+        const resSel = document.createElement("select");
+        const resLabels = {
+          "2160p": "4K UHD + HDR/DV (Up to 2160p)",
+          "1080p": "Full HD Cap (Up to 1080p — 1080p TVs & laptops)",
+          "720p": "720p Data-Saver Cap (Mobile / metered bandwidth)",
+        };
+        (state.streamPreferences.resolutionOptions || ["2160p", "1080p", "720p"]).forEach(optVal => {
+          const o = document.createElement("option");
+          o.value = optVal;
+          o.textContent = resLabels[optVal] || optVal;
+          if (state.streamPreferences.maxResolution === optVal) o.selected = true;
+          resSel.appendChild(o);
+        });
+        resSel.onchange = () => {
+          state.streamPreferences.maxResolution = resSel.value;
+          saveChanges(true);
+        };
+        resLbl.appendChild(resSel);
+
+        const cacheBox = document.createElement("div");
+        cacheBox.className = "pack-card" + (state.streamPreferences.cachedOnly ? " on" : "");
+        cacheBox.appendChild(makeSwitch(
+          "Instant-Play Cached Debrid Streams Only",
+          state.streamPreferences.cachedOnly,
+          v => { state.streamPreferences.cachedOnly = v; saveChanges(true); }
+        ));
+        const cacheHint = document.createElement("div");
+        cacheHint.style.fontSize = "12px";
+        cacheHint.style.color = "var(--muted)";
+        cacheHint.textContent = "Excludes uncached torrents from Debrid results so every listed stream starts immediately.";
+        cacheBox.appendChild(cacheHint);
+
+        spGrid.append(resLbl, cacheBox);
+        spCard.appendChild(spGrid);
+        root.appendChild(spCard);
+      }
+
       const packsCard = document.createElement("div");
       packsCard.className = "card";
-      packsCard.innerHTML = `<h2>2. Modular AIOStreams Addon Packs</h2>
+      packsCard.style.marginBottom = "18px";
+      packsCard.innerHTML = `<h2>3. Modular AIOStreams Addon Packs</h2>
         <p class="sub">Toggle scraper and subtitle packs on or off. Disabling an optional pack keeps its preset config saved locally while dropping its API key requirement at push time.</p>`;
       const pGrid = document.createElement("div");
       pGrid.className = "cards-grid";
@@ -711,6 +796,97 @@
       });
       packsCard.appendChild(pGrid);
       root.appendChild(packsCard);
+
+      // 4. Configurable Strelingo Dual-Subtitle Pair Builder
+      if (state.dualSubtitles && Array.isArray(state.dualSubtitles.languages)) {
+        const dualPack = state.packs.find(pk => pk.id === "dual_subtitles");
+        const dsCard = document.createElement("div");
+        dsCard.className = "card";
+        dsCard.innerHTML = `<h2>4. Bilingual Dual-Subtitle Tracks (Strelingo + SubSource)</h2>
+          <p class="sub">Build custom bilingual subtitle pairs (Main spoken/subtitle language on top, translation language underneath) for language learning or multilingual households.</p>`;
+
+        if (dualPack && !dualPack.enabled) {
+          const notice = document.createElement("div");
+          notice.className = "rows-box";
+          notice.style.marginTop = "0";
+          notice.style.marginBottom = "12px";
+          const enableBtn = document.createElement("button");
+          enableBtn.className = "accent-outline";
+          enableBtn.textContent = "Enable Dual-Subtitles Pack";
+          enableBtn.onclick = () => { dualPack.enabled = true; saveChanges(true); };
+          notice.innerHTML = `<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">The <strong>SubSource & Strelingo Dual-Subtitles</strong> pack is currently disabled.</div>`;
+          notice.appendChild(enableBtn);
+          dsCard.appendChild(notice);
+        }
+
+        const langByCode = {};
+        state.dualSubtitles.languages.forEach(l => { langByCode[l.code] = l; });
+
+        const activeChips = document.createElement("div");
+        activeChips.className = "chip-row";
+        activeChips.style.marginBottom = "14px";
+        (state.dualSubtitles.pairs || []).forEach((pair, idx) => {
+          const m = langByCode[pair[0]] || { label: pair[0], short: pair[0] };
+          const t = langByCode[pair[1]] || { label: pair[1], short: pair[1] };
+          const pill = document.createElement("div");
+          pill.className = "chip";
+          pill.style.display = "inline-flex";
+          pill.style.alignItems = "center";
+          pill.style.gap = "8px";
+          pill.innerHTML = `<strong>${escapeHtml(m.label)} (${escapeHtml(m.short)}) → ${escapeHtml(t.label)} (${escapeHtml(t.short)})</strong>`;
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "icon-btn danger";
+          rmBtn.textContent = "✕";
+          rmBtn.onclick = () => {
+            state.dualSubtitles.pairs.splice(idx, 1);
+            saveChanges(true);
+          };
+          pill.appendChild(rmBtn);
+          activeChips.appendChild(pill);
+        });
+        dsCard.appendChild(activeChips);
+
+        const builderRow = document.createElement("div");
+        builderRow.style.display = "grid";
+        builderRow.style.gridTemplateColumns = "repeat(auto-fit, minmax(180px, 1fr))";
+        builderRow.style.gap = "10px";
+        builderRow.style.alignItems = "end";
+
+        const makeLangSelect = (title, defaultCode) => {
+          const wrapLbl = document.createElement("label");
+          wrapLbl.className = "field";
+          wrapLbl.textContent = title;
+          const sel = document.createElement("select");
+          state.dualSubtitles.languages.forEach(l => {
+            const o = document.createElement("option");
+            o.value = l.code;
+            o.textContent = `${l.label} (${l.short})`;
+            if (l.code === defaultCode) o.selected = true;
+            sel.appendChild(o);
+          });
+          wrapLbl.appendChild(sel);
+          return { wrapLbl, sel };
+        };
+
+        const mainCtrl = makeLangSelect("Primary Subtitle Language", "kor");
+        const transCtrl = makeLangSelect("Secondary Translation Language", "eng");
+        const addPairBtn = document.createElement("button");
+        addPairBtn.className = "accent-outline";
+        addPairBtn.textContent = "+ Add Dual-Sub Pair";
+        addPairBtn.onclick = () => {
+          const m = mainCtrl.sel.value;
+          const t = transCtrl.sel.value;
+          if (m === t) {
+            showLog("Primary and translation subtitle languages must be different.", [], true);
+            return;
+          }
+          state.dualSubtitles.pairs.push([m, t]);
+          saveChanges(true);
+        };
+        builderRow.append(mainCtrl.wrapLbl, transCtrl.wrapLbl, addPairBtn);
+        dsCard.appendChild(builderRow);
+        root.appendChild(dsCard);
+      }
     }
 
     function renderNuvioTab(root) {
@@ -912,6 +1088,9 @@
 
     function makeParamInput(param, boundMap, onChange) {
       const cur = (boundMap && param.name in boundMap) ? boundMap[param.name] : param.default;
+      if (param.type === "bool") {
+        return makeSwitch(param.label || param.name, Boolean(cur), onChange);
+      }
       const lbl = document.createElement("label");
       lbl.className = "field";
       lbl.textContent = param.label || param.name;
