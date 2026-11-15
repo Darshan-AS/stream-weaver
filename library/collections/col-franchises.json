@@ -3,6 +3,11 @@
   "version": 1,
   "kind": "collection",
   "id": "col-franchises",
+  "ui": {
+    "title": "Franchises & Universes",
+    "description": "Marvel Cinematic Universe, Star Wars & Lucasfilm, DC Universe, and Studio Ghibli.",
+    "category": "discovery"
+  },
   "collection": {
     "id": "col-franchises",
     "title": "Franchises & Universes",

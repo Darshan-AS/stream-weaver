@@ -29,6 +29,7 @@ from typing import Any
 
 from stream_weaver.core.errors import ConfigValidationError
 from stream_weaver.core.result import Err, Ok, Result
+from stream_weaver.core.secrets import SECRET_PLACEHOLDER_RE
 from stream_weaver.core.template import (
     ParamSchema,
     bind_params,
@@ -36,7 +37,7 @@ from stream_weaver.core.template import (
     parse_param_schema,
     referenced_variables,
 )
-from stream_weaver.core.types import JsonDict, JsonValue, is_json_mapping
+from stream_weaver.core.types import JsonDict, JsonValue, is_json_list, is_json_mapping
 
 RECIPE_KINDS: tuple[str, ...] = ("collection", "folder", "catalog", "badges", "meta", "settings")
 """Body key == kind. Directory name is the plural-ish folder below."""
@@ -53,16 +54,66 @@ RECIPE_SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True, slots=True)
+class RecipePreset:
+    label: str
+    params: Mapping[str, JsonValue]
+
+
+@dataclass(frozen=True, slots=True)
+class RecipeUiMeta:
+    title: str = ""
+    description: str = ""
+    category: str = ""
+    presets: tuple[RecipePreset, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class Recipe:
     kind: str
     id: str
     params: ParamSchema
     body: JsonValue
     source: Path  # file it was loaded from (for diagnostics / `sw library show`)
+    ui: RecipeUiMeta = field(default_factory=RecipeUiMeta)
 
     @property
     def is_parameterised(self) -> bool:
         return bool(self.params.params)
+
+
+def _parse_ui_meta(
+    raw: Any, schema: ParamSchema, *, source: Path
+) -> Result[RecipeUiMeta, ConfigValidationError]:
+    if raw is None:
+        return Ok(RecipeUiMeta())
+    if not is_json_mapping(raw):
+        return Err(ConfigValidationError(f"{source}: `ui` must be an object"))
+    title = raw.get("title", "")
+    desc = raw.get("description", "")
+    cat = raw.get("category", "")
+    if not all(isinstance(v, str) for v in (title, desc, cat)):
+        return Err(ConfigValidationError(f"{source}: `ui.title`, `ui.description`, `ui.category` must be strings"))
+    raw_presets = raw.get("presets")
+    presets: list[RecipePreset] = []
+    if raw_presets is not None:
+        if not is_json_list(raw_presets):
+            return Err(ConfigValidationError(f"{source}: `ui.presets` must be a list"))
+        for i, item in enumerate(raw_presets):
+            if (
+                not is_json_mapping(item)
+                or not isinstance(item.get("label"), str)
+                or not is_json_mapping(item.get("with"))
+            ):
+                return Err(
+                    ConfigValidationError(f"{source}: `ui.presets[{i}]` must have string `label` and object `with`")
+                )
+            match bind_params(schema, item["with"], context=f"{source}: ui.presets[{i}]"):
+                case Err() as err:
+                    return err
+                case Ok():
+                    pass
+            presets.append(RecipePreset(label=item["label"], params=dict(item["with"])))
+    return Ok(RecipeUiMeta(title=title, description=desc, category=cat, presets=tuple(presets)))
 
 
 def parse_recipe(doc: Mapping[str, Any], *, source: Path) -> Result[Recipe, ConfigValidationError]:
@@ -83,6 +134,11 @@ def parse_recipe(doc: Mapping[str, Any], *, source: Path) -> Result[Recipe, Conf
             return err
         case Ok(schema):
             pass
+    match _parse_ui_meta(doc.get("ui"), schema, source=source):
+        case Err() as err:
+            return err
+        case Ok(ui_meta):
+            pass
     body = doc[kind]
     unknown_vars = referenced_variables(body) - set(schema.by_name())
     # loop variables are declared inline; only flag names that are neither params nor `for` vars
@@ -94,7 +150,7 @@ def parse_recipe(doc: Mapping[str, Any], *, source: Path) -> Result[Recipe, Conf
                 f"{source}: body references undeclared variable(s) {sorted(unknown_vars)}; declare them under `params`"
             )
         )
-    return Ok(Recipe(kind=str(kind), id=rid, params=schema, body=body, source=source))
+    return Ok(Recipe(kind=str(kind), id=rid, params=schema, body=body, source=source, ui=ui_meta))
 
 
 def _declared_loop_vars(node: Any) -> set[str]:
@@ -118,16 +174,33 @@ def recipe_to_doc(recipe: Recipe) -> JsonDict:
         "kind": recipe.kind,
         "id": recipe.id,
     }
+    if any((recipe.ui.title, recipe.ui.description, recipe.ui.category, recipe.ui.presets)):
+        ui_doc: JsonDict = {}
+        if recipe.ui.title:
+            ui_doc["title"] = recipe.ui.title
+        if recipe.ui.description:
+            ui_doc["description"] = recipe.ui.description
+        if recipe.ui.category:
+            ui_doc["category"] = recipe.ui.category
+        if recipe.ui.presets:
+            ui_doc["presets"] = [{"label": p.label, "with": dict(p.params)} for p in recipe.ui.presets]
+        doc["ui"] = ui_doc
     if recipe.params.params:
         params: JsonDict = {}
         for p in recipe.params.params:
             spec: JsonDict = {"type": p.type}
+            if p.label:
+                spec["label"] = p.label
+            if p.description:
+                spec["description"] = p.description
             if p.type == "list" and p.items != "string":
                 spec["items"] = p.items
             if p.nullable:
                 spec["nullable"] = True
             if p.has_default:
                 spec["default"] = p.default
+            if p.options:
+                spec["options"] = [{"label": o.label, "value": o.value} for o in p.options]
             params[p.name] = spec
         doc["params"] = params
     doc[recipe.kind] = recipe.body
@@ -211,3 +284,134 @@ class Library:
             except ValueError:
                 continue
         return None
+
+
+@dataclass(frozen=True, slots=True)
+class FolderPreview:
+    id: str
+    title: str
+    cover_url: str
+    row_titles: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class RecipeUiSummary:
+    kind: str
+    id: str
+    title: str
+    description: str
+    category: str
+    backdrop_url: str
+    folders: tuple[FolderPreview, ...]
+    required_secrets: tuple[str, ...]
+    params: ParamSchema
+    presets: tuple[RecipePreset, ...]
+    is_local: bool = False
+
+
+_SYMBOLIC_SECRET_HINTS: Mapping[tuple[str, str], str] = {
+    ("addon", "bingecat"): "SECRET_BINGECAT_TOKEN",
+    ("preset", "ito"): "SECRET_ITSOUT_TOKEN",
+}
+
+
+def _infer_secrets(node: Any, library: Library, seen_refs: set[tuple[str, str]]) -> set[str]:
+    secrets: set[str] = set()
+    if isinstance(node, str):
+        secrets.update(m.group(1) for m in SECRET_PLACEHOLDER_RE.finditer(node))
+    elif isinstance(node, list):
+        for item in node:
+            secrets |= _infer_secrets(item, library, seen_refs)
+    elif isinstance(node, Mapping):
+        for field_name, val in _SYMBOLIC_SECRET_HINTS:
+            if node.get(field_name) == val:
+                secrets.add(_SYMBOLIC_SECRET_HINTS[(field_name, val)])
+        ref = node.get("ref")
+        if isinstance(ref, str) and "${" not in ref:
+            for k in ("folder", "catalog"):
+                if (k, ref) not in seen_refs and (k, ref) in library.recipes:
+                    seen_refs.add((k, ref))
+                    secrets |= _infer_secrets(library.recipes[(k, ref)].body, library, seen_refs)
+        for v in node.values():
+            secrets |= _infer_secrets(v, library, seen_refs)
+    return secrets
+
+
+def describe_recipe(
+    recipe: Recipe,
+    library: Library,
+    *,
+    with_params: Mapping[str, Any] | None = None,
+    is_local: bool = False,
+) -> RecipeUiSummary:
+    """Purely derives a UI-ready summary (title, folder cover previews, required secrets, params) for a recipe."""
+    sample_params = dict(with_params) if with_params else None
+    if sample_params is None and recipe.ui.presets:
+        sample_params = dict(recipe.ui.presets[0].params)
+
+    rendered_body: Any = recipe.body
+    match bind_params(recipe.params, sample_params, context=f"{recipe.kind}/{recipe.id}"):
+        case Ok(bound):
+            match expand(recipe.body, bound, context=f"{recipe.kind}/{recipe.id}"):
+                case Ok(exp):
+                    rendered_body = exp
+                case Err():
+                    pass
+        case Err():
+            pass
+
+    title = recipe.ui.title
+    backdrop_url = ""
+    folders: list[FolderPreview] = []
+    if isinstance(rendered_body, Mapping):
+        if not title and isinstance(rendered_body.get("title"), str):
+            title = rendered_body["title"]
+        if isinstance(rendered_body.get("backdropImageUrl"), str):
+            backdrop_url = rendered_body["backdropImageUrl"]
+        raw_folders = rendered_body.get("folders")
+        if isinstance(raw_folders, list):
+            for f_item in raw_folders:
+                if not isinstance(f_item, Mapping):
+                    continue
+                f_doc: Mapping[str, Any] | None = None
+                if isinstance(f_item.get("ref"), str):
+                    match library.render("folder", f_item["ref"], f_item.get("with")):
+                        case Ok(rf) if isinstance(rf, Mapping):
+                            f_doc = rf
+                        case _:
+                            pass
+                else:
+                    f_doc = f_item
+                if f_doc is not None:
+                    sources = f_doc.get("sources")
+                    rows = tuple(
+                        str(s.get("title"))
+                        for s in (sources if isinstance(sources, list) else [])
+                        if isinstance(s, Mapping) and s.get("title")
+                    )
+                    folders.append(
+                        FolderPreview(
+                            id=str(f_doc.get("id") or ""),
+                            title=str(f_doc.get("title") or ""),
+                            cover_url=str(f_doc.get("coverImageUrl") or ""),
+                            row_titles=rows,
+                        )
+                    )
+
+    if not title:
+        title = recipe.id.removeprefix("col-").removeprefix("fld-").replace("-", " ").title()
+
+    inferred = _infer_secrets(rendered_body, library, set())
+    return RecipeUiSummary(
+        kind=recipe.kind,
+        id=recipe.id,
+        title=title,
+        description=recipe.ui.description,
+        category=recipe.ui.category or recipe.kind,
+        backdrop_url=backdrop_url,
+        folders=tuple(folders),
+        required_secrets=tuple(sorted(inferred)),
+        params=recipe.params,
+        presets=recipe.ui.presets,
+        is_local=is_local,
+    )

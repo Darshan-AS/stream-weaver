@@ -3,18 +3,39 @@
   "version": 1,
   "kind": "meta",
   "id": "default",
+  "ui": {
+    "title": "8-Source Ratings + Hero Trailers",
+    "description": "MDBList ratings strip (IMDb, TMDB, RT, Metacritic, Letterboxd, Trakt, MAL), TMDB Modern Home hero trailers, and Trakt comments."
+  },
   "params": {
     "watchProgressSource": {
       "type": "string",
-      "default": "trakt"
+      "label": "Watch Progress Source",
+      "default": "trakt",
+      "options": [
+        { "label": "Trakt", "value": "trakt" },
+        { "label": "Simkl", "value": "simkl" },
+        { "label": "Nuvio Cloud", "value": "nuvio" }
+      ]
     },
     "librarySource": {
       "type": "string",
-      "default": "trakt"
+      "label": "Library Source",
+      "default": "trakt",
+      "options": [
+        { "label": "Trakt", "value": "trakt" },
+        { "label": "Simkl", "value": "simkl" },
+        { "label": "Nuvio Cloud", "value": "nuvio" }
+      ]
     },
     "moreLikeThisSource": {
       "type": "string",
-      "default": "trakt"
+      "label": "More Like This Source",
+      "default": "trakt",
+      "options": [
+        { "label": "Trakt", "value": "trakt" },
+        { "label": "TMDB", "value": "tmdb" }
+      ]
     }
   },
   "meta": {

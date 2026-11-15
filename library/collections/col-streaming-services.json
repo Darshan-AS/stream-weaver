@@ -3,10 +3,26 @@
   "version": 1,
   "kind": "collection",
   "id": "col-streaming-services",
+  "ui": {
+    "title": "Streaming Services",
+    "description": "Tabbed OTT catalogs across Netflix, Prime Video, Apple TV+, HBO Max, Disney+, Hulu, Paramount+, and Peacock.",
+    "category": "platforms"
+  },
   "params": {
     "services": {
       "type": "list",
       "items": "string",
+      "label": "Included OTT Folders",
+      "options": [
+        { "label": "Netflix", "value": "fld-netflix" },
+        { "label": "Prime Video", "value": "fld-prime-video" },
+        { "label": "Apple TV+", "value": "fld-apple-tv" },
+        { "label": "HBO Max", "value": "fld-hbo-max" },
+        { "label": "Disney+", "value": "fld-disney-plus" },
+        { "label": "Hulu", "value": "fld-hulu" },
+        { "label": "Paramount+", "value": "fld-paramount-plus" },
+        { "label": "Peacock", "value": "fld-peacock" }
+      ],
       "default": [
         "fld-netflix",
         "fld-prime-video",

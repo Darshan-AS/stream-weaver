@@ -3,6 +3,11 @@
   "version": 1,
   "kind": "collection",
   "id": "col-genres-moods",
+  "ui": {
+    "title": "Genres & Moods",
+    "description": "Sci-Fi & Fantasy, Crime & Mystery Thrillers, Action & Adventure, Comedy, Animation, and Romance.",
+    "category": "discovery"
+  },
   "collection": {
     "id": "col-genres-moods",
     "title": "Genres & Moods",
