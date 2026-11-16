@@ -211,4 +211,4 @@ flowchart LR
 
 | Profile | Display | AIOStreams | AIOMetadata | Nuvio | Stremio | Home collections | Extras |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `don` | Demo | `default` | `default` | `don` → index 1 | `don` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs`, `col-genres-moods`, `col-franchises` | `bingecat`, `cinemeta` |
+| `main` | Demo | `default` | `default` | `main` → index 1 | `main` | `col-for-you-discovery`, `col-streaming-services`, `col-indian-cinema`, `col-anime-japanese`, `col-courses-docs`, `col-genres-moods`, `col-franchises` | `bingecat`, `cinemeta` |

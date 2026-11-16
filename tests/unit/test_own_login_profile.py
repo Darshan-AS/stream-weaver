@@ -67,7 +67,7 @@ def test_profile_on_its_own_nuvio_login(tmp_path: Path) -> None:
             "--nuvio-profile",
             "GF",
             "--extras-from",
-            "don",
+            "main",
             "--dir",
             str(t),
         ],

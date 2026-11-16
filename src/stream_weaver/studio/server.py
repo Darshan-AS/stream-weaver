@@ -266,7 +266,7 @@ class StudioDispatcher:
             payload = self._parse_json_body(body)
             if payload is None:
                 return _err_resp(400, "Request body must be a JSON object")
-            login_name = str(payload.get("login") or "don")
+            login_name = str(payload.get("login") or "")
             email = str(payload["email"]) if isinstance(payload.get("email"), str) and payload["email"].strip() else None
             password = str(payload["password"]) if isinstance(payload.get("password"), str) and payload["password"] else None
             with self._workspace_paths(payload) as paths:

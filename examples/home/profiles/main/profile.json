@@ -1,7 +1,7 @@
 {
   "$schema": "https://stream-weaver.dev/schemas/profile.v1.json",
   "version": 1,
-  "name": "don",
+  "name": "main",
   "displayName": "Demo",
   "instances": {
     "aiostreams": "default",
@@ -9,7 +9,7 @@
   },
   "clients": {
     "nuvio": {
-      "login": "don",
+      "login": "main",
       "profile": {},
       "platforms": [
         "tv",
@@ -18,7 +18,7 @@
       ]
     },
     "stremio": {
-      "login": "don"
+      "login": "main"
     }
   },
   "addons": {
@@ -175,7 +175,7 @@
     ]
   },
   "appearance": {
-    "emoji": "💀",
+    "emoji": "🎬",
     "accentColor": "#3b82f6"
   }
 }

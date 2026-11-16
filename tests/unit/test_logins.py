@@ -270,7 +270,7 @@ def test_sw_login_nuvio_uses_default_anon_key_and_reuses_template_prefix(
     example = Path(__file__).resolve().parents[2] / "examples" / "home"
     t = tmp_path / "t"
     assert runner.invoke(app, ["init", str(t), "--from", str(example)]).exit_code == 0
-    # Leave NUVIO_SUPABASE_ANON_KEY blank and omit --prefix; `don -> NUVIO` in tenant.json is reused.
+    # Leave NUVIO_SUPABASE_ANON_KEY blank and omit --prefix; `main -> NUVIO` in tenant.json is reused.
     monkeypatch.setattr("stream_weaver.cli.app.HttpxClient", lambda: _FakeClientCtx(_FakeNuvioHttp()))
     res = runner.invoke(
         app,
@@ -278,7 +278,7 @@ def test_sw_login_nuvio_uses_default_anon_key_and_reuses_template_prefix(
             "login",
             "nuvio",
             "--login",
-            "don",
+            "main",
             "--email",
             "cloner@example.com",
             "--password",

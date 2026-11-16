@@ -234,6 +234,7 @@ def main() -> None:
     ap.add_argument("--from", dest="source", default="tenants/don")
     ap.add_argument("--to", dest="target", default="examples/home")
     ap.add_argument("--profile", dest="profile", default="don")
+    ap.add_argument("--out-profile", dest="out_profile", default="main")
     args = ap.parse_args()
 
     src = (ROOT / args.source).resolve()
@@ -301,6 +302,9 @@ def main() -> None:
 
     prof_doc = copy.deepcopy(raw_src_profile)
     prof_doc.pop("accountId", None)
+    prof_doc["name"] = args.out_profile
+    if isinstance(prof_doc.get("appearance"), dict):
+        prof_doc["appearance"]["emoji"] = "🎬"
     prof_doc["collections"] = [
         c for c in prof_doc.get("collections", []) if not (isinstance(c, dict) and c.get("ref") in dropped_ids)
     ]
@@ -326,13 +330,6 @@ def main() -> None:
         out.write_text(json.dumps(scrub.walk(d), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"✅ {rel}")
 
-    if (dst / "profiles").is_dir():
-        shutil.rmtree(dst / "profiles")
-    prof_out = dst / "profiles" / args.profile / "profile.json"
-    prof_out.parent.mkdir(parents=True, exist_ok=True)
-    prof_out.write_text(json.dumps(scrub.walk(prof_doc), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"✅ {prof_out.relative_to(dst)}")
-
     src_manifest = json.loads((src / "tenant.json").read_text(encoding="utf-8")) if (src / "tenant.json").is_file() else {}
     manifest = default_tenant_manifest("home")
     shared_lib = ROOT / "library"
@@ -341,13 +338,22 @@ def main() -> None:
     used_logins: dict[str, dict[str, str]] = {}
     for plat, spec in (prof_doc.get("clients") or {}).items():
         if isinstance(spec, dict) and isinstance(spec.get("login"), str):
-            lname = spec["login"]
-            prefix = (src_manifest.get("logins") or {}).get(plat, {}).get(lname)
+            src_lname = spec["login"]
+            out_lname = args.out_profile if src_lname == args.profile else src_lname
+            spec["login"] = out_lname
+            prefix = (src_manifest.get("logins") or {}).get(plat, {}).get(src_lname)
             if prefix:
-                used_logins.setdefault(plat, {})[lname] = prefix
+                used_logins.setdefault(plat, {})[out_lname] = prefix
     manifest["logins"] = used_logins
-    manifest["profiles"] = [args.profile]
+    manifest["profiles"] = [args.out_profile]
     (dst / "tenant.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    if (dst / "profiles").is_dir():
+        shutil.rmtree(dst / "profiles")
+    prof_out = dst / "profiles" / args.out_profile / "profile.json"
+    prof_out.parent.mkdir(parents=True, exist_ok=True)
+    prof_out.write_text(json.dumps(scrub.walk(prof_doc), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"✅ {prof_out.relative_to(dst)}")
 
     env_example = src / ".env.example"
     if env_example.is_file():

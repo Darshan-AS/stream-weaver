@@ -15,14 +15,14 @@
   },
   "logins": {
     "nuvio": {
-      "don": "NUVIO"
+      "main": "NUVIO"
     },
     "stremio": {
-      "don": "STREMIO"
+      "main": "STREMIO"
     }
   },
   "profiles": [
-    "don"
+    "main"
   ],
   "libraries": [
     "library",

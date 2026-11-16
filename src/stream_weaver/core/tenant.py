@@ -43,7 +43,7 @@ type InstanceRegistry = Mapping[str, Mapping[str, str]]
 """service → instance name → env key prefix (e.g. {"aiometadata": {"default": "AIOMETADATA"}})."""
 
 type LoginRegistry = Mapping[str, Mapping[str, str]]
-"""platform → login name → env key prefix (e.g. {"nuvio": {"don": "NUVIO_DON"}})."""
+"""platform → login name → env key prefix (e.g. {"nuvio": {"main": "NUVIO"}})."""
 
 
 DEFAULT_LIBRARY_ROOTS: tuple[str, ...] = ("library", "../../library")

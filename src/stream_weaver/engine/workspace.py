@@ -1004,7 +1004,7 @@ def apply_studio_mutation(
             )
         if "stremioEnabled" in prof_mut:
             if bool(prof_mut["stremioEnabled"]):
-                st_login = updated_prof.stremio.login if updated_prof.stremio else (updated_prof.nuvio.login if updated_prof.nuvio else "don")
+                st_login = updated_prof.stremio.login if updated_prof.stremio else (updated_prof.nuvio.login if updated_prof.nuvio else "main")
                 updated_prof = replace(updated_prof, stremio=StremioClientSpec(login=st_login))
             else:
                 updated_prof = replace(updated_prof, stremio=None)
@@ -1113,7 +1113,7 @@ def apply_studio_mutation(
 def login_nuvio_and_list_profiles(
     paths: TenantPaths,
     *,
-    login: str = "don",
+    login: str = "",
     email: str | None = None,
     password: str | None = None,
     http_client: HttpClientProtocol | None = None,
@@ -1132,10 +1132,10 @@ def login_nuvio_and_list_profiles(
 
     env = load_env_file(paths.env_file)
     anon_key = resolve_nuvio_anon_key(env)
-    login_name = login.strip().lower()
-    env_prefix = manifest.logins.get("nuvio", {}).get(
-        login_name, f"NUVIO_{login_name.upper().replace('-', '_')}"
-    )
+    existing_nuvio = manifest.logins.get("nuvio", {})
+    login_name = login.strip().lower() or next(iter(existing_nuvio), "main")
+    default_prefix = "NUVIO" if login_name == "main" else f"NUVIO_{login_name.upper().replace('-', '_')}"
+    env_prefix = existing_nuvio.get(login_name, default_prefix)
 
     def _run(client: HttpClientProtocol) -> Result[JsonDict, StreamWeaverError]:
         working = dict(env)

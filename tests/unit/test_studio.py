@@ -160,7 +160,7 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
                 "SECRET_SUBSOURCE_API_KEY": "sub-tok",
             },
             "profile": {
-                "name": "don",
+                "name": "main",
                 "collections": [
                     {
                         "raw": {
@@ -210,7 +210,7 @@ def test_local_gitops_studio_end_to_end(tmp_path: Path) -> None:
     login_resp = dispatcher.dispatch(
         "POST",
         "/api/nuvio-login",
-        json.dumps({"login": "don", "email": "user@example.org", "password": "pw"}).encode("utf-8"),
+        json.dumps({"login": "main", "email": "user@example.org", "password": "pw"}).encode("utf-8"),
     )
     assert login_resp.status == 200, login_resp.body
     login_data = json.loads(login_resp.body)
@@ -243,7 +243,7 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
     assert "tenant.json" in bundle["files"]
 
     # 2. Mutating with browser bundle returns updated bundle without touching `examples/home`
-    before_profile = (EXAMPLE / "profiles" / "don" / "profile.json").read_text(encoding="utf-8")
+    before_profile = (EXAMPLE / "profiles" / "main" / "profile.json").read_text(encoding="utf-8")
     r2 = dispatcher.dispatch(
         "POST",
         "/api/mutate",
@@ -255,7 +255,7 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
                     "enabledPacks": ["core_debrid"],
                     "envUpdates": {"SECRET_ALLDEBRID_API_KEY": "ad-secret-7777"},
                     "profile": {
-                        "name": "don",
+                        "name": "main",
                         "displayName": "BrowserUser",
                         "collections": [{"ref": "col-genres-moods"}],
                     },
@@ -268,7 +268,7 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
     assert d2["state"]["debrid"]["active"] == "alldebrid"
     assert d2["state"]["profiles"][0]["displayName"] == "BrowserUser"
     assert d2["bundle"]["env"]["SECRET_ALLDEBRID_API_KEY"] == "ad-secret-7777"
-    assert (EXAMPLE / "profiles" / "don" / "profile.json").read_text(encoding="utf-8") == before_profile
+    assert (EXAMPLE / "profiles" / "main" / "profile.json").read_text(encoding="utf-8") == before_profile
 
     # 3. Export zip from stateless bundle includes customized profile.json & excludes `.env`
     r3 = dispatcher.dispatch(
@@ -276,7 +276,7 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
     )
     assert r3.status == 200
     with zipfile.ZipFile(io.BytesIO(r3.body)) as zf:
-        exported_prof = json.loads(zf.read("home/profiles/don/profile.json").decode("utf-8"))
+        exported_prof = json.loads(zf.read("home/profiles/main/profile.json").decode("utf-8"))
         assert exported_prof["displayName"] == "BrowserUser"
         assert "home/.env" not in zf.namelist()
 
@@ -296,7 +296,7 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
                         "SECRET_TVDB_API_KEY": "tvdb-v4",
                     },
                     "profile": {
-                        "name": "don",
+                        "name": "main",
                         "meta": {"enabled": False},
                         "collections": [{"ref": "col-streaming-services"}, {"ref": "col-genres-moods"}],
                     },

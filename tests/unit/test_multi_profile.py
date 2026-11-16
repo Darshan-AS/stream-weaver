@@ -22,7 +22,7 @@ DAD_PROFILE = {
     "name": "dad",
     "displayName": "Dad",
     "instances": {"aiostreams": "default", "aiometadata": "dad"},
-    "clients": {"nuvio": {"login": "don", "profile": {"match": {"name": "Dad"}}, "platforms": ["tv", "desktop", "mobile"]}},
+    "clients": {"nuvio": {"login": "main", "profile": {"match": {"name": "Dad"}}, "platforms": ["tv", "desktop", "mobile"]}},
     "addons": {"extra": [{"name": "cinemeta", "transportUrl": "https://v3-cinemeta.strem.io", "customName": "Cinemeta"}]},
     "collections": [
         {"ref": "regional-cinema", "with": {"language": "kn", "slug": "kannada", "label": "Kannada"}},

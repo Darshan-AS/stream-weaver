@@ -56,7 +56,7 @@ def test_engine_inspect_and_mutate_synchronizes_entire_tenant(tmp_path: Path) ->
             "enabledPacks": ["core_debrid", "http_fallbacks", "core_subtitles"],
             "envUpdates": {"SECRET_RD_API_KEY": "rd_super_secret_9999"},
             "profile": {
-                "name": "don",
+                "name": "main",
                 "displayName": "Arjun",
                 "stremioEnabled": False,
                 "collections": [
@@ -200,7 +200,7 @@ def test_diy_custom_collection_mdblist_slug_and_patch_safe_mutation(tmp_path: Pa
     }
     mut_res = apply_studio_mutation(
         paths,
-        {"profile": {"name": "don", "meta": {"enabled": False}, "collections": [{"raw": diy_col}]}},
+        {"profile": {"name": "main", "meta": {"enabled": False}, "collections": [{"raw": diy_col}]}},
     )
     assert isinstance(mut_res, Ok), mut_res
 

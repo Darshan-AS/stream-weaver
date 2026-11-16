@@ -176,3 +176,5 @@ def test_bundled_resource_roots_resolve() -> None:
     assert (lib_root / "collections").is_dir()
     assert tpl_root is not None
     assert (tpl_root / "tenant.json").is_file()
+    assert (tpl_root / "profiles" / "main" / "profile.json").is_file()
+    assert not (tpl_root / "profiles" / "don").exists()

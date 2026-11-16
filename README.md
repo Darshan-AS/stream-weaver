@@ -143,11 +143,11 @@ Open `tenants/<you>/.env` and fill in:
    ```
 3. **Sign in to Nuvio via `sw` and push your full stack:**
    ```bash
-   uv run sw login nuvio --login don --tenant <you>
+   uv run sw login nuvio --login main --tenant <you>
    uv run sw push --tenant <you>
    ```
-   `sw push` refreshes your live AIOStreams / AIOMetadata / BingeCat manifests so your personal BingeCat list IDs resolve automatically, then syncs your addons, all 7 Home Collections, `Elite-Badges`, MDBList/TMDB details enrichment, and app settings straight to Nuvio Profile #1 (or pass `--nuvio-profile` / edit `profiles/don/profile.json` to target another profile from `uv run sw profile nuvio-list --login don --tenant <you>`).
-4. *(Optional — AIOManager & Stremio)*: If you also use **AIOManager** Cloud Sync, fill `AIOMANAGER_URL`, `AIOMANAGER_UUID`, and `AIOMANAGER_SYNC_PASSWORD` in `.env`. Either sign in to Stremio (`uv run sw login stremio --login don --tenant <you>`) or delete `"stremio": {"login": "don"}` from `tenants/<you>/profiles/don/profile.json` if you only use Nuvio.
+   `sw push` refreshes your live AIOStreams / AIOMetadata / BingeCat manifests so your personal BingeCat list IDs resolve automatically, then syncs your addons, all 7 Home Collections, `Elite-Badges`, MDBList/TMDB details enrichment, and app settings straight to Nuvio Profile #1 (or pass `--nuvio-profile` / edit `profiles/main/profile.json` to target another profile from `uv run sw profile nuvio-list --login main --tenant <you>`).
+4. *(Optional — AIOManager & Stremio)*: If you also use **AIOManager** Cloud Sync, fill `AIOMANAGER_URL`, `AIOMANAGER_UUID`, and `AIOMANAGER_SYNC_PASSWORD` in `.env`. Either sign in to Stremio (`uv run sw login stremio --login main --tenant <you>`) or delete `"stremio": {"login": "main"}` from `tenants/<you>/profiles/main/profile.json` if you only use Nuvio.
 
 #### Optional: Enable Contraband (Peterson Academy)
 If you also want the **Peterson Academy** folder inside *Courses & Documentaries*:

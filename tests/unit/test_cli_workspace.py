@@ -160,7 +160,7 @@ def test_sw_init_from_template_copies_documents(tmp_path: Path) -> None:
     assert res.exit_code == 0, res.output
     for doc in ("aiostreams", "aiometadata", "aiomanager"):
         assert (target / f"{doc}.json").is_file(), doc
-    prof_file = target / "profiles" / "don" / "profile.json"
+    prof_file = target / "profiles" / "main" / "profile.json"
     assert prof_file.is_file()
     prof_doc = json.loads(prof_file.read_text(encoding="utf-8"))
     # All 7 curated collections ship in the template, and Nuvio defaults cleanly to profile index 1
