@@ -123,6 +123,7 @@ from stream_weaver.providers.services.nuvio_session import (
     password_grant,
     resolve_nuvio_anon_key,
 )
+from stream_weaver.resources import bundled_shared_library_root, bundled_starter_template_root
 from stream_weaver.studio import StudioDispatcher, serve_studio
 
 app = typer.Typer(
@@ -1163,9 +1164,13 @@ def cmd_config_init(
         Path | None,
         typer.Option(
             "--from",
-            help="Template tenant directory whose JSON documents are copied as a starting point (e.g. examples/home)",
+            help="Template tenant directory whose JSON documents are copied (or pass --starter for bundled starter)",
         ),
     ] = None,
+    starter: Annotated[
+        bool,
+        typer.Option("--starter", help="Seed from the bundled starter template (works even in standalone wheel installs)"),
+    ] = False,
     force: Annotated[
         bool,
         typer.Option("--force", help="Overwrite tenant.json, .env.example, .gitignore and template documents if present"),
@@ -1190,6 +1195,12 @@ def cmd_config_init(
     tenant_name = (name or target_dir.name).strip().lower()
     paths.architecture_dir.mkdir(parents=True, exist_ok=True)
 
+    if starter and template_dir is None:
+        template_dir = bundled_starter_template_root()
+        if template_dir is None:
+            err_console.print("❌ Bundled starter template not found.")
+            raise typer.Exit(code=1)
+
     manifest_doc = default_tenant_manifest(tenant_name)
     if template_dir is not None and (template_dir.expanduser().resolve() / TENANT_FILE).is_file():
         tpl_root = template_dir.expanduser().resolve()
@@ -1201,9 +1212,16 @@ def cmd_config_init(
                 roots: list[str] = ["library"]
                 for rel in tpl_libs if isinstance(tpl_libs, list) else []:
                     abs_root = (tpl_root / str(rel)).resolve()
-                    if abs_root == (tpl_root / "library").resolve() or not abs_root.is_dir():
+                    if abs_root == (tpl_root / "library").resolve():
                         continue
-                    roots.append(os.path.relpath(abs_root, target_dir))
+                    if not abs_root.is_dir():
+                        fallback_lib = bundled_shared_library_root()
+                        if fallback_lib is not None:
+                            abs_root = fallback_lib.resolve()
+                    if abs_root.is_dir():
+                        roots.append(os.path.relpath(abs_root, target_dir))
+                if len(roots) == 1 and (fallback_lib := bundled_shared_library_root()) is not None:
+                    roots.append(os.path.relpath(fallback_lib.resolve(), target_dir))
                 manifest_doc["libraries"] = roots
             case Err():
                 pass
@@ -3033,24 +3051,23 @@ def cmd_studio(
     tenant: TenantNameOption = None,
 ) -> None:
     """Launch the visual Stream Weaver Studio Web UI (customize collections, packs, keys & click Push)."""
-    repo_root = Path(__file__).resolve().parents[3]
-    shared_lib = repo_root / "library"
+    shared_lib = bundled_shared_library_root()
     if stateless:
-        tpl = (template_dir.expanduser().resolve() if template_dir else (repo_root / "examples" / "home"))
-        if not tpl.is_dir():
-            err_console.print(f"❌ Starter template directory not found: {tpl} (pass --template <dir>)")
+        tpl = template_dir.expanduser().resolve() if template_dir else bundled_starter_template_root()
+        if tpl is None or not tpl.is_dir():
+            err_console.print("❌ Starter template directory not found (pass --template <dir>)")
             raise typer.Exit(code=1)
         dispatcher = StudioDispatcher(
             tenant_paths=None,
             template_root=tpl,
-            shared_library_root=shared_lib if shared_lib.is_dir() else None,
+            shared_library_root=shared_lib,
         )
         mode_desc = f"Stateless Browser Mode (template: {tpl.name})"
     else:
         paths = _resolve_tenant(workspace_dir, tenant)
         dispatcher = StudioDispatcher(
             tenant_paths=paths,
-            shared_library_root=shared_lib if shared_lib.is_dir() else None,
+            shared_library_root=shared_lib,
         )
         mode_desc = f"Local GitOps Mode (tenant: {paths.root})"
 

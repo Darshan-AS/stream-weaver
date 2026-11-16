@@ -150,3 +150,29 @@ def test_examples_are_identity_free(path: Path) -> None:
         assert marker not in text, f"{path.relative_to(REPO)} contains identity marker {marker!r}"
     real_uuids = [u for u in UUID_RE.findall(text) if not FAKE_UUID_RE.match(u)]
     assert not real_uuids, f"{path.relative_to(REPO)} contains real-looking UUIDs: {real_uuids[:3]}"
+
+
+# ---------------------------------------------------------------------------
+# Rule 5 — uv.lock uses only public PyPI registries and bundled resources resolve
+# ---------------------------------------------------------------------------
+
+
+def test_uv_lock_references_only_public_pypi() -> None:
+    lock_path = REPO / "uv.lock"
+    if not lock_path.is_file():
+        return
+    text = lock_path.read_text(encoding="utf-8")
+    for forbidden in ("uplink.goog", "airlock-proxy", "artifact-foundry"):
+        assert forbidden not in text, f"uv.lock leaks internal proxy URL ({forbidden!r}); run `uv lock --no-config --default-index https://pypi.org/simple`"
+    assert 'registry = "https://pypi.org/simple"' in text
+
+
+def test_bundled_resource_roots_resolve() -> None:
+    from stream_weaver.resources import bundled_shared_library_root, bundled_starter_template_root
+
+    lib_root = bundled_shared_library_root()
+    tpl_root = bundled_starter_template_root()
+    assert lib_root is not None
+    assert (lib_root / "collections").is_dir()
+    assert tpl_root is not None
+    assert (tpl_root / "tenant.json").is_file()

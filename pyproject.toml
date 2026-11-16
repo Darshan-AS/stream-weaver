@@ -32,6 +32,10 @@ stream-weaver = "stream_weaver.cli.app:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/stream_weaver"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"library" = "stream_weaver/_bundled/library"
+"examples/home" = "stream_weaver/_bundled/starter"
+
 [tool.ruff]
 target-version = "py313"
 line-length = 100
