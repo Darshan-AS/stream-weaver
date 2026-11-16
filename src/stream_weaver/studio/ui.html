@@ -319,6 +319,7 @@
 
   <script>
     const STORAGE_KEY = "stream_weaver_studio_bundle_v1";
+    const CSRF_TOKEN = (document.querySelector('meta[name="sw-csrf-token"]') || {}).content || "";
     let appMode = "local";
     let bundle = null;
     let state = null;
@@ -371,11 +372,12 @@
     }
 
     async function api(path, bodyObj = null) {
+      const baseHeaders = CSRF_TOKEN ? { "X-Studio-Token": CSRF_TOKEN } : {};
       const opts = bodyObj === null
-        ? { method: "GET" }
+        ? { method: "GET", headers: baseHeaders }
         : {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { ...baseHeaders, "Content-Type": "application/json" },
             body: JSON.stringify(appMode === "stateless" && bundle ? { ...bodyObj, bundle } : bodyObj),
           };
       const res = await fetch(path, opts);
@@ -1792,9 +1794,10 @@
     document.getElementById("btn-export").onclick = async () => {
       try {
         if (dirty) await saveChanges(true);
+        const baseHeaders = CSRF_TOKEN ? { "X-Studio-Token": CSRF_TOKEN } : {};
         const opts = appMode === "stateless" && bundle
-          ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bundle }) }
-          : { method: "GET" };
+          ? { method: "POST", headers: { ...baseHeaders, "Content-Type": "application/json" }, body: JSON.stringify({ bundle }) }
+          : { method: "GET", headers: baseHeaders };
         const res = await fetch("/api/export-zip", opts);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);

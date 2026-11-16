@@ -311,3 +311,35 @@ def test_stateless_hosted_studio_persists_nothing_on_server() -> None:
     assert d4["state"]["tenant"]["aiometadataConfigureUrl"].endswith(
         "/stremio/00000000-0000-4000-8000-000000000072/configure"
     )
+
+    # 5. Live HTTP CSRF & Origin enforcement blocks drive-by cross-origin requests
+    html_text = dispatcher.dispatch("GET", "/").body.decode("utf-8")
+    assert f'<meta name="sw-csrf-token" content="{dispatcher.csrf_token}" />' in html_text
+
+    blocked_missing = dispatcher.dispatch("POST", "/api/mutate", b"{}", enforce_csrf=True)
+    assert blocked_missing.status == 403
+
+    blocked_origin = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        b"{}",
+        headers={
+            "X-Studio-Token": dispatcher.csrf_token,
+            "Host": "127.0.0.1:8787",
+            "Origin": "https://evil.example.com",
+        },
+        enforce_csrf=True,
+    )
+    assert blocked_origin.status == 403
+
+    allowed = dispatcher.dispatch(
+        "GET",
+        "/api/state",
+        headers={
+            "X-Studio-Token": dispatcher.csrf_token,
+            "Host": "127.0.0.1:8787",
+            "Origin": "http://127.0.0.1:8787",
+        },
+        enforce_csrf=True,
+    )
+    assert allowed.status == 200

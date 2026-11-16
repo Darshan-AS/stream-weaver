@@ -11,8 +11,10 @@ Supports two operating modes through one unified engine:
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
+import secrets
 import shutil
 import tempfile
 import webbrowser
@@ -22,6 +24,7 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from stream_weaver.core.result import Err, Ok
 from stream_weaver.core.secrets import parse_env_text
@@ -130,11 +133,17 @@ class StudioDispatcher:
         template_root: Path | None = None,
         shared_library_root: Path | None = None,
         http_client_factory: Callable[[], HttpClientProtocol | None] | None = None,
+        csrf_token: str | None = None,
     ) -> None:
         self._tenant_paths = tenant_paths
         self._template_root = template_root
         self._shared_library_root = shared_library_root
         self._http_client_factory = http_client_factory
+        self._csrf_token = csrf_token if csrf_token is not None else secrets.token_urlsafe(24)
+
+    @property
+    def csrf_token(self) -> str:
+        return self._csrf_token
 
     @property
     def is_stateless(self) -> bool:
@@ -169,12 +178,48 @@ class StudioDispatcher:
         except (UnicodeDecodeError, ValueError):
             return None
 
-    def dispatch(self, method: str, path: str, body: bytes = b"") -> StudioResponse:
+    def _verify_csrf_and_origin(self, headers: Mapping[str, str] | None) -> str | None:
+        hdrs = {k.lower(): v for k, v in (headers or {}).items()}
+        provided = hdrs.get("x-studio-token", "")
+        if not provided or not hmac.compare_digest(provided, self._csrf_token):
+            return "Missing or invalid X-Studio-Token session header (reload Studio tab)"
+        origin = hdrs.get("origin", "").strip()
+        host = hdrs.get("host", "").strip()
+        if origin and host:
+            origin_host = urlsplit(origin).netloc
+            if origin_host and origin_host.lower() != host.lower():
+                return f"Cross-origin Studio request rejected (origin {origin_host} != host {host})"
+        sec_site = hdrs.get("sec-fetch-site", "").strip().lower()
+        if sec_site in ("cross-site",):
+            return "Cross-site browser request to Studio rejected"
+        return None
+
+    def dispatch(
+        self,
+        method: str,
+        path: str,
+        body: bytes = b"",
+        *,
+        headers: Mapping[str, str] | None = None,
+        enforce_csrf: bool = False,
+    ) -> StudioResponse:
         clean_path = path.split("?", 1)[0]
 
         if method == "GET" and clean_path in ("/", "/index.html"):
-            html = _UI_HTML_PATH.read_bytes()
-            return StudioResponse(status=200, content_type="text/html; charset=utf-8", body=html)
+            raw_html = _UI_HTML_PATH.read_text(encoding="utf-8")
+            meta_tag = f'  <meta name="sw-csrf-token" content="{self._csrf_token}" />\n</head>'
+            injected = raw_html.replace("</head>", meta_tag, 1).encode("utf-8")
+            return StudioResponse(
+                status=200,
+                content_type="text/html; charset=utf-8",
+                body=injected,
+                headers={"X-Frame-Options": "DENY"},
+            )
+
+        if enforce_csrf and clean_path.startswith("/api/"):
+            csrf_err = self._verify_csrf_and_origin(headers)
+            if csrf_err is not None:
+                return _err_resp(403, csrf_err)
 
         if clean_path == "/api/state" and method in ("GET", "POST"):
             payload = self._parse_json_body(body) if method == "POST" else {}
@@ -421,7 +466,14 @@ def serve_studio(
         def _handle(self, method: str) -> None:
             length = int(self.headers.get("Content-Length") or "0")
             body = self.rfile.read(length) if length > 0 else b""
-            resp = dispatcher.dispatch(method, self.path, body)
+            req_headers = dict(self.headers.items())
+            resp = dispatcher.dispatch(
+                method,
+                self.path,
+                body,
+                headers=req_headers,
+                enforce_csrf=True,
+            )
             self.send_response(resp.status)
             self.send_header("Content-Type", resp.content_type)
             self.send_header("Content-Length", str(len(resp.body)))
