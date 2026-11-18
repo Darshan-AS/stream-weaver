@@ -1,7 +1,6 @@
 """Stream Weaver CLI (`sw`) — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, and AIOManager."""
 
 import concurrent.futures
-import copy
 import json
 import os
 import sys
@@ -16,45 +15,16 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from stream_weaver.cli.nuvio import (
-    ALL_NUVIO_DOCS,
-    NUVIO_TARGET_ALIASES,
-    NuvioDoc,
-    NuvioTarget,
-    local_nuvio_docs,
-    nuvio_targets,
-    profile_doc_after_pull,
-    pull_nuvio,
-    push_nuvio,
-)
+from stream_weaver.cli.nuvio import NUVIO_TARGET_ALIASES
+from stream_weaver.cli.packs import packs_app
 from stream_weaver.core.addon_index import build_addon_resolver
 from stream_weaver.core.aiomanager_accounts import (
     ResolvedProfile,
     apply_managed_accounts,
     derive_profile_from_account,
 )
-from stream_weaver.core.aiostreams_packs import (
-    DEBRID_PROVIDERS,
-    STRELINGO_BY_CODE,
-    active_debrid_provider,
-    apply_aiostreams_packs,
-    apply_debrid_provider,
-    apply_dual_subtitle_pairs,
-    apply_stream_preferences,
-    inspect_aiostreams_packs,
-    inspect_dual_subtitle_pairs,
-    inspect_stream_preferences,
-    prepare_aiometadata_for_push,
-    prepare_aiostreams_for_push,
-    sync_aiomanager_cached_debrid_catalog,
-    sync_watchlist_folder_recipe,
-)
 from stream_weaver.core.architecture import compile_architecture_bundle
-from stream_weaver.core.coercions import (
-    compute_config_diff,
-    dehydrate_aiomanager,
-    normalize_service_config,
-)
+from stream_weaver.core.coercions import normalize_service_config
 from stream_weaver.core.compile import CompiledProfile, compile_profile, derive_instance_catalogs
 from stream_weaver.core.composition import config_catalog_keys
 from stream_weaver.core.crypto import decrypt_envelope
@@ -84,7 +54,7 @@ from stream_weaver.core.profiles import (
     profile_to_doc,
 )
 from stream_weaver.core.result import Err, Ok, Result
-from stream_weaver.core.secrets import SECRET_PLACEHOLDER_RE, harvest_and_scrub, inject_secrets
+from stream_weaver.core.secrets import harvest_and_scrub
 from stream_weaver.core.tenant import (
     ENV_DIR_OVERRIDE,
     TENANT_FILE,
@@ -100,9 +70,8 @@ from stream_weaver.core.types import (
     ConfigDiffOutcome,
     JsonDict,
     ServiceId,
-    ServicePushOutcome,
 )
-from stream_weaver.effects.http import HttpClientProtocol, HttpxClient
+from stream_weaver.effects.http import HttpxClient as HttpxClient
 from stream_weaver.effects.storage import (
     load_env_file,
     read_json_file,
@@ -112,11 +81,13 @@ from stream_weaver.effects.storage import (
     write_json_file,
     write_text_file,
 )
-from stream_weaver.providers.protocols import ConfigServiceProtocol
-from stream_weaver.providers.services import (
-    build_config_services,
-    refresh_addon_manifests,
-    warm_home_catalogs,
+from stream_weaver.engine import verify_workspace_health
+from stream_weaver.engine.workspace import (
+    apply_debrid_and_packs,
+    diff_workspace,
+    pull_workspace,
+    push_workspace,
+    warm_workspace_catalogs,
 )
 from stream_weaver.providers.services.nuvio_session import (
     NuvioSessionPool,
@@ -133,6 +104,7 @@ app = typer.Typer(
 )
 config_app = typer.Typer(help="Manage AIOStreams, AIOMetadata, and AIOManager GitOps configurations.")
 app.add_typer(config_app, name="config")
+app.add_typer(packs_app, name="packs")
 
 console = Console(markup=False, highlight=False)
 err_console = Console(stderr=True, markup=False, highlight=False)
@@ -422,29 +394,6 @@ def _load_profiles(
     return Ok(out)
 
 
-def _managed_aiomanager_doc(
-    scrubbed_cfg: JsonDict,
-    tenant_name: str,
-    resolved_profiles: Sequence[ResolvedProfile],
-) -> tuple[JsonDict, list[str]]:
-    """Applies managed `accounts[]` to a scrubbed aiomanager doc; returns the doc and human notes."""
-    if not resolved_profiles:
-        return scrubbed_cfg, []
-    outcome = apply_managed_accounts(scrubbed_cfg, tenant_name, resolved_profiles)
-    notes = [f"managed account: {m}" for m in outcome.managed]
-    notes += [f"unmanaged account kept as-is: {u}" for u in outcome.unmanaged]
-    doc = outcome.state
-    # Transient per-account hint for name-based Nuvio profile resolution (stripped on persist).
-    by_id = {rp.profile.account_id or "": rp for rp in resolved_profiles}
-    for acc in doc.get("accounts", []):
-        rp = by_id.get(str(acc.get("id")))
-        if rp is None:
-            rp = next((r for r in resolved_profiles if r.profile.display_name == acc.get("name")), None)
-        if rp and rp.profile.nuvio and rp.profile.nuvio.profile_name and not rp.profile.nuvio.profile_id:
-            acc["nuvioProfileName"] = rp.profile.nuvio.profile_name
-    return doc, notes
-
-
 def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
     cleaned = target.strip().lower()
     if cleaned == "all":
@@ -458,16 +407,6 @@ def _resolve_service_targets(target: str) -> tuple[ServiceId, ...]:
         + ", ".join(NUVIO_TARGET_ALIASES)
     )
     raise typer.Exit(code=1)
-
-
-def _nuvio_docs_for_target(target: str, *, implicit_all: bool) -> tuple[NuvioDoc, ...]:
-    """Which Nuvio documents a target addresses directly (`all` includes them only where `implicit_all`)."""
-    cleaned = target.strip().lower()
-    if cleaned in NUVIO_TARGET_ALIASES:
-        return NUVIO_TARGET_ALIASES[cleaned]
-    if cleaned == "all" and implicit_all:
-        return ALL_NUVIO_DOCS
-    return ()
 
 
 def _read_scrubbed_aiomanager(paths: TenantPaths) -> JsonDict:
@@ -546,29 +485,16 @@ def _profiles_summary(ctx: _Context) -> list[JsonDict]:
                 "aiometadata": pr.instances.get("aiometadata", "default"),
                 "nuvio": nuvio,
                 "stremio": f"`{pr.stremio.login}`" if pr.stremio else None,
-                "collections": [c.get("ref") if isinstance(c, dict) and "ref" in c else (c.get("id") if isinstance(c, dict) else "?") for c in pr.collections],
+                "collections": [
+                    c.get("ref")
+                    if isinstance(c, dict) and "ref" in c
+                    else (c.get("id") if isinstance(c, dict) else "?")
+                    for c in pr.collections
+                ],
                 "extras": [a.name for a in pr.extra_addons],
             }
         )
     return rows
-
-
-def _nuvio_targets_or_exit(
-    ctx: _Context,
-    compiled: Sequence[CompiledProfile],
-    env_override: Mapping[str, str] | None = None,
-) -> list[NuvioTarget]:
-    match nuvio_targets(
-        tenant_name=ctx.manifest.name,
-        scrubbed_aiomanager=_read_scrubbed_aiomanager(ctx.paths),
-        env=dict(env_override) if env_override is not None else ctx.env,
-        compiled_profiles=compiled,
-    ):
-        case Err(t_err):
-            err_console.print(f"❌ {t_err}")
-            raise typer.Exit(code=1)
-        case Ok(targets):
-            return targets
 
 
 def _save_env_or_exit(env_path: Path, env: Mapping[str, str]) -> None:
@@ -578,182 +504,6 @@ def _save_env_or_exit(env_path: Path, env: Mapping[str, str]) -> None:
             raise typer.Exit(code=1)
         case Ok():
             pass
-
-
-def _refresh_manifests_and_recompile(
-    ctx: _Context,
-    working_env: dict[str, str],
-    http_client: HttpClientProtocol,
-    *,
-    instance: str = DEFAULT_INSTANCE,
-) -> tuple[_Context, list[CompiledProfile], dict[str, str]]:
-    """
-    Fetches live `manifest.json` for enabled HTTP(S) addons whose URL placeholders resolve in
-    `working_env`, updates `aiomanager.json`'s cached manifests on disk when present, and
-    recompiles all profiles so BingeCat / AIOStreams catalog IDs are current on first push.
-    """
-    mgr_path = ctx.paths.doc("aiomanager")
-    mgr_doc = _read_scrubbed_aiomanager(ctx.paths)
-    if mgr_doc:
-        managed_doc = apply_managed_accounts(mgr_doc, ctx.manifest.name, ctx.profiles).state
-
-        def _resolve_url_placeholders(url: str) -> str:
-            return SECRET_PLACEHOLDER_RE.sub(
-                lambda m: working_env.get(m.group(1), "") or m.group(0),
-                url,
-            )
-
-        probe_state = copy.deepcopy(managed_doc)
-        orig_acc_urls: dict[tuple[int, int], str] = {}
-        for i, acc in enumerate(probe_state.get("accounts", [])):
-            if not isinstance(acc, dict) or not isinstance(acc.get("addons"), list):
-                continue
-            for j, addon in enumerate(acc["addons"]):
-                if isinstance(addon, dict) and isinstance(addon.get("transportUrl"), str):
-                    orig_acc_urls[(i, j)] = addon["transportUrl"]
-                    addon["transportUrl"] = _resolve_url_placeholders(addon["transportUrl"])
-        orig_saved_urls: dict[int, str] = {}
-        addons_sec = probe_state.get("addons")
-        if isinstance(addons_sec, dict) and isinstance(addons_sec.get("savedAddons"), list):
-            for k, sa in enumerate(addons_sec["savedAddons"]):
-                if isinstance(sa, dict) and isinstance(sa.get("installUrl"), str):
-                    orig_saved_urls[k] = sa["installUrl"]
-                    sa["installUrl"] = _resolve_url_placeholders(sa["installUrl"])
-
-        refreshed = refresh_addon_manifests(http_client, probe_state)
-        if refreshed != probe_state:
-            for (i, j), raw_url in orig_acc_urls.items():
-                refreshed["accounts"][i]["addons"][j]["transportUrl"] = raw_url
-            if isinstance(refreshed.get("addons"), dict) and isinstance(refreshed["addons"].get("savedAddons"), list):
-                for k, raw_url in orig_saved_urls.items():
-                    refreshed["addons"]["savedAddons"][k]["installUrl"] = raw_url
-            match dehydrate_aiomanager(refreshed):
-                case Ok(dehydrated):
-                    scrubbed_mgr, working_env = harvest_and_scrub("aiomanager", dehydrated, working_env)
-                    canonical_mgr = apply_managed_accounts(
-                        scrubbed_mgr, ctx.manifest.name, ctx.profiles
-                    ).state
-                    if mgr_path.exists():
-                        _ = write_json_file(mgr_path, canonical_mgr)
-                case Err():
-                    pass
-
-    refreshed_ctx = _resolve_context(ctx.paths.root, instance=instance)
-    return refreshed_ctx, _compile_all(refreshed_ctx), working_env
-
-
-def _push_nuvio_from_profiles(
-    ctx: _Context,
-    compiled: Sequence[CompiledProfile],
-    docs: Sequence[NuvioDoc],
-    working_env: dict[str, str],
-    http_client: HttpClientProtocol,
-) -> dict[str, str]:
-    targets = _nuvio_targets_or_exit(ctx, compiled, env_override=working_env)
-    if not targets:
-        console.print("⏭️  [nuvio] No profile has a Nuvio client; nothing to push")
-        return working_env
-    with console.status(f"🚀 Pushing Nuvio {', '.join(docs)} for {', '.join(t.name for t in targets)}..."):
-        res = push_nuvio(targets, docs, working_env, http_client)
-    match res:
-        case Err(push_err):
-            err_console.print(f"❌ {push_err}")
-            raise typer.Exit(code=1)
-        case Ok((messages, refreshed)):
-            pass
-    for msg in messages:
-        console.print(f"✅ {msg}")
-    if refreshed:
-        working_env = {**working_env, **refreshed}
-        _save_env_or_exit(ctx.paths.env_file, working_env)
-    return working_env
-
-
-def _pull_nuvio_into_profiles(
-    ctx: _Context,
-    compiled: Sequence[CompiledProfile],
-    docs: Sequence[NuvioDoc],
-    working_env: dict[str, str],
-    http_client: HttpClientProtocol,
-    *,
-    strict: bool,
-) -> dict[str, str]:
-    """Pulls each profile's Nuvio documents and ejects server edits into profile.json (lossless)."""
-    targets = _nuvio_targets_or_exit(ctx, compiled)
-    if not targets:
-        if strict:
-            console.print("⏭️  [nuvio] No profile has a Nuvio client; nothing to pull")
-        return working_env
-    with console.status(f"⏳ Pulling Nuvio {', '.join(docs)} for {', '.join(t.name for t in targets)}..."):
-        res = pull_nuvio(targets, docs, working_env, http_client, ctx.library)
-    match res:
-        case Err(pull_err):
-            if strict:
-                err_console.print(f"❌ {pull_err}")
-                raise typer.Exit(code=1)
-            err_console.print(f"⚠️  [nuvio] {pull_err}")
-            return working_env
-        case Ok((pulled, refreshed)):
-            pass
-    if refreshed:
-        working_env = {**working_env, **refreshed}
-    _save_env_or_exit(ctx.paths.env_file, working_env)
-    for p in pulled:
-        if not p.changed_docs:
-            console.print(f"✅ [nuvio:{p.name}] {', '.join(docs)} match the profile's recipes — nothing ejected")
-            continue
-        pf = profile_file(ctx.paths, p.name)
-        match write_json_file(pf, profile_doc_after_pull(p)):
-            case Err(write_err):
-                err_console.print(f"❌ {write_err}")
-                raise typer.Exit(code=1)
-            case Ok(saved):
-                console.print(
-                    f"✅ [nuvio:{p.name}] Ejected server edits for {', '.join(p.changed_docs)} into "
-                    f"{ctx.paths.relative(saved)} (review the diff; move durable changes into recipes)"
-                )
-    return working_env
-
-
-def _diff_nuvio_profiles(
-    ctx: _Context,
-    compiled: Sequence[CompiledProfile],
-    docs: Sequence[NuvioDoc],
-    env: Mapping[str, str],
-    http_client: HttpClientProtocol,
-    *,
-    strict: bool,
-) -> list[ConfigDiffOutcome]:
-    targets = _nuvio_targets_or_exit(ctx, compiled)
-    if not targets:
-        return []
-    match pull_nuvio(targets, docs, dict(env), http_client, ctx.library):
-        case Err(pull_err):
-            if strict:
-                err_console.print(f"❌ {pull_err}")
-                raise typer.Exit(code=1)
-            err_console.print(f"⚠️  [nuvio] {pull_err}")
-            return []
-        case Ok((pulled, _)):
-            pass
-    outcomes: list[ConfigDiffOutcome] = []
-    by_name = {cp.name: cp for cp in compiled}
-    for p in pulled:
-        local = local_nuvio_docs(by_name[p.name])
-        for kind in docs:
-            if kind not in p.remote or kind not in local:
-                continue
-            label = f"nuvio_{kind}:{p.name}" if len(pulled) > 1 else f"nuvio_{kind}"
-            local_doc = {"collections": local[kind]} if kind == "collections" else local[kind]
-            remote_doc = {"collections": p.remote[kind]} if kind == "collections" else p.remote[kind]
-            outcomes.append(compute_config_diff(_drop_version(local_doc), _drop_version(remote_doc), target=label))
-    return outcomes
-
-
-def _drop_version(doc: Mapping[str, Any]) -> JsonDict:
-    out = dict(doc)
-    out.pop("version", None)
-    return out
 
 
 def _persist_scrubbed_config(
@@ -778,79 +528,6 @@ def _persist_scrubbed_config(
             return err
         case Ok(saved_path):
             return Ok((saved_path, updated_env))
-
-
-def _pull_service(
-    service_id: ServiceId,
-    env: dict[str, str],
-    *,
-    env_path: Path,
-    configs_dir: Path,
-    services: Mapping[ServiceId, ConfigServiceProtocol],
-    bindings: Mapping[ServiceId, InstanceBinding],
-) -> Result[tuple[Path | None, dict[str, str]]]:
-    svc = services.get(service_id)
-    binding = bindings.get(service_id)
-    if svc is None or binding is None or not binding.configured_for_pull():
-        return Ok((None, env))
-
-    match svc.pull_remote(binding):
-        case Err() as err:
-            return err
-        case Ok(normalized_cfg):
-            return _persist_scrubbed_config(
-                service_id,
-                normalized_cfg,
-                env,
-                env_path=env_path,
-                configs_dir=configs_dir,
-                instance=binding.name,
-            )
-
-
-def _diff_service(
-    service_id: ServiceId,
-    env: Mapping[str, str],
-    *,
-    configs_dir: Path,
-    services: Mapping[ServiceId, ConfigServiceProtocol],
-    bindings: Mapping[ServiceId, InstanceBinding],
-    tenant_name: str = "",
-    resolved_profiles: Sequence[ResolvedProfile] = (),
-    compiled_profiles: Sequence[CompiledProfile] = (),
-) -> Result[ConfigDiffOutcome | None]:
-    """Pulls remote service config in memory, scrubs secrets, and diffs against the tenant's `{service_id}.json`."""
-    svc = services.get(service_id)
-    binding = bindings.get(service_id)
-    if svc is None or binding is None or not binding.configured_for_pull():
-        return Ok(None)
-    cfg_path = _service_doc_path(configs_dir, service_id, binding.name)
-    if not cfg_path.exists():
-        return Ok(None)
-
-    match read_json_file(cfg_path):
-        case Err() as err:
-            return err
-        case Ok(local_scrubbed):
-            pass
-    if service_id == "aiomanager":
-        # Diff what *would* be pushed: the local doc with its managed accounts regenerated from profiles.
-        local_scrubbed, _ = _managed_aiomanager_doc(local_scrubbed, tenant_name, resolved_profiles)
-        for acc in local_scrubbed.get("accounts", []):
-            acc.pop("nuvioProfileName", None)
-    if service_id == "aiometadata" and compiled_profiles:
-        match derive_instance_catalogs(binding.name, local_scrubbed, compiled_profiles):
-            case Err(derive_err):
-                return Err(derive_err)
-            case Ok(plan):
-                local_scrubbed = {**local_scrubbed, "catalogs": plan.catalogs}
-
-    match svc.pull_remote(binding):
-        case Err() as err:
-            return err
-        case Ok(remote_normalized):
-            remote_scrubbed, _ = harvest_and_scrub(service_id, remote_normalized, env)
-            return Ok(compute_config_diff(local_scrubbed, remote_scrubbed, target=service_id))
 
 
 def _render_diff_summary_table(outcomes: Sequence[ConfigDiffOutcome]) -> None:
@@ -894,135 +571,20 @@ def _print_diff_outcome(outcome: ConfigDiffOutcome, *, stat_only: bool = False) 
         console.print(outcome.unified_diff.rstrip("\n"))
 
 
-def _push_service(
-    service_id: ServiceId,
-    env: dict[str, str],
-    *,
-    env_path: Path,
-    configs_dir: Path,
-    services: Mapping[ServiceId, ConfigServiceProtocol],
-    bindings: Mapping[ServiceId, InstanceBinding],
-    create: bool = False,
-    tenant_name: str = "",
-    resolved_profiles: Sequence[ResolvedProfile] = (),
-    compiled_profiles: Sequence[CompiledProfile] = (),
-) -> Result[tuple[ServicePushOutcome | None, dict[str, str]]]:
-    svc = services.get(service_id)
-    binding = bindings.get(service_id)
-    if svc is None or binding is None or not binding.configured_for_push(create=create):
-        return Ok((None, env))
-    cfg_path = _service_doc_path(configs_dir, service_id, binding.name)
-    if not cfg_path.exists():
-        return Ok((None, env))
+def _extra_library_roots() -> tuple[Path, ...]:
+    shared = bundled_shared_library_root()
+    return (shared,) if shared is not None else ()
 
-    match read_json_file(cfg_path):
-        case Err() as err:
-            return err
-        case Ok(scrubbed_cfg):
-            pass
 
-    if service_id == "aiomanager":
-        scrubbed_cfg, managed_notes = _managed_aiomanager_doc(scrubbed_cfg, tenant_name, resolved_profiles)
-        for note in managed_notes:
-            console.print(f"👤 [aiomanager] {note}")
-        # Each managed account carries its profile's compiled Nuvio documents (fanned out by the sync).
-        payload_by_id = {cp.resolved.profile.account_id or "": cp for cp in compiled_profiles}
-        payload_by_name = {cp.resolved.profile.display_name: cp for cp in compiled_profiles}
-        for acc in scrubbed_cfg.get("accounts", []):
-            cp = payload_by_id.get(str(acc.get("id"))) or payload_by_name.get(str(acc.get("name")))
-            if cp is not None:
-                acc_payload = cp.account_payload()
-                if "nuvioMeta" in acc_payload:
-                    match inject_secrets(acc_payload["nuvioMeta"], env):
-                        case Err(meta_sec_err):
-                            console.print(f"⚠️  [{cp.name}] meta: skipped ({meta_sec_err})")
-                            acc_payload.pop("nuvioMeta", None)
-                        case Ok():
-                            pass
-                acc.update(acc_payload)
-
-    derived_catalogs_changed = False
-    if service_id == "aiometadata" and compiled_profiles:
-        match derive_instance_catalogs(binding.name, scrubbed_cfg, compiled_profiles):
-            case Err(derive_err):
-                return Err(derive_err)
-            case Ok(plan):
-                if plan.changed:
-                    scrubbed_cfg = {**scrubbed_cfg, "catalogs": plan.catalogs}
-                    derived_catalogs_changed = True
-                    console.print(
-                        f"🧮 [aiometadata/{binding.name}] catalogs derived from profile(s) {', '.join(plan.profiles)}"
-                    )
-
-    payload_to_inject = (
-        prepare_aiostreams_for_push(scrubbed_cfg, env)
-        if service_id == "aiostreams"
-        else (
-            prepare_aiometadata_for_push(scrubbed_cfg, env)
-            if service_id == "aiometadata"
-            else scrubbed_cfg
-        )
-    )
-    match inject_secrets(payload_to_inject, env):
-        case Err(sec_err):
-            if service_id == "aiomanager" and any(k.startswith("SECRET_STREMIO") for k in sec_err.missing_keys):
-                return Err(
-                    StreamWeaverError(
-                        f"{sec_err} (run `sw login stremio --login <name>`, or remove `clients.stremio` "
-                        "from profile.json if you only use Nuvio)"
-                    )
-                )
-            if service_id == "aiomanager" and any(k.startswith("SECRET_NUVIO") for k in sec_err.missing_keys):
-                return Err(
-                    StreamWeaverError(
-                        f"{sec_err} (run `sw login nuvio --login <name>`)"
-                    )
-                )
-            return Err(sec_err)
-        case Ok(injected_cfg):
-            pass
-
-    match svc.push_remote(injected_cfg, binding, env, create=create):
-        case Err() as err:
-            return err
-        case Ok((outcome, updated_cfg, discovered_secrets)):
-            pass
-
-    if outcome.created and outcome.uuid:
-        # A freshly provisioned instance: persist its UUID under the binding's own env key.
-        discovered_secrets = {**discovered_secrets, binding.uuid_env_key: outcome.uuid}
-
-    working_env = {**env, **discovered_secrets}
-    if service_id == "aiometadata" and derived_catalogs_changed:
-        # Keep the local instance document in its derived (pushed) form.
-        match _persist_scrubbed_config(
-            service_id, updated_cfg, working_env, env_path=env_path, configs_dir=configs_dir, instance=binding.name
-        ):
-            case Err() as err:
-                return err
-            case Ok((_, working_env)):
-                pass
-    if service_id == "aiomanager":
-        match _persist_scrubbed_config(
-            service_id,
-            updated_cfg,
-            working_env,
-            env_path=env_path,
-            configs_dir=configs_dir,
-            instance=binding.name,
-        ):
-            case Err() as err:
-                return err
-            case Ok((_, working_env)):
-                pass
-    elif discovered_secrets:
-        match save_env_updates(env_path, working_env):
-            case Err() as err:
-                return err
-            case Ok():
-                pass
-
-    return Ok((outcome, working_env))
+def _print_engine_step(step: str) -> None:
+    if "Skipped" in step or "nothing to pull" in step or "nothing to push" in step:
+        console.print(f"⏭️  {step}")
+    elif "skipped (" in step.lower():
+        console.print(f"⚠️  {step}")
+    elif step.startswith("[warm]"):
+        console.print(f"🔥 {step}")
+    else:
+        console.print(f"✅ {step}")
 
 
 def _sanitize_service(
@@ -1292,7 +854,7 @@ def cmd_config_init(
 
     if debrid is not None or packs is not None:
         pack_list = [p.strip() for p in packs.split(",") if p.strip()] if packs is not None else None
-        match _apply_debrid_and_packs_to_tenant(paths, debrid=debrid, enabled_packs=pack_list):
+        match apply_debrid_and_packs(paths, debrid=debrid, enabled_packs=pack_list):
             case Err(pack_err):
                 err_console.print(f"❌ {pack_err}")
                 raise typer.Exit(code=1)
@@ -1317,248 +879,6 @@ def cmd_config_init(
     if preserved:
         console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
     console.print("   💡 Next: fill in instance URLs & credentials in .env, then run `sw pull` or `sw push --create`.")
-
-
-def _apply_debrid_and_packs_to_tenant(
-    paths: TenantPaths,
-    *,
-    debrid: str | None = None,
-    enabled_packs: Sequence[str] | None = None,
-    max_resolution: str | None = None,
-    cached_only: bool | None = None,
-    audio_languages: Sequence[str] | None = None,
-    dual_subtitle_pairs: Sequence[Sequence[str]] | None = None,
-) -> Result[None]:
-    """Applies Debrid provider, pack toggles, stream filters, and dual-sub pairs to a tenant's docs."""
-    streams_path = paths.doc("aiostreams")
-    if not streams_path.is_file():
-        return Err(StreamWeaverError("aiostreams.json not found in tenant directory"))
-    match read_json_file(streams_path):
-        case Err() as err:
-            return err
-        case Ok(streams_doc):
-            pass
-
-    if debrid is not None:
-        match apply_debrid_provider(streams_doc, debrid):
-            case Err() as err:
-                return err
-            case Ok(streams_doc):
-                pass
-    if dual_subtitle_pairs is not None:
-        match apply_dual_subtitle_pairs(streams_doc, dual_subtitle_pairs):
-            case Err() as err:
-                return err
-            case Ok(streams_doc):
-                pass
-    if enabled_packs is not None:
-        match apply_aiostreams_packs(streams_doc, enabled_packs):
-            case Err() as err:
-                return err
-            case Ok(streams_doc):
-                pass
-    if max_resolution is not None or cached_only is not None or audio_languages is not None:
-        match apply_stream_preferences(
-            streams_doc,
-            max_resolution=max_resolution,
-            cached_only=cached_only,
-            audio_languages=audio_languages,
-        ):
-            case Err() as err:
-                return err
-            case Ok(streams_doc):
-                pass
-
-    match write_json_file(streams_path, streams_doc):
-        case Err() as err:
-            return err
-        case Ok():
-            pass
-
-    cur_debrid = active_debrid_provider(streams_doc)
-    pack_states = {st.spec.id: st.enabled for st in inspect_aiostreams_packs(streams_doc)}
-
-    mgr_path = paths.doc("aiomanager")
-    if debrid is not None and mgr_path.is_file():
-        match read_json_file(mgr_path):
-            case Ok(mgr_doc):
-                updated_mgr = sync_aiomanager_cached_debrid_catalog(mgr_doc, cur_debrid)
-                match write_json_file(mgr_path, updated_mgr):
-                    case Err() as err:
-                        return err
-                    case Ok():
-                        pass
-            case Err():
-                pass
-
-    watchlist_path = paths.root / "library" / "folders" / "fld-watchlist-library.json"
-    if watchlist_path.is_file():
-        match read_json_file(watchlist_path):
-            case Ok(wl_doc):
-                synced_wl = sync_watchlist_folder_recipe(
-                    wl_doc,
-                    debrid_provider=cur_debrid,
-                    release_alerts_enabled=pack_states.get("release_alerts", True),
-                    core_debrid_enabled=pack_states.get("core_debrid", True),
-                )
-                match write_json_file(watchlist_path, synced_wl):
-                    case Err() as err:
-                        return err
-                    case Ok():
-                        pass
-            case Err():
-                pass
-
-    return Ok(None)
-
-
-# ============================================================================
-# `sw packs` — modular Debrid provider & AIOStreams addon pack toggles
-# ============================================================================
-
-packs_app = typer.Typer(help="Inspect and toggle AIOStreams Debrid providers and modular addon packs.")
-app.add_typer(packs_app, name="packs")
-
-
-@packs_app.command("list")
-def cmd_packs_list(
-    workspace_dir: WorkspaceDirOption = None,
-    tenant: TenantNameOption = None,
-) -> None:
-    """List the active Debrid provider and every toggleable AIOStreams addon pack."""
-    ctx = _resolve_context(workspace_dir, tenant)
-    streams_path = ctx.paths.doc("aiostreams")
-    match read_json_file(streams_path):
-        case Err(read_err):
-            err_console.print(f"❌ {read_err}")
-            raise typer.Exit(code=1)
-        case Ok(streams_doc):
-            pass
-
-    debrid_id = active_debrid_provider(streams_doc)
-    debrid_spec = DEBRID_PROVIDERS.get(debrid_id)
-    debrid_label = f"{debrid_spec.label} ({debrid_spec.secret_key})" if debrid_spec else debrid_id
-    prefs = inspect_stream_preferences(streams_doc)
-    pairs = inspect_dual_subtitle_pairs(streams_doc)
-    pairs_label = ", ".join(
-        f"{STRELINGO_BY_CODE[m].code2 if m in STRELINGO_BY_CODE else m}→{STRELINGO_BY_CODE[t].code2 if t in STRELINGO_BY_CODE else t}"
-        for m, t in pairs
-    ) or "none"
-    console.print(f"⚡ Active Debrid Provider: {debrid_label}")
-    console.print(
-        f"🎞️  Stream Policy: Max {prefs.max_resolution} · {'Cached Only' if prefs.cached_only else 'Cached + Uncached'} · Audio: {', '.join(prefs.audio_languages)} · Dual-Subs: {pairs_label}"
-    )
-
-    table = Table(title=f"AIOStreams Addon Packs — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
-    for col in ("Pack", "Title", "Enabled", "Presets", "Extra Secrets"):
-        table.add_column(col, overflow="fold")
-    for st in inspect_aiostreams_packs(streams_doc):
-        table.add_row(
-            st.spec.id,
-            st.spec.title,
-            "✅" if st.enabled else "—",
-            ", ".join(st.present_presets) or "—",
-            ", ".join(st.spec.required_secrets) or "—",
-        )
-    console.print(table)
-
-
-@packs_app.command("set")
-def cmd_packs_set(
-    debrid: Annotated[
-        str | None,
-        typer.Option("--debrid", help="Switch Debrid provider (torbox | realdebrid | alldebrid | premiumize)"),
-    ] = None,
-    enable: Annotated[
-        list[str] | None,
-        typer.Option("--enable", "-e", help="Enable an AIOStreams pack (repeatable)"),
-    ] = None,
-    disable: Annotated[
-        list[str] | None,
-        typer.Option("--disable", "-d", help="Disable an AIOStreams pack (repeatable)"),
-    ] = None,
-    max_resolution: Annotated[
-        str | None,
-        typer.Option("--max-resolution", help="Cap stream resolution (2160p | 1080p | 720p)"),
-    ] = None,
-    cached_only: Annotated[
-        bool | None,
-        typer.Option(
-            "--cached-only/--allow-uncached",
-            help="Require instant-play cached Debrid streams only, or allow uncached torrents",
-        ),
-    ] = None,
-    audio_langs: Annotated[
-        str | None,
-        typer.Option(
-            "--audio-langs",
-            help="Comma-separated stream audio languages (e.g. 'English,Spanish,Japanese')",
-        ),
-    ] = None,
-    dual_subs: Annotated[
-        str | None,
-        typer.Option(
-            "--dual-subs",
-            help="Comma-separated Strelingo pairs as MAIN:TRANS (e.g. 'jpn:eng,kor:eng,spa:eng')",
-        ),
-    ] = None,
-    workspace_dir: WorkspaceDirOption = None,
-    tenant: TenantNameOption = None,
-) -> None:
-    """Switch Debrid provider, toggle packs, set stream filters, or configure Strelingo dual-sub pairs."""
-    paths = _resolve_tenant(workspace_dir, tenant)
-    match read_json_file(paths.doc("aiostreams")):
-        case Err(read_err):
-            err_console.print(f"❌ {read_err}")
-            raise typer.Exit(code=1)
-        case Ok(streams_doc):
-            pass
-
-    next_packs: list[str] | None = None
-    if enable or disable:
-        current = {st.spec.id for st in inspect_aiostreams_packs(streams_doc) if st.enabled}
-        current |= {p.strip().lower() for p in (enable or []) if p.strip()}
-        current -= {p.strip().lower() for p in (disable or []) if p.strip()}
-        next_packs = sorted(current)
-
-    parsed_pairs: list[tuple[str, str]] | None = None
-    if dual_subs is not None:
-        parsed_pairs = []
-        for token in (t.strip() for t in dual_subs.split(",") if t.strip()):
-            if ":" not in token:
-                err_console.print(f"❌ Invalid --dual-subs token `{token}` (expected MAIN:TRANS, e.g. jpn:eng)")
-                raise typer.Exit(code=1)
-            m_code, _, t_code = token.partition(":")
-            parsed_pairs.append((m_code.strip(), t_code.strip()))
-
-    parsed_audio: list[str] | None = (
-        [t.strip() for t in audio_langs.split(",") if t.strip()]
-        if audio_langs is not None
-        else None
-    )
-
-    match _apply_debrid_and_packs_to_tenant(
-        paths,
-        debrid=debrid,
-        enabled_packs=next_packs,
-        max_resolution=max_resolution,
-        cached_only=cached_only,
-        audio_languages=parsed_audio,
-        dual_subtitle_pairs=parsed_pairs,
-    ):
-        case Err(pack_err):
-            err_console.print(f"❌ {pack_err}")
-            raise typer.Exit(code=1)
-        case Ok():
-            pass
-
-    ctx = _resolve_context(paths.root)
-    match _sync_diagrams_for_ctx(ctx):
-        case Ok():
-            pass
-        case Err(diag_err):
-            err_console.print(f"⚠️  [diagram] {diag_err}")
-    console.print("✅ Updated AIOStreams Debrid/packs configuration and regenerated architecture docs.")
 
 
 def _validate_tenant(paths: TenantPaths) -> list[str]:
@@ -2520,79 +1840,23 @@ def cmd_config_pull(
     tenant: TenantNameOption = None,
 ) -> None:
     """Pull live configs from remote instances, harvest secrets to .env, and scrub JSON files."""
-    ctx = _resolve_context(workspace_dir, tenant, instance)
-    ctx, compiled = _scope_to_profile(ctx, _compile_all(ctx), profile)
-    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
-    root_dir, env_path, configs_dir = paths.root, paths.env_file, paths.docs_dir
-    working_env = dict(env)
-    svc_targets = _resolve_service_targets(target)
-
+    paths = _resolve_tenant(workspace_dir, tenant)
     with HttpxClient() as http_client:
-        services = build_config_services(http_client)
-        configured_svcs: list[ServiceId] = []
-        skipped_svcs: list[ServiceId] = []
-        for svc_id in svc_targets:
-            svc = services.get(svc_id)
-            binding = bindings.get(svc_id)
-            if svc is None or binding is None or not binding.configured_for_pull():
-                skipped_svcs.append(svc_id)
-            else:
-                configured_svcs.append(svc_id)
-
-        for svc_id in skipped_svcs:
-            b = bindings.get(svc_id)
-            hint = (
-                f"missing {b.url_env_key}, {b.uuid_env_key}, or {b.password_env_key} in .env"
-                if b is not None
-                else "no `default` instance registered in tenant.json"
-            )
-            console.print(f"⏭️  [{svc_id}] Skipping pull: {hint}")
-
-        pulled_raw: dict[ServiceId, Result[JsonDict]] = {}
-        if configured_svcs:
-            def _fetch_remote_svc(sid: ServiceId) -> tuple[ServiceId, Result[JsonDict]]:
-                return sid, services[sid].pull_remote(bindings[sid])
-
-            with (
-                console.status(f"⏳ Pulling {', '.join(configured_svcs)} in parallel..."),
-                concurrent.futures.ThreadPoolExecutor(max_workers=len(configured_svcs)) as pool,
-            ):
-                for sid, res in pool.map(_fetch_remote_svc, configured_svcs):
-                    pulled_raw[sid] = res
-
-        for svc_id in configured_svcs:
-            match pulled_raw[svc_id]:
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(normalized_cfg):
-                    match _persist_scrubbed_config(
-                        svc_id,
-                        normalized_cfg,
-                        working_env,
-                        env_path=env_path,
-                        configs_dir=configs_dir,
-                    ):
-                        case Err(p_err):
-                            err_console.print(f"❌ {p_err}")
-                            raise typer.Exit(code=1)
-                        case Ok((saved_path, working_env)):
-                            uid = bindings[svc_id].uuid
-                            console.print(
-                                f"✅ [{svc_id}] Saved scrubbed config for UUID {uid} to {saved_path.relative_to(root_dir)}"
-                            )
-
-        nuvio_docs = _nuvio_docs_for_target(target, implicit_all=True)
-        if nuvio_docs:
-            working_env = _pull_nuvio_into_profiles(
-                ctx, compiled, nuvio_docs, working_env, http_client, strict=target.strip().lower() != "all"
-            )
-
-    match _sync_diagrams_for_ctx(ctx):
+        res = pull_workspace(
+            paths,
+            target=target,
+            instance=instance,
+            profile=profile,
+            on_step=_print_engine_step,
+            extra_library_roots=_extra_library_roots(),
+            http_client=http_client,
+        )
+    match res:
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
         case Ok():
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
-        case Err(diag_err):
-            err_console.print(f"⚠️  [diagram] {diag_err}")
 
 
 @config_app.command("push")
@@ -2610,6 +1874,10 @@ def cmd_config_push(
         bool,
         typer.Option("--dry-run", help="Preview config diff against remote without pushing"),
     ] = False,
+    warm: Annotated[
+        bool,
+        typer.Option("--warm", help="Pre-warm Home catalog rows after pushing"),
+    ] = False,
     instance: InstanceNameOption = DEFAULT_INSTANCE,
     profile: ProfileNameOption = None,
     workspace_dir: WorkspaceDirOption = None,
@@ -2617,136 +1885,36 @@ def cmd_config_push(
 ) -> None:
     """Inject secrets from .env and push the tenant's documents to remote servers."""
     if dry_run:
-        cmd_config_diff(target=target, stat_only=False, exit_code=False, workspace_dir=workspace_dir)
+        cmd_config_diff(
+            target=target,
+            stat_only=False,
+            exit_code=False,
+            instance=instance,
+            profile=profile,
+            workspace_dir=workspace_dir,
+            tenant=tenant,
+        )
         return
 
-    ctx = _resolve_context(workspace_dir, tenant, instance)
-    all_compiled = _compile_all(ctx)
-    ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
-    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
-    env_path, configs_dir = paths.env_file, paths.docs_dir
-    working_env = dict(env)
-    svc_targets = _resolve_service_targets(target)
-
-    # Phase 1: upstream addon services (`aiostreams`, `aiometadata`) run concurrently.
-    # Phase 2: `aiomanager` runs after Phase 1 so it refreshes the newly updated upstream manifests.
-    phase1_targets = tuple(s for s in svc_targets if s != "aiomanager")
-    phase2_targets = tuple(s for s in svc_targets if s == "aiomanager")
-
+    paths = _resolve_tenant(workspace_dir, tenant)
     with HttpxClient() as http_client:
-        services = build_config_services(http_client)
-        aiomanager_pushed = False
-        for phase in (phase1_targets, phase2_targets):
-            if not phase:
-                continue
-            if phase == phase2_targets:
-                ctx, all_compiled, working_env = _refresh_manifests_and_recompile(
-                    ctx, working_env, http_client, instance=instance
-                )
-                ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
-                bindings = ctx.bindings
-            if len(phase) > 1:
-                phase_env = dict(working_env)
-                phase_bindings = bindings
-                phase_tenant = ctx.manifest.name
-                phase_profiles = ctx.profiles
-                phase_compiled = all_compiled
-
-                def _run_push(
-                    sid: ServiceId,
-                    *,
-                    _env: dict[str, str] = phase_env,
-                    _bindings: dict[ServiceId, InstanceBinding] = phase_bindings,
-                    _tenant: str = phase_tenant,
-                    _profiles: list[ResolvedProfile] = phase_profiles,
-                    _compiled: list[CompiledProfile] = phase_compiled,
-                ) -> tuple[ServiceId, Result[tuple[ServicePushOutcome | None, dict[str, str]]]]:
-                    return (
-                        sid,
-                        _push_service(
-                            sid,
-                            dict(_env),
-                            env_path=env_path,
-                            configs_dir=configs_dir,
-                            services=services,
-                            bindings=_bindings,
-                            tenant_name=_tenant,
-                            resolved_profiles=_profiles,
-                            compiled_profiles=_compiled,
-                            create=create,
-                        ),
-                    )
-
-                with (
-                    console.status(f"🚀 Pushing {', '.join(phase)} in parallel..."),
-                    concurrent.futures.ThreadPoolExecutor(max_workers=len(phase)) as pool,
-                ):
-                    phase_results = dict(pool.map(_run_push, phase))
-            else:
-                only_sid = phase[0]
-                with console.status(f"🚀 Pushing {only_sid}..."):
-                    phase_results = {
-                        only_sid: _push_service(
-                            only_sid,
-                            working_env,
-                            env_path=env_path,
-                            configs_dir=configs_dir,
-                            services=services,
-                            bindings=bindings,
-                            tenant_name=ctx.manifest.name,
-                            resolved_profiles=ctx.profiles,
-                            compiled_profiles=all_compiled,
-                            create=create,
-                        )
-                    }
-
-            for svc_id in phase:
-                match phase_results[svc_id]:
-                    case Err(err):
-                        err_console.print(f"❌ {err}")
-                        raise typer.Exit(code=1)
-                    case Ok((None, new_env)):
-                        working_env.update(new_env)
-                        console.print(
-                            f"⏭️  [{svc_id}] Skipping push: missing config file or credentials in .env"
-                        )
-                    case Ok((outcome, new_env)):
-                        working_env.update(new_env)
-                        assert outcome is not None
-                        if svc_id == "aiomanager":
-                            aiomanager_pushed = True
-                        if outcome.created:
-                            console.print(f"✅ [{svc_id}] Created! New UUID: {outcome.uuid}")
-                            if outcome.install_url:
-                                console.print(f"🔗 [{svc_id}] Install URL: {outcome.install_url}")
-                        else:
-                            console.print(
-                                f"✅ [{svc_id}] Successfully updated UUID {outcome.uuid} in-place"
-                            )
-                        for client_msg in outcome.synced_clients:
-                            console.print(f"✅ {client_msg}")
-
-        nuvio_docs = _nuvio_docs_for_target(target, implicit_all=False)
-        if not nuvio_docs and target.strip().lower() == "all" and not aiomanager_pushed:
-            has_configured_nuvio = any(
-                (lb := cp.resolved.logins.get("nuvio")) is not None and lb.configured()
-                for cp in compiled
-            )
-            if has_configured_nuvio:
-                nuvio_docs = ALL_NUVIO_DOCS
-        if nuvio_docs:
-            if "collections" in nuvio_docs and not aiomanager_pushed:
-                ctx, all_compiled, working_env = _refresh_manifests_and_recompile(
-                    ctx, working_env, http_client, instance=instance
-                )
-                ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
-            working_env = _push_nuvio_from_profiles(ctx, compiled, nuvio_docs, working_env, http_client)
-
-    match _sync_diagrams_for_ctx(ctx):
+        res = push_workspace(
+            paths,
+            target=target,
+            instance=instance,
+            profile=profile,
+            create=create,
+            warm_catalogs=warm,
+            on_step=_print_engine_step,
+            extra_library_roots=_extra_library_roots(),
+            http_client=http_client,
+        )
+    match res:
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
         case Ok():
             console.print("🗺️  [diagram] Updated architecture/topology.c4 & ARCHITECTURE.md")
-        case Err(diag_err):
-            err_console.print(f"⚠️  [diagram] {diag_err}")
 
 
 @config_app.command("diff")
@@ -2770,78 +1938,112 @@ def cmd_config_diff(
     tenant: TenantNameOption = None,
 ) -> None:
     """Compare the tenant's documents against live remote instances without modifying any files."""
-    ctx = _resolve_context(workspace_dir, tenant, instance)
-    all_compiled = _compile_all(ctx)
-    ctx, compiled = _scope_to_profile(ctx, all_compiled, profile)
-    paths, env, bindings = ctx.paths, ctx.env, ctx.bindings
-    configs_dir = paths.docs_dir
-    has_drift = False
-    svc_targets = _resolve_service_targets(target)
-    nuvio_docs = _nuvio_docs_for_target(target, implicit_all=True)
+    paths = _resolve_tenant(workspace_dir, tenant)
+    with (
+        HttpxClient() as http_client,
+        console.status("🔍 Comparing local configs against live remote instances in parallel..."),
+    ):
+        res = diff_workspace(
+            paths,
+            target=target,
+            instance=instance,
+            profile=profile,
+            extra_library_roots=_extra_library_roots(),
+            http_client=http_client,
+        )
+    match res:
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
+        case Ok(report):
+            for skip_msg in report.skipped:
+                console.print(f"⏭️  {skip_msg}")
+            _render_diff_summary_table(report.outcomes)
+            for outcome in report.outcomes:
+                _print_diff_outcome(outcome, stat_only=stat_only)
+            if exit_code and any(not o.in_sync for o in report.outcomes):
+                raise typer.Exit(code=1)
 
+
+@config_app.command("doctor")
+@app.command("doctor")
+def cmd_doctor(
+    offline: Annotated[
+        bool,
+        typer.Option("--offline", help="Check .env keys and config requirements without live network probes"),
+    ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the raw JSON health report for automation"),
+    ] = False,
+    exit_code: Annotated[
+        bool,
+        typer.Option("--exit-code", help="Exit with code 1 if any health check fails with an error"),
+    ] = False,
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Run live workspace health checks across .env keys, AIO servers, Debrid, and metadata APIs."""
+    paths = _resolve_tenant(workspace_dir, tenant)
     with HttpxClient() as http_client:
-        services = build_config_services(http_client)
+        res = verify_workspace_health(
+            paths,
+            probe_network=not offline,
+            extra_library_roots=_extra_library_roots(),
+            http_client=http_client,
+        )
+    match res:
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
+        case Ok(report):
+            pass
 
-        def _diff_one(sid: ServiceId) -> tuple[ServiceId, Result[ConfigDiffOutcome | None]]:
-            return sid, _diff_service(
-                sid,
-                env,
-                configs_dir=configs_dir,
-                services=services,
-                bindings=bindings,
-                tenant_name=ctx.manifest.name,
-                resolved_profiles=ctx.profiles,
-                compiled_profiles=all_compiled,
+    overall = str(report.get("overall") or "unknown")
+    raw_summary = report.get("summary")
+    summary: Mapping[str, Any] = raw_summary if isinstance(raw_summary, Mapping) else {}
+    raw_checks = report.get("checks")
+    checks: list[Any] = raw_checks if isinstance(raw_checks, list) else []
+
+    if json_output:
+        typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        status_icons = {
+            "ok": "✅ ok",
+            "warn": "⚠️  warn",
+            "error": "❌ error",
+            "skipped": "⏭️  skipped",
+        }
+        overall_icons = {
+            "healthy": "✅ HEALTHY",
+            "warn": "⚠️  WARNING",
+            "error": "❌ ERROR",
+        }
+        table = Table(
+            title=f"Workspace Health Doctor — tenant `{paths.root.name}`",
+            box=box.ROUNDED,
+            header_style="bold",
+        )
+        for col in ("Category", "Check", "Status", "Detail"):
+            table.add_column(col, overflow="fold")
+        for chk in checks:
+            if not isinstance(chk, Mapping):
+                continue
+            st = str(chk.get("status") or "skipped")
+            table.add_row(
+                str(chk.get("category") or ""),
+                str(chk.get("label") or chk.get("id") or ""),
+                status_icons.get(st, st),
+                str(chk.get("detail") or ""),
             )
+        console.print(table)
+        console.print(
+            f"🩺 Overall: {overall_icons.get(overall, overall)}  "
+            f"(ok={summary.get('ok', 0)}, warn={summary.get('warn', 0)}, "
+            f"error={summary.get('error', 0)}, skipped={summary.get('skipped', 0)})"
+        )
 
-        svc_diff_results: dict[ServiceId, Result[ConfigDiffOutcome | None]] = {}
-        nuvio_outcomes: list[ConfigDiffOutcome] = []
-        with (
-            console.status("🔍 Comparing local configs against live remote instances in parallel..."),
-            concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(svc_targets) + 1)) as pool,
-        ):
-            futures = [pool.submit(_diff_one, sid) for sid in svc_targets]
-            nuvio_future = (
-                pool.submit(
-                    _diff_nuvio_profiles,
-                    ctx,
-                    compiled,
-                    nuvio_docs,
-                    env,
-                    http_client,
-                    strict=target.strip().lower() != "all",
-                )
-                if nuvio_docs
-                else None
-            )
-            for fut in futures:
-                sid, res = fut.result()
-                svc_diff_results[sid] = res
-            if nuvio_future is not None:
-                nuvio_outcomes = nuvio_future.result()
-
-        collected_outcomes: list[ConfigDiffOutcome] = []
-        skipped_msgs: list[str] = []
-        for svc_id in svc_targets:
-            match svc_diff_results[svc_id]:
-                case Err(err):
-                    err_console.print(f"❌ {err}")
-                    raise typer.Exit(code=1)
-                case Ok(None):
-                    skipped_msgs.append(f"⏭️  [{svc_id}] Skipping diff: missing local config or credentials in .env")
-                case Ok(outcome):
-                    assert outcome is not None
-                    collected_outcomes.append(outcome)
-        collected_outcomes.extend(nuvio_outcomes)
-        has_drift = any(not o.in_sync for o in collected_outcomes)
-
-        for msg in skipped_msgs:
-            console.print(msg)
-        _render_diff_summary_table(collected_outcomes)
-        for outcome in collected_outcomes:
-            _print_diff_outcome(outcome, stat_only=stat_only)
-
-    if exit_code and has_drift:
+    if exit_code and overall == "error":
         raise typer.Exit(code=1)
 
 
@@ -2999,33 +2201,23 @@ def cmd_config_warm(
     tenant: TenantNameOption = None,
 ) -> None:
     """Concurrently pre-warm all Home catalog endpoints across enabled addons."""
-    ctx = _resolve_context(workspace_dir, tenant)
-    env = ctx.env
-    cfg_path = ctx.paths.doc("aiomanager")
-    if not cfg_path.exists():
-        err_console.print("❌ Missing aiomanager.json")
-        raise typer.Exit(code=1)
-
-    match read_json_file(cfg_path):
-        case Err(read_err):
-            err_console.print(f"❌ {read_err}")
-            raise typer.Exit(code=1)
-        case Ok(scrubbed_cfg):
-            pass
-
-    match inject_secrets(scrubbed_cfg, env):
-        case Err(sec_err):
-            err_console.print(f"❌ {sec_err}")
-            raise typer.Exit(code=1)
-        case Ok(injected_cfg):
-            pass
-
+    paths = _resolve_tenant(workspace_dir, tenant)
     with (
         HttpxClient() as http_client,
         console.status(f"🔥 Pre-warming Home catalog rows ({workers} workers)..."),
     ):
-        warmed, total = warm_home_catalogs(injected_cfg, http_client, max_workers=workers)
-    console.print(f"🔥 [warm] Pre-warmed {warmed}/{total} Home catalog rows")
+        res = warm_workspace_catalogs(
+            paths,
+            workers=workers,
+            extra_library_roots=_extra_library_roots(),
+            http_client=http_client,
+        )
+    match res:
+        case Err(err):
+            err_console.print(f"❌ {err}")
+            raise typer.Exit(code=1)
+        case Ok(report):
+            console.print(f"🔥 {report['message']}")
 
 
 @app.command("studio")
