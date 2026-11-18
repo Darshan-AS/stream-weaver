@@ -1,19 +1,27 @@
-"""UI-agnostic workspace, profile customization, and sync orchestration engine."""
+"""UI-agnostic workspace, profile customization, health doctor, and sync orchestration engine."""
 
 from stream_weaver.engine.workspace import (
     KNOWN_ENV_KEYS,
     DiffReport,
     EnvKeySpec,
     PushReport,
+    apply_debrid_and_packs,
     apply_studio_mutation,
     build_custom_folder_sources,
     diff_workspace,
     export_tenant_zip_bytes,
+    inspect_raw_document,
     inspect_tenant_state,
+    inspect_workspace_addon_manifest,
     login_nuvio_and_list_profiles,
+    manage_studio_profile,
+    preview_catalog_items,
     provision_instances,
     pull_workspace,
     push_workspace,
+    save_raw_document,
+    verify_workspace_health,
+    warm_workspace_catalogs,
 )
 
 __all__ = [
@@ -21,13 +29,21 @@ __all__ = [
     "EnvKeySpec",
     "KNOWN_ENV_KEYS",
     "PushReport",
+    "apply_debrid_and_packs",
     "apply_studio_mutation",
     "build_custom_folder_sources",
     "diff_workspace",
     "export_tenant_zip_bytes",
+    "inspect_raw_document",
     "inspect_tenant_state",
+    "inspect_workspace_addon_manifest",
     "login_nuvio_and_list_profiles",
+    "manage_studio_profile",
+    "preview_catalog_items",
     "provision_instances",
     "pull_workspace",
     "push_workspace",
+    "save_raw_document",
+    "verify_workspace_health",
+    "warm_workspace_catalogs",
 ]
