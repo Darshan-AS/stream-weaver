@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream Weaver Studio — Streaming Control Plane</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-cluster">
+      <div class="brand-mark" aria-hidden="true">🧶</div>
+      <div class="brand-copy">
+        <div class="brand-row">
+          <h1>Stream Weaver Studio</h1>
+          <span class="pill" id="mode-pill">Loading…</span>
+          <span class="pill" id="env-ready-pill">…</span>
+        </div>
+        <div class="brand-subtitle" id="subtitle">Initializing workspace engine…</div>
+      </div>
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="Studio quick actions">
+      <button id="btn-wizard" class="btn accent-outline" title="Open 4-step Day-0 Setup Wizard">🧭 Setup Wizard</button>
+      <button id="btn-doctor" class="btn" title="Run live workspace &amp; API key health checks">🩺 Health Doctor</button>
+      <button id="btn-diff" class="btn" title="Compare local GitOps state against live remote servers">🔍 Drift Diff</button>
+      <button id="btn-raw-json" class="btn" title="Inspect &amp; edit scrubbed JSON configs directly">🛠️ Raw JSON</button>
+      <button id="btn-pull" class="btn" title="Pull live edits from AIOStreams, AIOMetadata, AIOManager &amp; Nuvio">📥 Pull</button>
+      <button id="btn-export" class="btn" title="Download secret-free portable GitOps zip">📦 Export GitOps Zip</button>
+      <button id="btn-save" class="btn" title="Save pending edits to workspace">💾 Save</button>
+      <div class="push-cluster">
+        <label class="warm-toggle" title="Pre-warm Home catalog rows immediately after pushing">
+          <input type="checkbox" id="chk-push-warm" />
+          <span>🔥 Warm</span>
+        </label>
+        <button id="btn-push" class="btn primary" title="Save &amp; stream live push across AIO instances and Nuvio">🚀 Save &amp; Push</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="subbar">
+    <nav class="tabs" id="nav-tabs" aria-label="Studio sections">
+      <button class="tab active" data-tab="home">🏠 Home &amp; Simulator</button>
+      <button class="tab" data-tab="streams">⚡ AIOStreams &amp; Metadata</button>
+      <button class="tab" data-tab="aiomanager">☁️ AIOManager &amp; Addons</button>
+      <button class="tab" data-tab="nuvio">🎛️ Nuvio &amp; Visuals</button>
+      <button class="tab" data-tab="keys">🔑 Keys &amp; Accounts</button>
+    </nav>
+
+    <div class="profile-switcher">
+      <div class="profile-pills" id="profile-tabs" role="tablist" aria-label="Household profiles"></div>
+      <button id="btn-new-profile" class="btn icon-pill accent-outline" title="Add household profile">+ New Profile</button>
+    </div>
+  </div>
+
+  <main class="studio-main">
+    <section id="onboarding-banner" class="onboarding-banner" hidden></section>
+
+    <section id="log-drawer" class="log-drawer" hidden aria-live="polite">
+      <div class="log-drawer-head">
+        <span id="log-drawer-title" class="log-drawer-title">Ready</span>
+        <button id="btn-close-log" class="btn icon-btn" title="Dismiss log drawer">✕</button>
+      </div>
+      <div id="log-drawer-steps" class="log-drawer-steps"></div>
+    </section>
+
+    <div id="view-root" class="view-root"></div>
+  </main>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div id="modal-root" class="modal-dialog" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

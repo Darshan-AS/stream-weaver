@@ -1,12 +1,12 @@
 """
-HTTP server and pure request dispatcher for Stream Weaver Studio (`sw studio`).
+HTTP server and pure request dispatcher for Stream Weaver Studio v2 (`sw studio`).
 
 Supports two operating modes through one unified engine:
 1. **Local GitOps Mode (`tenant_paths` set):** reads and writes the tenant directory on disk.
 2. **Stateless Hosted Mode (`tenant_paths is None`):** materializes each request's browser-held
    `bundle` (`files` + `env`) inside an ephemeral temporary directory, executes the requested
-   engine action, returns the updated `bundle` in JSON, and immediately wipes the temp directory—so
-   no user configuration or API key is ever persisted on the server.
+   engine action, returns the updated `bundle` in JSON/NDJSON, and immediately wipes the temp
+   directory—so no user configuration or API key is ever persisted on the server.
 """
 
 from __future__ import annotations
@@ -24,8 +24,9 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
+from stream_weaver.core.instances import DEFAULT_INSTANCE
 from stream_weaver.core.result import Err, Ok
 from stream_weaver.core.secrets import parse_env_text
 from stream_weaver.core.tenant import TenantPaths
@@ -37,14 +38,31 @@ from stream_weaver.engine import (
     build_custom_folder_sources,
     diff_workspace,
     export_tenant_zip_bytes,
+    inspect_raw_document,
     inspect_tenant_state,
+    inspect_workspace_addon_manifest,
     login_nuvio_and_list_profiles,
+    manage_studio_profile,
+    preview_catalog_items,
     provision_instances,
     pull_workspace,
     push_workspace,
+    save_raw_document,
+    verify_workspace_health,
+    warm_workspace_catalogs,
 )
 
-_UI_HTML_PATH = Path(__file__).with_name("ui.html")
+_STATIC_DIR = Path(__file__).with_name("static").resolve()
+_INDEX_HTML_PATH = _STATIC_DIR / "index.html"
+
+_STATIC_CONTENT_TYPES: Mapping[str, str] = {
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,7 +93,7 @@ def _serialize_bundle(paths: TenantPaths) -> JsonDict:
             continue
         if p.suffix in (".json", ".md", ".c4", ".example") or rel.name == ".gitignore":
             files[rel.as_posix()] = p.read_text(encoding="utf-8")
-    env_text = (paths.env_file.read_text(encoding="utf-8") if paths.env_file.is_file() else "")
+    env_text = paths.env_file.read_text(encoding="utf-8") if paths.env_file.is_file() else ""
     return {"files": files, "env": parse_env_text(env_text)}
 
 
@@ -123,6 +141,19 @@ def _materialize_bundle(
     return TenantPaths(target_dir)
 
 
+def _has_meaningful_mutation(mut: Mapping[str, Any]) -> bool:
+    for k, v in mut.items():
+        if k == "bundle":
+            continue
+        if k == "envUpdates":
+            if isinstance(v, Mapping) and any(str(val).strip() for val in v.values()):
+                return True
+            continue
+        if v is not None:
+            return True
+    return False
+
+
 class StudioDispatcher:
     """Pure HTTP route dispatcher for Stream Weaver Studio (testable without network sockets)."""
 
@@ -148,6 +179,9 @@ class StudioDispatcher:
     @property
     def is_stateless(self) -> bool:
         return self._tenant_paths is None
+
+    def _mode_name(self) -> str:
+        return "stateless" if self.is_stateless else "local"
 
     def _extra_libs(self) -> tuple[Path, ...]:
         if self._shared_library_root and self._shared_library_root.is_dir():
@@ -194,6 +228,142 @@ class StudioDispatcher:
             return "Cross-site browser request to Studio rejected"
         return None
 
+    def _serve_static_asset(self, raw_rel_path: str) -> StudioResponse:
+        decoded = unquote(raw_rel_path)
+        if (
+            not decoded
+            or "\x00" in decoded
+            or "\\" in decoded
+            or decoded.startswith("/")
+            or ".." in decoded.split("/")
+        ):
+            return _err_resp(403, "Path traversal in static asset route rejected")
+
+        rel = Path(decoded)
+        if rel.is_absolute() or ".." in rel.parts:
+            return _err_resp(403, "Path traversal in static asset route rejected")
+
+        candidate = (_STATIC_DIR / rel).resolve()
+        if not candidate.is_relative_to(_STATIC_DIR) or candidate == _STATIC_DIR:
+            return _err_resp(403, "Path traversal in static asset route rejected")
+        if not candidate.is_file():
+            return _err_resp(404, f"Static asset not found: {decoded}")
+
+        ctype = _STATIC_CONTENT_TYPES.get(candidate.suffix.lower())
+        if ctype is None:
+            return _err_resp(404, f"Unsupported static asset type: {candidate.suffix}")
+
+        return StudioResponse(
+            status=200,
+            content_type=ctype,
+            body=candidate.read_bytes(),
+            headers={"X-Content-Type-Options": "nosniff"},
+        )
+
+    def dispatch_push_stream(
+        self,
+        body: bytes = b"",
+        *,
+        headers: Mapping[str, str] | None = None,
+        enforce_csrf: bool = False,
+        on_chunk: Callable[[bytes], None] | None = None,
+    ) -> StudioResponse:
+        """
+        Executes a workspace push (with optional pre-mutation and catalog pre-warming), emitting
+        newline-delimited JSON (`application/x-ndjson`) per `on_step` plus a final `done` frame.
+        """
+        if enforce_csrf:
+            csrf_err = self._verify_csrf_and_origin(headers)
+            if csrf_err is not None:
+                return _err_resp(403, csrf_err)
+
+        payload = self._parse_json_body(body)
+        if payload is None:
+            return _err_resp(400, "Request body must be a JSON object")
+
+        target = str(payload.get("target") or "all")
+        inst = str(payload.get("instance") or DEFAULT_INSTANCE).strip() or DEFAULT_INSTANCE
+        prof = (
+            str(payload["profile"])
+            if isinstance(payload.get("profile"), str) and payload["profile"]
+            else None
+        )
+        warm_catalogs = bool(payload.get("warmCatalogs", False))
+        create_flag = bool(payload.get("create", False))
+
+        chunks: list[bytes] = []
+
+        def _emit(event: Mapping[str, Any]) -> None:
+            raw_line = (json.dumps(event, ensure_ascii=False) + "\n").encode("utf-8")
+            chunks.append(raw_line)
+            if on_chunk is not None:
+                on_chunk(raw_line)
+
+        try:
+            with self._workspace_paths(payload) as paths:
+                raw_mut = payload.get("mutation")
+                if isinstance(raw_mut, Mapping) and _has_meaningful_mutation(raw_mut):
+                    match apply_studio_mutation(
+                        paths, raw_mut, extra_library_roots=self._extra_libs()
+                    ):
+                        case Err(m_err):
+                            if on_chunk is None:
+                                return _err_resp(400, str(m_err))
+                            _emit({"type": "error", "ok": False, "error": str(m_err)})
+                            return StudioResponse(
+                                status=200,
+                                content_type="application/x-ndjson",
+                                body=b"".join(chunks),
+                            )
+                        case Ok():
+                            _emit({"type": "step", "step": "Saved pending Studio edits"})
+
+                match push_workspace(
+                    paths,
+                    target=target,
+                    instance=inst,
+                    profile=prof,
+                    create=create_flag,
+                    warm_catalogs=warm_catalogs,
+                    on_step=lambda step_msg: _emit({"type": "step", "step": step_msg}),
+                    extra_library_roots=self._extra_libs(),
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        if on_chunk is None:
+                            return _err_resp(400, str(err))
+                        _emit({"type": "error", "ok": False, "error": str(err)})
+                        return StudioResponse(
+                            status=200,
+                            content_type="application/x-ndjson",
+                            body=b"".join(chunks),
+                        )
+                    case Ok(report):
+                        done_event: JsonDict = {
+                            "type": "done",
+                            "ok": True,
+                            "mode": self._mode_name(),
+                            "steps": list(report.steps),
+                            "state": report.snapshot,
+                        }
+                        if self.is_stateless:
+                            done_event["bundle"] = _serialize_bundle(paths)
+                        _emit(done_event)
+                        return StudioResponse(
+                            status=200,
+                            content_type="application/x-ndjson",
+                            body=b"".join(chunks),
+                        )
+        except RuntimeError as exc:
+            if on_chunk is None:
+                return _err_resp(500, str(exc))
+            _emit({"type": "error", "ok": False, "error": str(exc)})
+            return StudioResponse(
+                status=200,
+                content_type="application/x-ndjson",
+                body=b"".join(chunks),
+            )
+
     def dispatch(
         self,
         method: str,
@@ -206,7 +376,7 @@ class StudioDispatcher:
         clean_path = path.split("?", 1)[0]
 
         if method == "GET" and clean_path in ("/", "/index.html"):
-            raw_html = _UI_HTML_PATH.read_text(encoding="utf-8")
+            raw_html = _INDEX_HTML_PATH.read_text(encoding="utf-8")
             meta_tag = f'  <meta name="sw-csrf-token" content="{self._csrf_token}" />\n</head>'
             injected = raw_html.replace("</head>", meta_tag, 1).encode("utf-8")
             return StudioResponse(
@@ -214,6 +384,17 @@ class StudioDispatcher:
                 content_type="text/html; charset=utf-8",
                 body=injected,
                 headers={"X-Frame-Options": "DENY"},
+            )
+
+        if method == "GET" and (clean_path == "/static" or clean_path.startswith("/static/")):
+            rel_asset = clean_path.removeprefix("/static").lstrip("/") if clean_path.startswith("/static/") else ""
+            if clean_path.startswith("/static/") and clean_path[len("/static/"):].startswith("/"):
+                return _err_resp(403, "Path traversal in static asset route rejected")
+            return self._serve_static_asset(rel_asset)
+
+        if method == "POST" and clean_path == "/api/push-stream":
+            return self.dispatch_push_stream(
+                body, headers=headers, enforce_csrf=enforce_csrf, on_chunk=None
             )
 
         if enforce_csrf and clean_path.startswith("/api/"):
@@ -233,7 +414,7 @@ class StudioDispatcher:
                         case Ok(snap):
                             out: JsonDict = {
                                 "ok": True,
-                                "mode": "stateless" if self.is_stateless else "local",
+                                "mode": self._mode_name(),
                                 "state": snap,
                             }
                             if self.is_stateless:
@@ -249,26 +430,175 @@ class StudioDispatcher:
             raw_mut = payload.get("mutation")
             mutation: Mapping[str, Any] = raw_mut if isinstance(raw_mut, Mapping) else payload
             with self._workspace_paths(payload) as paths:
-                match apply_studio_mutation(paths, mutation, extra_library_roots=self._extra_libs()):
+                match apply_studio_mutation(
+                    paths, mutation, extra_library_roots=self._extra_libs()
+                ):
                     case Err(err):
                         return _err_resp(400, str(err))
                     case Ok(snap):
                         out = {
                             "ok": True,
-                            "mode": "stateless" if self.is_stateless else "local",
+                            "mode": self._mode_name(),
                             "state": snap,
                         }
                         if self.is_stateless:
                             out["bundle"] = _serialize_bundle(paths)
                         return _json_resp(200, out)
 
+        if method == "POST" and clean_path == "/api/profile":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            raw_spec = payload.get("spec")
+            prof_spec: Mapping[str, Any] = raw_spec if isinstance(raw_spec, Mapping) else payload
+            with self._workspace_paths(payload) as paths:
+                match manage_studio_profile(
+                    paths, prof_spec, extra_library_roots=self._extra_libs()
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(snap):
+                        out = {
+                            "ok": True,
+                            "mode": self._mode_name(),
+                            "state": snap,
+                        }
+                        if self.is_stateless:
+                            out["bundle"] = _serialize_bundle(paths)
+                        return _json_resp(200, out)
+
+        if method == "POST" and clean_path == "/api/doctor":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            pending_env = (
+                payload.get("pendingEnv")
+                if isinstance(payload.get("pendingEnv"), Mapping)
+                else None
+            )
+            probe_net = bool(payload.get("probeNetwork", True))
+            with self._workspace_paths(payload) as paths:
+                match verify_workspace_health(
+                    paths,
+                    pending_env=pending_env,
+                    probe_network=probe_net,
+                    extra_library_roots=self._extra_libs(),
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(health_rep):
+                        return _json_resp(200, {"ok": True, "report": health_rep, **health_rep})
+
+        if method == "POST" and clean_path == "/api/inspect-manifest":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            raw_url = str(payload.get("url") or payload.get("manifestUrl") or "").strip()
+            match inspect_workspace_addon_manifest(raw_url, http_client=self._http_client()):
+                case Err(err):
+                    return _err_resp(400, str(err))
+                case Ok(manifest_info):
+                    return _json_resp(
+                        200, {"ok": True, "manifest": manifest_info, **manifest_info}
+                    )
+
+        if method == "POST" and clean_path == "/api/preview-catalog":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            raw_spec = payload.get("spec")
+            cat_spec: Mapping[str, Any] = raw_spec if isinstance(raw_spec, Mapping) else payload
+            pending_env = (
+                payload.get("pendingEnv")
+                if isinstance(payload.get("pendingEnv"), Mapping)
+                else None
+            )
+            with self._workspace_paths(payload) as paths:
+                match preview_catalog_items(
+                    paths,
+                    cat_spec,
+                    pending_env=pending_env,
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(preview):
+                        return _json_resp(200, {"ok": True, **preview})
+
+        if method == "POST" and clean_path == "/api/raw-doc":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            doc_key = str(payload.get("doc") or payload.get("docKey") or "aiostreams").strip()
+            action = str(
+                payload.get("action") or ("save" if "content" in payload else "get")
+            ).strip().lower()
+            with self._workspace_paths(payload) as paths:
+                if action in ("get", "read", "inspect"):
+                    match inspect_raw_document(paths, doc_key):
+                        case Err(err):
+                            return _err_resp(400, str(err))
+                        case Ok(doc_info):
+                            return _json_resp(200, {"ok": True, **doc_info})
+                if action in ("save", "write", "put"):
+                    raw_content = payload.get("content")
+                    if not isinstance(raw_content, str):
+                        return _err_resp(400, "`content` must be a JSON string when saving raw document")
+                    match save_raw_document(
+                        paths,
+                        doc_key,
+                        raw_content,
+                        extra_library_roots=self._extra_libs(),
+                    ):
+                        case Err(err):
+                            return _err_resp(400, str(err))
+                        case Ok(saved_info):
+                            out = {
+                                "ok": True,
+                                "mode": self._mode_name(),
+                                **saved_info,
+                            }
+                            if self.is_stateless:
+                                out["bundle"] = _serialize_bundle(paths)
+                            return _json_resp(200, out)
+                return _err_resp(400, f"Unsupported raw-doc action `{action}`")
+
+        if method == "POST" and clean_path == "/api/warm":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            raw_workers = payload.get("workers", 8)
+            if isinstance(raw_workers, bool) or not isinstance(raw_workers, (int, float)):
+                return _err_resp(400, "`workers` must be an integer")
+            workers = max(1, min(32, int(raw_workers)))
+            with self._workspace_paths(payload) as paths:
+                match warm_workspace_catalogs(
+                    paths,
+                    workers=workers,
+                    extra_library_roots=self._extra_libs(),
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(warm_res):
+                        return _json_resp(200, {"ok": True, **warm_res})
+
         if method == "POST" and clean_path == "/api/nuvio-login":
             payload = self._parse_json_body(body)
             if payload is None:
                 return _err_resp(400, "Request body must be a JSON object")
             login_name = str(payload.get("login") or "")
-            email = str(payload["email"]) if isinstance(payload.get("email"), str) and payload["email"].strip() else None
-            password = str(payload["password"]) if isinstance(payload.get("password"), str) and payload["password"] else None
+            email = (
+                str(payload["email"])
+                if isinstance(payload.get("email"), str) and payload["email"].strip()
+                else None
+            )
+            password = (
+                str(payload["password"])
+                if isinstance(payload.get("password"), str) and payload["password"]
+                else None
+            )
             with self._workspace_paths(payload) as paths:
                 match login_nuvio_and_list_profiles(
                     paths,
@@ -326,7 +656,14 @@ class StudioDispatcher:
             if payload is None:
                 return _err_resp(400, "Request body must be a JSON object")
             target = str(payload.get("target") or "all")
-            prof = str(payload["profile"]) if isinstance(payload.get("profile"), str) and payload["profile"] else None
+            inst = str(payload.get("instance") or DEFAULT_INSTANCE).strip() or DEFAULT_INSTANCE
+            prof = (
+                str(payload["profile"])
+                if isinstance(payload.get("profile"), str) and payload["profile"]
+                else None
+            )
+            warm_catalogs = bool(payload.get("warmCatalogs", False))
+            create_flag = bool(payload.get("create", False))
             with self._workspace_paths(payload) as paths:
                 if isinstance(payload.get("mutation"), Mapping):
                     match apply_studio_mutation(
@@ -339,7 +676,10 @@ class StudioDispatcher:
                 match push_workspace(
                     paths,
                     target=target,
+                    instance=inst,
                     profile=prof,
+                    create=create_flag,
+                    warm_catalogs=warm_catalogs,
                     extra_library_roots=self._extra_libs(),
                     http_client=self._http_client(),
                 ):
@@ -360,11 +700,17 @@ class StudioDispatcher:
             if payload is None:
                 return _err_resp(400, "Request body must be a JSON object")
             target = str(payload.get("target") or "all")
-            prof = str(payload["profile"]) if isinstance(payload.get("profile"), str) and payload["profile"] else None
+            inst = str(payload.get("instance") or DEFAULT_INSTANCE).strip() or DEFAULT_INSTANCE
+            prof = (
+                str(payload["profile"])
+                if isinstance(payload.get("profile"), str) and payload["profile"]
+                else None
+            )
             with self._workspace_paths(payload) as paths:
                 match pull_workspace(
                     paths,
                     target=target,
+                    instance=inst,
                     profile=prof,
                     extra_library_roots=self._extra_libs(),
                     http_client=self._http_client(),
@@ -387,7 +733,11 @@ class StudioDispatcher:
                 return _err_resp(400, "Request body must be a JSON object")
             raw_spec = payload.get("spec")
             spec: Mapping[str, Any] = raw_spec if isinstance(raw_spec, Mapping) else payload
-            pending_env = payload.get("pendingEnv") if isinstance(payload.get("pendingEnv"), Mapping) else None
+            pending_env = (
+                payload.get("pendingEnv")
+                if isinstance(payload.get("pendingEnv"), Mapping)
+                else None
+            )
             with self._workspace_paths(payload) as paths:
                 match build_custom_folder_sources(
                     paths,
@@ -405,11 +755,17 @@ class StudioDispatcher:
             if payload is None:
                 return _err_resp(400, "Request body must be a JSON object")
             target = str(payload.get("target") or "all")
-            prof = str(payload["profile"]) if isinstance(payload.get("profile"), str) and payload["profile"] else None
+            inst = str(payload.get("instance") or DEFAULT_INSTANCE).strip() or DEFAULT_INSTANCE
+            prof = (
+                str(payload["profile"])
+                if isinstance(payload.get("profile"), str) and payload["profile"]
+                else None
+            )
             with self._workspace_paths(payload) as paths:
                 match diff_workspace(
                     paths,
                     target=target,
+                    instance=inst,
                     profile=prof,
                     extra_library_roots=self._extra_libs(),
                     http_client=self._http_client(),
@@ -432,6 +788,7 @@ class StudioDispatcher:
                                     }
                                     for o in diff_rep.outcomes
                                 ],
+                                "skipped": list(diff_rep.skipped),
                             },
                         )
 
@@ -463,17 +820,7 @@ def serve_studio(
     """Runs the multi-threaded Studio HTTP server until interrupted (`Ctrl+C`)."""
 
     class _Handler(BaseHTTPRequestHandler):
-        def _handle(self, method: str) -> None:
-            length = int(self.headers.get("Content-Length") or "0")
-            body = self.rfile.read(length) if length > 0 else b""
-            req_headers = dict(self.headers.items())
-            resp = dispatcher.dispatch(
-                method,
-                self.path,
-                body,
-                headers=req_headers,
-                enforce_csrf=True,
-            )
+        def _send_studio_response(self, resp: StudioResponse) -> None:
             self.send_response(resp.status)
             self.send_header("Content-Type", resp.content_type)
             self.send_header("Content-Length", str(len(resp.body)))
@@ -482,6 +829,55 @@ def serve_studio(
                 self.send_header(hk, hv)
             self.end_headers()
             self.wfile.write(resp.body)
+            self.wfile.flush()
+
+        def _handle(self, method: str) -> None:
+            length = int(self.headers.get("Content-Length") or "0")
+            body = self.rfile.read(length) if length > 0 else b""
+            req_headers = dict(self.headers.items())
+            clean_path = self.path.split("?", 1)[0]
+
+            if method == "POST" and clean_path == "/api/push-stream":
+                csrf_err = dispatcher._verify_csrf_and_origin(req_headers)
+                if csrf_err is not None:
+                    self._send_studio_response(_err_resp(403, csrf_err))
+                    return
+                if dispatcher._parse_json_body(body) is None:
+                    self._send_studio_response(_err_resp(400, "Request body must be a JSON object"))
+                    return
+
+                headers_sent = False
+
+                def _stream_line(chunk: bytes) -> None:
+                    nonlocal headers_sent
+                    if not headers_sent:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/x-ndjson")
+                        self.send_header("Cache-Control", "no-store")
+                        self.send_header("X-Content-Type-Options", "nosniff")
+                        self.end_headers()
+                        headers_sent = True
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
+
+                resp = dispatcher.dispatch_push_stream(
+                    body,
+                    headers=req_headers,
+                    enforce_csrf=False,
+                    on_chunk=_stream_line,
+                )
+                if not headers_sent:
+                    self._send_studio_response(resp)
+                return
+
+            resp = dispatcher.dispatch(
+                method,
+                self.path,
+                body,
+                headers=req_headers,
+                enforce_csrf=True,
+            )
+            self._send_studio_response(resp)
 
         def do_GET(self) -> None:  # noqa: N802
             self._handle("GET")
