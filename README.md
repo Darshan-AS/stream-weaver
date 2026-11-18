@@ -13,17 +13,21 @@ It manages:
 
 ## Architecture: Functional Core, Imperative Shell
 
-`stream-weaver` is structured as a lean, strictly typed Python 3.14+ package (`src/stream_weaver/`) managed by `uv`:
+`stream-weaver` is structured as a lean, strictly typed Python 3.13+ package (`src/stream_weaver/`) managed by `uv`:
 
 ```mermaid
 flowchart LR
-    subgraph Local["Local Workspace (src/stream_weaver)"]
-        CLI["🧶 sw CLI (Imperative Shell)\nsw push | sw pull | sw sanitize"]
-        CORE["⚙️ Pure Functional Core\nSecret Lenses | AES-GCM Crypto | Dehydration"]
-        CLI --> CORE
+    subgraph Local["Local Workspace & Studio v2 (src/stream_weaver)"]
+        STUDIO["🎬 Stream Weaver Studio v2\nsw studio | --stateless | Docker"]
+        CLI["🧶 sw CLI\nsw push | pull | diff | doctor | packs"]
+        ENGINE["🧭 Unified Workspace Engine\nMulti-Profile | Provision | Live Previews"]
+        CORE["⚙️ Pure Functional Core\nSecret Lenses | AES-GCM | Power Configs"]
+        STUDIO --> ENGINE
+        CLI --> ENGINE
+        ENGINE --> CORE
     end
 
-    subgraph Hosted["AIO Instances (Yours or Family's)"]
+    subgraph Hosted["AIO Instances (ElfHosted or Self-Hosted Docker)"]
         AS["AIOStreams API\nPUT / POST /api/v1/user"]
         AM["AIOMetadata API\nPUT / POST /api/config"]
         MGR["AIOManager API\nPOST /api/sync/:uuid"]
@@ -31,14 +35,15 @@ flowchart LR
 
     subgraph Apps["Streaming Apps"]
         Stremio["Stremio"]
-        Nuvio["Nuvio"]
+        Nuvio["Nuvio (TV / Desktop / Mobile)"]
     end
 
-    CLI <--> AS
-    CLI <--> AM
-    CLI <--> MGR
-    MGR == "Direct API Sync" ==> Stremio
-    MGR == "Direct API Sync" ==> Nuvio
+    ENGINE <--> AS
+    ENGINE <--> AM
+    ENGINE <--> MGR
+    ENGINE == "Direct Cloud Sync" ==> Nuvio
+    MGR == "Autopilot & Sync" ==> Stremio
+    MGR == "Autopilot & Sync" ==> Nuvio
 ```
 
 ### Package Layout
@@ -46,6 +51,10 @@ flowchart LR
   * `secrets.py` — Declarative JSON-path `SecretLens` engine for lossless secret harvesting, scrubbing (`{{SECRET_*}}`), and injection.
   * `crypto.py` — Pure Python PBKDF2-HMAC-SHA256 + AES-256-GCM + raw deflate for AIOManager Cloud Sync (zero external Node.js dependency).
   * `coercions.py` — Pure config normalizers and AIOManager telemetry dehydration/rehydration.
+  * `aiostreams_power.py`, `aiometadata_power.py`, `aiomanager_power.py` — Multi-Debrid & Usenet priority stacking, custom `manifest.json` addon wiring, stream card formatters, advanced stream filters, metadata routers, AI search, poster rating engines, and Autopilot controls.
+  * `doctor.py` — Structured health diagnostics & Stremio addon manifest inspector.
+* `src/stream_weaver/engine/` — **Unified Workspace Engine** (`workspace.py`): shared orchestration for CLI and Studio v2 across multi-profile management, parallel push/pull/diff, NDJSON progress streaming, live catalog poster previews, and auto-scrubbed raw document editing.
+* `src/stream_weaver/studio/` — **Stream Weaver Studio v2** (`server.py` + zero-build ES-module web app in `static/`): works identically in **Local GitOps Mode** and **Zero-Persistence Stateless Browser Mode**.
 * `src/stream_weaver/providers/` — **Extensible Structural Protocols (`typing.Protocol`)**:
   * `ConfigServiceProtocol` (`AIOStreamsService`, `AIOMetadataService`, `AIOManagerService`)
   * `ClientSyncProtocol` (`NuvioClientSync`, `StremioClientSync`)
@@ -89,14 +98,19 @@ A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<
 
 ---
 
-## 1. Quick Start: Replicate This Setup on Your Own Accounts
+## 1. Quick Start: Stream Weaver Studio v2 or Terminal CLI
 
-> **Visual Web Studio (`sw studio`) or Terminal CLI — Your Choice!**
-> Prefer a visual browser configurator with live Nuvio folder cover previews, Debrid/pack switches, and a one-click **Save & Push to Nuvio** button? After `uv sync`, run:
+> **Flagship Dark-Cinema Web App (`sw studio`) — Zero-Build ES Modules, Local GitOps or Stateless Hosted!**
+> Launch Studio in two modes with identical capabilities:
 > * **Local GitOps Studio:** `uv run sw init tenants/<you> --from examples/home && uv run sw studio --tenant <you>`
-> * **Zero-Disk Hosted / Stateless Studio:** `uv run sw studio --stateless` *(keys stay in browser `localStorage`; includes 1-click **Export Repo (.zip)**)*
-> * **Zero-Visit Auto-Provisioning + Upstream Escape Hatches:** New users do **not** sign up on AIOStreams or AIOMetadata first—clicking **✨ Provision New UUIDs** in Studio creates and configures both instances directly via API (requiring only Debrid + TMDB + TVDB + Nuvio login when optional Trakt/MDBList features are off), while built-in **Open My AIOStreams / AIOMetadata Editor ↗** deep-links + **⬇️ Pull from Live** let power users tweak Usenet, custom formatters, or Trakt OAuth anytime.
-> * **Curated Catalog + Full DIY Builder (Zero Lock-In):** Start with curated collections (**A24 / Pixar / 70s–90s Classics**, **K-Drama & Global Hits**, **My Trakt Hub**, **Horror / Drama / Family / War / Stand-Up**, **Crunchyroll / MUBI / Shudder / BBC**, **80s–2000s Anime**, **10+ Regional Cinema** languages) **or** create any custom collection/folder in 1 step by pasting **any MDBList URL/ID**, picking **TMDB Genre + Language + Era** filters, or selecting **any addon catalog**—plus **21-language global Stream Audio filters**, **19-language Strelingo dual-subtitle pairs**, **2160p/1080p/720p + Cached-Only** policies, **12 Nuvio themes**, and 1-click **Pull from Live**.
+> * **Zero-Disk Hosted / Stateless Studio:** `uv run sw studio --stateless` *(zero server persistence; your bundle & keys stay in browser `localStorage`, with 1-click **📦 Export GitOps Zip**)*
+>
+> **What's Inside Studio v2:**
+> * **🧭 4-Step Guided Day-0 Setup Wizard:** Auto-opens on unprovisioned workspaces—pick **ElfHosted Public Instances** (1-click prefill) or **Custom Self-Hosted URLs**, enter Debrid + TMDB + TVDB keys with **🩺 Live Key Verification** right inside the wizard, pick starter collections + regional cinema + Nuvio account, and **1-Click Provision UUIDs & Stream Push** (`application/x-ndjson` live step logs).
+> * **👨‍👩‍👧‍👦 Household Multi-Profile Switcher:** Create profiles via **+ New Profile** using *Standard*, *Minimal*, *Kids & Family*, or *Clone Existing* presets—optionally provisioning a **Dedicated AIOMetadata Instance** (`aiometadata.<profile>.json`) per family member.
+> * **🏠 Interactive Nuvio Home & Live Poster Simulator:** Reorder collections & folder tabs (`↑`/`↓`), preview live poster strips with rating badges (`POST /api/preview-catalog` with offline sample fallback), or build DIY shelves from **MDBList URLs/IDs**, **TMDB Discover filters**, or **any addon catalog**.
+> * **⚡ AIOStreams & AIOMetadata Power Studio:** Stack multiple Debrid + Usenet providers (`torbox`, `realdebrid`, `alldebrid`, `premiumize`, `easynews`) in priority order, paste **any Stremio `manifest.json` URL** to inspect & wire into Primary/Fallback/Subtitles groups, preview **Stream Card Formatters** (*Prism*, *Compact TV*, *Minimal*), tune **Advanced Stream Filters** (max GB, min seeders, HDR/DV policy, codecs, excluded keywords, 21 audio languages, 19-language Strelingo dual-subs), and control **AIOMetadata** routers, **AI Search** (`Gemini` / `OpenRouter`), **Poster Rating Engines** (`RPDB` / `TopPosters` / `Posters+`), and per-catalog overrides.
+> * **☁️ AIOManager, Standalone Addons, Visual Simulators & Raw JSON Escape Hatch:** Configure AIOManager Cloud Sync + Autopilot intervals, manage per-profile standalone Stremio/Nuvio addons, preview **Elite-Badges** (`TOP`/`BOTTOM`) + **16:9 TV/Desktop Subtitle Scale**, run **🩺 Health Doctor** & **🔍 Drift Diff**, or edit scrubbed `aiostreams.json` / `aiometadata.json` / `aiomanager.json` / `tenant.json` / `profile.json` directly in the **🛠️ Raw JSON Modal** (with automatic secret harvesting & `{{SECRET_*}}` scrubbing).
 
 > **Do I need AIOManager or `aio_contraband`?**
 > * **AIOManager is optional:** `sw push` syncs addons, Home Collections, stream badges, details-page enrichment, and app settings **directly to Nuvio** whenever `AIOMANAGER_UUID` is left blank.
@@ -283,6 +297,20 @@ uv run sw diagram --check
 npx likec4 start tenants/<you>/architecture
 ```
 
+### Live Health Doctor, Drift Diff & Modular Addon Packs
+```bash
+# Verify required .env keys, AIOStreams/AIOMetadata reachability, UUID manifests & live API tokens:
+uv run sw doctor --tenant <you>
+uv run sw doctor --offline --tenant <you>                 # skip live network probes
+
+# Inspect drift between local GitOps JSON and live remote servers / Nuvio cloud:
+uv run sw diff --tenant <you>
+
+# Inspect or switch AIOStreams Debrid & modular scraper/subtitle packs from the terminal:
+uv run sw packs list --tenant <you>
+uv run sw packs set --debrid torbox --enable core_debrid,core_subtitles,dual_subtitles --tenant <you>
+```
+
 ### Offline Validation (CI gate)
 ```bash
 uv run sw validate --tenant <you>   # tenant.json schema, document normalization, architecture sync
@@ -291,7 +319,35 @@ uv run sw validate --all-tenants    # what CI runs on every PR
 
 ---
 
-## 3. Development & Verification Suite
+## 3. Docker & Self-Hosted Deployment
+
+Stream Weaver ships a root multi-stage Python 3.13 [`Dockerfile`](Dockerfile) and an all-in-one self-hosted [`docker/docker-compose.yml`](docker/docker-compose.yml) stack (`aiostreams` + `aiometadata` + `redis` + `aiomanager` + `studio`).
+
+### Standalone Studio Container (Stateless Hosted or Local GitOps)
+```bash
+# Build the lightweight wheel-based container:
+docker build -t stream-weaver .
+
+# 1. Stateless Browser Mode (default — zero server persistence, keys stay in browser localStorage):
+docker run --rm -p 8787:8787 stream-weaver
+
+# 2. Local GitOps Mode (mount a host tenant directory to /workspace):
+docker run --rm -p 8787:8787 \
+  -v "$(pwd)/tenants/<you>:/workspace" \
+  stream-weaver studio --dir /workspace --host 0.0.0.0 --port 8787 --no-open
+```
+
+### Full Self-Hosted Streaming Stack (`docker-compose.yml`)
+```bash
+cp docker/.env.selfhost.example docker/.env.selfhost
+# Fill in AIOSTREAMS_SECRET_KEY and AIOMANAGER_ENCRYPTION_KEY (`openssl rand -hex 32`)
+docker compose -f docker/docker-compose.yml up -d --build
+# Open http://localhost:8787 to launch Stream Weaver Studio v2!
+```
+
+---
+
+## 4. Development & Verification Suite
 
 Run the full linter, strict type-checker, and unit + property-based (`hypothesis`) test suite:
 ```bash

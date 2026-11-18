@@ -95,3 +95,28 @@ services:
       retries: 3
       start_period: 20s
 
+  # ============================================================================
+  # 4. Stream Weaver Studio v2 (Visual Control Plane, Setup Wizard & GitOps UI)
+  # ============================================================================
+  studio:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: stream_weaver_studio
+    restart: unless-stopped
+    ports:
+      - "${STUDIO_PORT:-8787}:8787"
+    command: ["studio", "--stateless", "--host", "0.0.0.0", "--port", "8787", "--no-open"]
+    # To run in Local GitOps mode against a host tenant directory instead of
+    # Stateless Browser mode, uncomment the volume mount and command override:
+    # volumes:
+    #   - ../tenants/main:/workspace
+    # command: ["studio", "--dir", "/workspace", "--host", "0.0.0.0", "--port", "8787", "--no-open"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+
