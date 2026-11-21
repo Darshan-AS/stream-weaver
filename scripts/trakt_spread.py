@@ -39,7 +39,8 @@ entry, or `--allow-repeat`), the script removes the existing plays, waits for th
 settle, and sends old and new plays together; plays of one item are never split across requests.
 
 `--replace unknown` re-dates items whose existing plays all have no date (bulk "unknown date"
-marks); `--replace all` replaces whatever plays the planned items have.
+marks); `--replace all` replaces whatever plays the planned items have; `--replace-window
+FROM..TO` replaces only the existing plays dated inside that range and keeps the items' others.
 
 Requires TRAKT_CLIENT_ID in the tenant .env. The Trakt user token from the device sign-in is
 cached in the tenant's git-ignored `.cache/`. With --apply, anything Trakt already has is skipped
@@ -86,6 +87,7 @@ Episode = Mapping[str, Any]
 Planned = tuple[Episode, datetime]
 Play = dict[str, Any]  # kind, parent, item, watched_at, label (+ history_id / resent)
 Existing = tuple[datetime, int]  # (watched_at, history id)
+Window = tuple[datetime, datetime]  # inclusive range of existing plays to replace
 
 
 # ── pure ─────────────────────────────────────────────────────────────────────
@@ -328,21 +330,33 @@ def is_unknown(at: datetime) -> bool:
     return at.year <= 1970
 
 
+def in_window(at: datetime, window: Window | None) -> bool:
+    return window is not None and window[0] <= at <= window[1]
+
+
 def decide(
-    at: datetime, existing: Sequence[datetime], *, rewatch: bool, replace: str | None
+    at: datetime,
+    existing: Sequence[datetime],
+    *,
+    rewatch: bool,
+    replace: str | None,
+    window: Window | None = None,
 ) -> str:
     """
     What to do with one planned play, given the item's existing plays.
 
     "add": nothing there yet. "skip": history already covers it. "replace": remove the existing
-    plays and add the planned one (`--replace`). "regroup": a genuine extra play (rewatch); Trakt
-    would re-date the existing play if it were simply added, so the existing plays are removed
-    and re-sent together with the new one.
+    plays and add the planned one (`--replace`). "redate": some existing plays fall inside the
+    `--replace-window`; those are dropped, the others are kept, and the planned play is added.
+    "regroup": a genuine extra play (rewatch); Trakt would re-date the existing play if it were
+    simply added, so the existing plays are removed and re-sent together with the new one.
     """
     if not existing:
         return "add"
     if replace == "all" or (replace == "unknown" and all(is_unknown(d) for d in existing)):
         return "replace"
+    if any(in_window(d, window) for d in existing):
+        return "redate"
     if already_played(at, existing, rewatch=rewatch):
         return "skip"
     return "regroup"
@@ -579,6 +593,12 @@ def main() -> None:
         help="Replace existing plays of the planned items with the planned dates: 'unknown' only "
         "where every existing play has no date (bulk 'unknown date' marks), 'all' always",
     )
+    ap.add_argument(
+        "--replace-window",
+        metavar="FROM..TO",
+        help="Replace only existing plays dated inside this range (e.g. 2018-09..2018-11) with the "
+        "planned dates; the items' other plays are kept",
+    )
     ap.add_argument("--undo", type=Path, help="Undo log to revert (with --apply; else a dry run)")
     args = ap.parse_args()
 
@@ -605,8 +625,16 @@ def main() -> None:
     now = datetime.now(tz=UTC)
     to_add: list[Play] = []  # new plays, plus existing plays that must be re-sent alongside them
     to_remove: list[Play] = []  # existing plays to remove first (each carries its history id)
-    touched: set[tuple[str, int]] = set()
+    after: dict[tuple[str, int], list[datetime]] = {}  # plays a reworked item will end up with
     cache: dict[int, list[dict[str, Any]]] = {}
+    window: Window | None = None
+    if args.replace_window:
+        lo, _, hi = args.replace_window.partition("..")
+        first, last = parse_bound(lo, end=False), parse_bound(hi or lo, end=True)
+        window = (
+            datetime(first.year, first.month, first.day, tzinfo=tz),
+            datetime(last.year, last.month, last.day, 23, 59, 59, tzinfo=tz),
+        )
 
     def consider(
         kind: str,
@@ -619,26 +647,38 @@ def main() -> None:
         rewatch: bool,
     ) -> str:
         """Queues one planned play; returns what was decided for it."""
-        action = decide(at, [d for d, _ in existing], rewatch=rewatch, replace=args.replace)
+        key = (kind, item)
+        new: Play = {
+            "kind": kind,
+            "parent": parent,
+            "item": item,
+            "watched_at": iso_utc(at),
+            "label": name,
+        }
+        if key in after:  # an earlier entry already reworked this item: only avoid a double play
+            if already_played(at, after[key], rewatch=True):
+                return "skip"
+            after[key].append(at)
+            to_add.append(new)
+            return "add"
+        action = decide(
+            at, [d for d, _ in existing], rewatch=rewatch, replace=args.replace, window=window
+        )
         if action == "skip":
             return action
-        if action in ("replace", "regroup") and (kind, item) not in touched:
+        kept: list[datetime] = []
+        if action != "add":
             for old_at, history_id in existing:
-                old: Play = {
-                    "kind": kind,
-                    "parent": parent,
-                    "item": item,
-                    "watched_at": iso_utc(old_at),
-                    "label": name,
-                    "history_id": history_id,
-                }
+                old: Play = {**new, "watched_at": iso_utc(old_at), "history_id": history_id}
                 to_remove.append(old)
-                if action == "regroup":  # keep the old play: it goes back in the same request
+                stale = action == "replace" or (action == "redate" and in_window(old_at, window))
+                if not stale:  # keep the old play: it goes back in the same request
                     to_add.append({**old, "resent": True})
-        touched.add((kind, item))
-        to_add.append(
-            {"kind": kind, "parent": parent, "item": item, "watched_at": iso_utc(at), "label": name}
-        )
+                    kept.append(old_at)
+        after[key] = kept
+        if not already_played(at, kept, rewatch=True):
+            after[key].append(at)
+            to_add.append(new)
         return action
 
     with httpx.Client(timeout=60) as client:
@@ -692,7 +732,7 @@ def main() -> None:
                 if action != "skip":
                     fresh.append((ep, at))
             stats["already_in_history"] = actions["skip"]
-            stats["replacing"] = actions["replace"]
+            stats["replacing"] = actions["replace"] + actions["redate"]
             stats["added_next_to_existing"] = actions["regroup"]
             mode = "exact" if "exact" in entry else entry.get("when") or "range"
             print(f"📺 {name}  [trakt.tv/shows/{found['ids'].get('slug')}]  {mode}")
