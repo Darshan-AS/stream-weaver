@@ -6,6 +6,7 @@ import os
 import sys
 import urllib.parse
 from collections.abc import Mapping, Sequence
+from contextlib import nullcontext
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Annotated, Any
@@ -939,14 +940,17 @@ def cmd_workspace_use(
 
 @workspace_app.command("show")
 def cmd_workspace_show(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Show the saved default workspace and how `sw` currently resolves a workspace from CWD."""
     cfg_path = user_config_path()
     saved = load_default_workspace()
-    console.print(f"Config file:       {cfg_path}")
-    console.print(f"Default workspace: {saved if saved is not None else '(not set)'}")
+    resolved_path: Path | None = None
     match resolve_tenant_root(
         workspace_dir or _CLI_WORKSPACE_DIR,
         tenant_name=tenant or _CLI_TENANT_NAME,
@@ -955,9 +959,25 @@ def cmd_workspace_show(
         require_marker=True,
     ):
         case Ok(resolved):
-            console.print(f"Active workspace:  {resolved}")
+            resolved_path = resolved
         case Err():
-            console.print("Active workspace:  (none)")
+            resolved_path = None
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "configFile": str(cfg_path),
+                    "defaultWorkspace": str(saved) if saved is not None else None,
+                    "activeWorkspace": str(resolved_path) if resolved_path is not None else None,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
+    console.print(f"Config file:       {cfg_path}")
+    console.print(f"Default workspace: {saved if saved is not None else '(not set)'}")
+    console.print(f"Active workspace:  {resolved_path if resolved_path is not None else '(none)'}")
 
 
 @workspace_app.command("clear")
@@ -1100,11 +1120,43 @@ def _write_profile(paths: TenantPaths, profile: Profile, *, force: bool) -> Path
 
 @profile_app.command("list")
 def cmd_profile_list(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """Show every profile with its instances, logins, Nuvio profile and extra addons."""
     ctx = _resolve_context(workspace_dir, tenant)
+    if json_output:
+        payload = {
+            "tenant": ctx.manifest.name,
+            "profiles": [
+                {
+                    "name": rp.profile.name,
+                    "displayName": rp.profile.display_name,
+                    "instances": dict(rp.profile.instances),
+                    "nuvio": (
+                        {
+                            "login": rp.profile.nuvio.login,
+                            "profileId": rp.profile.nuvio.profile_id,
+                            "profileName": rp.profile.nuvio.profile_name,
+                            "platforms": list(rp.profile.nuvio.platforms),
+                        }
+                        if rp.profile.nuvio
+                        else None
+                    ),
+                    "stremio": {"login": rp.profile.stremio.login} if rp.profile.stremio else None,
+                    "extraAddons": [a.name for a in rp.profile.extra_addons],
+                    "accountId": rp.profile.account_id,
+                    "collectionCount": len(rp.profile.collections),
+                }
+                for rp in ctx.profiles
+            ],
+        }
+        typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
     table = Table(title=f"Profiles — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
     for col in ("Profile", "Display", "AIOStreams", "AIOMetadata", "Nuvio", "Stremio", "Extras", "Account id"):
         table.add_column(col, overflow="fold")
@@ -1321,11 +1373,49 @@ app.add_typer(library_app, name="library")
 @library_app.command("list")
 def cmd_library_list(
     kind: Annotated[str | None, typer.Argument(help="collection | folder | catalog | badges | meta | settings")] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """List recipes with their source root and parameters."""
     ctx = _resolve_context(workspace_dir, tenant)
+    if json_output:
+        recipes_payload = []
+        for (k, rid), recipe in sorted(ctx.library.recipes.items()):
+            if kind and k != kind:
+                continue
+            root = ctx.library.root_of(k, rid)
+            recipes_payload.append(
+                {
+                    "kind": k,
+                    "id": rid,
+                    "params": [
+                        {
+                            "name": p.name,
+                            "type": p.type,
+                            "hasDefault": p.has_default,
+                            "default": p.default if p.has_default else None,
+                        }
+                        for p in recipe.params.params
+                    ],
+                    "root": str(root) if root else None,
+                }
+            )
+        typer.echo(
+            json.dumps(
+                {
+                    "tenant": ctx.manifest.name,
+                    "roots": [str(r) for r in ctx.library.roots],
+                    "recipes": recipes_payload,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
     table = Table(title=f"Library — tenant `{ctx.manifest.name}`", box=box.ROUNDED, header_style="bold")
     for col in ("Kind", "Id", "Params", "Root"):
         table.add_column(col, overflow="fold")
@@ -1889,6 +1979,10 @@ def cmd_config_validate(
         bool,
         typer.Option("--all-tenants", help="Validate every ./tenants/*/ directory instead of the active tenant"),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -1897,22 +1991,45 @@ def cmd_config_validate(
         repo_root = (workspace_dir or _CLI_WORKSPACE_DIR or Path.cwd()).expanduser().resolve()
         targets = [TenantPaths(p) for p in discover_tenants(repo_root)]
         if not targets:
-            err_console.print(f"❌ No tenants found under {repo_root / 'tenants'}")
+            msg = f"No tenants found under {repo_root / 'tenants'}"
+            if json_output:
+                typer.echo(json.dumps({"valid": False, "error": msg, "workspaces": []}, indent=2, ensure_ascii=False))
+            else:
+                err_console.print(f"❌ {msg}")
             raise typer.Exit(code=1)
     else:
         targets = [_resolve_tenant(workspace_dir, tenant)]
 
     any_failed = False
+    results_payload: list[dict[str, Any]] = []
     for paths in targets:
         failures = _validate_tenant(paths)
         label = paths.root.name
         if failures:
             any_failed = True
+        if json_output:
+            results_payload.append(
+                {
+                    "name": label,
+                    "path": str(paths.root),
+                    "valid": not failures,
+                    "failures": list(failures),
+                }
+            )
+        elif failures:
             err_console.print(f"❌ [{label}] {len(failures)} problem(s):")
             for f in failures:
                 err_console.print(f"   • {f}")
         else:
             console.print(f"✅ [{label}] tenant is valid")
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {"valid": not any_failed, "workspaces": results_payload},
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
     if any_failed:
         raise typer.Exit(code=1)
 
@@ -2022,6 +2139,10 @@ def cmd_config_diff(
         bool,
         typer.Option("--exit-code", help="Exit with code 1 if any drift is detected"),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     instance: InstanceNameOption = DEFAULT_INSTANCE,
     profile: ProfileNameOption = None,
     workspace_dir: WorkspaceDirOption = None,
@@ -2029,9 +2150,10 @@ def cmd_config_diff(
 ) -> None:
     """Compare the tenant's documents against live remote instances without modifying any files."""
     paths = _resolve_tenant(workspace_dir, tenant)
+    spinner = nullcontext() if json_output else console.status("🔍 Comparing local configs against live remote instances in parallel...")
     with (
         HttpxClient() as http_client,
-        console.status("🔍 Comparing local configs against live remote instances in parallel..."),
+        spinner,
     ):
         res = diff_workspace(
             paths,
@@ -2043,15 +2165,42 @@ def cmd_config_diff(
         )
     match res:
         case Err(err):
-            err_console.print(f"❌ {err}")
+            if json_output:
+                typer.echo(json.dumps({"inSync": False, "error": str(err)}, indent=2, ensure_ascii=False))
+            else:
+                err_console.print(f"❌ {err}")
             raise typer.Exit(code=1)
         case Ok(report):
-            for skip_msg in report.skipped:
-                console.print(f"⏭️  {skip_msg}")
-            _render_diff_summary_table(report.outcomes)
-            for outcome in report.outcomes:
-                _print_diff_outcome(outcome, stat_only=stat_only)
-            if exit_code and any(not o.in_sync for o in report.outcomes):
+            has_drift = any(not o.in_sync for o in report.outcomes)
+            if json_output:
+                typer.echo(
+                    json.dumps(
+                        {
+                            "inSync": not has_drift,
+                            "skipped": list(report.skipped),
+                            "outcomes": [
+                                {
+                                    "target": o.target,
+                                    "inSync": o.in_sync,
+                                    "changedKeys": list(o.changed_keys),
+                                    "addedLines": o.added_lines,
+                                    "removedLines": o.removed_lines,
+                                    "unifiedDiff": "" if stat_only else o.unified_diff,
+                                }
+                                for o in report.outcomes
+                            ],
+                        },
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                )
+            else:
+                for skip_msg in report.skipped:
+                    console.print(f"⏭️  {skip_msg}")
+                _render_diff_summary_table(report.outcomes)
+                for outcome in report.outcomes:
+                    _print_diff_outcome(outcome, stat_only=stat_only)
+            if exit_code and has_drift:
                 raise typer.Exit(code=1)
 
 

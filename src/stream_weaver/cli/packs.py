@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Annotated
 
@@ -45,6 +46,10 @@ TenantNameOption = Annotated[
 
 @packs_app.command("list")
 def cmd_packs_list(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured JSON output for scripts and agents"),
+    ] = False,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
@@ -65,6 +70,39 @@ def cmd_packs_list(
     debrid_label = f"{debrid_spec.label} ({debrid_spec.secret_key})" if debrid_spec else debrid_id
     prefs = inspect_stream_preferences(streams_doc)
     pairs = inspect_dual_subtitle_pairs(streams_doc)
+    pack_statuses = inspect_aiostreams_packs(streams_doc)
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "tenant": ctx.manifest.name,
+                    "debrid": {
+                        "id": debrid_id,
+                        "label": debrid_spec.label if debrid_spec else debrid_id,
+                        "secretKey": debrid_spec.secret_key if debrid_spec else None,
+                    },
+                    "streamPolicy": {
+                        "maxResolution": prefs.max_resolution,
+                        "cachedOnly": prefs.cached_only,
+                        "audioLanguages": list(prefs.audio_languages),
+                        "dualSubtitlePairs": [{"main": m, "translation": t} for m, t in pairs],
+                    },
+                    "packs": [
+                        {
+                            "id": st.spec.id,
+                            "title": st.spec.title,
+                            "enabled": st.enabled,
+                            "presentPresets": list(st.present_presets),
+                            "requiredSecrets": list(st.spec.required_secrets),
+                        }
+                        for st in pack_statuses
+                    ],
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
     pairs_label = (
         ", ".join(
             f"{STRELINGO_BY_CODE[m].code2 if m in STRELINGO_BY_CODE else m}→{STRELINGO_BY_CODE[t].code2 if t in STRELINGO_BY_CODE else t}"
@@ -84,7 +122,7 @@ def cmd_packs_list(
     )
     for col in ("Pack", "Title", "Enabled", "Presets", "Extra Secrets"):
         table.add_column(col, overflow="fold")
-    for st in inspect_aiostreams_packs(streams_doc):
+    for st in pack_statuses:
         table.add_row(
             st.spec.id,
             st.spec.title,
