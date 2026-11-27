@@ -330,3 +330,11 @@ def test_load_default_workspace_handles_unreadable_config_and_skips_when_explici
     assert init_res.exit_code == 0, init_res.output
     val_res = runner.invoke(app, ["validate", "--dir", str(ws)])
     assert val_res.exit_code == 0, val_res.output
+
+
+def test_subcommand_groups_show_help_when_invoked_without_subcommand() -> None:
+    for group in ("config", "packs", "workspace", "profile", "library", "migrate", "login", "instance"):
+        res = runner.invoke(app, [group])
+        assert "Missing command" not in res.output, f"{group}: {res.output}"
+        assert "Usage:" in res.output, f"{group}: {res.output}"
+        assert "Commands" in res.output, f"{group}: {res.output}"

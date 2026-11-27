@@ -23,7 +23,10 @@ from stream_weaver.core.tenant import TENANT_FILE
 from stream_weaver.effects.storage import read_json_file
 from stream_weaver.engine.workspace import apply_debrid_and_packs
 
-packs_app = typer.Typer(help="Inspect and toggle AIOStreams Debrid providers and modular addon packs.")
+packs_app = typer.Typer(
+    help="Inspect and toggle AIOStreams Debrid providers and modular addon packs.",
+    no_args_is_help=True,
+)
 
 WorkspaceDirOption = Annotated[
     Path | None,

@@ -107,7 +107,10 @@ app = typer.Typer(
     help="Stream Weaver — Pure Functional GitOps Control Plane for AIOStreams, AIOMetadata, AIOManager, Nuvio & Stremio.",
     no_args_is_help=True,
 )
-config_app = typer.Typer(help="Manage AIOStreams, AIOMetadata, and AIOManager GitOps configurations.")
+config_app = typer.Typer(
+    help="Manage AIOStreams, AIOMetadata, and AIOManager GitOps configurations.",
+    no_args_is_help=True,
+)
 app.add_typer(config_app, name="config")
 app.add_typer(packs_app, name="packs")
 
@@ -910,7 +913,10 @@ def cmd_config_init(
         )
 
 
-workspace_app = typer.Typer(help="Manage the remembered default Stream Weaver workspace.")
+workspace_app = typer.Typer(
+    help="Manage the remembered default Stream Weaver workspace.",
+    no_args_is_help=True,
+)
 app.add_typer(workspace_app, name="workspace")
 
 
@@ -1085,7 +1091,10 @@ def _validate_tenant(paths: TenantPaths) -> list[str]:
 # `sw profile` — people (identity bindings) of the active tenant
 # ============================================================================
 
-profile_app = typer.Typer(help="Manage profiles: one person's instances, logins, Nuvio profile and extra addons.")
+profile_app = typer.Typer(
+    help="Manage profiles: one person's instances, logins, Nuvio profile and extra addons.",
+    no_args_is_help=True,
+)
 app.add_typer(profile_app, name="profile")
 
 
@@ -1366,7 +1375,10 @@ def cmd_profile_new(
 # `sw library` — recipes available to the active tenant
 # ============================================================================
 
-library_app = typer.Typer(help="Browse and render the recipe library (tenant-local roots first, then shared).")
+library_app = typer.Typer(
+    help="Browse and render the recipe library (tenant-local roots first, then shared).",
+    no_args_is_help=True,
+)
 app.add_typer(library_app, name="library")
 
 
@@ -1476,7 +1488,10 @@ def cmd_library_show(
 # `sw migrate` — schema / layout upgrades
 # ============================================================================
 
-migrate_app = typer.Typer(help="One-shot migrations between stream-weaver layouts and schema versions.")
+migrate_app = typer.Typer(
+    help="One-shot migrations between stream-weaver layouts and schema versions.",
+    no_args_is_help=True,
+)
 app.add_typer(migrate_app, name="migrate")
 
 
@@ -1646,7 +1661,10 @@ def cmd_migrate_compose(
 # `sw login` — named client logins (tenant.json `logins` registry)
 # ============================================================================
 
-login_app = typer.Typer(help="Sign in to client platforms (Nuvio, Stremio) and store tokens per named login.")
+login_app = typer.Typer(
+    help="Sign in to client platforms (Nuvio, Stremio) and store tokens per named login.",
+    no_args_is_help=True,
+)
 app.add_typer(login_app, name="login")
 
 
@@ -1837,7 +1855,10 @@ def cmd_login_adopt(
 # `sw instance` — named service instances (tenant.json `instances` registry)
 # ============================================================================
 
-instance_app = typer.Typer(help="Register and inspect named service instances of the active tenant.")
+instance_app = typer.Typer(
+    help="Register and inspect named service instances of the active tenant.",
+    no_args_is_help=True,
+)
 app.add_typer(instance_app, name="instance")
 
 
