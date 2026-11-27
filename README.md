@@ -60,41 +60,41 @@ flowchart LR
   * `ClientSyncProtocol` (`NuvioClientSync`, `StremioClientSync`)
 * `src/stream_weaver/effects/` & `src/stream_weaver/cli/` — **Imperative Shell** (`httpx` HTTP adapter, JSON/`.env` persistence, and `typer`/`rich` CLI).
 
-### Repository Layout: Library → Profile → Tenant
-The repo separates **tool** from **data**, and data into three layers:
+### Workspace Layout: Library → Profile → Workspace
+The tool separates **code** (`stream-weaver`) from **your personal data** (which lives cleanly in its own standalone folder such as `~/my-streaming-stack`, backed by your own private Git repo), layered cleanly in three tiers:
 
 | Layer | What lives here | Owned by |
 | :--- | :--- | :--- |
-| **Library** (`library/`, `tenants/<t>/library/`) | identity-free *recipes*: collection / folder / catalog / badges / meta / settings fragments, optionally parameterised (`${language}`, `for` loops) | shared, or tenant-private when it needs a custom AIOStreams preset |
-| **Profile** (`tenants/<t>/profiles/<p>/profile.json`) | one person: which instances and logins they use, which Nuvio profile, plus their *taste* — `collections` as `{ref, with}` items (or inline), `badges`/`meta`/`settings` refs, `aiometadata.extraCatalogs` | the tenant's maintainer |
-| **Tenant** (`tenants/<t>/`) | identity + infrastructure: `tenant.json` (instances, logins, profiles, library roots), `.env`, raw `aiostreams.json` / `aiomanager.json`, one `aiometadata[.<instance>].json` per AIOMetadata instance | one maintainer |
+| **Library** (bundled `library/`, plus local `<workspace>/library/`) | identity-free *recipes*: collection / folder / catalog / badges / meta / settings fragments, optionally parameterised (`${language}`, `for` loops) | shared upstream, or workspace-private for custom AIOStreams presets |
+| **Profile** (`<workspace>/profiles/<p>/profile.json`) | one person / household member: which instances and logins they use, which Nuvio profile, plus their *taste* — `collections` as `{ref, with}` items (or inline), `badges`/`meta`/`settings` refs, `aiometadata.extraCatalogs` | the workspace maintainer |
+| **Workspace** (`<workspace>/`) | identity + infrastructure: `tenant.json` (instances, logins, profiles, library roots), `.env`, raw `aiostreams.json` / `aiomanager.json`, one `aiometadata[.<instance>].json` per AIOMetadata instance | you (private folder/repo) |
 
-The tool never assumes where a tenant lives; it is told via `--tenant <name>` (→ `./tenants/<name>`), `--dir <path>`, `STREAM_WEAVER_DIR`, or by running inside a directory containing `tenant.json`.
+`sw` never hardcodes where your config lives; workspace resolution checks `--dir <path>`, `--tenant <name>` (`./tenants/<name>` for multi-tenant monorepos), `STREAM_WEAVER_DIR`, a `tenant.json` in your current working directory, and finally your remembered default workspace (`~/.config/stream-weaver/config.json`, set via `sw workspace use <path>` or `sw init <path> --use`).
 
 ```text
-stream-weaver/
-├── src/stream_weaver/            tool (sw) — reads only the tenant dir + library roots it is given
-├── library/                      shared recipes (collections/, folders/, catalogs/, badges/, meta/, settings/)
-├── examples/home/                identity-free demo tenant: docs + test fixture (`sw init --from examples/home`)
-├── tenants/
-│   └── don/
-│       ├── tenant.json           instances {aiometadata: {default, dad}}, logins {nuvio: {don}}, profiles [don, dad]
-│       ├── .env                  all values (gitignored): AIOMETADATA_DAD_UUID, SECRET_NUVIO_ACCESS_TOKEN, …
-│       ├── aiostreams.json       raw instance document (shared by every profile)
-│       ├── aiomanager.json       raw document; accounts[] is *managed* (regenerated from profiles on push)
-│       ├── aiometadata.json      instance `default` — catalogs *derived* from the profiles bound to it
-│       ├── aiometadata.dad.json  instance `dad`
-│       ├── profiles/{don,dad}/profile.json
-│       ├── library/              tenant-private recipes (Contraband, ItsOut-dependent folders)
-│       ├── architecture/ · ARCHITECTURE.md   generated
-└── .github/CODEOWNERS            src/ + library/ need review; tenants/<x>/ is self-owned
+stream-weaver/                       tool (`sw` + Studio v2)
+├── src/stream_weaver/               core, engine, studio, providers, cli
+├── library/                         bundled shared recipes (ships inside the installed package)
+├── examples/home/                   identity-free public demo & starter template (`sw init --starter`)
+└── .github/CODEOWNERS
+
+~/my-streaming-stack/                your portable private config repo (`sw init --starter --use`)
+├── tenant.json                      instances, logins, profiles [main, dad, …], libraries ["library"]
+├── .env                             secrets & UUIDs (gitignored automatically)
+├── aiostreams.json                  raw instance document (shared across profiles)
+├── aiomanager.json                  raw document; accounts[] is managed from profiles on push
+├── aiometadata.json                 instance `default` — catalogs derived from bound profiles
+├── aiometadata.<profile>.json       optional per-person AIOMetadata instance
+├── profiles/<profile>/profile.json  per-person collections, badges, meta, settings
+├── library/                         optional workspace-private recipes
+└── architecture/ · ARCHITECTURE.md  generated LikeC4 topology & Markdown overview
 ```
 
-**How a push works:** every profile is *compiled* — recipe refs are rendered, symbolic addons (`aiometadata`, `aiostreams`, `bingecat`, …) are resolved to manifest ids from the tenant's cached manifests, BingeCat rows are matched by name, AIOStreams rows by `preset` + `catalog`. The compiled documents feed three pushes: each AIOMetadata instance gets the union of catalogs its profiles reference (everything else disabled), `aiomanager.json` gets one managed account per profile (addons = instances + extras, connections = logins), and each Nuvio profile gets its collections / badges / meta / settings.
+**How a push works:** every profile is *compiled* — recipe refs are rendered, symbolic addons (`aiometadata`, `aiostreams`, `bingecat`, …) are resolved to manifest ids from the workspace's cached manifests, BingeCat rows are matched by name, AIOStreams rows by `preset` + `catalog`. The compiled documents feed three pushes: each AIOMetadata instance gets the union of catalogs its profiles reference (everything else disabled), `aiomanager.json` gets one managed account per profile (addons = instances + extras, connections = logins), and each Nuvio profile gets its collections / badges / meta / settings.
 
 **How a pull works:** server documents are compared with each profile's rendering. Items still equal to their recipe stay `{ref}`; items edited on a device are *ejected* inline into `profile.json` (lossless — the file always compiles back to what the server has). Raw instance documents (`aiostreams.json`, `aiomanager.json`) are written back as before.
 
-A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<name> --from examples/home`), gets the shared library for free, and runs every command with `--tenant <name>`.
+A friend or family member with a separate Debrid stack simply creates their own folder (`sw init ~/friend-stack --starter`), gets the bundled shared library automatically, and switches with `sw --dir ~/friend-stack` or `sw use ~/friend-stack`.
 
 ---
 
@@ -132,8 +132,8 @@ From now on, plain `sw studio`, `sw push`, `sw pull`, `sw doctor`, and `sw valid
 
 > Running straight from a git clone without installing globally? Replace `sw` with `uv run sw` inside the cloned repo (and pass `--dir ~/my-streaming-stack` or `sw init ~/my-streaming-stack --starter --use`).
 
-### Step 2: Fill in Your Keys in `tenants/<you>/.env`
-Open `tenants/<you>/.env` and fill in:
+### Step 2: Fill in Your Keys in `~/my-streaming-stack/.env` (or via Studio Wizard)
+Run `sw studio` to fill everything visually in the 4-step wizard, or edit `~/my-streaming-stack/.env` directly:
 1. **Instance URLs** (hosted instances such as ElfHosted / MidnightIgnite, or your own via [`docker/docker-compose.yml`](docker/docker-compose.yml)):
    ```dotenv
    AIOSTREAMS_URL=https://aiostreams.elfhosted.com
@@ -159,21 +159,21 @@ Open `tenants/<you>/.env` and fill in:
 1. **Sign in to the Nuvio app at least once** on each device you use (`tv`, `desktop`, `mobile`) so Nuvio initialises that platform's profile settings blob in cloud sync (and optionally link Trakt inside Nuvio for Continue Watching / comments).
 2. **Create your AIOStreams & AIOMetadata instances** (this automatically writes `AIOSTREAMS_UUID`, `SECRET_AIOSTREAMS_ENCRYPTED_PASSWORD`, and `AIOMETADATA_UUID` into `.env`):
    ```bash
-   uv run sw push aiostreams --create --tenant <you>
-   uv run sw push aiometadata --create --tenant <you>
+   sw push aiostreams --create
+   sw push aiometadata --create
    ```
 3. **Sign in to Nuvio via `sw` and push your full stack:**
    ```bash
-   uv run sw login nuvio --login main --tenant <you>
-   uv run sw push --tenant <you>
+   sw login nuvio --login main
+   sw push
    ```
-   `sw push` refreshes your live AIOStreams / AIOMetadata / BingeCat manifests so your personal BingeCat list IDs resolve automatically, then syncs your addons, all 7 Home Collections, `Elite-Badges`, MDBList/TMDB details enrichment, and app settings straight to Nuvio Profile #1 (or pass `--nuvio-profile` / edit `profiles/main/profile.json` to target another profile from `uv run sw profile nuvio-list --login main --tenant <you>`).
-4. *(Optional — AIOManager & Stremio)*: If you also use **AIOManager** Cloud Sync, fill `AIOMANAGER_URL`, `AIOMANAGER_UUID`, and `AIOMANAGER_SYNC_PASSWORD` in `.env`. Either sign in to Stremio (`uv run sw login stremio --login main --tenant <you>`) or delete `"stremio": {"login": "main"}` from `tenants/<you>/profiles/main/profile.json` if you only use Nuvio.
+   `sw push` refreshes your live AIOStreams / AIOMetadata / BingeCat manifests so your personal BingeCat list IDs resolve automatically, then syncs your addons, all 7 Home Collections, `Elite-Badges`, MDBList/TMDB details enrichment, and app settings straight to Nuvio Profile #1 (or pass `--nuvio-profile` / edit `profiles/main/profile.json` to target another profile from `sw profile nuvio-list --login main`).
+4. *(Optional — AIOManager & Stremio)*: If you also use **AIOManager** Cloud Sync, fill `AIOMANAGER_URL`, `AIOMANAGER_UUID`, and `AIOMANAGER_SYNC_PASSWORD` in `.env`. Either sign in to Stremio (`sw login stremio --login main`) or delete `"stremio": {"login": "main"}` from `profiles/main/profile.json` if you only use Nuvio.
 
 #### Optional: Enable Contraband (Peterson Academy)
-If you also want the **Peterson Academy** folder inside *Courses & Documentaries*:
-1. Copy [`tenants/don/library/folders/fld-peterson-academy.json`](tenants/don/library/folders/fld-peterson-academy.json) into `tenants/<you>/library/folders/` and add `{"ref": "fld-peterson-academy"}` to `tenants/<you>/library/collections/col-courses-docs.json`.
-2. Copy the `"swc"` preset (`https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/manifest.json`) and `"swc"` group entry from [`tenants/don/aiostreams.json`](tenants/don/aiostreams.json) into `tenants/<you>/aiostreams.json`, then run `uv run sw push --tenant <you>`. *(Note: Contraband streams use BitTorrent `infoHash`es, which play instantly when cached in TorBox.)*
+If you also want [`aio_contraband`](https://github.com/Darshan-AS/aio_contraband) inside AIOStreams and a **Courses** shelf on Home:
+1. In **Studio → AIOStreams Power → Custom Addon URL Manager**, add `https://raw.githubusercontent.com/Darshan-AS/aio_contraband/main/manifest.json` (or add a custom `swc` preset in `aiostreams.json`).
+2. Add a local folder recipe in `~/my-streaming-stack/library/folders/` referencing its catalog and include it in your profile's `collections`, then run `sw push`. *(Note: Contraband streams use BitTorrent `infoHash`es, which play instantly when cached in TorBox.)*
 
 ---
 
@@ -181,45 +181,50 @@ If you also want the **Peterson Academy** folder inside *Courses & Documentaries
 
 ### Pushing Local Config Edits to Live Instances
 ```bash
+# Check or switch which workspace directory `sw` targets globally:
+sw workspace show
+sw workspace use ~/my-streaming-stack        # alias: sw use <path>
+sw workspace clear
+
 # Push AIOStreams, AIOMetadata, AIOManager, Nuvio & Stremio in one shot:
-uv run sw push
+sw push
 
 # Or push a single service:
-uv run sw push aiostreams
-uv run sw push aiometadata
-uv run sw push aiomanager
+sw push aiostreams
+sw push aiometadata
+sw push aiomanager
 
 # Or push only the Nuvio client-side profile settings (no AIOManager round-trip):
-uv run sw push nuvio              # addons + collections + badges + meta enrichment + app settings
-uv run sw push nuvio_collections  # Home screen folders only
-uv run sw push nuvio_badges       # stream badge packs only
-uv run sw push nuvio_meta         # details-page enrichment only (see below)
-uv run sw push nuvio_settings     # playback / subtitles / audio / theme / TV layout (see below)
+sw push nuvio              # addons + collections + badges + meta enrichment + app settings
+sw push nuvio_collections  # Home screen folders only
+sw push nuvio_badges       # stream badge packs only
+sw push nuvio_meta         # details-page enrichment only (see below)
+sw push nuvio_settings     # playback / subtitles / audio / theme / TV layout (see below)
 ```
 
 ### People: Profiles, Instances, Logins
 ```bash
-uv run sw profile list --tenant don                      # who exists, which instances/logins/collections
-uv run sw profile import "Don" --name don                # migrate an existing AIOManager account into a profile
-uv run sw profile nuvio-list --login don                 # Nuvio profiles (index, name, id) on a login
-uv run sw profile new dad --aiometadata dad --nuvio-login don --nuvio-profile Dad --extras-from don
+sw profile list                                            # who exists, which instances/logins/collections
+sw profile import "Main" --name main                       # migrate an existing AIOManager account into a profile
+sw profile nuvio-list --login main                         # Nuvio profiles (index, name, id) on a login
+sw profile new dad --aiometadata dad --nuvio-login main --nuvio-profile Dad --extras-from main
 
-uv run sw instance list                                   # named service instances + readiness
-uv run sw instance new aiometadata dad --from tenants/don/aiometadata.json
-uv run sw push aiometadata --profile dad --create         # provision it; UUID written to AIOMETADATA_DAD_UUID
+sw instance list                                           # named service instances + readiness
+sw instance new aiometadata dad --from aiometadata.json
+sw push aiometadata --profile dad --create                 # provision it; UUID written to AIOMETADATA_DAD_UUID
 
-uv run sw login nuvio --login gf                          # own Nuvio account → SECRET_NUVIO_GF_*
-uv run sw login adopt nuvio --login don --prefix NUVIO    # register already-present SECRET_NUVIO_* keys
-uv run sw login list
+sw login nuvio --login gf                                  # own Nuvio account → SECRET_NUVIO_GF_*
+sw login adopt nuvio --login main --prefix NUVIO           # register already-present SECRET_NUVIO_* keys
+sw login list
 
-uv run sw push --profile dad                              # scope Nuvio sync + instance bindings to one profile
+sw push --profile dad                                      # scope Nuvio sync + instance bindings to one profile
 ```
 
 ### Recipes: the Library
 ```bash
-uv run sw library list                                    # every recipe, params, and which root it comes from
-uv run sw library show folder regional-movies -w language=kn -w slug=kannada -w label=Kannada
-uv run sw migrate compose                                 # lift legacy root nuvio_*.json into recipes + refs (golden-gated)
+sw library list                                            # every recipe, params, and which root it comes from
+sw library show folder regional-movies -w language=kn -w slug=kannada -w label=Kannada
+sw migrate compose                                         # lift legacy root nuvio_*.json into recipes + refs
 ```
 A profile composes recipes:
 ```jsonc
@@ -283,45 +288,45 @@ provider-credential RPCs; leave blank to keep whatever each device already has).
 ### Pulling Changes Made in the Web UI
 If you tweak settings visually in the AIOStreams, AIOMetadata, or AIOManager web UI:
 ```bash
-uv run sw pull --tenant <you>
-git diff tenants/<you>/          # raw docs rewritten; device edits to Home/badges/settings ejected into profiles/*/profile.json
+sw pull
+git diff                         # raw docs rewritten; device edits to Home/badges/settings ejected into profiles/*/profile.json
 ```
 `sw pull` automatically harvests any new API keys into `.env`, dehydrates volatile runtime telemetry (`watchEvents`, `changelog`, duplicate cached manifests), and scrubs secrets into `{{SECRET_*}}` placeholders via JSON-path lenses.
 
 ### Sanitizing Manually Exported Config Files
 ```bash
-uv run sw sanitize
+sw sanitize
 ```
 
 ### Self-Updating Architecture Topology (`LikeC4` & `ARCHITECTURE.md`)
-`stream-weaver` automatically compiles each tenant's JSON documents into an interactive **LikeC4** model (`tenants/<you>/architecture/topology.c4`) and a GitHub-rendered Markdown overview (e.g. [`tenants/don/ARCHITECTURE.md`](tenants/don/ARCHITECTURE.md)) on every `sw pull`, `sw push`, `sw sanitize`, and `git commit`:
+`stream-weaver` automatically compiles each workspace's JSON documents into an interactive **LikeC4** model (`architecture/topology.c4`) and a GitHub-rendered Markdown overview (e.g. [`examples/home/ARCHITECTURE.md`](examples/home/ARCHITECTURE.md)) on every `sw pull`, `sw push`, `sw sanitize`, and workspace diagram update:
 ```bash
 # Manually regenerate or check for drift:
-uv run sw diagram
-uv run sw diagram --check
+sw diagram
+sw diagram --check
 
 # Launch the interactive LikeC4 zoomable architecture explorer:
-npx likec4 start tenants/<you>/architecture
+npx likec4 start ~/my-streaming-stack/architecture
 ```
 
 ### Live Health Doctor, Drift Diff & Modular Addon Packs
 ```bash
 # Verify required .env keys, AIOStreams/AIOMetadata reachability, UUID manifests & live API tokens:
-uv run sw doctor --tenant <you>
-uv run sw doctor --offline --tenant <you>                 # skip live network probes
+sw doctor
+sw doctor --offline                                        # skip live network probes
 
 # Inspect drift between local GitOps JSON and live remote servers / Nuvio cloud:
-uv run sw diff --tenant <you>
+sw diff
 
 # Inspect or switch AIOStreams Debrid & modular scraper/subtitle packs from the terminal:
-uv run sw packs list --tenant <you>
-uv run sw packs set --debrid torbox --enable core_debrid,core_subtitles,dual_subtitles --tenant <you>
+sw packs list
+sw packs set --debrid torbox --enable core_debrid,core_subtitles,dual_subtitles
 ```
 
 ### Offline Validation (CI gate)
 ```bash
-uv run sw validate --tenant <you>   # tenant.json schema, document normalization, architecture sync
-uv run sw validate --all-tenants    # what CI runs on every PR
+sw validate                           # validates active workspace (tenant.json, docs, architecture sync)
+sw validate --dir examples/home       # what CI validates on every PR
 ```
 
 ---
@@ -338,9 +343,9 @@ docker build -t stream-weaver .
 # 1. Stateless Browser Mode (default — zero server persistence, keys stay in browser localStorage):
 docker run --rm -p 8787:8787 stream-weaver
 
-# 2. Local GitOps Mode (mount a host tenant directory to /workspace):
+# 2. Local GitOps Mode (mount your host workspace directory to /workspace):
 docker run --rm -p 8787:8787 \
-  -v "$(pwd)/tenants/<you>:/workspace" \
+  -v "$HOME/my-streaming-stack:/workspace" \
   stream-weaver studio --dir /workspace --host 0.0.0.0 --port 8787 --no-open
 ```
 
