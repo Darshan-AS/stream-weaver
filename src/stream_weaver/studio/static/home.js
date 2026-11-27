@@ -129,10 +129,10 @@ export function renderHomeTab(root, ctx) {
     );
 
     const info = document.createElement("div");
-    info.style.cssText = "display:flex;align-items:center;gap:6px;min-width:0";
+    info.style.cssText = "display:flex;align-items:center;gap:6px;min-width:0;flex:1;overflow:hidden";
     info.innerHTML = `
       <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
-      <div style="min-width:0">
+      <div style="min-width:0;flex:1;overflow:hidden">
         <div class="col-item-title">${idx + 1}. ${escapeHtml(col.title)}</div>
         <div class="col-item-meta">${(col.folders || []).length} tab(s) · <code>${escapeHtml(col.ref || "diy-inline")}</code></div>
       </div>

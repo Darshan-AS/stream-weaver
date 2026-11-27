@@ -68,7 +68,10 @@ function renderAppearanceAndSubtitlesCard(ctx, p) {
   card.className = "card";
   card.innerHTML = `
     <div class="card-eyebrow">${icon("sliders", 12)} Appearance &amp; Player</div>
-    <h2>Nuvio Themes, Layout &amp; Subtitles (<code>nuvio_settings</code>)</h2>
+    <div class="row-between" style="gap:8px;flex-wrap:wrap;margin-bottom:4px">
+      <h2 style="margin:0">Nuvio Themes, Layout &amp; Subtitles</h2>
+      <code>nuvio_settings</code>
+    </div>
     <p class="sub">Changes reflect immediately in the live TV/Desktop/Mobile viewport.</p>
   `;
 

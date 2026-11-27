@@ -458,7 +458,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "certification": "TV-MA",
         "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
-        "backdropUrl": "https://image.tmdb.org/t/p/w1280/ixgFmf1X59PUy2yE85gB2kG0v7m.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/hPea3Qy5Gd6z4kJLUruBbwAH8Rm.jpg",
         "logoUrl": "",
         "overview": "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
         "genres": ["Sci-Fi", "Thriller"],

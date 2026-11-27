@@ -87,55 +87,33 @@ const STREAM_SAMPLES = [
 
 const CONTINUE_WATCHING_SAMPLES = [
   {
-    title: "Princess Mononoke",
+    title: "Spirited Away",
     epCode: "",
     epName: "",
     pill: "12% watched",
     prog: 12,
-    bg: "https://image.tmdb.org/t/p/w1280/gl0jzn4BupSbL2qmveqrjKkF9Js.jpg",
+    bg: "https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg",
     item: {
-      id: "tt0119698",
-      title: "Princess Mononoke",
-      year: "1997",
-      runtime: "2h 14m",
-      certification: "PG-13",
+      id: "tt0245429",
+      title: "Spirited Away",
+      year: "2001",
+      runtime: "2h 5m",
+      certification: "PG",
       language: "JA",
-      rating: "8.4",
+      rating: "8.6",
       type: "movie",
-      posterUrl: "https://image.tmdb.org/t/p/w500/cMYCDADoLKLbB83g4WnJegaZimC.jpg",
-      backdropUrl: "https://image.tmdb.org/t/p/w1280/gl0jzn4BupSbL2qmveqrjKkF9Js.jpg",
-      overview: "On a journey to find the cure for a Tatarigami's curse, Ashitaka finds himself in the middle of a war between the forest gods and a mining colony.",
+      posterUrl: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg",
+      overview: "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits.",
       genres: ["Animation", "Fantasy"],
-    },
-  },
-  {
-    title: "Severance",
-    epCode: "S1 E4",
-    epName: "The You You Are",
-    pill: "Next Up",
-    prog: 0,
-    bg: "https://image.tmdb.org/t/p/w1280/ixgFmf1X59PUy2yE85gB2kG0v7m.jpg",
-    item: {
-      id: "tt11280740",
-      title: "Severance",
-      year: "2022",
-      runtime: "55m",
-      certification: "TV-MA",
-      language: "EN",
-      rating: "8.7",
-      type: "series",
-      posterUrl: "https://image.tmdb.org/t/p/w500/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
-      backdropUrl: "https://image.tmdb.org/t/p/w1280/ixgFmf1X59PUy2yE85gB2kG0v7m.jpg",
-      overview: "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
-      genres: ["Sci-Fi", "Thriller"],
     },
   },
   {
     title: "Shogun",
     epCode: "S1 E3",
     epName: "Tomorrow Is Tomorrow",
-    pill: "18% watched",
-    prog: 18,
+    pill: "Next Up",
+    prog: 0,
     bg: "https://image.tmdb.org/t/p/w1280/5zmiBoMzeeVdQ62no55JOJMY498.jpg",
     item: {
       id: "tt2788316",
@@ -156,8 +134,8 @@ const CONTINUE_WATCHING_SAMPLES = [
     title: "Arcane",
     epCode: "S2 E2",
     epName: "Watch It All Burn",
-    pill: "64% watched",
-    prog: 64,
+    pill: "18% watched",
+    prog: 18,
     bg: "https://image.tmdb.org/t/p/w1280/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg",
     item: {
       id: "tt11126994",
@@ -172,6 +150,28 @@ const CONTINUE_WATCHING_SAMPLES = [
       backdropUrl: "https://image.tmdb.org/t/p/w1280/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg",
       overview: "Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies and clashing convictions.",
       genres: ["Animation", "Sci-Fi"],
+    },
+  },
+  {
+    title: "Dune: Part Two",
+    epCode: "",
+    epName: "",
+    pill: "64% watched",
+    prog: 64,
+    bg: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+    item: {
+      id: "tt15239678",
+      title: "Dune: Part Two",
+      year: "2024",
+      runtime: "2h 46m",
+      certification: "PG-13",
+      language: "EN",
+      rating: "8.5",
+      type: "movie",
+      posterUrl: "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+      overview: "Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.",
+      genres: ["Sci-Fi", "Adventure"],
     },
   },
 ];
@@ -224,13 +224,57 @@ const DEFAULT_HERO_SLIDES = [
   },
 ];
 
-const CAST_SAMPLES = [
-  { name: "Timothée Chalamet", role: "Paul Atreides", init: "TC", bg: "#1e3a5f" },
-  { name: "Zendaya", role: "Chani", init: "Z", bg: "#4c1d45" },
-  { name: "Rebecca Ferguson", role: "Lady Jessica", init: "RF", bg: "#1f3d2f" },
-  { name: "Javier Bardem", role: "Stilgar", init: "JB", bg: "#4a2c14" },
-  { name: "Austin Butler", role: "Feyd-Rautha", init: "AB", bg: "#2d2a4a" },
-];
+const CAST_BY_ID = {
+  tt15239678: [
+    { name: "Timothée Chalamet", role: "Paul Atreides", init: "TC", bg: "#1e3a5f" },
+    { name: "Zendaya", role: "Chani", init: "Z", bg: "#4c1d45" },
+    { name: "Rebecca Ferguson", role: "Lady Jessica", init: "RF", bg: "#1f3d2f" },
+    { name: "Javier Bardem", role: "Stilgar", init: "JB", bg: "#4a2c14" },
+    { name: "Austin Butler", role: "Feyd-Rautha", init: "AB", bg: "#2d2a4a" },
+  ],
+  tt9362722: [
+    { name: "Shameik Moore", role: "Miles Morales", init: "SM", bg: "#4c1d24" },
+    { name: "Hailee Steinfeld", role: "Gwen Stacy", init: "HS", bg: "#3b1d4a" },
+    { name: "Oscar Isaac", role: "Miguel O'Hara", init: "OI", bg: "#1e2e5c" },
+    { name: "Jake Johnson", role: "Peter B. Parker", init: "JJ", bg: "#1f3d32" },
+    { name: "Daniel Kaluuya", role: "Hobie Brown", init: "DK", bg: "#4a3014" },
+  ],
+  tt15398776: [
+    { name: "Cillian Murphy", role: "J. Robert Oppenheimer", init: "CM", bg: "#3a2518" },
+    { name: "Emily Blunt", role: "Kitty Oppenheimer", init: "EB", bg: "#2b2d42" },
+    { name: "Matt Damon", role: "Leslie Groves", init: "MD", bg: "#1e3a3a" },
+    { name: "Robert Downey Jr.", role: "Lewis Strauss", init: "RD", bg: "#3e2230" },
+  ],
+  tt2788316: [
+    { name: "Hiroyuki Sanada", role: "Yoshii Toranaga", init: "HS", bg: "#402618" },
+    { name: "Cosmo Jarvis", role: "John Blackthorne", init: "CJ", bg: "#1e334a" },
+    { name: "Anna Sawai", role: "Toda Mariko", init: "AS", bg: "#422133" },
+    { name: "Tadanobu Asano", role: "Kashigi Yabushige", init: "TA", bg: "#243b2a" },
+  ],
+  tt11126994: [
+    { name: "Hailee Steinfeld", role: "Vi", init: "HS", bg: "#4c1d34" },
+    { name: "Ella Purnell", role: "Jinx", init: "EP", bg: "#1c2d5a" },
+    { name: "Kevin Alejandro", role: "Jayce Talis", init: "KA", bg: "#3f3016" },
+    { name: "Katie Leung", role: "Caitlyn Kiramman", init: "KL", bg: "#1e3545" },
+  ],
+  tt0245429: [
+    { name: "Rumi Hiiragi", role: "Chihiro Ogino", init: "RH", bg: "#3d2240" },
+    { name: "Miyu Irino", role: "Haku", init: "MI", bg: "#193a3c" },
+    { name: "Mari Natsuki", role: "Yubaba", init: "MN", bg: "#4a2420" },
+    { name: "Bunta Sugawara", role: "Kamajii", init: "BS", bg: "#2b3322" },
+  ],
+};
+
+function getCastForItem(item) {
+  if (item && CAST_BY_ID[item.id]) return CAST_BY_ID[item.id];
+  const t = String(item?.title || "Feature");
+  return [
+    { name: "Lead Performer", role: `${t} Cast`, init: "LP", bg: "#1e3a5f" },
+    { name: "Co-Star", role: "Principal Role", init: "CS", bg: "#3d2245" },
+    { name: "Supporting Cast", role: "Ensemble", init: "SC", bg: "#1f3d2f" },
+    { name: "Director", role: "TMDB Credits", init: "DR", bg: "#4a2c14" },
+  ];
+}
 
 function effectiveSettings(profile) {
   const compiled = profile?.compiledPreview?.settings || {};
@@ -534,12 +578,6 @@ export function renderNuvioViewport(ctx, options = {}) {
   const stageBody = document.createElement("div");
   stageBody.className = "nv-stage-body";
 
-  if (vpState.device === "mobile") {
-    const notch = document.createElement("div");
-    notch.className = "nv-mobile-notch";
-    stageBody.appendChild(notch);
-  }
-
   const isPlayer = vpState.screen === "player";
 
   // 1) TV or Desktop Sidebar Left Rail (hidden during full-screen Player OSD)
@@ -575,8 +613,21 @@ export function renderNuvioViewport(ctx, options = {}) {
     stageBody.appendChild(rail);
   }
 
-  // 2) Desktop Top Floating Glass Pill (exact match to real Nuvio Desktop topBar)
-  if (!isPlayer && vpState.device === "desktop" && s.desktopNavigation !== "sidebar") {
+  // Dedicated Content Canvas (guarantees floating nav pill stays mathematically centered)
+  const canvasArea = document.createElement("div");
+  canvasArea.className = "nv-canvas-area";
+
+  if (vpState.device === "mobile") {
+    const notch = document.createElement("div");
+    notch.className = "nv-mobile-notch";
+    const status = document.createElement("div");
+    status.className = "nv-mobile-statusbar";
+    status.innerHTML = `<span>9:41</span><span>5G · 98%</span>`;
+    canvasArea.append(notch, status);
+  }
+
+  // 2) Desktop Top Floating Glass Pill (shown cleanly on top-level Home screen, matching real Nuvio)
+  if (vpState.screen === "home" && vpState.device === "desktop" && s.desktopNavigation !== "sidebar") {
     const floatNav = document.createElement("nav");
     floatNav.className = "nv-floating-nav";
     floatNav.setAttribute("aria-label", "Nuvio Desktop Navigation");
@@ -606,7 +657,7 @@ export function renderNuvioViewport(ctx, options = {}) {
       ctx.render();
     };
     floatNav.appendChild(avatarBtn);
-    stageBody.appendChild(floatNav);
+    canvasArea.appendChild(floatNav);
 
     const cornerBtn = document.createElement("button");
     cornerBtn.className = "nv-corner-action";
@@ -617,12 +668,12 @@ export function renderNuvioViewport(ctx, options = {}) {
       if (options.onToggleTheater) options.onToggleTheater(vpState.theater);
       ctx.render();
     };
-    stageBody.appendChild(cornerBtn);
+    canvasArea.appendChild(cornerBtn);
   }
 
   const mainScroll = document.createElement("div");
   mainScroll.className = "nv-main-scroll";
-  stageBody.appendChild(mainScroll);
+  canvasArea.appendChild(mainScroll);
 
   // 3) Mobile Floating Frosted Jelly Bottom Navigation Dock
   if (!isPlayer && vpState.device === "mobile") {
@@ -643,8 +694,10 @@ export function renderNuvioViewport(ctx, options = {}) {
       };
       dock.appendChild(b);
     });
-    stageBody.appendChild(dock);
+    canvasArea.appendChild(dock);
   }
+
+  stageBody.appendChild(canvasArea);
 
   frame.appendChild(stageBody);
   shell.appendChild(frame);
@@ -692,7 +745,7 @@ function renderHomeScreen(root, ctx, _profile, cols, s, options, fetchHeroFn) {
 
     const titleVisual = heroItem.logoUrl
       ? `<img class="nv-hero-logo" src="${escapeHtml(heroItem.logoUrl)}" alt="${escapeHtml(heroItem.title)}" data-hero-logo />`
-      : `<h2 class="nv-hero-title" data-hero-title>${escapeHtml(heroItem.title)}</h2>`;
+      : `<div class="nv-hero-title" data-hero-title>${escapeHtml(heroItem.title)}</div>`;
 
     hero.innerHTML = `
       <div class="nv-hero-content">
@@ -722,7 +775,7 @@ function renderHomeScreen(root, ctx, _profile, cols, s, options, fetchHeroFn) {
 
     const logoEl = hero.querySelector("[data-hero-logo]");
     if (logoEl) {
-      attachImgFallback(logoEl, `<h2 class="nv-hero-title">${escapeHtml(heroItem.title)}</h2>`);
+      attachImgFallback(logoEl, `<div class="nv-hero-title">${escapeHtml(heroItem.title)}</div>`);
     }
 
     hero.querySelector("[data-hero-details]").onclick = () => {
@@ -769,15 +822,15 @@ function renderHomeScreen(root, ctx, _profile, cols, s, options, fetchHeroFn) {
   // Continue Watching Row (16:9 edge-to-edge cards matching real Nuvio)
   if (s.continueWatchingEnabled) {
     const cwSec = document.createElement("section");
-    cwSec.innerHTML = `<div class="nv-section-head"><h3 class="nv-section-title">Continue Watching</h3></div>`;
+    cwSec.innerHTML = `<div class="nv-section-head"><div class="nv-section-title">Continue Watching</div></div>`;
     const strip = document.createElement("div");
     strip.className = "nv-hstrip";
 
     CONTINUE_WATCHING_SAMPLES.forEach(cw => {
       const card = document.createElement("div");
       card.className = "nv-cw-card";
-      card.style.backgroundImage = safeBgCss(cw.bg);
       card.innerHTML = `
+        <img class="nv-cw-bg-img" src="${escapeHtml(cw.bg)}" alt="${escapeHtml(cw.title)}" loading="lazy" onerror="this.remove()" />
         <span class="nv-cw-pill">${escapeHtml(cw.pill)}</span>
         <div class="nv-cw-overlay">
           ${cw.epCode ? `<div class="nv-cw-ep-code">${escapeHtml(cw.epCode)}</div>` : ""}
@@ -810,7 +863,7 @@ function renderHomeScreen(root, ctx, _profile, cols, s, options, fetchHeroFn) {
   // Stacked Home Collection Rows respecting tileShape (LANDSCAPE/SQUARE/POSTER), hideTitle & focusGifUrl
   cols.forEach((col, cIdx) => {
     const sec = document.createElement("section");
-    sec.innerHTML = `<div class="nv-section-head"><h3 class="nv-section-title">${escapeHtml(col.title)}</h3></div>`;
+    sec.innerHTML = `<div class="nv-section-head"><div class="nv-section-title">${escapeHtml(col.title)}</div></div>`;
 
     const strip = document.createElement("div");
     strip.className = s.homeLayout === "grid" ? "nv-col-grid" : "nv-hstrip";
@@ -914,7 +967,7 @@ function renderCollectionScreen(root, ctx, profile, col, _s, options) {
     ctx.render();
   };
 
-  const titleEl = document.createElement("h2");
+  const titleEl = document.createElement("div");
   titleEl.className = "nv-col-title";
   titleEl.textContent = col.title;
 
@@ -988,7 +1041,7 @@ function renderCollectionScreen(root, ctx, profile, col, _s, options) {
       rowLabels.forEach((rTitle, rIdx) => {
         const rowSec = document.createElement("section");
         rowSec.style.marginBottom = "18px";
-        rowSec.innerHTML = `<div class="nv-section-head"><h3 class="nv-section-title">${escapeHtml(rTitle)}</h3></div>`;
+        rowSec.innerHTML = `<div class="nv-section-head"><div class="nv-section-title">${escapeHtml(rTitle)}</div></div>`;
         const hstrip = document.createElement("div");
         hstrip.className = "nv-hstrip";
         const rotated = [...items.slice(rIdx * 2), ...items.slice(0, rIdx * 2)];
@@ -1080,6 +1133,10 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
   const runtimeLbl = item.runtime || (isSeries ? "52m" : "2h 18m");
   const certLbl = item.certification || (isSeries ? "TV-MA" : "PG-13");
 
+  const isAnimeLike =
+    (item.genres || []).some(g => /anime|animation/i.test(String(g))) ||
+    String(item.language || "").toUpperCase() === "JA";
+
   const ratingsSpec = [
     ["imdb", "IMDb", item.rating || "8.5", "#F5C518", "#000000"],
     ["tmdb", "TMDB", "84%", "#01D277", "#031b11"],
@@ -1088,7 +1145,7 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
     ["metacritic", "MC", "83", "#66CC33", "#071a04"],
     ["trakt", "Trakt", "88%", "#ED1C24", "#ffffff"],
     ["letterboxd", "LB", "4.3", "#00E054", "#041a0b"],
-    ["mal", "MAL", "8.9", "#2E51A2", "#ffffff"],
+    ...(isAnimeLike ? [["mal", "MAL", "8.9", "#2E51A2", "#ffffff"]] : []),
   ];
 
   const ratingsHtml = metaCfg.enabled
@@ -1104,7 +1161,7 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
   const inner = document.createElement("div");
   inner.className = "nv-detail-inner";
   inner.innerHTML = `
-    ${item.logoUrl ? `<img class="nv-hero-logo" src="${escapeHtml(item.logoUrl)}" alt="${escapeHtml(item.title)}" data-detail-logo />` : `<h2 class="nv-hero-title" style="font-size:28px">${escapeHtml(item.title)}</h2>`}
+    ${item.logoUrl ? `<img class="nv-hero-logo" src="${escapeHtml(item.logoUrl)}" alt="${escapeHtml(item.title)}" data-detail-logo />` : `<div class="nv-hero-title" style="font-size:28px">${escapeHtml(item.title)}</div>`}
     <div class="nv-hero-meta-line">
       <span>${escapeHtml(mediaLbl)}</span>
       <span class="nv-meta-sep">•</span>
@@ -1126,7 +1183,7 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
   `;
 
   const dLogo = inner.querySelector("[data-detail-logo]");
-  if (dLogo) attachImgFallback(dLogo, `<h2 class="nv-hero-title" style="font-size:28px">${escapeHtml(item.title)}</h2>`);
+  if (dLogo) attachImgFallback(dLogo, `<div class="nv-hero-title" style="font-size:28px">${escapeHtml(item.title)}</div>`);
 
   inner.querySelector("[data-open-streams]").onclick = () => {
     vpState.screen = "streams";
@@ -1163,7 +1220,7 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
     const epSec = document.createElement("section");
     epSec.innerHTML = `
       <div class="nv-section-head">
-        <h3 class="nv-section-title">Episodes · Season 1</h3>
+        <div class="nv-section-title">Episodes · Season 1</div>
         <span style="font-size:11px;color:var(--nv-muted)">${blurOn ? "Spoiler Blur Active" : "Thumbnails Visible"}</span>
       </div>
     `;
@@ -1200,10 +1257,10 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
     if (rendered.has("CAST")) return;
     rendered.add("CAST");
     const cSec = document.createElement("section");
-    cSec.innerHTML = `<div class="nv-section-head"><h3 class="nv-section-title">Cast &amp; Crew</h3></div>`;
+    cSec.innerHTML = `<div class="nv-section-head"><div class="nv-section-title">Cast &amp; Crew</div></div>`;
     const rail = document.createElement("div");
     rail.className = "nv-cast-rail";
-    CAST_SAMPLES.forEach(c => {
+    getCastForItem(item).forEach(c => {
       const card = document.createElement("div");
       card.className = "nv-cast-card";
       card.innerHTML = `
@@ -1221,7 +1278,7 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
     if (rendered.has("MORE_LIKE_THIS")) return;
     rendered.add("MORE_LIKE_THIS");
     const mSec = document.createElement("section");
-    mSec.innerHTML = `<div class="nv-section-head"><h3 class="nv-section-title">More Like This</h3></div>`;
+    mSec.innerHTML = `<div class="nv-section-head"><div class="nv-section-title">More Like This</div></div>`;
     const rail = document.createElement("div");
     rail.className = "nv-hstrip";
     DEFAULT_HERO_SLIDES.concat(CONTINUE_WATCHING_SAMPLES.map(c => c.item)).forEach(rec => {

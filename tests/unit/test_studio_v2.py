@@ -569,7 +569,14 @@ def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path:
     state_data = json.loads(dispatcher.dispatch("GET", "/api/state").body)
     assert state_data["ok"] is True
     prof = state_data["state"]["profiles"][0]
-    assert prof["collections"][0]["folders"][0]["sources"]
+    first_col = prof["collections"][0]
+    first_folder = first_col["folders"][0]
+    assert first_folder["sources"]
+    assert first_folder["tileShape"] in ("LANDSCAPE", "SQUARE", "POSTER")
+    assert isinstance(first_folder["hideTitle"], bool)
+    assert "focusGifUrl" in first_folder
+    assert first_col["viewMode"] in ("TABBED_GRID", "ROWS", "FOLLOW_LAYOUT")
+    assert isinstance(first_col["showAllTab"], bool)
 
     cp = prof["compiledPreview"]
     assert cp["badges"]["enabled"] is True
@@ -594,6 +601,9 @@ def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path:
     assert "backdropUrl" in items[0]
     assert items[0]["overview"]
     assert items[0]["genres"]
+    assert items[0]["runtime"]
+    assert items[0]["certification"]
+    assert items[0]["language"]
 
     # Live AIOMetadata catalog preview also includes details metadata fields
     live_prev = dispatcher.dispatch(
