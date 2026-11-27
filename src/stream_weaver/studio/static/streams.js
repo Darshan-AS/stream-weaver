@@ -1,15 +1,18 @@
 // Tab 2 — AIOStreams & AIOMetadata Power Studio
 
 import {
+  createPosterOverlayElement,
   getViewportState,
   hasZeroWidthBadgeEncoding,
   renderNuvioStreamCard,
+  resolveCustomizedPosterUrl,
   setViewportState,
 } from "./nuvio_viewport.js";
 
 let streamsSubFilter = "all"; // all | streams | metadata
 let previewClientMode = "nuvio"; // nuvio | stremio
 let previewShowBadgesOverride = null; // null = follow active profile's nuvio_badges setting
+let posterPreviewShape = "poster"; // poster | landscape
 let inspectedStreamAddon = null;
 let customManifestUrlInput = "";
 let customGroupChoice = "primary";
@@ -1049,21 +1052,27 @@ function renderMetadataPowerSection(ctx) {
   );
   card.appendChild(routerGrid);
 
-  // Poster Rating Engine + AI Search
-  const midGrid = document.createElement("div");
-  midGrid.className = "grid-equal";
-
+  // Poster Customization Studio & Live 3-Poster Preview
   const posterBox = document.createElement("div");
   posterBox.className = "rows-box";
-  posterBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Poster Rating Badge Engine</div>`;
+  posterBox.innerHTML = `
+    <div class="row-between" style="margin-bottom:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:700">Poster Customization Studio (Ratings, Upcoming Status &amp; Awards)</div>
+        <div style="font-size:11px;color:var(--muted)">Configure Posters+, RPDB, or TopPosters overlays for Movies, TV Series, and Anime across AIOMetadata &amp; Nuvio.</div>
+      </div>
+    </div>
+  `;
+
   const posterGrid = document.createElement("div");
-  posterGrid.className = "cards-grid-sm";
+  posterGrid.className = "cards-grid";
+  posterGrid.style.marginBottom = "14px";
   [
-    ["rpdb", "RatingPosterDB (RPDB)", "SECRET_RPDB_API_KEY"],
-    ["topposters", "TopPosters", "SECRET_TOP_POSTER_API_KEY"],
-    ["postersplus", "Posters+", ""],
-    ["none", "Clean Posters (No Badges)", ""],
-  ].forEach(([pid, plabel, reqKey]) => {
+    ["postersplus", "Posters+", "Live ratings, status notches & awards — no key needed"],
+    ["rpdb", "RatingPosterDB (RPDB)", "Requires SECRET_RPDB_API_KEY"],
+    ["topposters", "TopPosters", "Requires SECRET_TOP_POSTER_API_KEY"],
+    ["none", "Clean Posters", "Raw artwork without overlays"],
+  ].forEach(([pid, plabel, subTxt]) => {
     const isAct = (mp.posterProvider || "none") === pid;
     const pc = document.createElement("div");
     pc.className = "pack-card" + (isAct ? " on" : "");
@@ -1077,11 +1086,307 @@ function renderMetadataPowerSection(ctx) {
         <strong style="font-size:12px">${escapeHtml(plabel)}</strong>
         <span class="pill ${isAct ? "ok" : ""}">${isAct ? "Active" : pid}</span>
       </div>
-      ${reqKey ? `<div style="font-size:10.5px;color:var(--muted)"><code>${escapeHtml(reqKey)}</code></div>` : `<div style="font-size:10.5px;color:var(--muted)">Zero key needed</div>`}
+      <div style="font-size:10.5px;color:var(--muted)">${escapeHtml(subTxt)}</div>
     `;
     posterGrid.appendChild(pc);
   });
   posterBox.appendChild(posterGrid);
+
+  const studioSplit = document.createElement("div");
+  studioSplit.className = "nv-poster-studio-grid";
+
+  // Left: Posters+ & Artwork Customization Controls
+  const controlsCol = document.createElement("div");
+  controlsCol.className = "section-stack";
+
+  if (!mp.posterCustomizations) {
+    mp.posterCustomizations = {
+      ratings: ["myanimelist:a", "anilist:a", "imdb", "tomatoes:mt", "letterboxd:m", "trakt:t"],
+      maxBadges: 3,
+      statusMode: "notch",
+      tvStatusOverlay: true,
+      showWatchingStatus: true,
+      awardsMask: 7,
+      badgeStyle: "frosted",
+      clientPreset: "stremio_tv_nuvio",
+    };
+  }
+  if (!mp.posterOptions) {
+    mp.posterOptions = {
+      enableRatingPostersForLibrary: true,
+      displayAgeRating: true,
+      blurThumbs: false,
+      hideUnreleasedDigital: false,
+      englishArtOnly: true,
+    };
+  }
+
+  const pcCfg = mp.posterCustomizations;
+  const pOpts = mp.posterOptions;
+
+  if ((mp.posterProvider || "none") === "postersplus") {
+    // Rating Sources & Max Badges
+    const rbWrap = document.createElement("div");
+    rbWrap.innerHTML = `<div style="font-size:11.5px;font-weight:600;margin-bottom:6px;color:var(--text-soft)">Rating Sources on Posters (<code>rb</code>)</div>`;
+    const rbRow = document.createElement("div");
+    rbRow.className = "chip-row";
+    const ratingChoices = [
+      ["imdb", "IMDb"],
+      ["tomatoes:mt", "Rotten Tomatoes"],
+      ["letterboxd:m", "Letterboxd (Movies)"],
+      ["trakt:t", "Trakt (Series)"],
+      ["myanimelist:a", "MAL (Anime)"],
+      ["anilist:a", "AniList (Anime)"],
+      ["tmdb", "TMDB"],
+      ["metacritic", "Metacritic"],
+    ];
+    const activeSet = new Set(Array.isArray(pcCfg.ratings) ? pcCfg.ratings : []);
+    ratingChoices.forEach(([tok, lbl]) => {
+      const idBase = tok.split(":")[0];
+      const existingTok = [...activeSet].find(x => x === tok || x.split(":")[0] === idBase);
+      const isOn = Boolean(existingTok);
+      const chipLbl = document.createElement("label");
+      chipLbl.className = "switch chip" + (isOn ? " active" : "");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = isOn;
+      chk.onchange = () => {
+        const next = ratingChoices
+          .map(([t]) => {
+            const curMatch = [...activeSet].find(x => x.split(":")[0] === t.split(":")[0]);
+            if (t === tok) return chk.checked ? (curMatch || t) : null;
+            return curMatch || null;
+          })
+          .filter(Boolean);
+        pcCfg.ratings = next;
+        ctx.saveSection("metadataPower", true);
+      };
+      chipLbl.append(chk, document.createTextNode(lbl));
+      rbRow.appendChild(chipLbl);
+    });
+    rbWrap.appendChild(rbRow);
+    controlsCol.appendChild(rbWrap);
+
+    // Dropdowns row: Max Badges, Status Style, Badge Style
+    const selGrid = document.createElement("div");
+    selGrid.className = "cards-grid";
+
+    const mkSel = (lbl, opts, curVal, onPick) => {
+      const l = document.createElement("label");
+      l.className = "field";
+      l.textContent = lbl;
+      const sel = document.createElement("select");
+      opts.forEach(([v, t]) => {
+        const o = document.createElement("option");
+        o.value = String(v);
+        o.textContent = t;
+        if (String(curVal) === String(v)) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => onPick(sel.value);
+      l.appendChild(sel);
+      return l;
+    };
+
+    selGrid.append(
+      mkSel("Max Rating Badges", [["1", "1 badge"], ["2", "2 badges"], ["3", "3 badges"], ["4", "4 badges"]], pcCfg.maxBadges ?? 3, (v) => {
+        pcCfg.maxBadges = Number(v);
+        ctx.saveSection("metadataPower", true);
+      }),
+      mkSel("Status Banner Style", [["notch", "Top Notch"], ["pill", "Floating Pill"], ["ribbon", "Accent Ribbon"], ["off", "Hidden"]], pcCfg.statusMode || "notch", (v) => {
+        pcCfg.statusMode = v;
+        ctx.saveSection("metadataPower", true);
+      }),
+      mkSel("Badge Visual Surface", [["frosted", "Frosted Glass"], ["solid", "Solid Dark"], ["minimal", "Minimal Clean"]], pcCfg.badgeStyle || "frosted", (v) => {
+        pcCfg.badgeStyle = v;
+        ctx.saveSection("metadataPower", true);
+      })
+    );
+    controlsCol.appendChild(selGrid);
+
+    // Status Banners & Awards Checkboxes
+    const awWrap = document.createElement("div");
+    awWrap.innerHTML = `<div style="font-size:11.5px;font-weight:600;margin-bottom:6px;color:var(--text-soft)">Status Overlays &amp; Awards Accolades (Oscars · Emmys · Top 250)</div>`;
+    const awRow = document.createElement("div");
+    awRow.className = "chip-row";
+
+    const mask = Number(pcCfg.awardsMask ?? 7);
+    [
+      { label: "TV Upcoming / New Ep Status", checked: Boolean(pcCfg.tvStatusOverlay), onChange: v => { pcCfg.tvStatusOverlay = v; } },
+      { label: "Watching / Next Up Banner", checked: Boolean(pcCfg.showWatchingStatus), onChange: v => { pcCfg.showWatchingStatus = v; } },
+      { label: "🏆 Oscars", checked: Boolean(mask & 1), onChange: v => { pcCfg.awardsMask = v ? (mask | 1) : (mask & ~1); } },
+      { label: "🏆 Emmys", checked: Boolean(mask & 2), onChange: v => { pcCfg.awardsMask = v ? (mask | 2) : (mask & ~2); } },
+      { label: "★ IMDb Top 250", checked: Boolean(mask & 4), onChange: v => { pcCfg.awardsMask = v ? (mask | 4) : (mask & ~4); } },
+    ].forEach(item => {
+      const lbl = document.createElement("label");
+      lbl.className = "switch chip" + (item.checked ? " active" : "");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = item.checked;
+      chk.onchange = () => {
+        item.onChange(chk.checked);
+        ctx.saveSection("metadataPower", true);
+      };
+      lbl.append(chk, document.createTextNode(item.label));
+      awRow.appendChild(lbl);
+    });
+    awWrap.appendChild(awRow);
+    controlsCol.appendChild(awWrap);
+  }
+
+  // Library & Artwork Toggles (`posterOptions`)
+  const libWrap = document.createElement("div");
+  libWrap.className = "chip-row";
+  [
+    ["enableRatingPostersForLibrary", "Apply Rating Posters to Library"],
+    ["displayAgeRating", "Show Age Ratings"],
+    ["englishArtOnly", "English Artwork Only"],
+    ["hideUnreleasedDigital", "Hide Unreleased Digital"],
+    ["blurThumbs", "Blur Episode Thumbs"],
+  ].forEach(([k, lblTxt]) => {
+    const isOn = Boolean(pOpts[k]);
+    const lbl = document.createElement("label");
+    lbl.className = "switch chip" + (isOn ? " active" : "");
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.checked = isOn;
+    chk.onchange = () => {
+      pOpts[k] = chk.checked;
+      ctx.saveSection("metadataPower", true);
+    };
+    lbl.append(chk, document.createTextNode(lblTxt));
+    libWrap.appendChild(lbl);
+  });
+  controlsCol.appendChild(libWrap);
+
+  if ((mp.posterProvider || "none") === "postersplus") {
+    const det = document.createElement("details");
+    det.style.cssText = "font-size:11.5px;color:var(--muted)";
+    det.innerHTML = `<summary style="cursor:pointer;font-weight:600;color:var(--text-soft)">Advanced: Posters+ URL Pattern</summary>`;
+    const urlIn = document.createElement("input");
+    urlIn.type = "text";
+    urlIn.style.cssText = "margin-top:8px;font-family:var(--mono);font-size:11px";
+    urlIn.value = mp.customPosterUrlPattern || "";
+    urlIn.onchange = () => {
+      mp.customPosterUrlPattern = urlIn.value.trim();
+      ctx.saveSection("metadataPower", true);
+    };
+    det.appendChild(urlIn);
+    controlsCol.appendChild(det);
+  }
+
+  // Right: Live 3-Poster Preview Strip (Movie + Series + Anime)
+  const previewCol = document.createElement("div");
+  previewCol.className = "nv-device-frame";
+  previewCol.dataset.nuvioTheme = "ocean";
+  previewCol.dataset.nuvioAmoled = "true";
+  previewCol.style.cssText = "padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:10px";
+
+  const pHead = document.createElement("div");
+  pHead.className = "row-between";
+  pHead.innerHTML = `<span class="eyebrow" style="padding:0;color:var(--nv-muted)">Live Customized Posters</span>`;
+  const shapeSeg = document.createElement("div");
+  shapeSeg.className = "segmented";
+  [["poster", "Poster 2:3"], ["landscape", "Landscape 16:9"]].forEach(([sh, lbl]) => {
+    const b = document.createElement("button");
+    b.className = "seg-btn" + (posterPreviewShape === sh ? " active" : "");
+    b.textContent = lbl;
+    b.onclick = () => {
+      posterPreviewShape = sh;
+      ctx.render();
+    };
+    shapeSeg.appendChild(b);
+  });
+  pHead.appendChild(shapeSeg);
+  previewCol.appendChild(pHead);
+
+  const sampleStrip = document.createElement("div");
+  sampleStrip.className = "nv-poster-sample-strip" + (posterPreviewShape === "landscape" ? " landscape" : "");
+
+  const sampleItems = [
+    {
+      id: "tt15239678",
+      tmdbId: "693134",
+      title: "Dune: Part Two",
+      year: "2024",
+      type: "movie",
+      genres: ["Sci-Fi"],
+      language: "EN",
+      rating: "8.5",
+      statusLabel: "RELEASED",
+      awardLabel: "🏆 Oscar",
+      posterUrl: "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+    },
+    {
+      id: "tt2788316",
+      tmdbId: "126308",
+      title: "Shogun",
+      year: "2024",
+      type: "series",
+      genres: ["Drama"],
+      language: "EN",
+      rating: "8.6",
+      statusLabel: "UPCOMING",
+      awardLabel: "🏆 Emmy",
+      posterUrl: "https://image.tmdb.org/t/p/w500/7O4iVfOMQmdCSxhOg1WnzG1AgYT.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w1280/5zmiBoMzeeVdQ62no55JOJMY498.jpg",
+    },
+    {
+      id: "tt0245429",
+      tmdbId: "129",
+      title: "Spirited Away",
+      year: "2001",
+      type: "movie",
+      genres: ["Animation"],
+      language: "JA",
+      rating: "8.6",
+      statusLabel: "NEXT UP",
+      awardLabel: "★ Top 250",
+      posterUrl: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg",
+    },
+  ];
+
+  const itemsToShow = sampleItems;
+  itemsToShow.forEach(sm => {
+    const cardEl = document.createElement("div");
+    cardEl.className = "nv-poster-card";
+    const wrap = document.createElement("div");
+    wrap.className = "nv-poster-wrap";
+    const rawImg = posterPreviewShape === "landscape" ? (sm.backdropUrl || sm.posterUrl) : sm.posterUrl;
+    const customUrl = resolveCustomizedPosterUrl(sm, mp, posterPreviewShape);
+    const img = document.createElement("img");
+    img.src = customUrl || rawImg;
+    img.alt = sm.title;
+    img.loading = "lazy";
+    let triedRaw = !customUrl || customUrl === rawImg;
+    img.onerror = () => {
+      if (!triedRaw && rawImg) {
+        triedRaw = true;
+        img.src = rawImg;
+        const ov = createPosterOverlayElement(sm, mp);
+        if (ov && !wrap.querySelector(".nv-poster-overlay")) wrap.appendChild(ov);
+        return;
+      }
+      wrap.innerHTML = `<div class="nv-poster-fallback">${escapeHtml(sm.title)}</div>`;
+    };
+    wrap.appendChild(img);
+    if (mp.posterProvider === "rpdb" || mp.posterProvider === "topposters") {
+      const ov = createPosterOverlayElement(sm, mp);
+      if (ov) wrap.appendChild(ov);
+    }
+    cardEl.appendChild(wrap);
+    cardEl.insertAdjacentHTML(
+      "beforeend",
+      `<div class="nv-poster-title">${escapeHtml(sm.title)}</div><div class="nv-poster-year">${escapeHtml(sm.year)} · ${escapeHtml(sm.type)}</div>`
+    );
+    sampleStrip.appendChild(cardEl);
+  });
+  previewCol.appendChild(sampleStrip);
+
+  studioSplit.append(controlsCol, previewCol);
+  posterBox.appendChild(studioSplit);
 
   const aiBox = document.createElement("div");
   aiBox.className = "rows-box";
@@ -1141,8 +1446,7 @@ function renderMetadataPowerSection(ctx) {
     aiBox.appendChild(aiCfg);
   }
 
-  midGrid.append(posterBox, aiBox);
-  card.appendChild(midGrid);
+  card.append(posterBox, aiBox);
 
   // Catalog Overrides Table
   const cats = Array.isArray(mp.catalogs) ? mp.catalogs : [];

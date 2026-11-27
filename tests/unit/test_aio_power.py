@@ -393,6 +393,44 @@ def test_aiometadata_power_providers_ai_search_posters_and_catalogs() -> None:
     assert insp["aiSearchEnabled"] is False
     assert insp["aiSearchProvider"] == "gemini"
     assert insp["posterProvider"] == "postersplus"
+    assert insp["customPosterUrlPattern"].startswith("https://postersplus.slokker.cc/poster")
+    pc = insp["posterCustomizations"]
+    assert pc["statusMode"] == "notch"
+    assert pc["tvStatusOverlay"] is True
+    assert pc["showWatchingStatus"] is True
+    assert pc["awardsMask"] == 7
+    assert pc["maxBadges"] == 3
+    assert "imdb" in pc["ratings"]
+    assert insp["posterOptions"]["enableRatingPostersForLibrary"] is True
+    assert insp["posterOptions"]["englishArtOnly"] is True
+
+    # Updating Posters+ customizations preserves template placeholders & other query params
+    pc_res = apply_aiometadata_power(
+        raw,
+        {
+            "posterCustomizations": {
+                "ratings": ["imdb", "tomatoes:mt"],
+                "maxBadges": 2,
+                "statusMode": "pill",
+                "tvStatusOverlay": False,
+                "awardsMask": 3,
+                "badgeStyle": "solid",
+            },
+            "posterOptions": {"blurThumbs": True, "englishArtOnly": False},
+        },
+    )
+    assert isinstance(pc_res, Ok), pc_res
+    pc_insp = inspect_aiometadata_power(pc_res.value)
+    assert "{tmdb_id?}" in pc_insp["customPosterUrlPattern"]
+    assert "{imdb_id?}" in pc_insp["customPosterUrlPattern"]
+    assert pc_insp["posterCustomizations"]["ratings"] == ["imdb", "tomatoes:mt"]
+    assert pc_insp["posterCustomizations"]["maxBadges"] == 2
+    assert pc_insp["posterCustomizations"]["statusMode"] == "pill"
+    assert pc_insp["posterCustomizations"]["tvStatusOverlay"] is False
+    assert pc_insp["posterCustomizations"]["awardsMask"] == 3
+    assert pc_insp["posterCustomizations"]["badgeStyle"] == "solid"
+    assert pc_insp["posterOptions"]["blurThumbs"] is True
+    assert pc_insp["posterOptions"]["englishArtOnly"] is False
     assert len(insp["catalogs"]) > 40
     assert set(insp["catalogs"][0].keys()) == {"id", "name", "type", "source", "enabled", "showInHome"}
     assert required_aiometadata_power_secrets(raw) == (

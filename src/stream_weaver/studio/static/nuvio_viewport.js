@@ -528,11 +528,20 @@ export function renderNuvioStreamCard(ctx, options = {}) {
     ? renderBadgesStrip(ctx, { ...badgeCfg, enabled: true }, sample, debridLabel)
     : "";
 
+  const descHtml = String(formatted.desc || "")
+    .split("\n")
+    .filter(Boolean)
+    .map(line => {
+      const cls = line.startsWith("▤") ? "nv-stream-desc-line file-line" : "nv-stream-desc-line";
+      return `<span class="${cls}">${escapeHtml(line)}</span>`;
+    })
+    .join("");
+
   const card = document.createElement("div");
   card.className = "nv-stream-card";
   const textHtml = `
     <div class="nv-stream-name">${escapeHtml(formatted.name)}</div>
-    <div class="nv-stream-desc">${escapeHtml(formatted.desc)}</div>
+    <div class="nv-stream-desc">${descHtml}</div>
   `;
   card.innerHTML = `
     <div class="nv-stream-body">
@@ -588,6 +597,133 @@ function normalizeShape(rawShape) {
   if (s === "SQUARE") return "square";
   if (s === "POSTER" || s === "PORTRAIT") return "poster";
   return "landscape";
+}
+
+const POSTER_RATING_META = {
+  imdb: { short: "IMDb", color: "#F5C518", sample: sm => sm.rating || "8.5" },
+  tomatoes: { short: "RT", color: "#FA320A", sample: () => "93%" },
+  letterboxd: { short: "LB", color: "#00E054", sample: () => "4.3" },
+  trakt: { short: "Trakt", color: "#ED1C24", sample: () => "88%" },
+  myanimelist: { short: "MAL", color: "#2E51A2", sample: () => "8.9" },
+  anilist: { short: "AL", color: "#02A9FF", sample: () => "87%" },
+  tmdb: { short: "TMDB", color: "#01D277", sample: () => "84%" },
+  metacritic: { short: "MC", color: "#66CC33", sample: () => "83" },
+};
+
+export function resolveCustomizedPosterUrl(item, metadataPower, shape = "poster") {
+  const rawUrl = item?.posterUrl || "";
+  if (!metadataPower || metadataPower.posterProvider !== "postersplus") return rawUrl;
+  const pattern = String(metadataPower.customPosterUrlPattern || "").trim();
+  if (!pattern) return rawUrl;
+  const itemId = String(item?.id || "");
+  const tmdbId = String(item?.tmdbId || (itemId.startsWith("tmdb:") ? itemId.slice(5) : ""));
+  const imdbId = itemId.startsWith("tt") ? itemId : "";
+  const mediaType = item?.type === "series" ? "series" : "movie";
+  let url = pattern
+    .replaceAll("{tmdb_id?}", encodeURIComponent(tmdbId))
+    .replaceAll("{imdb_id?}", encodeURIComponent(imdbId))
+    .replaceAll("{id}", encodeURIComponent(itemId || tmdbId))
+    .replaceAll("{type}", encodeURIComponent(mediaType))
+    .replaceAll("{shape}", encodeURIComponent(shape));
+  url = url.replace(/([?&])(tmdb_id|imdb_id)=&/g, "$1").replace(/([?&])(tmdb_id|imdb_id)=$/, "");
+  return url;
+}
+
+export function createPosterOverlayElement(item, metadataPower) {
+  const prov = metadataPower?.posterProvider || "none";
+  if (prov === "none") return null;
+
+  const pc = metadataPower?.posterCustomizations || {};
+  const statusMode = pc.statusMode || "notch";
+  const maxBadges = Number(pc.maxBadges || 3);
+  const badgeStyle = pc.badgeStyle || "frosted";
+  const awardsMask = Number(pc.awardsMask ?? 7);
+  const tokens = Array.isArray(pc.ratings) && pc.ratings.length
+    ? pc.ratings
+    : ["imdb", "tomatoes:mt", "letterboxd:m", "trakt:t"];
+
+  const overlay = document.createElement("div");
+  overlay.className = "nv-poster-overlay";
+
+  // Top status banner (Upcoming / Airing / Next Watching)
+  let statusHtml = "";
+  if (prov === "postersplus" && statusMode !== "off" && statusMode !== "none") {
+    const isSeries = item?.type === "series";
+    let statusTxt = item?.statusLabel || "";
+    let tone = "";
+    if (!statusTxt) {
+      if (isSeries && pc.tvStatusOverlay !== false) {
+        statusTxt = "NEW EP";
+        tone = "tone-upcoming";
+      } else if (!isSeries && pc.showWatchingStatus !== false) {
+        statusTxt = "RELEASED";
+        tone = "tone-watching";
+      }
+    }
+    if (statusTxt) {
+      statusHtml = `<div class="nv-poster-status mode-${statusMode} ${tone}">${statusTxt}</div>`;
+    }
+  }
+
+  // Awards & Accolades (Oscars / Emmys / IMDb Top 250)
+  let awardHtml = "";
+  if (prov === "postersplus" && awardsMask > 0) {
+    const isSeries = item?.type === "series";
+    let awardTxt = item?.awardLabel || "";
+    if (!awardTxt) {
+      if (isSeries && (awardsMask & 2)) awardTxt = "🏆 Emmy Winner";
+      else if (!isSeries && (awardsMask & 1)) awardTxt = "🏆 Oscar Nom";
+      else if (awardsMask & 4) awardTxt = "★ Top Rated";
+    }
+    if (awardTxt) {
+      awardHtml = `<div class="nv-poster-mid-badges"><span class="nv-poster-award">${awardTxt}</span></div>`;
+    }
+  }
+
+  // Bottom rating pills filtered by type (m=movie, t=series, a=anime)
+  const isAnime =
+    (item?.genres || []).some(g => /anime|animation/i.test(String(g))) ||
+    String(item?.language || "").toUpperCase() === "JA";
+  const isSeries = item?.type === "series";
+  const picked = [];
+  if (prov === "rpdb") {
+    picked.push(
+      { short: "IMDb", color: "#F5C518", val: item?.rating || "8.5" },
+      { short: "RT", color: "#FA320A", val: "93%" }
+    );
+  } else if (prov === "topposters") {
+    picked.push(
+      { short: "IMDb", color: "#F5C518", val: item?.rating || "8.5" },
+      { short: "TMDB", color: "#01D277", val: "84%" },
+      { short: "RT", color: "#FA320A", val: "93%" }
+    );
+  } else {
+    tokens.forEach(tok => {
+      if (picked.length >= maxBadges) return;
+      const [id, scope] = String(tok).split(":");
+      if (scope) {
+        const allowMovie = scope.includes("m") && !isSeries;
+        const allowTv = scope.includes("t") && isSeries;
+        const allowAnime = scope.includes("a") && isAnime;
+        if (!allowMovie && !allowTv && !allowAnime) return;
+      }
+      const meta = POSTER_RATING_META[id];
+      if (!meta) return;
+      picked.push({ short: meta.short, color: meta.color, val: meta.sample(item || {}) });
+    });
+  }
+
+  const ratingsHtml = picked.length
+    ? `<div class="nv-poster-ratings">${picked
+        .map(
+          r =>
+            `<span class="nv-pr-pill style-${badgeStyle}"><span style="color:${r.color}">${r.short}</span> ${r.val}</span>`
+        )
+        .join("")}</div>`
+    : "";
+
+  overlay.innerHTML = `${statusHtml}${awardHtml}${ratingsHtml}`;
+  return overlay;
 }
 
 function attachImgFallback(imgEl, fallbackHtml) {
@@ -1202,6 +1338,8 @@ function renderCollectionScreen(root, ctx, profile, col, _s, options) {
 
 function buildPosterCard(ctx, item, fixedWidth) {
   const { escapeHtml } = ctx.ui;
+  const mp = ctx.state?.metadataPower || {};
+  const prov = mp.posterProvider || "none";
   const card = document.createElement("div");
   card.className = "nv-poster-card";
   if (fixedWidth) card.style.flex = "0 0 var(--nv-card-w, 118px)";
@@ -1209,18 +1347,38 @@ function buildPosterCard(ctx, item, fixedWidth) {
   const wrap = document.createElement("div");
   wrap.className = "nv-poster-wrap";
   const fallbackHtml = `<div class="nv-poster-fallback">${escapeHtml(item.title)}</div>`;
-  if (item.posterUrl) {
+  const customUrl = resolveCustomizedPosterUrl(item, mp, "poster");
+  const rawUrl = item.posterUrl || "";
+
+  if (customUrl || rawUrl) {
     const img = document.createElement("img");
-    img.src = item.posterUrl;
+    img.src = customUrl || rawUrl;
     img.alt = item.title;
     img.loading = "lazy";
-    attachImgFallback(img, fallbackHtml);
+    let triedRaw = !customUrl || customUrl === rawUrl;
+    img.onerror = () => {
+      if (!triedRaw && rawUrl) {
+        triedRaw = true;
+        img.src = rawUrl;
+        const ov = createPosterOverlayElement(item, mp);
+        if (ov && !wrap.querySelector(".nv-poster-overlay")) wrap.appendChild(ov);
+        return;
+      }
+      const tmp = document.createElement("div");
+      tmp.innerHTML = fallbackHtml;
+      if (tmp.firstElementChild) img.replaceWith(tmp.firstElementChild);
+    };
     wrap.appendChild(img);
+
+    if (prov === "rpdb" || prov === "topposters") {
+      const ov = createPosterOverlayElement(item, mp);
+      if (ov) wrap.appendChild(ov);
+    }
   } else {
     wrap.innerHTML = fallbackHtml;
   }
 
-  if (item.rating) {
+  if (item.rating && prov === "none") {
     const chip = document.createElement("span");
     chip.className = "nv-rating-chip";
     chip.textContent = `★ ${item.rating}`;
@@ -1524,7 +1682,7 @@ function renderStreamsScreen(root, ctx, profile, _s, badgeCfg, st) {
   [
     ["all", "All Streams"],
     ["4k", "4K UHD"],
-    ["hdr", "Dolby Vision / HDR"],
+    ["hdr", "DV / HDR"],
     ["cached", `${debridLabel} Cached`],
   ].forEach(([fid, lbl]) => {
     const b = document.createElement("button");

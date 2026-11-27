@@ -9,7 +9,9 @@ and exact dynamic secret requirements.
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import urllib.parse
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -40,6 +42,117 @@ DEFAULT_POSTERSPLUS_URL_PATTERN = (
 
 def _err(msg: str) -> Err[ConfigValidationError]:
     return Err(ConfigValidationError(message=msg, service="aiometadata"))
+
+
+_DEFAULT_POSTERSPLUS_RATINGS: tuple[str, ...] = (
+    "myanimelist:a",
+    "anilist:a",
+    "imdb",
+    "tomatoes:mt",
+    "letterboxd:m",
+    "trakt:t",
+)
+
+
+def _parse_bool_str(val: str | None, default: bool) -> bool:
+    if val is None or val == "":
+        return default
+    return str(val).strip().lower() not in ("false", "0", "no", "off")
+
+
+def _parse_int_str(val: str | None, default: int, lo: int, hi: int) -> int:
+    if val is None or not str(val).strip():
+        return default
+    try:
+        parsed = int(str(val).strip())
+    except ValueError:
+        return default
+    return max(lo, min(hi, parsed))
+
+
+def _parse_postersplus_config(url: str) -> JsonDict:
+    parsed = urllib.parse.urlsplit(url or DEFAULT_POSTERSPLUS_URL_PATTERN)
+    params = dict(urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
+    raw_rb = str(params.get("rb") or "").strip()
+    ratings = (
+        [tok.strip() for tok in raw_rb.split(",") if tok.strip()]
+        if "rb" in params
+        else list(_DEFAULT_POSTERSPLUS_RATINGS)
+    )
+    return {
+        "ratings": ratings,
+        "maxBadges": _parse_int_str(params.get("rbm"), 3, 1, 5),
+        "statusMode": str(params.get("sm") or params.get("_sm") or "notch").strip() or "notch",
+        "tvStatusOverlay": _parse_bool_str(params.get("tvso"), True),
+        "showWatchingStatus": _parse_bool_str(params.get("sws") or params.get("_ws"), True),
+        "awardsMask": _parse_int_str(params.get("bdm") or params.get("_bdm"), 7, 0, 15),
+        "badgeStyle": str(params.get("bqs") or params.get("bcts") or "frosted").strip() or "frosted",
+        "clientPreset": str(params.get("pc") or "stremio_tv_nuvio").strip() or "stremio_tv_nuvio",
+    }
+
+
+def _update_postersplus_url(base_url: str, cfg: Mapping[str, Any]) -> str:
+    parsed = urllib.parse.urlsplit(base_url or DEFAULT_POSTERSPLUS_URL_PATTERN)
+    pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+    updates: dict[str, str] = {}
+    existing_keys = {k for k, _ in pairs}
+
+    if "ratings" in cfg and isinstance(cfg["ratings"], Sequence) and not isinstance(cfg["ratings"], (str, bytes)):
+        ratings = [str(r).strip() for r in cfg["ratings"] if str(r).strip()]
+        updates["rb"] = ",".join(ratings)
+    if "maxBadges" in cfg and not isinstance(cfg["maxBadges"], bool):
+        with contextlib.suppress(TypeError, ValueError):
+            updates["rbm"] = str(max(1, min(5, int(cfg["maxBadges"]))))
+    if "statusMode" in cfg:
+        sm = str(cfg["statusMode"] or "notch").strip() or "off"
+        updates["sm"] = sm
+        if "_sm" in existing_keys:
+            updates["_sm"] = sm
+    if "tvStatusOverlay" in cfg:
+        updates["tvso"] = "true" if bool(cfg["tvStatusOverlay"]) else "false"
+    if "showWatchingStatus" in cfg:
+        ws = "true" if bool(cfg["showWatchingStatus"]) else "false"
+        updates["sws"] = ws
+        if "_ws" in existing_keys:
+            updates["_ws"] = ws
+    if "awardsMask" in cfg and not isinstance(cfg["awardsMask"], bool):
+        try:
+            bdm = str(max(0, min(15, int(cfg["awardsMask"]))))
+            updates["bdm"] = bdm
+            if "_bdm" in existing_keys:
+                updates["_bdm"] = bdm
+        except (TypeError, ValueError):
+            pass
+    if "badgeStyle" in cfg:
+        bs = str(cfg["badgeStyle"] or "frosted").strip() or "frosted"
+        updates["bqs"] = bs
+        updates["bcts"] = bs
+        if "_bqs" in existing_keys:
+            updates["_bqs"] = bs
+        if "_bcts" in existing_keys:
+            updates["_bcts"] = bs
+    if "clientPreset" in cfg:
+        pc = str(cfg["clientPreset"] or "stremio_tv_nuvio").strip()
+        if pc:
+            updates["pc"] = pc
+
+    out_pairs: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for k, v in pairs:
+        if k in updates:
+            out_pairs.append((k, updates[k]))
+        else:
+            out_pairs.append((k, v))
+        seen.add(k)
+    for k, v in updates.items():
+        if k not in seen:
+            out_pairs.append((k, v))
+
+    query_str = "&".join(
+        f"{urllib.parse.quote(k, safe='')}={urllib.parse.quote(v, safe='{}?,:.')}"
+        for k, v in out_pairs
+    )
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query_str, parsed.fragment))
 
 
 def _detect_poster_provider(doc: Mapping[str, Any]) -> str:
@@ -102,6 +215,9 @@ def inspect_aiometadata_power(doc: Mapping[str, Any]) -> JsonDict:
     )
     ai_enabled, ai_provider = _detect_ai_search(doc)
     poster_provider = _detect_poster_provider(doc)
+    custom_poster_pattern = str(doc.get("customPosterUrlPattern") or "")
+    raw_art = doc.get("artProviders")
+    art_map: Mapping[str, Any] = raw_art if isinstance(raw_art, Mapping) else {}
 
     catalogs_summary: list[JsonDict] = []
     raw_cats = doc.get("catalogs")
@@ -132,6 +248,15 @@ def inspect_aiometadata_power(doc: Mapping[str, Any]) -> JsonDict:
         "aiSearchEnabled": ai_enabled,
         "aiSearchProvider": ai_provider,
         "posterProvider": poster_provider,
+        "customPosterUrlPattern": custom_poster_pattern,
+        "posterCustomizations": _parse_postersplus_config(custom_poster_pattern),
+        "posterOptions": {
+            "enableRatingPostersForLibrary": bool(doc.get("enableRatingPostersForLibrary", True)),
+            "displayAgeRating": bool(doc.get("displayAgeRating", True)),
+            "blurThumbs": bool(doc.get("blurThumbs", False)),
+            "hideUnreleasedDigital": bool(doc.get("hideUnreleasedDigital", False)),
+            "englishArtOnly": bool(art_map.get("englishArtOnly", True)),
+        },
         "catalogs": catalogs_summary,
         "providerOptions": {
             "movie": list(MOVIE_METADATA_PROVIDERS),
@@ -389,6 +514,33 @@ def apply_aiometadata_power(
 
     if search_changed or "posterProvider" in spec:
         out["apiKeys"] = api_keys
+
+    if "customPosterUrlPattern" in spec:
+        pat = str(spec["customPosterUrlPattern"] or "").strip()
+        if pat:
+            out["customPosterUrlPattern"] = pat
+
+    if "posterCustomizations" in spec:
+        pc_spec = spec["posterCustomizations"]
+        if not isinstance(pc_spec, Mapping):
+            return _err("`posterCustomizations` must be an object.")
+        base_pat = str(out.get("customPosterUrlPattern") or "").strip() or DEFAULT_POSTERSPLUS_URL_PATTERN
+        out["customPosterUrlPattern"] = _update_postersplus_url(base_pat, pc_spec)
+        if "posterProvider" not in spec:
+            out["posterRatingProvider"] = "custom"
+
+    if "posterOptions" in spec:
+        po = spec["posterOptions"]
+        if not isinstance(po, Mapping):
+            return _err("`posterOptions` must be an object.")
+        for top_key in ("enableRatingPostersForLibrary", "displayAgeRating", "blurThumbs", "hideUnreleasedDigital"):
+            if top_key in po:
+                out[top_key] = bool(po[top_key])
+        if "englishArtOnly" in po:
+            raw_art = out.get("artProviders")
+            art_sec: JsonDict = copy.deepcopy(dict(raw_art)) if isinstance(raw_art, Mapping) else {}
+            art_sec["englishArtOnly"] = bool(po["englishArtOnly"])
+            out["artProviders"] = art_sec
 
     if "catalogOverrides" in spec or "catalogOrder" in spec:
         raw_cats = out.get("catalogs")

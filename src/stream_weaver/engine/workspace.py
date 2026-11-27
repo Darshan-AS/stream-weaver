@@ -299,6 +299,7 @@ _ENV_SPECS_BY_KEY: Mapping[str, EnvKeySpec] = {s.key: s for s in KNOWN_ENV_KEYS}
 _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     {
         "id": "tt15239678",
+        "tmdbId": "693134",
         "title": "Dune: Part Two",
         "year": "2024",
         "runtime": "2h 46m",
@@ -314,6 +315,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt15398776",
+        "tmdbId": "872585",
         "title": "Oppenheimer",
         "year": "2023",
         "runtime": "3h 0m",
@@ -329,6 +331,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt9362722",
+        "tmdbId": "569094",
         "title": "Spider-Man: Across the Spider-Verse",
         "year": "2023",
         "runtime": "2h 20m",
@@ -344,6 +347,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt0245429",
+        "tmdbId": "129",
         "title": "Spirited Away",
         "year": "2001",
         "runtime": "2h 5m",
@@ -359,6 +363,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt0816692",
+        "tmdbId": "157336",
         "title": "Interstellar",
         "year": "2014",
         "runtime": "2h 49m",
@@ -374,6 +379,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt6710474",
+        "tmdbId": "545611",
         "title": "Everything Everywhere All at Once",
         "year": "2022",
         "runtime": "2h 19m",
@@ -389,6 +395,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt29623480",
+        "tmdbId": "1184918",
         "title": "The Wild Robot",
         "year": "2024",
         "runtime": "1h 42m",
@@ -404,6 +411,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt6751668",
+        "tmdbId": "496243",
         "title": "Parasite",
         "year": "2019",
         "runtime": "2h 12m",
@@ -419,6 +427,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt2380307",
+        "tmdbId": "354912",
         "title": "Coco",
         "year": "2017",
         "runtime": "1h 45m",
@@ -434,6 +443,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt1856101",
+        "tmdbId": "335984",
         "title": "Blade Runner 2049",
         "year": "2017",
         "runtime": "2h 44m",
@@ -452,6 +462,7 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
 _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     {
         "id": "tt11280740",
+        "tmdbId": "95396",
         "title": "Severance",
         "year": "2022",
         "runtime": "55m",
@@ -467,6 +478,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt2788316",
+        "tmdbId": "126308",
         "title": "Shogun",
         "year": "2024",
         "runtime": "1h 0m",
@@ -482,6 +494,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt11126994",
+        "tmdbId": "94605",
         "title": "Arcane",
         "year": "2021",
         "runtime": "42m",
@@ -497,6 +510,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt2934286",
+        "tmdbId": "209867",
         "title": "Frieren: Beyond Journey's End",
         "year": "2023",
         "runtime": "24m",
@@ -512,6 +526,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt7660850",
+        "tmdbId": "76331",
         "title": "Succession",
         "year": "2018",
         "runtime": "1h 2m",
@@ -527,6 +542,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt14452776",
+        "tmdbId": "136315",
         "title": "The Bear",
         "year": "2022",
         "runtime": "35m",
@@ -542,6 +558,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt7366338",
+        "tmdbId": "87108",
         "title": "Chernobyl",
         "year": "2019",
         "runtime": "1h 5m",
@@ -557,6 +574,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt9253866",
+        "tmdbId": "83867",
         "title": "Andor",
         "year": "2022",
         "runtime": "48m",
@@ -572,6 +590,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt7678620",
+        "tmdbId": "82728",
         "title": "Bluey",
         "year": "2018",
         "runtime": "7m",
@@ -587,6 +606,7 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
     },
     {
         "id": "tt3032476",
+        "tmdbId": "60059",
         "title": "Better Call Saul",
         "year": "2015",
         "runtime": "52m",
@@ -2757,6 +2777,7 @@ def preview_catalog_items(
                             live_items.append(
                                 {
                                     "id": str(m.get("id") or f"meta-{idx}"),
+                                    "tmdbId": str(m.get("tmdb_id") or m.get("tmdbId") or ""),
                                     "title": str(m.get("name") or m.get("title") or "Untitled"),
                                     "year": rel[:4],
                                     "runtime": str(m.get("runtime") or ""),
@@ -2821,6 +2842,7 @@ def preview_catalog_items(
                             tmdb_items.append(
                                 {
                                     "id": f"tmdb:{r.get('id', idx)}",
+                                    "tmdbId": str(r.get("id") or ""),
                                     "title": str(r.get("title") or r.get("name") or "Untitled"),
                                     "year": date_str[:4],
                                     "runtime": "",

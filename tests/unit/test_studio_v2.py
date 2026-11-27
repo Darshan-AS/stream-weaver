@@ -568,6 +568,11 @@ def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path:
 
     state_data = json.loads(dispatcher.dispatch("GET", "/api/state").body)
     assert state_data["ok"] is True
+    mp = state_data["state"]["metadataPower"]
+    assert mp["posterProvider"] == "postersplus"
+    assert "customPosterUrlPattern" in mp
+    assert mp["posterCustomizations"]["statusMode"] == "notch"
+    assert mp["posterCustomizations"]["awardsMask"] == 7
     prof = state_data["state"]["profiles"][0]
     first_col = prof["collections"][0]
     first_folder = first_col["folders"][0]
@@ -604,6 +609,7 @@ def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path:
     assert items[0]["runtime"]
     assert items[0]["certification"]
     assert items[0]["language"]
+    assert items[0]["tmdbId"]
 
     # Live AIOMetadata catalog preview also includes details metadata fields
     live_prev = dispatcher.dispatch(
