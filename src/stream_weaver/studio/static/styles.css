@@ -1779,12 +1779,25 @@ label.field span.hint {
   color: #86efac;
 }
 
-/* Split Stage + Persistent Live Nuvio Viewport + Drag & Drop */
+/* Split Stage + Persistent Live Nuvio Viewport + Theater Mode + Drag & Drop */
 .studio-split-stage {
   display: grid;
-  grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(310px, 385px) minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
+}
+
+.studio-split-stage.theater-mode {
+  grid-template-columns: 1fr;
+}
+
+.studio-split-stage.theater-mode .sticky-stage {
+  position: static;
+  order: -1;
+}
+
+.viewport-card {
+  padding: 14px;
 }
 
 @media (max-width: 1120px) {
@@ -1795,7 +1808,7 @@ label.field span.hint {
 
 .sticky-stage {
   position: sticky;
-  top: 72px;
+  top: 70px;
 }
 
 @media (max-width: 1120px) {

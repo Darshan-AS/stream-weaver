@@ -7,22 +7,21 @@ let inlineDiffOutcomes = null;
 let inlineWarmResult = null;
 
 const THEME_SWATCHES = [
-  { id: "ocean", label: "Ocean", color: "#38bdf8" },
-  { id: "crimson", label: "Crimson", color: "#ef4444" },
-  { id: "violet", label: "Violet", color: "#8b5cf6" },
-  { id: "emerald", label: "Emerald", color: "#10b981" },
-  { id: "amber", label: "Amber", color: "#f59e0b" },
-  { id: "rose", label: "Rose", color: "#f43f5e" },
-  { id: "gold", label: "Gold (TV)", color: "#eab308" },
-  { id: "jade", label: "Jade (TV)", color: "#14b8a6" },
-  { id: "rose_gold", label: "Rose Gold", color: "#fb7185" },
-  { id: "arctic_blue", label: "Arctic Blue", color: "#7dd3fc" },
-  { id: "graphite", label: "Graphite", color: "#94a3b8" },
-  { id: "white", label: "White", color: "#f8fafc" },
+  { id: "ocean", label: "Ocean", color: "#1E88E5" },
+  { id: "crimson", label: "Crimson", color: "#E53935" },
+  { id: "violet", label: "Violet", color: "#8E24AA" },
+  { id: "emerald", label: "Emerald", color: "#43A047" },
+  { id: "amber", label: "Amber", color: "#FB8C00" },
+  { id: "rose", label: "Rose", color: "#D81B60" },
+  { id: "gold", label: "Gold", color: "#FFD45C" },
+  { id: "jade", label: "Jade", color: "#22D37C" },
+  { id: "rose_gold", label: "Rose Gold", color: "#EC70A9" },
+  { id: "arctic_blue", label: "Arctic Blue", color: "#3185F5" },
+  { id: "graphite", label: "Graphite", color: "#AAB2BE" },
+  { id: "white", label: "White", color: "#F5F5F5" },
 ];
 
 export function renderNuvioTab(root, ctx) {
-  const { icon } = ctx.ui;
   const p = ctx.currentProfile();
   if (!p) return;
 
@@ -31,7 +30,7 @@ export function renderNuvioTab(root, ctx) {
 
   // Split Stage: Controls (Left) + Sticky Real-Time Nuvio Viewport (Right)
   const split = document.createElement("div");
-  split.className = "studio-split-stage";
+  split.className = "studio-split-stage" + (getViewportState().theater ? " theater-mode" : "");
 
   const controlsStack = document.createElement("div");
   controlsStack.className = "section-stack";
@@ -41,16 +40,7 @@ export function renderNuvioTab(root, ctx) {
   );
 
   const right = document.createElement("div");
-  right.className = "card sticky-stage";
-  right.innerHTML = `
-    <div class="row-between" style="margin-bottom:8px;flex-wrap:wrap">
-      <div>
-        <div class="card-eyebrow">${icon("tv", 12)} Live Simulator</div>
-        <h2 style="margin-bottom:2px">Real-Time Nuvio Experience Preview</h2>
-      </div>
-      <span class="pill">Updates live on every edit</span>
-    </div>
-  `;
+  right.className = "card viewport-card sticky-stage";
   right.appendChild(renderNuvioViewport(ctx, {}));
 
   split.append(controlsStack, right);
@@ -245,7 +235,7 @@ function renderBadgesAndMetaCard(ctx, p) {
   badgeRow.appendChild(
     ctx.ui.makeSwitch("Enable Elite-Badges Pack", Boolean(p.badgesEnabled), (v) => {
       p.badgesEnabled = v;
-      setViewportState({ screen: "details" });
+      setViewportState({ screen: "streams" });
       ctx.saveSection("profile", true);
     })
   );
@@ -257,7 +247,7 @@ function renderBadgesAndMetaCard(ctx, p) {
     b.className = "seg-btn" + (vp.badgePlacement === pos ? " active" : "");
     b.textContent = lbl;
     b.onclick = () => {
-      setViewportState({ badgePlacement: pos, screen: "details" });
+      setViewportState({ badgePlacement: pos, screen: "streams" });
       ctx.render();
     };
     posTabs.appendChild(b);

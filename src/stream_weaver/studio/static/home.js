@@ -1,6 +1,6 @@
 // Tab 1 — Home Screen, Drag-and-Drop Reordering, DIY Builder & Persistent Real-Time Nuvio Viewport
 
-import { renderNuvioViewport, setViewportState } from "./nuvio_viewport.js";
+import { getViewportState, renderNuvioViewport, setViewportState } from "./nuvio_viewport.js";
 
 let selectedColIdx = 0;
 let selectedFolderIdx = 0;
@@ -81,7 +81,7 @@ export function renderHomeTab(root, ctx) {
   if (selectedFolderIdx >= folders.length) selectedFolderIdx = 0;
 
   const wrap = document.createElement("div");
-  wrap.className = "studio-split-stage";
+  wrap.className = "studio-split-stage" + (getViewportState().theater ? " theater-mode" : "");
 
   // =========================================================================
   // LEFT COLUMN — Drag-and-Drop Shelves + Folder Tabs Editor + Recipe Catalog
@@ -384,7 +384,40 @@ export function renderHomeTab(root, ctx) {
         ctx.saveSection("profile", true);
       };
       fcLbl.appendChild(fcIn);
-      fEdit.append(ftLbl, fcLbl);
+
+      const shapeRow = document.createElement("div");
+      shapeRow.style.cssText = "display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end";
+
+      const shLbl = document.createElement("label");
+      shLbl.className = "field";
+      shLbl.textContent = "Tile Shape";
+      const shSel = document.createElement("select");
+      [
+        ["LANDSCAPE", "Landscape (16:9)"],
+        ["SQUARE", "Square (1:1)"],
+        ["POSTER", "Poster (2:3)"],
+      ].forEach(([sv, sl]) => {
+        const o = document.createElement("option");
+        o.value = sv;
+        o.textContent = sl;
+        if (String(rawF.tileShape || "LANDSCAPE").toUpperCase() === sv) o.selected = true;
+        shSel.appendChild(o);
+      });
+      shSel.onchange = () => {
+        rawF.tileShape = shSel.value;
+        setViewportState({ screen: "home" });
+        ctx.saveSection("profile", true);
+      };
+      shLbl.appendChild(shSel);
+
+      const hideSw = ctx.ui.makeSwitch("Hide Title", Boolean(rawF.hideTitle), (v) => {
+        rawF.hideTitle = v;
+        setViewportState({ screen: "home" });
+        ctx.saveSection("profile", true);
+      });
+      shapeRow.append(shLbl, hideSw);
+
+      fEdit.append(ftLbl, fcLbl, shapeRow);
       detailBox.appendChild(fEdit);
     }
 
@@ -485,16 +518,7 @@ export function renderHomeTab(root, ctx) {
   // RIGHT COLUMN — Persistent Real-Time Nuvio Viewport Showcase
   // =========================================================================
   const right = document.createElement("div");
-  right.className = "card sticky-stage";
-  right.innerHTML = `
-    <div class="row-between" style="margin-bottom:8px;flex-wrap:wrap">
-      <div>
-        <div class="card-eyebrow">${icon("tv", 12)} Real-Time Showcase</div>
-        <h2 style="margin-bottom:2px">Live Nuvio Layout Preview</h2>
-      </div>
-      <span class="pill">Click any shelf, poster, or stream</span>
-    </div>
-  `;
+  right.className = "card viewport-card sticky-stage";
 
   right.appendChild(
     renderNuvioViewport(ctx, {
