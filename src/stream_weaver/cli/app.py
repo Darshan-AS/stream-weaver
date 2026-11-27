@@ -235,11 +235,20 @@ def _resolve_tenant(
     require_marker: bool = True,
 ) -> TenantPaths:
     """Resolves the active tenant directory or exits with a actionable error."""
+    explicit_dir = workspace_dir or _CLI_WORKSPACE_DIR
+    effective_tenant = tenant_name or _CLI_TENANT_NAME
+    env_override = os.environ.get(ENV_DIR_OVERRIDE)
+    should_check_default = (
+        require_marker
+        and explicit_dir is None
+        and effective_tenant is None
+        and not (env_override or "").strip()
+    )
     match resolve_tenant_root(
-        workspace_dir or _CLI_WORKSPACE_DIR,
-        tenant_name=tenant_name or _CLI_TENANT_NAME,
-        env_override=os.environ.get(ENV_DIR_OVERRIDE),
-        default_dir=load_default_workspace() if require_marker else None,
+        explicit_dir,
+        tenant_name=effective_tenant,
+        env_override=env_override,
+        default_dir=load_default_workspace() if should_check_default else None,
         require_marker=require_marker,
     ):
         case Err(err):

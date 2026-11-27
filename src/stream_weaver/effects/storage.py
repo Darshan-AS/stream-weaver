@@ -112,7 +112,10 @@ def user_config_path() -> Path:
 def load_default_workspace() -> Path | None:
     """Reads the remembered default workspace directory from the user's config file, if configured."""
     cfg_path = user_config_path()
-    if not cfg_path.is_file():
+    try:
+        if not cfg_path.is_file():
+            return None
+    except OSError:
         return None
     match read_json_file(cfg_path):
         case Ok(doc):

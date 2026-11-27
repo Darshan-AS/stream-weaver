@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from typer.testing import CliRunner
@@ -305,3 +306,28 @@ def test_default_workspace_config_and_workspace_commands(tmp_path: Path) -> None
     bad_use = runner.invoke(app, ["workspace", "use", str(bare)])
     assert bad_use.exit_code == 1
     assert TENANT_FILE in bad_use.output
+
+
+def test_load_default_workspace_handles_unreadable_config_and_skips_when_explicit_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from stream_weaver.effects import storage
+
+    cfg = tmp_path / "unreadable" / "config.json"
+    monkeypatch.setenv("STREAM_WEAVER_CONFIG", str(cfg))
+
+    orig_is_file = Path.is_file
+
+    def _deny_cfg(self: Path) -> bool:
+        if self == cfg:
+            raise PermissionError("sandbox denied")
+        return orig_is_file(self)
+
+    monkeypatch.setattr(Path, "is_file", _deny_cfg)
+    assert storage.load_default_workspace() is None
+
+    ws = tmp_path / "explicit-ws"
+    init_res = runner.invoke(app, ["init", str(ws), "--starter"])
+    assert init_res.exit_code == 0, init_res.output
+    val_res = runner.invoke(app, ["validate", "--dir", str(ws)])
+    assert val_res.exit_code == 0, val_res.output
