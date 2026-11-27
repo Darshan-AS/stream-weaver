@@ -1262,13 +1262,17 @@ def cmd_profile_import(
 
 @profile_app.command("nuvio-list")
 def cmd_profile_nuvio_list(
-    login: Annotated[str, typer.Option("--login", "-l", help="Nuvio login name")],
+    login: Annotated[
+        str | None,
+        typer.Option("--login", "-l", help="Nuvio login name (default: sole registered login)"),
+    ] = None,
     workspace_dir: WorkspaceDirOption = None,
     tenant: TenantNameOption = None,
 ) -> None:
     """List the Nuvio profiles that exist on a login (names + indexes) — use with `sw profile new --nuvio-profile`."""
     ctx = _resolve_context(workspace_dir, tenant)
-    match resolve_login_binding(ctx.manifest, ctx.env, "nuvio", login):
+    login_name = _resolve_login_name(ctx.manifest, "nuvio", login, default_if_empty=None)
+    match resolve_login_binding(ctx.manifest, ctx.env, "nuvio", login_name):
         case Err(login_err):
             err_console.print(f"❌ {login_err}")
             raise typer.Exit(code=1)
@@ -1288,7 +1292,7 @@ def cmd_profile_nuvio_list(
                 pass
     if session.refreshed_secrets:
         _save_env_or_exit(ctx.paths.env_file, {**ctx.env, **session.refreshed_secrets})
-    table = Table(title=f"Nuvio profiles — login `{login}`", box=box.ROUNDED, header_style="bold")
+    table = Table(title=f"Nuvio profiles — login `{login_name}`", box=box.ROUNDED, header_style="bold")
     for col in ("Index", "Name", "Id"):
         table.add_column(col, overflow="fold")
     for p in session.profiles:
@@ -1729,9 +1733,37 @@ def cmd_login_list(
     console.print(table)
 
 
+def _resolve_login_name(
+    manifest: TenantManifest,
+    platform: str,
+    explicit: str | None,
+    *,
+    default_if_empty: str | None = "main",
+) -> str:
+    """Resolve `--login` explicitly, or auto-select the sole registered login."""
+    if explicit and explicit.strip():
+        return explicit.strip().lower()
+    registered = sorted(manifest.logins.get(platform, {}))
+    if len(registered) == 1:
+        console.print(f"ℹ️  Using {platform} login `{registered[0]}` (pass --login to pick another)")
+        return registered[0]
+    if len(registered) == 0:
+        if default_if_empty is not None:
+            return default_if_empty
+        err_console.print(f"❌ No {platform} logins registered yet — run `sw login {platform}` first.")
+        raise typer.Exit(code=1)
+    err_console.print(
+        f"❌ Multiple {platform} logins registered ({', '.join(registered)}); specify --login <name>."
+    )
+    raise typer.Exit(code=1)
+
+
 @login_app.command("nuvio")
 def cmd_login_nuvio(
-    login: Annotated[str, typer.Option("--login", "-l", help="Login name (e.g. don, gf)")],
+    login: Annotated[
+        str | None,
+        typer.Option("--login", "-l", help="Login name (default: sole registered login, or 'main')"),
+    ] = None,
     email: Annotated[str | None, typer.Option("--email", help="Nuvio account email (prompted if omitted)")] = None,
     password: Annotated[
         str | None,
@@ -1750,9 +1782,14 @@ def cmd_login_nuvio(
     env = load_env_file(paths.env_file)
     anon_key = resolve_nuvio_anon_key(env)
 
-    login_name = login.strip().lower()
+    login_name = _resolve_login_name(manifest, "nuvio", login)
     registered_prefix = manifest.logins.get("nuvio", {}).get(login_name)
-    env_prefix = (prefix or registered_prefix or f"NUVIO_{login_name.upper().replace('-', '_')}").strip()
+    default_prefix = (
+        "NUVIO"
+        if login_name == "main" and not manifest.logins.get("nuvio")
+        else f"NUVIO_{login_name.upper().replace('-', '_')}"
+    )
+    env_prefix = (prefix or registered_prefix or default_prefix).strip()
     email_val = (email or typer.prompt("Nuvio email")).strip()
     password_val = password or typer.prompt("Nuvio password", hide_input=True)
 
@@ -1778,7 +1815,10 @@ def cmd_login_nuvio(
 
 @login_app.command("stremio")
 def cmd_login_stremio(
-    login: Annotated[str, typer.Option("--login", "-l", help="Login name (e.g. don)")],
+    login: Annotated[
+        str | None,
+        typer.Option("--login", "-l", help="Login name (default: sole registered login, or 'main')"),
+    ] = None,
     email: Annotated[str | None, typer.Option("--email", help="Stremio account email (prompted if omitted)")] = None,
     password: Annotated[
         str | None,
@@ -1794,9 +1834,14 @@ def cmd_login_stremio(
     """Sign in to Stremio and store its authKey as SECRET_<PREFIX>_AUTH_KEY for this login."""
     paths = _resolve_tenant(workspace_dir, tenant)
     manifest = _load_tenant_manifest(paths)
-    login_name = login.strip().lower()
+    login_name = _resolve_login_name(manifest, "stremio", login)
     registered_prefix = manifest.logins.get("stremio", {}).get(login_name)
-    env_prefix = (prefix or registered_prefix or f"STREMIO_{login_name.upper().replace('-', '_')}").strip()
+    default_prefix = (
+        "STREMIO"
+        if login_name == "main" and not manifest.logins.get("stremio")
+        else f"STREMIO_{login_name.upper().replace('-', '_')}"
+    )
+    env_prefix = (prefix or registered_prefix or default_prefix).strip()
     email_val = (email or typer.prompt("Stremio email")).strip()
     password_val = password or typer.prompt("Stremio password", hide_input=True)
 

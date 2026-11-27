@@ -294,6 +294,68 @@ def test_sw_login_nuvio_uses_default_anon_key_and_reuses_template_prefix(
     assert "SECRET_NUVIO_EMAIL=cloner@example.com" in env_text
 
 
+class _FakeLoginHttp(_FakeNuvioHttp):
+    def request_json(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        json_body: Any | None = None,
+        raw_body: bytes | None = None,
+        timeout: float = 30.0,
+    ) -> Result[HttpResponse, NetworkError]:
+        if url == "https://api.strem.io/api/login":
+            return Ok(HttpResponse(status_code=200, data={"result": {"authKey": "stremio-k"}}, text=""))
+        return super().request_json(
+            method, url, headers=headers, json_body=json_body, raw_body=raw_body, timeout=timeout
+        )
+
+
+def test_sw_login_and_nuvio_list_auto_select_when_login_omitted(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    ws = tmp_path / "ws"
+    assert runner.invoke(app, ["init", str(ws), "--starter"]).exit_code == 0
+    monkeypatch.setattr("stream_weaver.cli.app.HttpxClient", lambda: _FakeClientCtx(_FakeLoginHttp()))
+
+    # 1. Bare `sw login nuvio` auto-selects sole registered login `main` (prefix NUVIO)
+    res_nuvio = runner.invoke(
+        app,
+        ["login", "nuvio", "--email", "u@example.com", "--password", "pw", "--dir", str(ws)],
+    )
+    assert res_nuvio.exit_code == 0, res_nuvio.output
+    assert "Using nuvio login `main`" in res_nuvio.output
+    assert "SECRET_NUVIO_ACCESS_TOKEN=a-pw" in (ws / ".env").read_text(encoding="utf-8")
+
+    # 2. Bare `sw login stremio` works on a fresh workspace without registered stremio logins -> `main` (prefix STREMIO)
+    manifest_doc = json.loads((ws / "tenant.json").read_text(encoding="utf-8"))
+    manifest_doc["logins"].pop("stremio", None)
+    (ws / "tenant.json").write_text(json.dumps(manifest_doc, indent=2), encoding="utf-8")
+
+    res_stremio = runner.invoke(
+        app,
+        ["login", "stremio", "--email", "s@example.com", "--password", "pw", "--dir", str(ws)],
+    )
+    assert res_stremio.exit_code == 0, res_stremio.output
+    env_text = (ws / ".env").read_text(encoding="utf-8")
+    assert "SECRET_STREMIO_AUTH_KEY=stremio-k" in env_text
+    assert "SECRET_STREMIO_EMAIL=s@example.com" in env_text
+
+    # 3. Multiple registered logins require explicit `--login`
+    manifest_doc = json.loads((ws / "tenant.json").read_text(encoding="utf-8"))
+    manifest_doc["logins"]["nuvio"]["partner"] = "NUVIO_PARTNER"
+    (ws / "tenant.json").write_text(json.dumps(manifest_doc, indent=2), encoding="utf-8")
+
+    ambig = runner.invoke(app, ["login", "nuvio", "--dir", str(ws)])
+    assert ambig.exit_code == 1
+    assert "Multiple nuvio logins registered (main, partner)" in ambig.output
+
+    ambig_list = runner.invoke(app, ["profile", "nuvio-list", "--dir", str(ws)])
+    assert ambig_list.exit_code == 1
+    assert "Multiple nuvio logins registered (main, partner)" in ambig_list.output
+
+
 def test_nuvio_targets_work_without_aiomanager_or_stremio_and_skip_missing_meta_key(
     tmp_path: Path,
 ) -> None:
