@@ -14,11 +14,15 @@ fi
 
 staged="$(git diff --cached --name-only)"
 
-# If the architecture compiler itself changed, every tenant's diagram is potentially stale.
+# If the architecture compiler itself changed, every workspace diagram is potentially stale.
 if grep -qE '^src/stream_weaver/core/architecture\.py$' <<<"$staged"; then
-    tenants="$(find tenants -mindepth 1 -maxdepth 1 -type d -exec test -f '{}/tenant.json' ';' -print | sort)"
+    tenants="$([[ -d tenants ]] && find tenants -mindepth 1 -maxdepth 1 -type d -exec test -f '{}/tenant.json' ';' -print | sort || true)"
+    [[ -f "examples/home/tenant.json" ]] && tenants="${tenants}"$'\n'"examples/home"
 else
     tenants="$(grep -oE '^tenants/[^/]+/[^/]+\.json$' <<<"$staged" | cut -d/ -f1-2 | sort -u || true)"
+    if grep -qE '^examples/home/[^/]+\.json$' <<<"$staged"; then
+        tenants="${tenants}"$'\n'"examples/home"
+    fi
 fi
 
 for tenant_dir in $tenants; do

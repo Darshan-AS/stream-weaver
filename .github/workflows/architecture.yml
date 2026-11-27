@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Optional repository variable override; auto-falls back to tenants/don, first tenant, or examples/home.
+  # Optional repository variable override; auto-falls back to first tenant under tenants/ or examples/home.
   PAGES_TENANT: ${{ vars.PAGES_TENANT }}
 
 jobs:
@@ -37,8 +37,12 @@ jobs:
           uv run mypy
           uv run pytest
 
-      - name: Validate every tenant offline (schema, documents, architecture sync)
-        run: uv run sw validate --all-tenants
+      - name: Validate starter fixture and any repo tenants offline (schema, documents, architecture sync)
+        run: |
+          uv run sw validate --dir examples/home
+          if find tenants -mindepth 2 -maxdepth 2 -name tenant.json 2>/dev/null | grep -q .; then
+            uv run sw validate --all-tenants
+          fi
 
   build-pages:
     needs: validate
@@ -54,8 +58,6 @@ jobs:
         run: |
           if [[ -n "${PAGES_TENANT}" && -d "tenants/${PAGES_TENANT}/architecture" ]]; then
             ARCH_DIR="tenants/${PAGES_TENANT}/architecture"
-          elif [[ -d "tenants/don/architecture" ]]; then
-            ARCH_DIR="tenants/don/architecture"
           else
             FIRST_TENANT="$(find tenants -mindepth 2 -maxdepth 2 -name tenant.json 2>/dev/null | sort | head -n 1 | xargs -r dirname || true)"
             if [[ -n "${FIRST_TENANT}" && -d "${FIRST_TENANT}/architecture" ]]; then

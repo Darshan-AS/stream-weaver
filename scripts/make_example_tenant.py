@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Regenerates `examples/home/` — the identity-free demo tenant used by docs and as the test
-fixture — from a real tenant (default `tenants/don`, profile `don`).
+fixture — from a real workspace (default sibling `../stream-braid`, profile `don`).
 
 What it strips / rewrites (deterministically, so re-runs are idempotent):
   * hostnames of the source instances → `*.example.com`
@@ -14,8 +14,8 @@ What it strips / rewrites (deterministically, so re-runs are idempotent):
   * scopes to a single starter profile (`--profile don`) with Nuvio defaulting to profile index 1
 
 Usage:
-    uv run python scripts/make_example_tenant.py            # from tenants/don (profile don)
-    uv run python scripts/make_example_tenant.py --from tenants/bro --profile bro
+    uv run python scripts/make_example_tenant.py            # from ../stream-braid (profile don)
+    uv run python scripts/make_example_tenant.py --from /path/to/workspace --profile main
 """
 
 from __future__ import annotations
@@ -231,7 +231,7 @@ def _strip_extra_instance_env_lines(text: str) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--from", dest="source", default="tenants/don")
+    ap.add_argument("--from", dest="source", default="../stream-braid")
     ap.add_argument("--to", dest="target", default="examples/home")
     ap.add_argument("--profile", dest="profile", default="don")
     ap.add_argument("--out-profile", dest="out_profile", default="main")
