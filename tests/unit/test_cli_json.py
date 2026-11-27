@@ -10,8 +10,8 @@ import pytest
 from typer.testing import CliRunner
 
 from stream_weaver.cli.app import app
-from stream_weaver.core.coercions import ConfigDiffOutcome
 from stream_weaver.core.result import Ok
+from stream_weaver.core.types import ConfigDiffOutcome
 from stream_weaver.engine.workspace import DiffReport
 
 runner = CliRunner()
