@@ -70,11 +70,6 @@ export function openSetupWizard(ctx) {
     launchError: "",
   };
 
-  if (wiz.hostingMode === "elfhosted") {
-    if (!ctx.isEnvKeyReady("AIOSTREAMS_URL")) ctx.setPendingEnv("AIOSTREAMS_URL", "https://aiostreams.elfhosted.com");
-    if (!ctx.isEnvKeyReady("AIOMETADATA_URL")) ctx.setPendingEnv("AIOMETADATA_URL", "https://aiometadata.elfhosted.com");
-  }
-
   ctx.openModal((dialog) => {
     const { escapeHtml, icon } = ctx.ui;
     const renderWizard = () => {
@@ -253,7 +248,7 @@ function renderStep1Hosting(container, wiz, ctx, rerender) {
     const inp = document.createElement("input");
     inp.type = "text";
     inp.placeholder = placeholder;
-    inp.value = ctx.effectiveEnvValue(key);
+    inp.value = ctx.effectiveEnvValue(key) || (wiz.hostingMode === "elfhosted" && key !== "AIOMANAGER_URL" ? placeholder : "");
     inp.oninput = () => {
       wiz.hostingMode = "custom";
       ctx.setPendingEnv(key, inp.value);
@@ -684,8 +679,13 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
         enabledPacks.push("dual_subtitles");
       }
 
+      const envUpdates = { ...ctx.pendingEnvEdits };
+      if (wiz.hostingMode === "elfhosted") {
+        if (!ctx.isEnvKeyReady("AIOSTREAMS_URL")) envUpdates.AIOSTREAMS_URL = "https://aiostreams.elfhosted.com";
+        if (!ctx.isEnvKeyReady("AIOMETADATA_URL")) envUpdates.AIOMETADATA_URL = "https://aiometadata.elfhosted.com";
+      }
       const mut = {
-        envUpdates: { ...ctx.pendingEnvEdits },
+        envUpdates,
         enabledPacks,
         dualSubtitlePairs: wiz.dualSubQuick ? [wiz.dualSubQuick.split(":")] : (st.dualSubtitles?.pairs || []),
       };

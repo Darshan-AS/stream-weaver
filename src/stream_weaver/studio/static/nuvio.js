@@ -130,11 +130,6 @@ function renderAppearanceAndSubtitlesCard(ctx, p) {
 
     const updateLiveSub = (targetDev, px) => {
       const vp = getViewportState();
-      if (vp.screen !== "player") {
-        setViewportState({ screen: "player", device: targetDev });
-        ctx.render();
-        return;
-      }
       const subEl = document.querySelector(".nv-sub-box");
       if (subEl && vp.device === targetDev) {
         subEl.style.fontSize = `${px}px`;
@@ -161,6 +156,7 @@ function renderAppearanceAndSubtitlesCard(ctx, p) {
     tvRange.onchange = () => {
       p.settings.enabled = true;
       p.settings.with = { ...(p.settings.with || {}), tvSubtitleSizePercent: tvPercent };
+      setViewportState({ screen: "player", device: "tv" });
       ctx.saveSection("profile", true);
     };
     tvLbl.append(tvValSpan, tvRange);
@@ -184,6 +180,7 @@ function renderAppearanceAndSubtitlesCard(ctx, p) {
     spRange.onchange = () => {
       p.settings.enabled = true;
       p.settings.with = { ...(p.settings.with || {}), subtitleSizeSp: sizeSp };
+      setViewportState({ screen: "player", device: "desktop" });
       ctx.saveSection("profile", true);
     };
     spLbl.append(spValSpan, spRange);
@@ -232,12 +229,20 @@ function renderBadgesAndMetaCard(ctx, p) {
     <p class="sub">Real badge icons render on Streams &amp; Player OSD; MDBList + spoiler controls update Details.</p>
   `;
 
+  const curPlacement = String(
+    p.badges?.with?.badgePlacement || p.compiledPreview?.badges?.placement || vp.badgePlacement || "BOTTOM"
+  ).toUpperCase();
   const badgeRow = document.createElement("div");
   badgeRow.className = "row-between";
   badgeRow.style.cssText = "margin-bottom:12px;flex-wrap:wrap";
   badgeRow.appendChild(
     ctx.ui.makeSwitch("Enable Elite-Badges Pack", Boolean(p.badgesEnabled), (v) => {
       p.badgesEnabled = v;
+      p.badges = {
+        ref: p.badges?.ref || "default",
+        with: { ...(p.badges?.with || {}) },
+        enabled: v,
+      };
       setViewportState({ screen: "streams" });
       ctx.saveSection("profile", true);
     })
@@ -247,11 +252,17 @@ function renderBadgesAndMetaCard(ctx, p) {
   posTabs.className = "segmented";
   [["BOTTOM", "Row: BOTTOM"], ["TOP", "Row: TOP"]].forEach(([pos, lbl]) => {
     const b = document.createElement("button");
-    b.className = "seg-btn" + (vp.badgePlacement === pos ? " active" : "");
+    b.className = "seg-btn" + (curPlacement === pos ? " active" : "");
     b.textContent = lbl;
     b.onclick = () => {
+      p.badgesEnabled = true;
+      p.badges = {
+        enabled: true,
+        ref: p.badges?.ref || "default",
+        with: { ...(p.badges?.with || {}), badgePlacement: pos },
+      };
       setViewportState({ badgePlacement: pos, screen: "streams" });
-      ctx.render();
+      ctx.saveSection("profile", true);
     };
     posTabs.appendChild(b);
   });

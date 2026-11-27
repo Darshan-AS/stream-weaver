@@ -203,13 +203,14 @@ function renderMultiDebridSection(ctx) {
 
     left.append(sw, rankPill, keyPill);
 
+    const enabledCount = providers.filter(p => p.enabled).length;
     const ctrls = document.createElement("div");
     ctrls.className = "col-controls";
     const up = document.createElement("button");
     up.className = "btn ghost icon-btn";
     up.innerHTML = icon("chevronUp", 13);
     up.title = "Raise provider priority";
-    up.disabled = idx === 0;
+    up.disabled = !prov.enabled || idx === 0;
     up.onclick = () => {
       [providers[idx - 1], providers[idx]] = [providers[idx], providers[idx - 1]];
       commitDebridList(providers);
@@ -218,7 +219,7 @@ function renderMultiDebridSection(ctx) {
     dn.className = "btn ghost icon-btn";
     dn.innerHTML = icon("chevronDown", 13);
     dn.title = "Lower provider priority";
-    dn.disabled = idx === providers.length - 1;
+    dn.disabled = !prov.enabled || idx >= enabledCount - 1;
     dn.onclick = () => {
       [providers[idx + 1], providers[idx]] = [providers[idx], providers[idx + 1]];
       commitDebridList(providers);
@@ -312,7 +313,8 @@ function renderFormatterSection(ctx) {
       ? Boolean(profile.badgesEnabled)
       : Boolean(profile?.compiledPreview?.badges?.enabled);
   const showBadges = previewShowBadgesOverride !== null ? previewShowBadgesOverride : profileBadgesOn;
-  const badgePlacement = vp.badgePlacement || profile?.compiledPreview?.badges?.placement || "BOTTOM";
+  const badgePlacement =
+    profile?.badges?.with?.badgePlacement || profile?.compiledPreview?.badges?.placement || vp.badgePlacement || "BOTTOM";
   const theme = profile?.settings?.with?.theme || profile?.compiledPreview?.settings?.theme || "ocean";
   const amoled =
     profile?.settings?.with?.amoledBlack !== undefined
@@ -368,8 +370,18 @@ function renderFormatterSection(ctx) {
       posBtn.textContent = badgePlacement;
       posBtn.title = "Toggle badge placement TOP vs BOTTOM";
       posBtn.onclick = () => {
-        setViewportState({ badgePlacement: badgePlacement === "TOP" ? "BOTTOM" : "TOP" });
-        ctx.render();
+        const nextPos = badgePlacement === "TOP" ? "BOTTOM" : "TOP";
+        setViewportState({ badgePlacement: nextPos });
+        if (profile && profile.badgesEnabled) {
+          profile.badges = {
+            enabled: true,
+            ref: profile.badges?.ref || "default",
+            with: { ...(profile.badges?.with || {}), badgePlacement: nextPos },
+          };
+          ctx.saveSection("profile", true);
+        } else {
+          ctx.render();
+        }
       };
       pControls.appendChild(posBtn);
     }
@@ -413,6 +425,7 @@ function renderAdvancedFiltersSection(ctx) {
   const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const sp = st.streamPreferences || { maxResolution: "2160p", cachedOnly: true, audioLanguages: ["English"] };
+  st.streamPreferences = sp;
   const adv = st.advancedStreamFilters || {
     maxSizeGb: null,
     minSeeders: 0,
@@ -556,7 +569,8 @@ function renderAdvancedFiltersSection(ctx) {
     chk.type = "checkbox";
     chk.checked = curCodecs.includes(codec);
     chk.onchange = () => {
-      const next = codecChoices.filter(c => (c === codec ? chk.checked : curCodecs.includes(c)));
+      const liveCodecs = Array.isArray(adv.preferredCodecs) ? adv.preferredCodecs : [];
+      const next = codecChoices.filter(c => (c === codec ? chk.checked : liveCodecs.includes(c)));
       adv.preferredCodecs = next.length ? next : ["HEVC", "AVC"];
       ctx.saveSection("advancedStreamFilters", true);
     };
@@ -579,7 +593,8 @@ function renderAdvancedFiltersSection(ctx) {
     chk.type = "checkbox";
     chk.checked = curExQual.includes(q);
     chk.onchange = () => {
-      const set = new Set(curExQual);
+      const liveQual = Array.isArray(adv.excludeQualities) ? adv.excludeQualities : [];
+      const set = new Set(liveQual);
       if (chk.checked) set.add(q);
       else set.delete(q);
       adv.excludeQualities = Array.from(set);
@@ -658,7 +673,8 @@ function renderAdvancedFiltersSection(ctx) {
       chk.type = "checkbox";
       chk.checked = curAudio.includes(lang);
       chk.onchange = () => {
-        const next = sp.audioLanguageOptions.filter(l => (l === lang ? chk.checked : curAudio.includes(l)));
+        const liveAudio = Array.isArray(sp.audioLanguages) ? sp.audioLanguages : ["English"];
+        const next = sp.audioLanguageOptions.filter(l => (l === lang ? chk.checked : liveAudio.includes(l)));
         if (!next.length) {
           chk.checked = true;
           return;
@@ -1078,6 +1094,7 @@ function renderMetadataPowerSection(ctx) {
     pc.className = "pack-card" + (isAct ? " on" : "");
     pc.style.cursor = "pointer";
     pc.onclick = () => {
+      mp._rawPosterUrlEdited = false;
       mp.posterProvider = pid;
       ctx.saveSection("metadataPower", true);
     };
@@ -1151,13 +1168,15 @@ function renderMetadataPowerSection(ctx) {
       chk.type = "checkbox";
       chk.checked = isOn;
       chk.onchange = () => {
+        const liveSet = new Set(Array.isArray(pcCfg.ratings) ? pcCfg.ratings : []);
         const next = ratingChoices
           .map(([t]) => {
-            const curMatch = [...activeSet].find(x => x.split(":")[0] === t.split(":")[0]);
+            const curMatch = [...liveSet].find(x => x.split(":")[0] === t.split(":")[0]);
             if (t === tok) return chk.checked ? (curMatch || t) : null;
             return curMatch || null;
           })
           .filter(Boolean);
+        mp._rawPosterUrlEdited = false;
         pcCfg.ratings = next;
         ctx.saveSection("metadataPower", true);
       };
@@ -1190,14 +1209,17 @@ function renderMetadataPowerSection(ctx) {
 
     selGrid.append(
       mkSel("Max Rating Badges", [["1", "1 badge"], ["2", "2 badges"], ["3", "3 badges"], ["4", "4 badges"]], pcCfg.maxBadges ?? 3, (v) => {
+        mp._rawPosterUrlEdited = false;
         pcCfg.maxBadges = Number(v);
         ctx.saveSection("metadataPower", true);
       }),
       mkSel("Status Banner Style", [["notch", "Top Notch"], ["pill", "Floating Pill"], ["ribbon", "Accent Ribbon"], ["off", "Hidden"]], pcCfg.statusMode || "notch", (v) => {
+        mp._rawPosterUrlEdited = false;
         pcCfg.statusMode = v;
         ctx.saveSection("metadataPower", true);
       }),
       mkSel("Badge Visual Surface", [["frosted", "Frosted Glass"], ["solid", "Solid Dark"], ["minimal", "Minimal Clean"]], pcCfg.badgeStyle || "frosted", (v) => {
+        mp._rawPosterUrlEdited = false;
         pcCfg.badgeStyle = v;
         ctx.saveSection("metadataPower", true);
       })
@@ -1210,20 +1232,22 @@ function renderMetadataPowerSection(ctx) {
     const awRow = document.createElement("div");
     awRow.className = "chip-row";
 
-    const mask = Number(pcCfg.awardsMask ?? 7);
+    const getMask = () => Number(pcCfg.awardsMask ?? 7);
     [
-      { label: "TV Upcoming / New Ep Status", checked: Boolean(pcCfg.tvStatusOverlay), onChange: v => { pcCfg.tvStatusOverlay = v; } },
-      { label: "Watching / Next Up Banner", checked: Boolean(pcCfg.showWatchingStatus), onChange: v => { pcCfg.showWatchingStatus = v; } },
-      { label: "🏆 Oscars", checked: Boolean(mask & 1), onChange: v => { pcCfg.awardsMask = v ? (mask | 1) : (mask & ~1); } },
-      { label: "🏆 Emmys", checked: Boolean(mask & 2), onChange: v => { pcCfg.awardsMask = v ? (mask | 2) : (mask & ~2); } },
-      { label: "★ IMDb Top 250", checked: Boolean(mask & 4), onChange: v => { pcCfg.awardsMask = v ? (mask | 4) : (mask & ~4); } },
+      { label: "TV Upcoming / New Ep Status", checked: () => Boolean(pcCfg.tvStatusOverlay), onChange: v => { pcCfg.tvStatusOverlay = v; } },
+      { label: "Watching / Next Up Banner", checked: () => Boolean(pcCfg.showWatchingStatus), onChange: v => { pcCfg.showWatchingStatus = v; } },
+      { label: "🏆 Oscars", checked: () => Boolean(getMask() & 1), onChange: v => { const m = getMask(); pcCfg.awardsMask = v ? (m | 1) : (m & ~1); } },
+      { label: "🏆 Emmys", checked: () => Boolean(getMask() & 2), onChange: v => { const m = getMask(); pcCfg.awardsMask = v ? (m | 2) : (m & ~2); } },
+      { label: "★ IMDb Top 250", checked: () => Boolean(getMask() & 4), onChange: v => { const m = getMask(); pcCfg.awardsMask = v ? (m | 4) : (m & ~4); } },
     ].forEach(item => {
+      const isChecked = item.checked();
       const lbl = document.createElement("label");
-      lbl.className = "switch chip" + (item.checked ? " active" : "");
+      lbl.className = "switch chip" + (isChecked ? " active" : "");
       const chk = document.createElement("input");
       chk.type = "checkbox";
-      chk.checked = item.checked;
+      chk.checked = isChecked;
       chk.onchange = () => {
+        mp._rawPosterUrlEdited = false;
         item.onChange(chk.checked);
         ctx.saveSection("metadataPower", true);
       };
@@ -1268,6 +1292,7 @@ function renderMetadataPowerSection(ctx) {
     urlIn.style.cssText = "margin-top:8px;font-family:var(--mono);font-size:11px";
     urlIn.value = mp.customPosterUrlPattern || "";
     urlIn.onchange = () => {
+      mp._rawPosterUrlEdited = true;
       mp.customPosterUrlPattern = urlIn.value.trim();
       ctx.saveSection("metadataPower", true);
     };
@@ -1395,19 +1420,21 @@ function renderMetadataPowerSection(ctx) {
   seRow.className = "chip-row";
   seRow.style.marginBottom = "10px";
   const engines = mp.searchEngines || {};
-  Object.keys(engines).forEach(engKey => {
-    const lbl = document.createElement("label");
-    lbl.className = "switch chip" + (engines[engKey] ? " active" : "");
-    const chk = document.createElement("input");
-    chk.type = "checkbox";
-    chk.checked = Boolean(engines[engKey]);
-    chk.onchange = () => {
-      mp.searchEngines[engKey] = chk.checked;
-      ctx.saveSection("metadataPower", true);
-    };
-    lbl.append(chk, document.createTextNode(engKey));
-    seRow.appendChild(lbl);
-  });
+  Object.keys(engines)
+    .filter(engKey => engKey !== "gemini.search" && engKey !== "openrouter.search")
+    .forEach(engKey => {
+      const lbl = document.createElement("label");
+      lbl.className = "switch chip" + (engines[engKey] ? " active" : "");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = Boolean(engines[engKey]);
+      chk.onchange = () => {
+        mp.searchEngines[engKey] = chk.checked;
+        ctx.saveSection("metadataPower", true);
+      };
+      lbl.append(chk, document.createTextNode(engKey));
+      seRow.appendChild(lbl);
+    });
   aiBox.appendChild(seRow);
 
   aiBox.appendChild(
@@ -1502,57 +1529,73 @@ function renderMetadataPowerSection(ctx) {
         nameIn.value = cat.name || cat.id;
         nameIn.style.padding = "4px 8px";
         nameIn.style.fontSize = "12px";
-        nameIn.onchange = () => {
-          cat.name = nameIn.value.trim() || cat.id;
-          mp.catalogOverrides[ovKey] = {
-            id: cat.id,
-            type: cat.type,
-            name: cat.name,
-            enabled: Boolean(cat.enabled),
-            showInHome: Boolean(cat.showInHome),
+        if (cat.hasRecipeDefinition) {
+          nameIn.disabled = true;
+          nameIn.title = "Title is defined by a library recipe in your Home collections";
+        } else {
+          nameIn.onchange = () => {
+            cat.name = nameIn.value.trim() || cat.id;
+            mp.catalogOverrides[ovKey] = {
+              id: cat.id,
+              type: cat.type,
+              name: cat.name,
+              enabled: Boolean(cat.enabled),
+              showInHome: Boolean(cat.showInHome),
+            };
+            ctx.saveSection("metadataPower", true);
           };
-          ctx.saveSection("metadataPower", true);
-        };
+        }
         tdName.appendChild(nameIn);
 
         const tdId = document.createElement("td");
         tdId.innerHTML = `<code>${escapeHtml(cat.id)}</code> <span class="pill">${escapeHtml(cat.type)}</span>`;
 
         const tdSrc = document.createElement("td");
-        tdSrc.textContent = cat.source || "aiometadata";
+        tdSrc.innerHTML = `${escapeHtml(cat.source || "aiometadata")}` +
+          (cat.managedByCollection ? ` <span class="pill" title="Controlled by Home shelves on the Home tab">Collection</span>` : "");
 
         const tdEn = document.createElement("td");
         const enChk = document.createElement("input");
         enChk.type = "checkbox";
         enChk.checked = Boolean(cat.enabled);
-        enChk.onchange = () => {
-          cat.enabled = enChk.checked;
-          mp.catalogOverrides[ovKey] = {
-            id: cat.id,
-            type: cat.type,
-            name: cat.name,
-            enabled: Boolean(cat.enabled),
-            showInHome: Boolean(cat.showInHome),
+        if (cat.managedByCollection) {
+          enChk.disabled = true;
+          enChk.title = "Managed by a Home collection — edit shelves in the Home tab";
+        } else {
+          enChk.onchange = () => {
+            cat.enabled = enChk.checked;
+            mp.catalogOverrides[ovKey] = {
+              id: cat.id,
+              type: cat.type,
+              name: cat.name,
+              enabled: Boolean(cat.enabled),
+              showInHome: Boolean(cat.showInHome),
+            };
+            ctx.saveSection("metadataPower", true);
           };
-          ctx.saveSection("metadataPower", true);
-        };
+        }
         tdEn.appendChild(enChk);
 
         const tdHome = document.createElement("td");
         const hmChk = document.createElement("input");
         hmChk.type = "checkbox";
         hmChk.checked = Boolean(cat.showInHome);
-        hmChk.onchange = () => {
-          cat.showInHome = hmChk.checked;
-          mp.catalogOverrides[ovKey] = {
-            id: cat.id,
-            type: cat.type,
-            name: cat.name,
-            enabled: Boolean(cat.enabled),
-            showInHome: Boolean(cat.showInHome),
+        if (cat.managedByCollection) {
+          hmChk.disabled = true;
+          hmChk.title = "Managed by a Home collection — edit shelves in the Home tab";
+        } else {
+          hmChk.onchange = () => {
+            cat.showInHome = hmChk.checked;
+            mp.catalogOverrides[ovKey] = {
+              id: cat.id,
+              type: cat.type,
+              name: cat.name,
+              enabled: Boolean(cat.enabled),
+              showInHome: Boolean(cat.showInHome),
+            };
+            ctx.saveSection("metadataPower", true);
           };
-          ctx.saveSection("metadataPower", true);
-        };
+        }
         tdHome.appendChild(hmChk);
 
         tr.append(tdName, tdId, tdSrc, tdEn, tdHome);

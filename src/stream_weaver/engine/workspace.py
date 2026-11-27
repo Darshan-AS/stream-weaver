@@ -1404,7 +1404,29 @@ def inspect_tenant_state(
             if any(rp.profile.instances.get("aiometadata") == inst_name for rp in ws.profiles):
                 required_keys.add(f"{inst_prefix}_PASSWORD")
 
+    on_default_inst = [
+        cp
+        for cp in ws.compiled
+        if cp.resolved.profile.instances.get("aiometadata") == DEFAULT_INSTANCE
+    ]
+    used_catalog_keys = {(u.catalog_id, u.type) for cp in on_default_inst for u in cp.catalog_uses}
+    recipe_def_keys = {
+        (u.catalog_id, u.type)
+        for cp in on_default_inst
+        for u in cp.catalog_uses
+        if u.definition
+    } | {
+        (e.catalog_id, e.type)
+        for cp in on_default_inst
+        for e in cp.extra_catalogs
+        if e.definition
+    }
     metadata_power_view = inspect_aiometadata_power(effective_meta_doc)
+    for cat_view in metadata_power_view.get("catalogs", []):
+        if isinstance(cat_view, dict):
+            ckeys = config_catalog_keys(cat_view)
+            cat_view["managedByCollection"] = any(k in used_catalog_keys for k in ckeys)
+            cat_view["hasRecipeDefinition"] = any(k in recipe_def_keys for k in ckeys)
     aiomanager_power_view = inspect_aiomanager_power(effective_mgr_doc, ws.env)
 
     compiled_by_name = {cp.name: cp for cp in ws.compiled}
@@ -1513,6 +1535,7 @@ def inspect_tenant_state(
             required_keys.add("SECRET_MDBLIST_API_KEY")
             required_keys.add("SECRET_TMDB_API_KEY")
 
+        badges_with = prof.badges.get("with") if isinstance(prof.badges, Mapping) else None
         meta_with = prof.meta.get("with") if isinstance(prof.meta, Mapping) else None
         settings_with = prof.settings.get("with") if isinstance(prof.settings, Mapping) else None
         nuvio_login = rp.logins.get("nuvio")
@@ -1541,6 +1564,11 @@ def inspect_tenant_state(
                 "bingecatEnabled": any(a.name == "bingecat" and a.enabled for a in prof.extra_addons),
                 "collections": active_cols,
                 "badgesEnabled": prof.badges is not None,
+                "badges": {
+                    "enabled": prof.badges is not None,
+                    "ref": prof.badges.get("ref") if isinstance(prof.badges, Mapping) else None,
+                    "with": dict(badges_with) if isinstance(badges_with, Mapping) else {},
+                },
                 "meta": {
                     "enabled": prof.meta is not None,
                     "ref": prof.meta.get("ref") if isinstance(prof.meta, Mapping) else None,
@@ -2219,7 +2247,26 @@ def apply_studio_mutation(
                     new_cols.append(dict(item))
             updated_prof = replace(updated_prof, collections=tuple(new_cols))
 
-        if "badgesEnabled" in prof_mut:
+        if isinstance(prof_mut.get("badges"), Mapping):
+            b_mut = prof_mut["badges"]
+            if not bool(b_mut.get("enabled", True)):
+                updated_prof = replace(updated_prof, badges=None)
+            elif (
+                isinstance(updated_prof.badges, Mapping)
+                and "ref" not in updated_prof.badges
+                and not b_mut.get("ref")
+            ):
+                inline_badges = copy.deepcopy(dict(updated_prof.badges))
+                b_with = b_mut.get("with")
+                if isinstance(b_with, Mapping) and "badgePlacement" in b_with:
+                    inline_badges["badgePlacement"] = str(b_with["badgePlacement"]).strip().upper()
+                updated_prof = replace(updated_prof, badges=inline_badges)
+            else:
+                b_doc: JsonDict = {"ref": str(b_mut.get("ref") or "default")}
+                if isinstance(b_mut.get("with"), Mapping) and b_mut["with"]:
+                    b_doc["with"] = dict(b_mut["with"])
+                updated_prof = replace(updated_prof, badges=b_doc)
+        elif "badgesEnabled" in prof_mut:
             updated_prof = replace(
                 updated_prof,
                 badges=({"ref": "default"} if updated_prof.badges is None else updated_prof.badges)

@@ -28,6 +28,11 @@ let dismissBanner = false;
 let dirty = false;
 let pendingEnvEdits = {};
 let nuvioProfilesCache = [];
+let mutationEpoch = 0;
+let saveInFlight = false;
+let saveQueued = false;
+let saveQueuedQuiet = true;
+let activeSavePromise = null;
 
 function createEmptyChangedSections() {
   return {
@@ -345,7 +350,7 @@ function buildMutationPayload() {
   if (changedSections.metadataPower && state.metadataPower) {
     const mp = state.metadataPower;
     const overridesObj = mp.catalogOverrides || {};
-    mut.metadataPower = {
+    const mpMut = {
       movieProvider: mp.movieProvider,
       seriesProvider: mp.seriesProvider,
       animeProvider: mp.animeProvider,
@@ -355,6 +360,22 @@ function buildMutationPayload() {
       posterProvider: mp.posterProvider,
       catalogOverrides: Array.isArray(overridesObj) ? overridesObj : Object.values(overridesObj),
     };
+    if (mp.animeIdProvider) {
+      mpMut.animeIdProvider = mp.animeIdProvider;
+    }
+    if (mp.posterOptions && typeof mp.posterOptions === "object") {
+      mpMut.posterOptions = { ...mp.posterOptions };
+    }
+    if (mp._rawPosterUrlEdited) {
+      mpMut.customPosterUrlPattern = mp.customPosterUrlPattern || "";
+    } else if (
+      mp.posterProvider === "postersplus"
+      && mp.posterCustomizations
+      && typeof mp.posterCustomizations === "object"
+    ) {
+      mpMut.posterCustomizations = { ...mp.posterCustomizations };
+    }
+    mut.metadataPower = mpMut;
   }
   if (changedSections.aiomanagerPower && state.aiomanagerPower) {
     mut.aiomanagerPower = {
@@ -380,6 +401,7 @@ function buildMutationPayload() {
         c.ref ? { ref: c.ref, with: c.with || {} } : { raw: c.raw }
       ),
       badgesEnabled: p.badgesEnabled,
+      badges: p.badges,
       meta: p.meta,
       settings: p.settings,
     };
@@ -394,16 +416,72 @@ function clearPendingEdits() {
 }
 
 async function saveChanges(quiet = false) {
-  try {
-    const mut = buildMutationPayload();
-    await api("/api/mutate", { mutation: mut });
-    clearPendingEdits();
-    if (!quiet) {
-      showLog("Saved configuration, synchronized derived catalogs, and updated topology diagrams.", []);
+  if (saveInFlight) {
+    saveQueued = true;
+    saveQueuedQuiet = saveQueuedQuiet && quiet;
+    if (activeSavePromise) await activeSavePromise;
+    return;
+  }
+
+  let nextQuiet = quiet;
+  const runLoop = async () => {
+    while (true) {
+      saveInFlight = true;
+      const sentEpoch = mutationEpoch;
+      const sentEnv = { ...pendingEnvEdits };
+      const sentSections = { ...changedSections };
+      const mut = buildMutationPayload();
+      clearPendingEdits();
+      try {
+        const res = await fetch("/api/mutate", {
+          method: "POST",
+          headers: { ...baseHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify(withStatelessBundle({ mutation: mut })),
+        });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        if (data.mode) appMode = data.mode;
+        if (data.bundle) persistBundle(data.bundle);
+        if (data.state && mutationEpoch === sentEpoch && !saveQueued) {
+          state = data.state;
+          if (activeProfileIdx >= (state.profiles || []).length) {
+            activeProfileIdx = 0;
+          }
+          render();
+        }
+        if (!nextQuiet) {
+          showLog("Saved configuration, synchronized derived catalogs, and updated topology diagrams.", []);
+        }
+      } catch (err) {
+        for (const [k, v] of Object.entries(sentEnv)) {
+          if (!(k in pendingEnvEdits)) pendingEnvEdits[k] = v;
+        }
+        for (const [sec, flag] of Object.entries(sentSections)) {
+          if (flag && sec in changedSections) changedSections[sec] = true;
+        }
+        dirty = true;
+        renderHeader();
+        showLog(err.message, [], true);
+        saveQueued = false;
+        saveQueuedQuiet = true;
+        break;
+      } finally {
+        saveInFlight = false;
+      }
+      if (!saveQueued) break;
+      nextQuiet = saveQueuedQuiet;
+      saveQueued = false;
+      saveQueuedQuiet = true;
     }
-    render();
-  } catch (err) {
-    showLog(err.message, [], true);
+  };
+
+  activeSavePromise = runLoop();
+  try {
+    await activeSavePromise;
+  } finally {
+    activeSavePromise = null;
   }
 }
 
@@ -411,6 +489,9 @@ async function saveSection(section, quiet = true) {
   if (section && section in changedSections) {
     changedSections[section] = true;
   }
+  mutationEpoch += 1;
+  dirty = true;
+  renderHeader();
   await saveChanges(quiet);
 }
 
@@ -1042,6 +1123,7 @@ function makeCtx() {
     },
     setPendingEnv(key, val) {
       pendingEnvEdits[key] = val;
+      mutationEpoch += 1;
       dirty = true;
       renderHeader();
     },
@@ -1057,6 +1139,7 @@ function makeCtx() {
     },
     markChanged(section) {
       if (section in changedSections) changedSections[section] = true;
+      mutationEpoch += 1;
       dirty = true;
       renderHeader();
     },

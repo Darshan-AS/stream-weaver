@@ -3,6 +3,17 @@
   "version": 1,
   "kind": "badges",
   "id": "default",
+  "params": {
+    "badgePlacement": {
+      "type": "string",
+      "label": "Badge Row Placement",
+      "default": "BOTTOM",
+      "options": [
+        { "label": "Bottom of Stream Card", "value": "BOTTOM" },
+        { "label": "Top of Stream Card", "value": "TOP" }
+      ]
+    }
+  },
   "badges": {
     "version": "1.0.0",
     "platforms": [
@@ -10,7 +21,7 @@
       "desktop",
       "mobile"
     ],
-    "badgePlacement": "BOTTOM",
+    "badgePlacement": "${badgePlacement}",
     "streamBackgroundMode": "cinematic",
     "showFileSizeBadges": false,
     "showAddonLogo": true,

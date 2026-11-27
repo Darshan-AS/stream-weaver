@@ -376,7 +376,7 @@ function effectiveBadges(profile) {
     profile?.badgesEnabled !== undefined ? Boolean(profile.badgesEnabled) : Boolean(compiled.enabled);
   return {
     enabled,
-    placement: vpState.badgePlacement || compiled.placement || "BOTTOM",
+    placement: profile?.badges?.with?.badgePlacement || compiled.placement || vpState.badgePlacement || "BOTTOM",
     showInPlayer: compiled.showInPlayer !== false,
     filters: Array.isArray(compiled.filters) ? compiled.filters : [],
   };

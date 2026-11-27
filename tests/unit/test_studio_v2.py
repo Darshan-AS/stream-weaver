@@ -632,3 +632,230 @@ def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path:
     assert "backdropUrl" in live_data["items"][0]
     assert "overview" in live_data["items"][0]
     assert "genres" in live_data["items"][0]
+
+
+def test_studio_posters_plus_and_options_persist_roundtrip(tmp_path: Path) -> None:
+    _, dispatcher = _make_local_dispatcher(tmp_path)
+
+    custom_cfg = {
+        "ratings": ["imdb", "tmdb"],
+        "maxBadges": 4,
+        "statusMode": "pill",
+        "tvStatusOverlay": False,
+        "showWatchingStatus": False,
+        "awardsMask": 3,
+        "badgeStyle": "solid",
+        "clientPreset": "stremio_tv_nuvio",
+    }
+    poster_opts = {
+        "enableRatingPostersForLibrary": False,
+        "displayAgeRating": False,
+        "blurThumbs": True,
+        "hideUnreleasedDigital": True,
+        "englishArtOnly": False,
+    }
+    mut_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps(
+            {
+                "mutation": {
+                    "metadataPower": {
+                        "posterProvider": "postersplus",
+                        "posterCustomizations": custom_cfg,
+                        "posterOptions": poster_opts,
+                    }
+                }
+            }
+        ).encode("utf-8"),
+    )
+    assert mut_resp.status == 200, mut_resp.body
+
+    reloaded = json.loads(dispatcher.dispatch("GET", "/api/state").body)
+    mp = reloaded["state"]["metadataPower"]
+    assert mp["posterProvider"] == "postersplus"
+    pc = mp["posterCustomizations"]
+    assert pc["ratings"] == ["imdb", "tmdb"]
+    assert pc["maxBadges"] == 4
+    assert pc["statusMode"] == "pill"
+    assert pc["badgeStyle"] == "solid"
+    assert pc["tvStatusOverlay"] is False
+    assert pc["showWatchingStatus"] is False
+    assert pc["awardsMask"] == 3
+    assert mp["posterOptions"] == poster_opts
+    assert mp["catalogs"]
+    assert all(
+        isinstance(c.get("managedByCollection"), bool)
+        and isinstance(c.get("hasRecipeDefinition"), bool)
+        for c in mp["catalogs"]
+    )
+
+    # Editing customPosterUrlPattern directly without posterCustomizations also persists
+    direct_pat = (
+        "https://postersplus.slokker.cc/poster?tmdb_id={tmdb_id?}&imdb_id={imdb_id?}"
+        "&stremio_id={id}&type={type}&shape={shape}&rb=imdb,trakt:t&rbm=2&sm=ribbon&pc=stremio_tv_nuvio"
+    )
+    pat_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps({"mutation": {"metadataPower": {"customPosterUrlPattern": direct_pat}}}).encode("utf-8"),
+    )
+    assert pat_resp.status == 200, pat_resp.body
+    mp_after_pat = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]["metadataPower"]
+    assert mp_after_pat["customPosterUrlPattern"] == direct_pat
+    assert mp_after_pat["posterCustomizations"]["maxBadges"] == 2
+    assert mp_after_pat["posterCustomizations"]["statusMode"] == "ribbon"
+
+
+def test_studio_badges_placement_and_toggle_persist(tmp_path: Path) -> None:
+    _, dispatcher = _make_local_dispatcher(tmp_path)
+
+    top_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps(
+            {
+                "mutation": {
+                    "profile": {
+                        "name": "main",
+                        "badgesEnabled": True,
+                        "badges": {
+                            "enabled": True,
+                            "ref": "default",
+                            "with": {"badgePlacement": "TOP"},
+                        },
+                    }
+                }
+            }
+        ).encode("utf-8"),
+    )
+    assert top_resp.status == 200, top_resp.body
+    prof = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]["profiles"][0]
+    assert prof["badgesEnabled"] is True
+    assert prof["badges"]["with"]["badgePlacement"] == "TOP"
+    assert prof["compiledPreview"]["badges"]["placement"] == "TOP"
+
+    off_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps(
+            {
+                "mutation": {
+                    "profile": {
+                        "name": "main",
+                        "badgesEnabled": False,
+                        "badges": {"enabled": False, "ref": "default", "with": {"badgePlacement": "TOP"}},
+                    }
+                }
+            }
+        ).encode("utf-8"),
+    )
+    assert off_resp.status == 200, off_resp.body
+    prof_off = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]["profiles"][0]
+    assert prof_off["badgesEnabled"] is False
+
+    on_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps(
+            {
+                "mutation": {
+                    "profile": {
+                        "name": "main",
+                        "badgesEnabled": True,
+                        "badges": {"enabled": True, "ref": "default", "with": {"badgePlacement": "BOTTOM"}},
+                    }
+                }
+            }
+        ).encode("utf-8"),
+    )
+    assert on_resp.status == 200, on_resp.body
+    prof_on = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]["profiles"][0]
+    assert prof_on["badgesEnabled"] is True
+    assert prof_on["compiledPreview"]["badges"]["placement"] == "BOTTOM"
+
+
+def test_studio_all_tabs_mutation_roundtrip_and_static_checks(tmp_path: Path) -> None:
+    _, dispatcher = _make_local_dispatcher(tmp_path)
+
+    state0 = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]
+    cur_settings_with = dict(state0["profiles"][0]["settings"]["with"])
+    cur_settings_with.update(
+        {
+            "theme": "crimson",
+            "amoledBlack": False,
+            "tvSubtitleSizePercent": 125,
+            "subtitleSizeSp": 22,
+        }
+    )
+
+    sweep_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps(
+            {
+                "mutation": {
+                    "streamFormatter": "compact_tv",
+                    "advancedStreamFilters": {
+                        "maxSizeGb": 25,
+                        "minSeeders": 5,
+                        "hdrPolicy": "prefer_dv_hdr",
+                        "preferredCodecs": ["AV1", "HEVC"],
+                        "excludeQualities": ["CAM", "TS"],
+                        "excludeKeywords": ["hardcoded"],
+                        "rpdbPostersEnabled": True,
+                    },
+                    "streamPreferences": {
+                        "maxResolution": "1080p",
+                        "cachedOnly": False,
+                        "audioLanguages": ["English", "Japanese"],
+                    },
+                    "aiomanagerPower": {
+                        "autopilotEnabled": True,
+                        "syncIntervalMinutes": 30,
+                    },
+                    "profile": {
+                        "name": "main",
+                        "settings": {
+                            "enabled": True,
+                            "ref": "default",
+                            "with": cur_settings_with,
+                        },
+                    },
+                }
+            }
+        ).encode("utf-8"),
+    )
+    assert sweep_resp.status == 200, sweep_resp.body
+
+    reloaded = json.loads(dispatcher.dispatch("GET", "/api/state").body)["state"]
+    assert reloaded["streamFormatter"]["active"] == "compact_tv"
+    adv = reloaded["advancedStreamFilters"]
+    assert adv["maxSizeGb"] == 25
+    assert adv["minSeeders"] == 5
+    assert adv["hdrPolicy"] == "prefer_dv_hdr"
+    assert adv["preferredCodecs"] == ["AV1", "HEVC"]
+    assert set(adv["excludeQualities"]) >= {"CAM", "TS"}
+    assert "hardcoded" in adv["excludeKeywords"]
+    assert adv["rpdbPostersEnabled"] is True
+
+    sp = reloaded["streamPreferences"]
+    assert sp["maxResolution"] == "1080p"
+    assert sp["cachedOnly"] is False
+    assert sp["audioLanguages"] == ["English", "Japanese"]
+
+    mgr = reloaded["aiomanagerPower"]
+    assert mgr["autopilotEnabled"] is True
+    assert mgr["syncIntervalMinutes"] == 30
+
+    p_set = reloaded["profiles"][0]["settings"]["with"]
+    assert p_set["theme"] == "crimson"
+    assert p_set["amoledBlack"] is False
+    assert p_set["tvSubtitleSizePercent"] == 125
+    assert p_set["subtitleSizeSp"] == 22
+
+    app_js = dispatcher.dispatch("GET", "/static/app.js").body.decode("utf-8")
+    for token in ("posterCustomizations", "posterOptions", "customPosterUrlPattern", "badges"):
+        assert token in app_js
+    styles_css = dispatcher.dispatch("GET", "/static/styles.css").body.decode("utf-8")
+    assert "[hidden]" in styles_css
