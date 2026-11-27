@@ -302,6 +302,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Dune: Part Two",
         "year": "2024",
         "posterUrl": "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
+        "logoUrl": "",
+        "overview": "Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.",
+        "genres": ["Sci-Fi", "Adventure"],
         "rating": "8.5",
         "type": "movie",
     },
@@ -310,6 +314,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Oppenheimer",
         "year": "2023",
         "posterUrl": "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+        "logoUrl": "",
+        "overview": "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+        "genres": ["Drama", "History"],
         "rating": "8.3",
         "type": "movie",
     },
@@ -318,6 +326,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Spider-Man: Across the Spider-Verse",
         "year": "2023",
         "posterUrl": "https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg",
+        "logoUrl": "",
+        "overview": "Miles Morales catapults across the Multiverse, encountering a team of Spider-People charged with protecting its very existence.",
+        "genres": ["Animation", "Action"],
         "rating": "8.6",
         "type": "movie",
     },
@@ -326,6 +338,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Spirited Away",
         "year": "2001",
         "posterUrl": "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg",
+        "logoUrl": "",
+        "overview": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits.",
+        "genres": ["Animation", "Fantasy"],
         "rating": "8.6",
         "type": "movie",
     },
@@ -334,6 +350,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Interstellar",
         "year": "2014",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/pbrkL804c8yAv3zBZR4QPEafpAR.jpg",
+        "logoUrl": "",
+        "overview": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+        "genres": ["Sci-Fi", "Drama"],
         "rating": "8.7",
         "type": "movie",
     },
@@ -342,6 +362,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Everything Everywhere All at Once",
         "year": "2022",
         "posterUrl": "https://image.tmdb.org/t/p/w500/w3LxiVYdWWRvEVdn5RYq6jIqkb1.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/ss0Os3uWJfQAENILHZUdX8Tt1OC.jpg",
+        "logoUrl": "",
+        "overview": "An aging Chinese immigrant is swept up in an insane adventure where she alone can save the multiverse.",
+        "genres": ["Action", "Sci-Fi"],
         "rating": "7.8",
         "type": "movie",
     },
@@ -350,6 +374,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "The Wild Robot",
         "year": "2024",
         "posterUrl": "https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/4zlOPT9CrtIX05bBIkYxNZsm5zN.jpg",
+        "logoUrl": "",
+        "overview": "After a shipwreck, an intelligent robot called Roz is stranded on an uninhabited island and adapts to its harsh surroundings.",
+        "genres": ["Animation", "Family"],
         "rating": "8.3",
         "type": "movie",
     },
@@ -358,6 +386,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Parasite",
         "year": "2019",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg",
+        "logoUrl": "",
+        "overview": "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+        "genres": ["Thriller", "Drama"],
         "rating": "8.5",
         "type": "movie",
     },
@@ -366,6 +398,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Coco",
         "year": "2017",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/askg3SMvhqEl4OL52YuvdtY40Yb.jpg",
+        "logoUrl": "",
+        "overview": "Aspiring musician Miguel enters the Land of the Dead to find his great-great-grandfather, a legendary singer.",
+        "genres": ["Animation", "Music"],
         "rating": "8.4",
         "type": "movie",
     },
@@ -374,6 +410,10 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "title": "Blade Runner 2049",
         "year": "2017",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg",
+        "logoUrl": "",
+        "overview": "Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard.",
+        "genres": ["Sci-Fi", "Mystery"],
         "rating": "8.0",
         "type": "movie",
     },
@@ -385,6 +425,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Severance",
         "year": "2022",
         "posterUrl": "https://image.tmdb.org/t/p/w500/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/ixgFmf1X59PUy2yE85gB2kG0v7m.jpg",
+        "logoUrl": "",
+        "overview": "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
+        "genres": ["Sci-Fi", "Thriller"],
         "rating": "8.7",
         "type": "series",
     },
@@ -393,6 +437,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Shogun",
         "year": "2024",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7O4iVfOMQmdCSxhOg1WnzG1AgYT.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/5zmiBoMzeeVdQ62no55JOJMY498.jpg",
+        "logoUrl": "",
+        "overview": "When a mysterious European ship is found marooned in a nearby fishing village, Lord Toranaga uncovers secrets that could tip the scales of power.",
+        "genres": ["Drama", "History"],
         "rating": "8.6",
         "type": "series",
     },
@@ -401,6 +449,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Arcane",
         "year": "2021",
         "posterUrl": "https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg",
+        "logoUrl": "",
+        "overview": "Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies and clashing convictions.",
+        "genres": ["Animation", "Sci-Fi"],
         "rating": "9.0",
         "type": "series",
     },
@@ -409,6 +461,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Frieren: Beyond Journey's End",
         "year": "2023",
         "posterUrl": "https://image.tmdb.org/t/p/w500/dqZENchTd7lp5zht7BdlqM7RBhD.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/96RT2A47UdzWlUugIERFyBsIKk2.jpg",
+        "logoUrl": "",
+        "overview": "After a decade-long quest to defeat the Demon King, elven mage Frieren embarks on a new journey to understand humanity.",
+        "genres": ["Animation", "Fantasy"],
         "rating": "8.9",
         "type": "series",
     },
@@ -417,6 +473,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Succession",
         "year": "2018",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/6k81A5aP3e5uL9xKz7L1Y6U5J9a.jpg",
+        "logoUrl": "",
+        "overview": "The Roy family is known for controlling the biggest media and entertainment company in the world.",
+        "genres": ["Drama", "Comedy"],
         "rating": "8.8",
         "type": "series",
     },
@@ -425,6 +485,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "The Bear",
         "year": "2022",
         "posterUrl": "https://image.tmdb.org/t/p/w500/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/6fYtlV6v2F6x6rC4W6X5F1z6A3e.jpg",
+        "logoUrl": "",
+        "overview": "A young chef from the fine dining world returns to Chicago to run his family sandwich shop.",
+        "genres": ["Drama", "Comedy"],
         "rating": "8.5",
         "type": "series",
     },
@@ -433,6 +497,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Chernobyl",
         "year": "2019",
         "posterUrl": "https://image.tmdb.org/t/p/w500/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/900tHlUYUkp7Ol04XFSoAaEIXcT.jpg",
+        "logoUrl": "",
+        "overview": "The true story of one of the worst man-made catastrophes in history and the brave sacrifices made to save Europe.",
+        "genres": ["Drama", "History"],
         "rating": "9.3",
         "type": "series",
     },
@@ -441,6 +509,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Andor",
         "year": "2022",
         "posterUrl": "https://image.tmdb.org/t/p/w500/59SVNwLfoMnZPPB6ukW6dlPxAdI.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/kNt9jG8wW2D9t3y5oR2P6X2W3V8.jpg",
+        "logoUrl": "",
+        "overview": "In an era filled with danger, deception and intrigue, Cassian Andor embarks on a path destined to turn him into a rebel hero.",
+        "genres": ["Sci-Fi", "Action"],
         "rating": "8.4",
         "type": "series",
     },
@@ -449,6 +521,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Bluey",
         "year": "2018",
         "posterUrl": "https://image.tmdb.org/t/p/w500/b9mY0X5T20s0v8K3X9Q0s0V6B0s.jpg",
+        "backdropUrl": "",
+        "logoUrl": "",
+        "overview": "A blue heeler puppy named Bluey lives with her mum, dad and little sister Bingo in Brisbane.",
+        "genres": ["Animation", "Family"],
         "rating": "9.4",
         "type": "series",
     },
@@ -457,6 +533,10 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "title": "Better Call Saul",
         "year": "2015",
         "posterUrl": "https://image.tmdb.org/t/p/w500/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg",
+        "backdropUrl": "https://image.tmdb.org/t/p/w1280/hPea3Qy5Gd6z4kJLUruBbwAH8Rm.jpg",
+        "logoUrl": "",
+        "overview": "Six years before Saul Goodman meets Walter White, small-time attorney Jimmy McGill hustles to make a name for himself.",
+        "genres": ["Crime", "Drama"],
         "rating": "9.0",
         "type": "series",
     },
@@ -885,6 +965,139 @@ def _discover_available_catalogs(
     return out
 
 
+def _compact_sources_view(comp_folder: Mapping[str, Any] | None) -> list[JsonDict]:
+    if not isinstance(comp_folder, Mapping):
+        return []
+    return [
+        {
+            "catalogId": str(s.get("catalogId") or ""),
+            "type": str(s.get("type") or "movie"),
+            "title": str(s.get("title") or s.get("catalogId") or ""),
+            "addonId": str(s.get("addonId") or ""),
+        }
+        for s in (comp_folder.get("sources") or [])
+        if isinstance(s, Mapping)
+    ]
+
+
+def _as_mapping(val: Any) -> Mapping[str, Any]:
+    return val if isinstance(val, Mapping) else {}
+
+
+def _build_compiled_preview(prof: Any, cp: CompiledProfile) -> JsonDict:
+    badges_doc = _as_mapping(cp.badges)
+    badge_filters: list[JsonDict] = []
+    for flt in badges_doc.get("extraFilters") or []:
+        if not isinstance(flt, Mapping) or not bool(flt.get("isEnabled", True)):
+            continue
+        img_url = str(flt.get("imageURL") or "").strip()
+        if not img_url:
+            continue
+        badge_filters.append(
+            {
+                "id": str(flt.get("id") or ""),
+                "name": str(flt.get("name") or ""),
+                "groupId": str(flt.get("groupId") or ""),
+                "imageUrl": img_url,
+            }
+        )
+
+    meta_doc = _as_mapping(cp.meta)
+    ratings = _as_mapping(meta_doc.get("ratings"))
+    raw_providers = _as_mapping(ratings.get("providers"))
+    meta_screen = _as_mapping(meta_doc.get("metaScreen"))
+    raw_sections = meta_screen.get("sections")
+    sections_list = raw_sections if isinstance(raw_sections, list) else []
+    sections: list[JsonDict] = [
+        {
+            "key": str(sec.get("key") or ""),
+            "enabled": bool(sec.get("enabled", True)),
+            "order": int(sec.get("order", idx)),
+        }
+        for idx, sec in enumerate(sections_list)
+        if isinstance(sec, Mapping)
+    ]
+    sections.sort(key=lambda item: int(item["order"]))
+    poster_card_style = _as_mapping(meta_doc.get("posterCardStyle"))
+    meta_cw = _as_mapping(meta_doc.get("continueWatching"))
+
+    settings_doc = _as_mapping(cp.settings)
+    appearance = _as_mapping(settings_doc.get("appearance"))
+    tv_layout = _as_mapping(settings_doc.get("tvLayout"))
+    sidebar = _as_mapping(tv_layout.get("sidebar"))
+    posters = _as_mapping(tv_layout.get("posters"))
+    layout_cw = _as_mapping(tv_layout.get("continueWatching"))
+    details = _as_mapping(tv_layout.get("details"))
+    playback = _as_mapping(settings_doc.get("playback"))
+    skip_cfg = _as_mapping(playback.get("skip"))
+    subtitles = _as_mapping(settings_doc.get("subtitles"))
+    sub_style = _as_mapping(subtitles.get("style"))
+    sub_outline = _as_mapping(sub_style.get("outline"))
+    sub_tv = _as_mapping(subtitles.get("tv"))
+    sub_hdr = _as_mapping(sub_tv.get("hdrStyle"))
+
+    return {
+        "badges": {
+            "enabled": prof.badges is not None,
+            "placement": str(badges_doc.get("badgePlacement") or "BOTTOM"),
+            "showInPlayer": bool(badges_doc.get("showInPlayer", True)),
+            "showAddonLogo": bool(badges_doc.get("showAddonLogo", True)),
+            "showFileSizeBadges": bool(badges_doc.get("showFileSizeBadges", False)),
+            "filters": badge_filters,
+        },
+        "meta": {
+            "enabled": prof.meta is not None,
+            "ratingsEnabled": bool(ratings.get("enabled", True)),
+            "providers": {str(k): bool(v) for k, v in raw_providers.items()},
+            "traktComments": bool(meta_doc.get("traktComments", True)),
+            "blurUnwatchedEpisodes": bool(meta_screen.get("blurUnwatchedEpisodes", False)),
+            "sections": sections,
+            "posterCardStyle": {
+                "widthDp": int(poster_card_style.get("widthDp", 126)),
+                "heightDp": int(poster_card_style.get("heightDp", 189)),
+                "cornerRadiusDp": int(poster_card_style.get("cornerRadiusDp", 16)),
+                "landscapeMode": bool(poster_card_style.get("landscapeMode", False)),
+                "hideLabels": bool(poster_card_style.get("hideLabels", False)),
+            },
+            "continueWatchingVisible": bool(meta_cw.get("visible", True)),
+        },
+        "settings": {
+            "enabled": prof.settings is not None,
+            "theme": str(appearance.get("theme") or "ocean"),
+            "amoledBlack": bool(appearance.get("amoledBlack", True)),
+            "desktopNavigation": str(appearance.get("desktopNavigation") or "topBar"),
+            "homeLayout": str(tv_layout.get("homeLayout") or "modern"),
+            "heroSection": bool(tv_layout.get("heroSection", True)),
+            "sidebarCollapsed": bool(sidebar.get("collapsedByDefault", False)),
+            "posterWidthDp": int(posters.get("widthDp", 126)),
+            "posterHeightDp": int(posters.get("heightDp", 189)),
+            "posterCornerRadiusDp": int(posters.get("cornerRadiusDp", 16)),
+            "posterLabels": bool(posters.get("labels", True)),
+            "continueWatchingEnabled": bool(layout_cw.get("enabled", True)),
+            "skipIntro": bool(skip_cfg.get("skipIntro", True)),
+            "autoSkip": [str(x) for x in (skip_cfg.get("autoSkip") or [])],
+            "blurUnwatchedEpisodes": bool(details.get("blurUnwatchedEpisodes", False)),
+            "subtitleStyle": {
+                "textColor": str(sub_style.get("textColor") or "#FFFFFFFF"),
+                "backgroundColor": str(sub_style.get("backgroundColor") or "#00000000"),
+                "outlineEnabled": bool(sub_outline.get("enabled", True)),
+                "outlineColor": str(sub_outline.get("color") or "#FF000000"),
+                "outlineWidth": int(sub_outline.get("width", 2)),
+                "bold": bool(sub_style.get("bold", False)),
+                "sizeSp": int(sub_style.get("sizeSp", 18)),
+                "tvSizePercent": int(sub_tv.get("sizePercent", 100)),
+                "hdrEnabled": bool(sub_hdr.get("enabled", True)),
+                "preferredLanguage": str(subtitles.get("preferredLanguage") or "en"),
+                "secondaryLanguage": (
+                    str(subtitles["secondaryLanguage"])
+                    if subtitles.get("secondaryLanguage") is not None
+                    else ""
+                ),
+            },
+        },
+    }
+
+
 def _inline_template_from_compiled(comp_col: Mapping[str, Any], cp: CompiledProfile) -> JsonDict:
     """Converts a compiled Nuvio collection into an editable symbolic inline collection object."""
     folders_out: list[JsonDict] = []
@@ -1108,6 +1321,9 @@ def inspect_tenant_state(
             ref_id = raw_item.get("ref") if isinstance(raw_item, Mapping) else None
             raw_col_with = raw_item.get("with") if isinstance(raw_item, Mapping) else None
             with_params: dict[str, Any] = dict(raw_col_with) if isinstance(raw_col_with, Mapping) else {}
+            comp_folders = [
+                cf for cf in (comp_col.get("folders") or []) if isinstance(cf, Mapping)
+            ]
             if isinstance(ref_id, str) and ("collection", ref_id) in ws.library.recipes:
                 rec = ws.library.recipes[("collection", ref_id)]
                 summary = describe_recipe(rec, ws.library, with_params=with_params)
@@ -1118,8 +1334,11 @@ def inspect_tenant_state(
                         "title": f.title,
                         "coverUrl": f.cover_url,
                         "rows": list(f.row_titles),
+                        "sources": _compact_sources_view(
+                            comp_folders[f_idx] if f_idx < len(comp_folders) else None
+                        ),
                     }
-                    for f in summary.folders
+                    for f_idx, f in enumerate(summary.folders)
                 ]
                 col_title = str(comp_col.get("title") or summary.title)
                 backdrop = str(comp_col.get("backdropImageUrl") or summary.backdrop_url)
@@ -1136,9 +1355,9 @@ def inspect_tenant_state(
                             for s in (f.get("sources") or [])
                             if isinstance(s, Mapping)
                         ],
+                        "sources": _compact_sources_view(f),
                     }
-                    for f in (comp_col.get("folders") or [])
-                    if isinstance(f, Mapping)
+                    for f in comp_folders
                 ]
             for f_comp in comp_col.get("folders") or []:
                 if not isinstance(f_comp, Mapping):
@@ -1212,6 +1431,7 @@ def inspect_tenant_state(
                     "ref": prof.settings.get("ref") if isinstance(prof.settings, Mapping) else None,
                     "with": dict(settings_with) if isinstance(settings_with, Mapping) else {},
                 },
+                "compiledPreview": _build_compiled_preview(prof, cp),
             }
         )
 
@@ -2428,12 +2648,22 @@ def preview_catalog_items(
                             if not isinstance(m, Mapping):
                                 continue
                             rel = str(m.get("releaseInfo") or m.get("year") or "").strip()
+                            raw_genres = m.get("genres")
+                            genres = (
+                                [str(g) for g in raw_genres[:4] if isinstance(g, str) and g.strip()]
+                                if isinstance(raw_genres, list)
+                                else []
+                            )
                             live_items.append(
                                 {
                                     "id": str(m.get("id") or f"meta-{idx}"),
                                     "title": str(m.get("name") or m.get("title") or "Untitled"),
                                     "year": rel[:4],
                                     "posterUrl": str(m.get("poster") or m.get("posterUrl") or ""),
+                                    "backdropUrl": str(m.get("background") or m.get("backdropUrl") or ""),
+                                    "logoUrl": str(m.get("logo") or m.get("logoUrl") or ""),
+                                    "overview": str(m.get("description") or m.get("overview") or "")[:240],
+                                    "genres": genres,
                                     "rating": str(m.get("imdbRating") or m.get("rating") or ""),
                                     "type": str(m.get("type") or media_type),
                                 }
@@ -2468,6 +2698,12 @@ def preview_catalog_items(
                                 if poster_path.startswith("/")
                                 else poster_path
                             )
+                            bd_path = str(r.get("backdrop_path") or "")
+                            bd_url = (
+                                f"https://image.tmdb.org/t/p/w1280{bd_path}"
+                                if bd_path.startswith("/")
+                                else bd_path
+                            )
                             date_str = str(r.get("release_date") or r.get("first_air_date") or "")
                             vote = r.get("vote_average")
                             rating_str = (
@@ -2481,6 +2717,10 @@ def preview_catalog_items(
                                     "title": str(r.get("title") or r.get("name") or "Untitled"),
                                     "year": date_str[:4],
                                     "posterUrl": poster_url,
+                                    "backdropUrl": bd_url,
+                                    "logoUrl": "",
+                                    "overview": str(r.get("overview") or "")[:240],
+                                    "genres": [],
                                     "rating": rating_str,
                                     "type": media_type,
                                 }
