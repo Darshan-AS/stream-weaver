@@ -1,0 +1,968 @@
+/* Clean-room MIT Real-Time Nuvio Viewport Styles (TV / Desktop / Mobile + 4 Interactive Screens) */
+
+.nv-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nv-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nv-breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.nv-crumb {
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.14s ease;
+}
+
+.nv-crumb:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.nv-crumb.active {
+  background: var(--accent-soft);
+  border-color: rgba(129, 140, 248, 0.45);
+  color: var(--text);
+}
+
+.nv-toolbar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------------------------
+ * Theme & Surface Tokens
+ * ------------------------------------------------------------------------- */
+.nv-device-frame {
+  --nv-accent: #38bdf8;
+  --nv-accent-soft: rgba(56, 189, 248, 0.16);
+  --nv-bg: #000000;
+  --nv-surface: #0c0f16;
+  --nv-surface-2: #141923;
+  --nv-border: rgba(255, 255, 255, 0.085);
+  --nv-text: #f8fafc;
+  --nv-muted: #94a3b8;
+  --nv-radius: 10px;
+
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--nv-bg);
+  color: var(--nv-text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.nv-device-frame[data-nuvio-amoled="false"] {
+  --nv-bg: #0b0e14;
+  --nv-surface: #121722;
+  --nv-surface-2: #1a2130;
+}
+
+.nv-device-frame[data-nuvio-theme="ocean"]       { --nv-accent: #38bdf8; --nv-accent-soft: rgba(56, 189, 248, 0.16); }
+.nv-device-frame[data-nuvio-theme="crimson"]     { --nv-accent: #ef4444; --nv-accent-soft: rgba(239, 68, 68, 0.16); }
+.nv-device-frame[data-nuvio-theme="violet"]      { --nv-accent: #8b5cf6; --nv-accent-soft: rgba(139, 92, 246, 0.18); }
+.nv-device-frame[data-nuvio-theme="emerald"]     { --nv-accent: #10b981; --nv-accent-soft: rgba(16, 185, 129, 0.16); }
+.nv-device-frame[data-nuvio-theme="amber"]       { --nv-accent: #f59e0b; --nv-accent-soft: rgba(245, 158, 11, 0.16); }
+.nv-device-frame[data-nuvio-theme="rose"]        { --nv-accent: #f43f5e; --nv-accent-soft: rgba(244, 63, 94, 0.16); }
+.nv-device-frame[data-nuvio-theme="gold"]        { --nv-accent: #eab308; --nv-accent-soft: rgba(234, 179, 8, 0.16); }
+.nv-device-frame[data-nuvio-theme="jade"]        { --nv-accent: #14b8a6; --nv-accent-soft: rgba(20, 184, 166, 0.16); }
+.nv-device-frame[data-nuvio-theme="rose_gold"]   { --nv-accent: #fb7185; --nv-accent-soft: rgba(251, 113, 133, 0.16); }
+.nv-device-frame[data-nuvio-theme="arctic_blue"] { --nv-accent: #7dd3fc; --nv-accent-soft: rgba(125, 211, 252, 0.16); }
+.nv-device-frame[data-nuvio-theme="graphite"]    { --nv-accent: #94a3b8; --nv-accent-soft: rgba(148, 163, 184, 0.16); }
+.nv-device-frame[data-nuvio-theme="white"]       { --nv-accent: #f8fafc; --nv-accent-soft: rgba(248, 250, 252, 0.16); }
+
+/* Device Frame Chrome */
+.nv-device-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: var(--nv-muted);
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nv-device-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nv-device-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.nv-device-frame[data-nuvio-device="mobile"] {
+  max-width: 372px;
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+}
+
+.nv-stage-body {
+  display: flex;
+  min-height: 495px;
+  max-height: 670px;
+  overflow: hidden;
+  position: relative;
+}
+
+.nv-device-frame[data-nuvio-device="desktop"][data-desktop-nav="topBar"] .nv-stage-body,
+.nv-device-frame[data-nuvio-device="mobile"] .nv-stage-body {
+  flex-direction: column;
+}
+
+.nv-device-frame[data-nuvio-device="mobile"] .nv-stage-body {
+  min-height: 560px;
+  max-height: 615px;
+}
+
+/* -------------------------------------------------------------------------
+ * Navigation Chrome (TV Rail, Desktop Topbar/Sidebar, Mobile Bottom Bar)
+ * ------------------------------------------------------------------------- */
+.nv-rail {
+  width: 114px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.35));
+  border-right: 1px solid var(--nv-border);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nv-rail.collapsed {
+  width: 52px;
+  align-items: center;
+}
+
+.nv-rail.collapsed .nv-nav-label {
+  display: none;
+}
+
+.nv-rail-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.nv-rail-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--nv-accent);
+  box-shadow: 0 0 12px var(--nv-accent);
+  flex-shrink: 0;
+}
+
+.nv-rail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nv-nav-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--nv-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+}
+
+.nv-nav-btn:hover {
+  color: var(--nv-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nv-nav-btn.active {
+  color: var(--nv-text);
+  background: var(--nv-accent-soft);
+  border-color: var(--nv-accent);
+}
+
+.nv-desktop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid var(--nv-border);
+  flex-shrink: 0;
+}
+
+.nv-desktop-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nv-mobile-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(12, 15, 22, 0.94);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--nv-border);
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+.nv-mobile-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--nv-muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.nv-mobile-tab.active {
+  color: var(--nv-accent);
+}
+
+.nv-main-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 14px 16px;
+}
+
+/* -------------------------------------------------------------------------
+ * Screen 1 — Home (Hero Banner + Continue Watching + Stacked Collections)
+ * ------------------------------------------------------------------------- */
+.nv-hero {
+  position: relative;
+  border-radius: 12px;
+  min-height: 162px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: linear-gradient(135deg, #161d2e, #0a0c12);
+  background-size: cover;
+  background-position: center 25%;
+  border: 1px solid var(--nv-border);
+  margin-bottom: 14px;
+}
+
+.nv-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.65) 55%, rgba(0, 0, 0, 0.28) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, var(--nv-bg) 100%);
+  pointer-events: none;
+}
+
+.nv-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 78%;
+}
+
+.nv-device-frame[data-nuvio-device="mobile"] .nv-hero-content {
+  max-width: 100%;
+}
+
+.nv-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nv-accent);
+  margin-bottom: 4px;
+}
+
+.nv-hero-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.nv-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 7px;
+}
+
+.nv-hero-overview {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.38;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.nv-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.nv-cta {
+  appearance: none;
+  border: 1px solid var(--nv-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.nv-cta.primary {
+  background: var(--nv-accent);
+  border-color: var(--nv-accent);
+  color: #04070d;
+}
+
+/* Rows & Shelves */
+.nv-row {
+  margin-bottom: 14px;
+}
+
+.nv-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.nv-row-title {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--nv-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nv-row-sub {
+  font-size: 10.5px;
+  color: var(--nv-muted);
+}
+
+.nv-hstrip {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 3px 2px 6px;
+  scroll-snap-type: x proximity;
+}
+
+.nv-cw-card {
+  flex: 0 0 166px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-border);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.nv-cw-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--nv-accent);
+  box-shadow: 0 0 0 1px var(--nv-accent);
+}
+
+.nv-cw-thumb {
+  height: 76px;
+  background: linear-gradient(135deg, #1f2937, #0f172a);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.nv-cw-prog-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nv-cw-prog-fill {
+  height: 100%;
+  background: var(--nv-accent);
+}
+
+.nv-cw-meta {
+  padding: 6px 8px;
+}
+
+.nv-cw-title {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nv-cw-ep {
+  font-size: 10px;
+  color: var(--nv-muted);
+}
+
+/* Collection Folder Cards */
+.nv-folder-card {
+  flex: 0 0 var(--nv-card-w, 110px);
+  border-radius: var(--nv-radius, 12px);
+  overflow: hidden;
+  background: var(--nv-surface);
+  border: 1.5px solid var(--nv-border);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+  scroll-snap-align: start;
+}
+
+.nv-folder-card:hover,
+.nv-folder-card.focused {
+  transform: scale(1.045);
+  border-color: var(--nv-accent);
+  box-shadow: 0 0 0 2px var(--nv-accent-soft), 0 10px 22px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+
+.nv-folder-img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+  background: var(--nv-surface-2);
+}
+
+.nv-folder-fallback {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(155deg, var(--nv-accent-soft), rgba(17, 24, 39, 0.95));
+  color: var(--nv-text);
+}
+
+.nv-folder-foot {
+  padding: 5px 7px 6px;
+}
+
+.nv-folder-name {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nv-folder-rows {
+  font-size: 9.5px;
+  color: var(--nv-muted);
+}
+
+.nv-layout-grid .nv-folder-card {
+  flex: 0 0 96px;
+}
+
+.nv-layout-grid .nv-col-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+/* -------------------------------------------------------------------------
+ * Screen 2 — Collection Drill-Down & Live Posters Grid
+ * ------------------------------------------------------------------------- */
+.nv-col-banner {
+  position: relative;
+  border-radius: 11px;
+  padding: 12px 14px;
+  min-height: 86px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #171c2b, #0c1018);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--nv-border);
+  margin-bottom: 10px;
+}
+
+.nv-col-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.88));
+}
+
+.nv-col-banner > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nv-tab-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.nv-tab-pill {
+  appearance: none;
+  border: 1px solid var(--nv-border);
+  background: var(--nv-surface);
+  color: var(--nv-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.nv-tab-pill.active {
+  background: var(--nv-accent);
+  border-color: var(--nv-accent);
+  color: #04070d;
+  font-weight: 650;
+}
+
+.nv-posters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(94px, 1fr));
+  gap: 9px;
+}
+
+.nv-poster-tile {
+  position: relative;
+  border-radius: var(--nv-radius, 11px);
+  overflow: hidden;
+  background: var(--nv-surface);
+  border: 1.5px solid var(--nv-border);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.nv-poster-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--nv-accent);
+  box-shadow: 0 0 0 2px var(--nv-accent-soft);
+}
+
+.nv-poster-tile img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.nv-rating-chip {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fde047;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.nv-poster-caption {
+  padding: 5px 6px;
+}
+
+.nv-poster-caption .t {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nv-poster-caption .y {
+  font-size: 9.5px;
+  color: var(--nv-muted);
+}
+
+/* -------------------------------------------------------------------------
+ * Screen 3 — Details Page + 8-Source Ratings + Ordered Sections + Streams
+ * ------------------------------------------------------------------------- */
+.nv-details-hero {
+  position: relative;
+  border-radius: 12px;
+  padding: 13px;
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--nv-border);
+  background: linear-gradient(135deg, #161d2e, #0a0c12);
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 12px;
+}
+
+.nv-details-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.94) 15%, rgba(0, 0, 0, 0.74) 100%);
+}
+
+.nv-details-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nv-details-poster {
+  width: 82px;
+  height: 123px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.nv-device-frame[data-nuvio-device="mobile"] .nv-details-poster {
+  width: 66px;
+  height: 99px;
+}
+
+.nv-ratings-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.nv-rate-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nv-rate-badge strong {
+  color: var(--nv-accent);
+}
+
+.nv-sections-strip {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+
+.nv-sec-pill {
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-border);
+  color: var(--nv-muted);
+}
+
+.nv-ep-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nv-ep-card {
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-border);
+}
+
+.nv-ep-thumb {
+  height: 54px;
+  background: linear-gradient(135deg, #273145, #121722);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.nv-ep-thumb.blurred::after {
+  content: "Spoiler Hidden";
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.nv-stream-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nv-stream-item {
+  border-radius: 10px;
+  padding: 10px 11px;
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-border);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.nv-stream-item:hover {
+  border-color: var(--nv-accent);
+  background: var(--nv-surface-2);
+}
+
+.nv-stream-main {
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.nv-stream-left {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--nv-accent);
+  white-space: pre-line;
+  border-right: 1px solid var(--nv-border);
+  padding-right: 8px;
+}
+
+.nv-stream-desc {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--nv-text);
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.nv-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.nv-badge-img {
+  height: 18px;
+  width: auto;
+  max-width: 78px;
+  object-fit: contain;
+  display: inline-block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+.nv-badge-fallback {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--nv-text);
+}
+
+/* -------------------------------------------------------------------------
+ * Screen 4 — Player OSD (Real Subtitle Scale + Dual-Sub + Skip + Player Badges)
+ * ------------------------------------------------------------------------- */
+.nv-player-stage {
+  position: relative;
+  min-height: 330px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #1b2436, #06080c);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--nv-border);
+}
+
+.nv-player-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.88) 100%);
+  pointer-events: none;
+}
+
+.nv-player-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nv-player-osd-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+}
+
+.nv-player-mid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.nv-skip-btn {
+  border: 1px solid var(--nv-accent);
+  background: rgba(9, 12, 18, 0.82);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nv-sub-box {
+  align-self: center;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.32;
+  color: #ffffff;
+  text-shadow: 0 2px 5px #000000, 0 0 2px #000000;
+  max-width: 92%;
+}
+
+.nv-sub-sec {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.86em;
+  color: #fde68a;
+}
+
+.nv-player-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nv-seek-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.nv-seek-fill {
+  width: 61%;
+  height: 100%;
+  background: var(--nv-accent);
+}
