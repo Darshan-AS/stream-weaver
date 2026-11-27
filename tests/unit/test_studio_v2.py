@@ -549,3 +549,70 @@ def test_stateless_push_stream_and_profile_return_updated_bundle() -> None:
     last_frame = json.loads(streamed_chunks[-1].decode("utf-8"))
     assert last_frame["type"] == "done"
     assert last_frame["bundle"]["env"]["AIOSTREAMS_UUID"] == "00000000-0000-4000-8000-000000000081"
+
+
+def test_real_time_nuvio_viewport_assets_and_compiled_preview_metadata(tmp_path: Path) -> None:
+    _, dispatcher = _make_local_dispatcher(tmp_path)
+
+    index_resp = dispatcher.dispatch("GET", "/")
+    assert index_resp.status == 200
+    assert b"/static/nuvio_preview.css" in index_resp.body
+
+    css_resp = dispatcher.dispatch("GET", "/static/nuvio_preview.css")
+    assert css_resp.status == 200
+    assert css_resp.content_type.startswith("text/css")
+
+    js_resp = dispatcher.dispatch("GET", "/static/nuvio_viewport.js")
+    assert js_resp.status == 200
+    assert "javascript" in js_resp.content_type
+
+    state_data = json.loads(dispatcher.dispatch("GET", "/api/state").body)
+    assert state_data["ok"] is True
+    prof = state_data["state"]["profiles"][0]
+    assert prof["collections"][0]["folders"][0]["sources"]
+
+    cp = prof["compiledPreview"]
+    assert cp["badges"]["enabled"] is True
+    assert any(f.get("imageUrl") for f in cp["badges"]["filters"])
+    assert cp["meta"]["enabled"] is True
+    assert cp["meta"]["providers"]["imdb"] is True
+    assert cp["meta"]["sections"]
+    assert cp["settings"]["homeLayout"] in ("modern", "grid", "classic")
+    assert "tvSizePercent" in cp["settings"]["subtitleStyle"]
+
+    # Sample mode catalog preview returns enriched details metadata
+    prev_resp = dispatcher.dispatch(
+        "POST",
+        "/api/preview-catalog",
+        json.dumps({"spec": {"catalogId": "trakt.popular.movies", "type": "movie", "title": "Popular"}}).encode("utf-8"),
+    )
+    assert prev_resp.status == 200
+    prev_data = json.loads(prev_resp.body)
+    assert prev_data["source"] == "sample"
+    items = prev_data["items"]
+    assert items
+    assert "backdropUrl" in items[0]
+    assert items[0]["overview"]
+    assert items[0]["genres"]
+
+    # Live AIOMetadata catalog preview also includes details metadata fields
+    live_prev = dispatcher.dispatch(
+        "POST",
+        "/api/preview-catalog",
+        json.dumps(
+            {
+                "spec": {"catalogId": "tmdb.trending", "type": "movie", "title": "Trending"},
+                "pendingEnv": {
+                    "AIOMETADATA_URL": "https://meta.example.org",
+                    "AIOMETADATA_UUID": "00000000-0000-4000-8000-000000000082",
+                },
+            }
+        ).encode("utf-8"),
+    )
+    assert live_prev.status == 200
+    live_data = json.loads(live_prev.body)
+    assert live_data["source"] == "aiometadata"
+    assert live_data["items"][0]["title"] == "Dune: Part Two"
+    assert "backdropUrl" in live_data["items"][0]
+    assert "overview" in live_data["items"][0]
+    assert "genres" in live_data["items"][0]
