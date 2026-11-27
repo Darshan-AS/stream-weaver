@@ -94,3 +94,49 @@ def write_text_file(path: Path, content: str) -> Result[Path, StorageError]:
     except OSError as exc:
         return Err(StorageError(message=f"Failed to write text to {path}: {exc}", path=str(path)))
 
+
+ENV_USER_CONFIG = "STREAM_WEAVER_CONFIG"
+
+
+def user_config_path() -> Path:
+    """Returns the per-user Stream Weaver config path (`~/.config/stream-weaver/config.json`)."""
+    explicit = os.environ.get(ENV_USER_CONFIG, "").strip()
+    if explicit:
+        return Path(explicit).expanduser()
+    xdg = os.environ.get("XDG_CONFIG_HOME", "").strip()
+    if xdg:
+        return Path(xdg).expanduser() / "stream-weaver" / "config.json"
+    return Path.home() / ".config" / "stream-weaver" / "config.json"
+
+
+def load_default_workspace() -> Path | None:
+    """Reads the remembered default workspace directory from the user's config file, if configured."""
+    cfg_path = user_config_path()
+    if not cfg_path.is_file():
+        return None
+    match read_json_file(cfg_path):
+        case Ok(doc):
+            raw = doc.get("defaultWorkspace")
+            if isinstance(raw, str) and raw.strip():
+                return Path(raw.strip()).expanduser().resolve()
+            return None
+        case Err():
+            return None
+
+
+def save_default_workspace(workspace_dir: Path | None) -> Result[Path, StorageError]:
+    """Persists (or clears when `None`) the remembered default workspace directory in user config."""
+    cfg_path = user_config_path()
+    existing: dict[str, Any] = {}
+    if cfg_path.is_file():
+        match read_json_file(cfg_path):
+            case Ok(doc):
+                existing = dict(doc)
+            case Err():
+                existing = {}
+    existing["version"] = 1
+    existing["defaultWorkspace"] = (
+        str(workspace_dir.expanduser().resolve()) if workspace_dir is not None else ""
+    )
+    return write_json_file(cfg_path, existing)
+

@@ -144,6 +144,7 @@ from stream_weaver.providers.services.nuvio_session import (
     password_grant,
     resolve_nuvio_anon_key,
 )
+from stream_weaver.resources import bundled_shared_library_root
 
 _PROFILE_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}$")
 _STRICT_NAME_RE = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
@@ -551,11 +552,11 @@ def _load_workspace(
             case Err():
                 continue
 
-    roots = list(manifest.library_roots(paths.root))
-    for extra in extra_library_roots:
-        if extra.is_dir() and extra not in roots:
-            roots.append(extra)
-    library = Library.load(roots)
+    fallback_roots: list[Path] = list(extra_library_roots)
+    bundled = bundled_shared_library_root()
+    if bundled is not None and bundled not in fallback_roots:
+        fallback_roots.append(bundled)
+    library = Library.load(manifest.library_roots(paths.root, fallback_roots=fallback_roots))
     if library.errors:
         return Err(StreamWeaverError("library: " + "; ".join(str(e) for e in library.errors)))
 

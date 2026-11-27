@@ -36,20 +36,35 @@ def test_resolve_tenant_root_priority(tmp_path: Path) -> None:
     named = _mk_tenant(tmp_path / "repo" / "tenants" / "dad", "dad")
     env_dir = _mk_tenant(tmp_path / "env_dir")
     cwd_tenant = _mk_tenant(tmp_path / "cwd_tenant")
+    saved_default = _mk_tenant(tmp_path / "saved_default")
     repo_root = tmp_path / "repo"
+    bare_cwd = tmp_path / "bare_cwd"
+    bare_cwd.mkdir()
 
     # 1. --dir beats everything
     assert resolve_tenant_root(
-        explicit, tenant_name="dad", cwd=repo_root, env_override=str(env_dir)
+        explicit, tenant_name="dad", cwd=repo_root, env_override=str(env_dir), default_dir=saved_default
     ) == Ok(explicit.resolve())
-    # 2. --tenant NAME → <cwd>/tenants/NAME beats env + cwd
-    assert resolve_tenant_root(None, tenant_name="dad", cwd=repo_root, env_override=str(env_dir)) == Ok(
-        named.resolve()
-    )
-    # 3. STREAM_WEAVER_DIR beats cwd
-    assert resolve_tenant_root(None, cwd=cwd_tenant, env_override=str(env_dir)) == Ok(env_dir.resolve())
-    # 4. cwd containing tenant.json
-    assert resolve_tenant_root(None, cwd=cwd_tenant, env_override="") == Ok(cwd_tenant.resolve())
+    # 2. --tenant NAME → <cwd>/tenants/NAME beats env + cwd + default
+    assert resolve_tenant_root(
+        None, tenant_name="dad", cwd=repo_root, env_override=str(env_dir), default_dir=saved_default
+    ) == Ok(named.resolve())
+    # 3. STREAM_WEAVER_DIR beats cwd + default
+    assert resolve_tenant_root(
+        None, cwd=cwd_tenant, env_override=str(env_dir), default_dir=saved_default
+    ) == Ok(env_dir.resolve())
+    # 4. cwd containing tenant.json beats default
+    assert resolve_tenant_root(
+        None, cwd=cwd_tenant, env_override="", default_dir=saved_default
+    ) == Ok(cwd_tenant.resolve())
+    # 5. Saved default workspace resolves when CWD has no tenant.json
+    assert resolve_tenant_root(
+        None, cwd=bare_cwd, env_override="", default_dir=saved_default
+    ) == Ok(saved_default.resolve())
+    # 6. With require_marker=False (e.g. `sw init`), bare CWD wins over default_dir
+    assert resolve_tenant_root(
+        None, cwd=bare_cwd, env_override="", default_dir=saved_default, require_marker=False
+    ) == Ok(bare_cwd.resolve())
 
 
 def test_resolve_tenant_root_has_no_repo_root_fallback(tmp_path: Path) -> None:
@@ -176,8 +191,10 @@ def test_sw_init_from_template_copies_documents(tmp_path: Path) -> None:
     assert prof_doc["clients"]["nuvio"]["profile"] == {}
     assert (target / "library" / "collections").is_dir()  # tenant-local recipes travel with the template
     libs = json.loads((target / TENANT_FILE).read_text())["libraries"]
-    assert libs[0] == "library"
-    assert (target / libs[1]).resolve() == shared_library.resolve()  # shared library re-anchored
+    assert libs == ["library"]  # portable across machines — bundled shared library resolves automatically
+    # External directory validates cleanly without needing `../../library` relative paths
+    val_res = runner.invoke(app, ["validate", "--dir", str(target)])
+    assert val_res.exit_code == 0, val_res.output
     # template documents must carry no identity or stale personal vault/account placeholders
     blob = "".join(p.read_text(encoding="utf-8") for p in target.glob("*.json"))
     assert "midnightignite" not in blob
@@ -237,3 +254,54 @@ def test_sw_validate_all_tenants_discovers_repo_layout(tmp_path: Path) -> None:
     res_bad = runner.invoke(app, ["validate", "--all-tenants", "--dir", str(tmp_path)])
     assert res_bad.exit_code == 1
     assert "diagram out of sync" in res_bad.output
+
+
+def test_default_workspace_config_and_workspace_commands(tmp_path: Path) -> None:
+    import os
+
+    ws1 = tmp_path / "external-stack"
+    ws2 = tmp_path / "second-stack"
+    bare = tmp_path / "elsewhere"
+    bare.mkdir()
+
+    # 1. `sw init <dir> --starter --use` saves the workspace as the remembered default
+    init1 = runner.invoke(app, ["init", str(ws1), "--starter", "--use"])
+    assert init1.exit_code == 0, init1.output
+    assert json.loads((ws1 / TENANT_FILE).read_text())["libraries"] == ["library"]
+
+    init2 = runner.invoke(app, ["init", str(ws2), "--starter"])
+    assert init2.exit_code == 0, init2.output
+
+    prev = os.getcwd()
+    os.chdir(bare)
+    try:
+        os.environ.pop("STREAM_WEAVER_DIR", None)
+        # Running `sw validate` from an unrelated directory uses ws1 automatically
+        val1 = runner.invoke(app, ["validate"])
+        assert val1.exit_code == 0, val1.output
+        assert "[external-stack] tenant is valid" in val1.output
+
+        show1 = runner.invoke(app, ["workspace", "show"], env={"COLUMNS": "300"})
+        assert show1.exit_code == 0, show1.output
+        assert str(ws1.resolve()) in show1.output.replace("\n", "")
+
+        # Switch default workspace to ws2 via `sw use` alias
+        use2 = runner.invoke(app, ["use", str(ws2)])
+        assert use2.exit_code == 0, use2.output
+        val2 = runner.invoke(app, ["validate"])
+        assert val2.exit_code == 0, val2.output
+        assert "[second-stack] tenant is valid" in val2.output
+
+        # Clear default workspace → commands from bare CWD fail cleanly again
+        clr = runner.invoke(app, ["workspace", "clear"])
+        assert clr.exit_code == 0, clr.output
+        no_ws = runner.invoke(app, ["validate"])
+        assert no_ws.exit_code == 1
+        assert "No tenant found" in no_ws.output
+    finally:
+        os.chdir(prev)
+
+    # Rejects pointing `sw workspace use` at a directory without tenant.json
+    bad_use = runner.invoke(app, ["workspace", "use", str(bare)])
+    assert bad_use.exit_code == 1
+    assert TENANT_FILE in bad_use.output

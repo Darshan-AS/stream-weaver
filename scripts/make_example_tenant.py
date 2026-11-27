@@ -332,9 +332,7 @@ def main() -> None:
 
     src_manifest = json.loads((src / "tenant.json").read_text(encoding="utf-8")) if (src / "tenant.json").is_file() else {}
     manifest = default_tenant_manifest("home")
-    shared_lib = ROOT / "library"
-    if shared_lib.is_dir():
-        manifest["libraries"] = ["library", os.path.relpath(shared_lib, dst)]
+    manifest["libraries"] = ["library"]
     used_logins: dict[str, dict[str, str]] = {}
     for plat, spec in (prof_doc.get("clients") or {}).items():
         if isinstance(spec, dict) and isinstance(spec.get("login"), str):

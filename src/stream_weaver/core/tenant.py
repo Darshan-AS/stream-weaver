@@ -22,7 +22,7 @@ Layout (v1):
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -46,8 +46,8 @@ type LoginRegistry = Mapping[str, Mapping[str, str]]
 """platform → login name → env key prefix (e.g. {"nuvio": {"main": "NUVIO"}})."""
 
 
-DEFAULT_LIBRARY_ROOTS: tuple[str, ...] = ("library", "../../library")
-"""Recipe roots relative to the tenant dir, highest precedence first: tenant-local, then shared."""
+DEFAULT_LIBRARY_ROOTS: tuple[str, ...] = ("library",)
+"""Recipe roots relative to the tenant dir, highest precedence first (bundled shared library is always appended automatically)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,13 +61,22 @@ class TenantManifest:
     profiles: tuple[str, ...] = ()
     libraries: tuple[str, ...] = DEFAULT_LIBRARY_ROOTS
 
-    def library_roots(self, tenant_root: Path) -> tuple[Path, ...]:
-        """Absolute, existing recipe roots in precedence order (missing roots are skipped)."""
+    def library_roots(
+        self,
+        tenant_root: Path,
+        *,
+        fallback_roots: Sequence[Path] = (),
+    ) -> tuple[Path, ...]:
+        """Absolute, existing recipe roots in precedence order: workspace-local first, then `fallback_roots`."""
         roots: list[Path] = []
         for rel in self.libraries:
             candidate = (tenant_root / rel).resolve()
             if candidate.is_dir() and candidate not in roots:
                 roots.append(candidate)
+        for fb in fallback_roots:
+            resolved = fb.resolve()
+            if resolved.is_dir() and resolved not in roots:
+                roots.append(resolved)
         return tuple(roots)
 
 
@@ -227,6 +236,7 @@ def resolve_tenant_root(
     tenant_name: str | None = None,
     cwd: Path | None = None,
     env_override: str | None = None,
+    default_dir: Path | None = None,
     require_marker: bool = True,
 ) -> Result[Path, StorageError]:
     """
@@ -236,10 +246,11 @@ def resolve_tenant_root(
     2. `--tenant NAME` → `<cwd>/tenants/NAME`
     3. `STREAM_WEAVER_DIR` environment variable
     4. Current working directory, if it contains `tenant.json`
+    5. Saved default workspace (`~/.config/stream-weaver/config.json`, when `require_marker=True`)
 
-    There is deliberately **no** fallback to the package / repository root: the tool
-    never assumes where a tenant lives. With `require_marker=False` (used by `sw init`)
-    the resolved directory is returned even if `tenant.json` does not exist yet.
+    With `require_marker=False` (used by `sw init`) the resolved directory is returned
+    even if `tenant.json` does not exist yet (ignoring saved `default_dir` so bare `sw init`
+    targets CWD).
     """
     effective_cwd = (cwd or Path.cwd()).resolve()
 
@@ -253,12 +264,15 @@ def resolve_tenant_root(
         candidate, source = Path(env_override.strip()).expanduser().resolve(), ENV_DIR_OVERRIDE
     elif is_tenant_dir(effective_cwd) or not require_marker:
         candidate, source = effective_cwd, "cwd"
+    elif default_dir is not None:
+        candidate, source = default_dir.expanduser().resolve(), "default workspace"
 
     if candidate is None:
         return Err(
             StorageError(
                 "No tenant found. Run from a directory containing `tenant.json`, pass "
-                "`--dir <tenant>` / `--tenant <name>`, set STREAM_WEAVER_DIR, or scaffold one with `sw init <dir>`.",
+                "`--dir <dir>` / `--tenant <name>`, set STREAM_WEAVER_DIR, scaffold one with "
+                "`sw init <dir>`, or run `sw workspace use <dir>`.",
                 path=str(effective_cwd),
             )
         )

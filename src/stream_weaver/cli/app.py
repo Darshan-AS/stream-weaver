@@ -62,6 +62,7 @@ from stream_weaver.core.tenant import (
     TenantPaths,
     default_tenant_manifest,
     discover_tenants,
+    is_tenant_dir,
     parse_tenant_manifest,
     resolve_tenant_root,
 )
@@ -73,11 +74,14 @@ from stream_weaver.core.types import (
 )
 from stream_weaver.effects.http import HttpxClient as HttpxClient
 from stream_weaver.effects.storage import (
+    load_default_workspace,
     load_env_file,
     read_json_file,
     read_text_file,
+    save_default_workspace,
     save_env_updates,
     scaffold_env_keys,
+    user_config_path,
     write_json_file,
     write_text_file,
 )
@@ -235,6 +239,7 @@ def _resolve_tenant(
         workspace_dir or _CLI_WORKSPACE_DIR,
         tenant_name=tenant_name or _CLI_TENANT_NAME,
         env_override=os.environ.get(ENV_DIR_OVERRIDE),
+        default_dir=load_default_workspace() if require_marker else None,
         require_marker=require_marker,
     ):
         case Err(err):
@@ -303,7 +308,7 @@ def _try_context(
                 bindings[svc] = binding
             case Err():
                 continue
-    library = Library.load(manifest.library_roots(paths.root))
+    library = Library.load(manifest.library_roots(paths.root, fallback_roots=_extra_library_roots()))
     if library.errors:
         return Err(StreamWeaverError("library: " + "; ".join(str(e) for e in library.errors)))
     match _load_profiles(paths, manifest, env):
@@ -737,6 +742,10 @@ def cmd_config_init(
         bool,
         typer.Option("--force", help="Overwrite tenant.json, .env.example, .gitignore and template documents if present"),
     ] = False,
+    use: Annotated[
+        bool,
+        typer.Option("--use", help="Save this directory as the default workspace in ~/.config/stream-weaver/config.json"),
+    ] = False,
     debrid: Annotated[
         str | None,
         typer.Option("--debrid", help="Primary Debrid provider for aiostreams.json (torbox | realdebrid | alldebrid | premiumize)"),
@@ -766,24 +775,23 @@ def cmd_config_init(
     manifest_doc = default_tenant_manifest(tenant_name)
     if template_dir is not None and (template_dir.expanduser().resolve() / TENANT_FILE).is_file():
         tpl_root = template_dir.expanduser().resolve()
+        bundled_lib = bundled_shared_library_root()
+        bundled_resolved = bundled_lib.resolve() if bundled_lib is not None else None
         match read_json_file(tpl_root / TENANT_FILE):
             case Ok(tpl_manifest):
                 manifest_doc = {**tpl_manifest, "name": tenant_name}
-                # Re-anchor the template's library roots relative to the new tenant so recipes stay reachable.
+                # Keep `libraries` portable (`["library"]`) — the bundled shared library is
+                # always resolved automatically as a fallback; keep any custom extra root only.
                 tpl_libs = tpl_manifest.get("libraries") or []
                 roots: list[str] = ["library"]
                 for rel in tpl_libs if isinstance(tpl_libs, list) else []:
                     abs_root = (tpl_root / str(rel)).resolve()
                     if abs_root == (tpl_root / "library").resolve():
                         continue
-                    if not abs_root.is_dir():
-                        fallback_lib = bundled_shared_library_root()
-                        if fallback_lib is not None:
-                            abs_root = fallback_lib.resolve()
+                    if bundled_resolved is not None and abs_root == bundled_resolved:
+                        continue
                     if abs_root.is_dir():
                         roots.append(os.path.relpath(abs_root, target_dir))
-                if len(roots) == 1 and (fallback_lib := bundled_shared_library_root()) is not None:
-                    roots.append(os.path.relpath(fallback_lib.resolve(), target_dir))
                 manifest_doc["libraries"] = roots
             case Err():
                 pass
@@ -878,7 +886,80 @@ def cmd_config_init(
         console.print(f"   ✅ Created:   {', '.join(created)}, architecture/, ARCHITECTURE.md")
     if preserved:
         console.print(f"   ℹ️  Preserved: {', '.join(preserved)}")
-    console.print("   💡 Next: fill in instance URLs & credentials in .env, then run `sw pull` or `sw push --create`.")
+    if use:
+        match save_default_workspace(target_dir):
+            case Err(cfg_err):
+                err_console.print(f"❌ {cfg_err}")
+                raise typer.Exit(code=1)
+            case Ok(cfg_path):
+                console.print(f"   📌 Set as default workspace ({cfg_path})")
+        console.print("   💡 Next: run `sw studio` (or `sw push --create`) from anywhere!")
+    else:
+        console.print(
+            f"   💡 Next: run `sw studio --dir {target_dir}` or `sw workspace use {target_dir}` to make it your default."
+        )
+
+
+workspace_app = typer.Typer(help="Manage the remembered default Stream Weaver workspace.")
+app.add_typer(workspace_app, name="workspace")
+
+
+@workspace_app.command("use")
+@app.command("use")
+def cmd_workspace_use(
+    directory: Annotated[
+        Path,
+        typer.Argument(help="Workspace directory containing tenant.json to set as default"),
+    ],
+) -> None:
+    """Remember a workspace directory in ~/.config/stream-weaver/config.json so `sw` finds it from anywhere."""
+    resolved = directory.expanduser().resolve()
+    if not is_tenant_dir(resolved):
+        err_console.print(
+            f"❌ `{resolved}` is not a Stream Weaver workspace (missing `{TENANT_FILE}`). "
+            f"Initialize it first with `sw init {resolved} --starter --use`."
+        )
+        raise typer.Exit(code=1)
+    match save_default_workspace(resolved):
+        case Err(cfg_err):
+            err_console.print(f"❌ {cfg_err}")
+            raise typer.Exit(code=1)
+        case Ok(cfg_path):
+            console.print(f"📌 Default workspace set to `{resolved}` (saved in {cfg_path})")
+
+
+@workspace_app.command("show")
+def cmd_workspace_show(
+    workspace_dir: WorkspaceDirOption = None,
+    tenant: TenantNameOption = None,
+) -> None:
+    """Show the saved default workspace and how `sw` currently resolves a workspace from CWD."""
+    cfg_path = user_config_path()
+    saved = load_default_workspace()
+    console.print(f"Config file:       {cfg_path}")
+    console.print(f"Default workspace: {saved if saved is not None else '(not set)'}")
+    match resolve_tenant_root(
+        workspace_dir or _CLI_WORKSPACE_DIR,
+        tenant_name=tenant or _CLI_TENANT_NAME,
+        env_override=os.environ.get(ENV_DIR_OVERRIDE),
+        default_dir=saved,
+        require_marker=True,
+    ):
+        case Ok(resolved):
+            console.print(f"Active workspace:  {resolved}")
+        case Err():
+            console.print("Active workspace:  (none)")
+
+
+@workspace_app.command("clear")
+def cmd_workspace_clear() -> None:
+    """Clear the remembered default workspace from user config."""
+    match save_default_workspace(None):
+        case Err(cfg_err):
+            err_console.print(f"❌ {cfg_err}")
+            raise typer.Exit(code=1)
+        case Ok(cfg_path):
+            console.print(f"🧹 Cleared default workspace in {cfg_path}")
 
 
 def _validate_tenant(paths: TenantPaths) -> list[str]:

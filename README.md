@@ -102,8 +102,13 @@ A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<
 
 > **Flagship Dark-Cinema Web App (`sw studio`) — Zero-Build ES Modules, Local GitOps or Stateless Hosted!**
 > Launch Studio in two modes with identical capabilities:
-> * **Local GitOps Studio:** `uv run sw init tenants/<you> --from examples/home && uv run sw studio --tenant <you>`
-> * **Zero-Disk Hosted / Stateless Studio:** `uv run sw studio --stateless` *(zero server persistence; your bundle & keys stay in browser `localStorage`, with 1-click **📦 Export GitOps Zip**)*
+> * **Portable Local Workspace (Recommended for Personal Git Repo / CLI):**
+>   ```bash
+>   uv tool install git+https://github.com/Darshan-AS/stream-weaver.git   # or run from repo with `uv run`
+>   sw init ~/my-streaming-stack --starter --use                         # scaffolds portable config folder & sets it as default
+>   sw studio                                                            # launches Studio for your remembered workspace from anywhere
+>   ```
+> * **Zero-Disk Hosted / Stateless Studio:** `sw studio --stateless` *(zero server persistence; your bundle & keys stay in browser `localStorage`, with 1-click **Export GitOps Zip**)*
 >
 > **What's Inside Studio v2:**
 > * **🧭 4-Step Guided Day-0 Setup Wizard:** Auto-opens on unprovisioned workspaces—pick **ElfHosted Public Instances** (1-click prefill) or **Custom Self-Hosted URLs**, enter Debrid + TMDB + TVDB keys with **🩺 Live Key Verification** right inside the wizard, pick starter collections + regional cinema + Nuvio account, and **1-Click Provision UUIDs & Stream Push** (`application/x-ndjson` live step logs).
@@ -116,14 +121,16 @@ A second person who self-hosts adds `tenants/<name>/` (`uv run sw init tenants/<
 > * **AIOManager is optional:** `sw push` syncs addons, Home Collections, stream badges, details-page enrichment, and app settings **directly to Nuvio** whenever `AIOMANAGER_UUID` is left blank.
 > * **`aio_contraband` is optional:** `examples/home` ships all 7 curated collections (30+ folders) out of the box without Contraband. To also add the **Peterson Academy** tab, see [Optional: Enable Contraband](#optional-enable-contraband-peterson-academy) below.
 
-### Step 1: Clone `stream-weaver`, Install Dependencies & Scaffold Your Tenant
+### Step 1: Install `sw` & Scaffold Your Own Portable Config Directory
+Your streaming config folder is 100% standalone (safe to push to your own private Git repo; the shared `library/` ships inside the installed `stream-weaver` package automatically):
 ```bash
-git clone git@github.com:Darshan-AS/stream-weaver.git
-cd stream-weaver
-uv sync
-uv run sw init tenants/<you> --from examples/home   # tenant.json, .env, starter documents & 7 collections
+uv tool install git+https://github.com/Darshan-AS/stream-weaver.git
+sw init ~/my-streaming-stack --starter --use
+sw workspace show   # verify your remembered default workspace (~/.config/stream-weaver/config.json)
 ```
-Every `sw` command below takes `--tenant <you>` (or `cd tenants/<you>` first).
+From now on, plain `sw studio`, `sw push`, `sw pull`, `sw doctor`, and `sw validate` operate on `~/my-streaming-stack` from **any** directory (override anytime with `--dir <path>`, `STREAM_WEAVER_DIR`, `sw workspace use <path>`, or `--tenant <name>` for monorepo `tenants/<name>` layouts).
+
+> Running straight from a git clone without installing globally? Replace `sw` with `uv run sw` inside the cloned repo (and pass `--dir ~/my-streaming-stack` or `sw init ~/my-streaming-stack --starter --use`).
 
 ### Step 2: Fill in Your Keys in `tenants/<you>/.env`
 Open `tenants/<you>/.env` and fill in:
