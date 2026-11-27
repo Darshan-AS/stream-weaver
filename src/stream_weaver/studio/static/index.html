@@ -7,65 +7,162 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand-cluster">
-      <div class="brand-mark" aria-hidden="true">🧶</div>
-      <div class="brand-copy">
-        <div class="brand-row">
-          <h1>Stream Weaver Studio</h1>
-          <span class="pill" id="mode-pill">Loading…</span>
-          <span class="pill" id="env-ready-pill">…</span>
+  <div class="app-shell" id="app-shell">
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Workspace navigation">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7c4 0 4 10 8 10s4-10 8-10"/>
+            <path d="M4 17c4 0 4-10 8-10s4 10 8 10" opacity="0.5"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+          </svg>
         </div>
-        <div class="brand-subtitle" id="subtitle">Initializing workspace engine…</div>
+        <div class="brand-copy">
+          <h1>Stream Weaver Studio</h1>
+          <div class="brand-meta">
+            <span class="pill" id="mode-pill">Loading…</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="toolbar" role="toolbar" aria-label="Studio quick actions">
-      <button id="btn-wizard" class="btn accent-outline" title="Open 4-step Day-0 Setup Wizard">🧭 Setup Wizard</button>
-      <button id="btn-doctor" class="btn" title="Run live workspace &amp; API key health checks">🩺 Health Doctor</button>
-      <button id="btn-diff" class="btn" title="Compare local GitOps state against live remote servers">🔍 Drift Diff</button>
-      <button id="btn-raw-json" class="btn" title="Inspect &amp; edit scrubbed JSON configs directly">🛠️ Raw JSON</button>
-      <button id="btn-pull" class="btn" title="Pull live edits from AIOStreams, AIOMetadata, AIOManager &amp; Nuvio">📥 Pull</button>
-      <button id="btn-export" class="btn" title="Download secret-free portable GitOps zip">📦 Export GitOps Zip</button>
-      <button id="btn-save" class="btn" title="Save pending edits to workspace">💾 Save</button>
-      <div class="push-cluster">
-        <label class="warm-toggle" title="Pre-warm Home catalog rows immediately after pushing">
-          <input type="checkbox" id="chk-push-warm" />
-          <span>🔥 Warm</span>
-        </label>
-        <button id="btn-push" class="btn primary" title="Save &amp; stream live push across AIO instances and Nuvio">🚀 Save &amp; Push</button>
+      <div class="sidebar-scroll">
+        <div class="nav-group">
+          <div class="eyebrow">Workspace</div>
+          <nav class="nav-list" id="nav-tabs" aria-label="Studio sections">
+            <button class="nav-item active" data-tab="home">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+              <span>Home &amp; Simulator</span>
+            </button>
+            <button class="nav-item" data-tab="streams">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>AIOStreams &amp; Metadata</span>
+            </button>
+            <button class="nav-item" data-tab="aiomanager">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+              <span>AIOManager &amp; Addons</span>
+            </button>
+            <button class="nav-item" data-tab="nuvio">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
+              <span>Nuvio &amp; Visuals</span>
+            </button>
+            <button class="nav-item" data-tab="keys">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <span>Keys &amp; Accounts</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="nav-group">
+          <div class="eyebrow">Tools</div>
+          <div class="nav-list">
+            <button id="btn-wizard" class="nav-item" title="Open 4-step Day-0 Setup Wizard">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+              <span>Setup Wizard</span>
+              <span class="pulse-dot" id="wizard-pulse-dot" hidden></span>
+            </button>
+            <button id="btn-doctor" class="nav-item" title="Run live workspace &amp; API key health checks">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <span>Health Doctor</span>
+            </button>
+            <button id="btn-diff" class="nav-item" title="Compare local GitOps state against live remote servers">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+              <span>Drift Diff</span>
+            </button>
+            <button id="btn-raw-json" class="nav-item" title="Inspect &amp; edit scrubbed JSON configs directly">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span>Raw JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="row-between eyebrow-row">
+            <span class="eyebrow">Household</span>
+            <button id="btn-new-profile" class="btn ghost icon-btn" title="Add household profile" aria-label="New household profile">
+              <svg class="sw-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            </button>
+          </div>
+          <div class="profile-list" id="profile-tabs" role="tablist" aria-label="Household profiles"></div>
+        </div>
       </div>
-    </div>
-  </header>
 
-  <div class="subbar">
-    <nav class="tabs" id="nav-tabs" aria-label="Studio sections">
-      <button class="tab active" data-tab="home">🏠 Home &amp; Simulator</button>
-      <button class="tab" data-tab="streams">⚡ AIOStreams &amp; Metadata</button>
-      <button class="tab" data-tab="aiomanager">☁️ AIOManager &amp; Addons</button>
-      <button class="tab" data-tab="nuvio">🎛️ Nuvio &amp; Visuals</button>
-      <button class="tab" data-tab="keys">🔑 Keys &amp; Accounts</button>
-    </nav>
+      <div class="sidebar-footer">
+        <div class="key-meter">
+          <div class="row-between">
+            <span class="key-meter-label">Vault Readiness</span>
+            <span class="pill" id="env-ready-pill">…</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="env-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+        <button id="btn-export" class="btn subtle full-width" title="Download secret-free portable GitOps zip">
+          <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <span>Export GitOps Zip</span>
+        </button>
+      </div>
+    </aside>
 
-    <div class="profile-switcher">
-      <div class="profile-pills" id="profile-tabs" role="tablist" aria-label="Household profiles"></div>
-      <button id="btn-new-profile" class="btn icon-pill accent-outline" title="Add household profile">+ New Profile</button>
+    <div class="workspace-pane">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="btn-mobile-menu" class="btn ghost icon-btn mobile-only" title="Toggle navigation" aria-label="Toggle navigation">
+            <svg class="sw-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
+          <div class="topbar-title-wrap">
+            <div class="view-title" id="view-title">Home &amp; Simulator</div>
+            <div class="brand-subtitle" id="subtitle">Initializing workspace engine…</div>
+          </div>
+        </div>
+
+        <div class="toolbar" role="toolbar" aria-label="Studio quick actions">
+          <button id="btn-cmd-k" class="btn cmdk-trigger" title="Open Command Palette (⌘K / Ctrl+K)">
+            <svg class="sw-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+            <span class="cmdk-label">Search</span>
+            <kbd>⌘K</kbd>
+          </button>
+          <span class="pill warn" id="dirty-pill" hidden>Unsaved</span>
+          <button id="btn-pull" class="btn" title="Pull live edits from AIOStreams, AIOMetadata, AIOManager &amp; Nuvio">
+            <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            <span>Pull</span>
+          </button>
+          <button id="btn-save" class="btn" title="Save pending edits to workspace">
+            <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Save</span>
+          </button>
+          <div class="push-cluster">
+            <label class="warm-toggle" title="Pre-warm Home catalog rows immediately after pushing">
+              <input type="checkbox" id="chk-push-warm" />
+              <svg class="sw-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+              <span>Warm</span>
+            </label>
+            <button id="btn-push" class="btn primary" title="Save &amp; stream live push across AIO instances and Nuvio">
+              <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              <span>Save &amp; Push</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="studio-main">
+        <section id="onboarding-banner" class="onboarding-banner" hidden></section>
+
+        <section id="log-drawer" class="log-drawer" hidden aria-live="polite">
+          <div class="log-drawer-head">
+            <span id="log-drawer-title" class="log-drawer-title">Ready</span>
+            <button id="btn-close-log" class="btn ghost icon-btn" title="Dismiss log drawer" aria-label="Dismiss log drawer">
+              <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="log-drawer-steps" class="log-drawer-steps"></div>
+        </section>
+
+        <div id="view-root" class="view-root"></div>
+      </main>
     </div>
   </div>
-
-  <main class="studio-main">
-    <section id="onboarding-banner" class="onboarding-banner" hidden></section>
-
-    <section id="log-drawer" class="log-drawer" hidden aria-live="polite">
-      <div class="log-drawer-head">
-        <span id="log-drawer-title" class="log-drawer-title">Ready</span>
-        <button id="btn-close-log" class="btn icon-btn" title="Dismiss log drawer">✕</button>
-      </div>
-      <div id="log-drawer-steps" class="log-drawer-steps"></div>
-    </section>
-
-    <div id="view-root" class="view-root"></div>
-  </main>
 
   <div id="modal-backdrop" class="modal-backdrop" hidden>
     <div id="modal-root" class="modal-dialog" role="dialog" aria-modal="true"></div>

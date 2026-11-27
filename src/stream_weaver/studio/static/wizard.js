@@ -76,7 +76,7 @@ export function openSetupWizard(ctx) {
   }
 
   ctx.openModal((dialog) => {
-    const { escapeHtml } = ctx.ui;
+    const { escapeHtml, icon } = ctx.ui;
     const renderWizard = () => {
       dialog.innerHTML = "";
       dialog.classList.add("modal-wide");
@@ -86,13 +86,13 @@ export function openSetupWizard(ctx) {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:18px">🧭 Stream Weaver Day-0 Setup Wizard</h2>
+          <h2>${icon("compass", 17)} Stream Weaver Day-0 Setup Wizard</h2>
           <p class="sub" style="margin:3px 0 0">Zero-visit provisioning: configure hosting, verify keys live, pick your shelves, and launch in minutes.</p>
         </div>
       `;
       const dismissBtn = document.createElement("button");
-      dismissBtn.className = "btn";
-      dismissBtn.textContent = "✕ Dismiss Wizard";
+      dismissBtn.className = "btn ghost";
+      dismissBtn.innerHTML = `${icon("x", 14)} <span>Dismiss</span>`;
       dismissBtn.onclick = () => {
         try { sessionStorage.setItem("sw_wizard_dismissed", "1"); } catch (_) {}
         ctx.closeModal();
@@ -107,12 +107,12 @@ export function openSetupWizard(ctx) {
         [1, "1. Hosting", "ElfHosted or Custom URLs"],
         [2, "2. Keys & Check", "Debrid, TMDB & Live Doctor"],
         [3, "3. Taste & Nuvio", "Shelves, Languages & Login"],
-        [4, "4. Launch", "1-Click Provision & Push"],
+        [4, "4. Launch", "Provision & Push"],
       ].forEach(([num, title, desc]) => {
         const b = document.createElement("button");
         b.className = "wizard-step-pill" + (wiz.step === num ? " active" : (wiz.step > num ? " done" : ""));
-        b.innerHTML = `<div>${wiz.step > num ? "✅ " : ""}${escapeHtml(title)}</div>
-          <div style="font-size:10.5px;font-weight:400;opacity:0.8;margin-top:2px">${escapeHtml(desc)}</div>`;
+        b.innerHTML = `<div style="display:inline-flex;align-items:center;gap:5px">${wiz.step > num ? icon("check", 12) : ""}${escapeHtml(title)}</div>
+          <div style="font-size:10.5px;font-weight:400;opacity:0.8">${escapeHtml(desc)}</div>`;
         b.onclick = () => {
           if (!wiz.launching) {
             wiz.step = num;
@@ -161,7 +161,7 @@ export function openSetupWizard(ctx) {
       } else if (wiz.launchDone) {
         const finishBtn = document.createElement("button");
         finishBtn.className = "btn primary";
-        finishBtn.textContent = "🎉 Open Studio Workspace";
+        finishBtn.innerHTML = `${icon("check", 14)} <span>Open Studio Workspace</span>`;
         finishBtn.onclick = () => {
           try { sessionStorage.setItem("sw_wizard_dismissed", "1"); } catch (_) {}
           ctx.closeModal();
@@ -178,6 +178,7 @@ export function openSetupWizard(ctx) {
 }
 
 function renderStep1Hosting(container, wiz, ctx, rerender) {
+  const { icon } = ctx.ui;
   const cards = document.createElement("div");
   cards.className = "grid-equal";
 
@@ -192,11 +193,11 @@ function renderStep1Hosting(container, wiz, ctx, rerender) {
   };
   elfCard.innerHTML = `
     <div class="row-between">
-      <strong>⚡ ElfHosted Public Free Instances</strong>
+      <strong style="display:inline-flex;align-items:center;gap:6px">${icon("zap", 14)} ElfHosted Public Free Instances</strong>
       <span class="pill ${wiz.hostingMode === "elfhosted" ? "ok" : ""}">1-Click Prefill</span>
     </div>
     <div style="font-size:12.5px;color:var(--muted)">
-      Zero server maintenance. Uses community-hosted <code>aiostreams.elfhosted.com</code> and <code>aiometadata.elfhosted.com</code>—Studio provisions your private encrypted UUIDs automatically.
+      Zero server maintenance. Uses community-hosted <code>aiostreams.elfhosted.com</code> and <code>aiometadata.elfhosted.com</code> — Studio provisions your private encrypted UUIDs automatically.
     </div>
   `;
 
@@ -209,7 +210,7 @@ function renderStep1Hosting(container, wiz, ctx, rerender) {
   };
   customCard.innerHTML = `
     <div class="row-between">
-      <strong>🏠 Custom / Self-Hosted URLs</strong>
+      <strong style="display:inline-flex;align-items:center;gap:6px">${icon("home", 14)} Custom / Self-Hosted URLs</strong>
       <span class="pill ${wiz.hostingMode === "custom" ? "accent" : ""}">Docker / VPS</span>
     </div>
     <div style="font-size:12.5px;color:var(--muted)">
@@ -228,7 +229,7 @@ function renderStep1Hosting(container, wiz, ctx, rerender) {
   if (wiz.hostingMode === "custom") {
     const dockerBtn = document.createElement("button");
     dockerBtn.className = "btn icon-btn accent-outline";
-    dockerBtn.textContent = "🐳 Prefill Local Docker (:3000 / :3232 / :1610)";
+    dockerBtn.textContent = "Prefill Local Docker (:3000 / :3232 / :1610)";
     dockerBtn.onclick = () => {
       ctx.setPendingEnv("AIOSTREAMS_URL", "http://localhost:3000");
       ctx.setPendingEnv("AIOMETADATA_URL", "http://localhost:3232");
@@ -265,19 +266,19 @@ function renderStep1Hosting(container, wiz, ctx, rerender) {
 }
 
 function renderStep2Keys(container, wiz, ctx, rerender) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
 
   // Primary Debrid selector
   const debBox = document.createElement("div");
   debBox.className = "rows-box";
   debBox.style.marginTop = "0";
-  debBox.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:8px">1. Choose Primary Debrid / Usenet Provider</div>`;
+  debBox.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:8px">1. Choose Primary Debrid / Usenet Provider</div>`;
   const pills = document.createElement("div");
   pills.className = "chip-row";
   DEBRID_WIZARD_OPTIONS.forEach(opt => {
     const b = document.createElement("button");
     b.className = "btn" + (wiz.debrid === opt.id ? " accent-outline" : "");
-    b.textContent = (wiz.debrid === opt.id ? "✓ " : "") + opt.label;
+    b.innerHTML = `${wiz.debrid === opt.id ? icon("check", 12) : ""} <span>${escapeHtml(opt.label)}</span>`;
     b.onclick = () => { wiz.debrid = opt.id; rerender(); };
     pills.appendChild(b);
   });
@@ -299,10 +300,10 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
   const pwHead = document.createElement("div");
   pwHead.className = "row-between";
   pwHead.style.marginBottom = "10px";
-  pwHead.innerHTML = `<div style="font-size:13px;font-weight:700">2. Instance Passwords &amp; Metadata API Keys</div>`;
+  pwHead.innerHTML = `<div style="font-size:13px;font-weight:600">2. Instance Passwords &amp; Metadata API Keys</div>`;
   const genBtn = document.createElement("button");
   genBtn.className = "btn icon-btn accent-outline";
-  genBtn.textContent = "🎲 Generate Instance Passwords";
+  genBtn.innerHTML = `${icon("wand", 12)} <span>Generate Passwords</span>`;
   genBtn.onclick = () => {
     const pw = randomPassword();
     ctx.setPendingEnv("AIOSTREAMS_PASSWORD", pw);
@@ -325,7 +326,6 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
     keyGrid.appendChild(makeWizardEnvInput(ctx, k, label, url));
   });
 
-  // RPDB with 1-click free tier helper
   const rpdbWrap = makeWizardEnvInput(ctx, "SECRET_RPDB_API_KEY", "RatingPosterDB Key (Optional)", "https://ratingposterdb.com");
   const freeRpdbBtn = document.createElement("button");
   freeRpdbBtn.className = "btn icon-btn";
@@ -355,7 +355,7 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
   const verifyBtn = document.createElement("button");
   verifyBtn.className = "btn accent-outline";
   verifyBtn.disabled = wiz.verifying;
-  verifyBtn.textContent = wiz.verifying ? "🩺 Verifying…" : "🩺 Verify Keys Live";
+  verifyBtn.innerHTML = `${icon("activity", 13)} <span>${wiz.verifying ? "Verifying…" : "Verify Keys Live"}</span>`;
   verifyBtn.onclick = async () => {
     wiz.verifying = true;
     rerender();
@@ -377,13 +377,12 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
     checksWrap.className = "cards-grid-sm";
     checksWrap.style.marginTop = "12px";
     wiz.doctorReport.checks.forEach(chk => {
-      const icon = chk.status === "ok" ? "✅" : (chk.status === "warn" ? "⚠️" : (chk.status === "error" ? "❌" : "⏭️"));
       const pillCls = chk.status === "ok" ? "ok" : (chk.status === "warn" ? "warn" : (chk.status === "error" ? "danger" : ""));
       const item = document.createElement("div");
       item.className = "env-card";
       item.innerHTML = `
         <div class="row-between">
-          <strong style="font-size:12px">${icon} ${escapeHtml(chk.label)}</strong>
+          <strong style="font-size:12px">${escapeHtml(chk.label)}</strong>
           <span class="pill ${pillCls}">${escapeHtml(chk.status)}</span>
         </div>
         <div style="font-size:11px;color:var(--muted)">${escapeHtml(chk.detail)}</div>
@@ -396,7 +395,7 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
 }
 
 function makeWizardEnvInput(ctx, key, label, signupUrl) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const spec = (ctx.state.env || []).find(e => e.key === key);
   const isSecret = spec ? Boolean(spec.isSecret) : key.startsWith("SECRET_") || key.endsWith("_PASSWORD");
   const pending = ctx.pendingEnvEdits[key] || "";
@@ -407,11 +406,11 @@ function makeWizardEnvInput(ctx, key, label, signupUrl) {
   card.innerHTML = `
     <div class="row-between">
       <strong style="font-size:12px">${escapeHtml(label)}</strong>
-      <span class="pill ${isSet ? "ok" : "warn"}">${isSet ? "Ready ✓" : "Needed"}</span>
+      <span class="pill ${isSet ? "ok" : "warn"}">${isSet ? "Ready" : "Needed"}</span>
     </div>
     <div class="row-between" style="font-size:11px;color:var(--muted)">
       <code>${escapeHtml(key)}</code>
-      ${signupUrl ? `<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noreferrer">Get Key ↗</a>` : ""}
+      ${signupUrl ? `<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noreferrer"><span>Get Key</span> ${icon("externalLink", 10)}</a>` : ""}
     </div>
   `;
   const inp = document.createElement("input");
@@ -426,7 +425,7 @@ function makeWizardEnvInput(ctx, key, label, signupUrl) {
 }
 
 function renderStep3Taste(container, wiz, ctx, rerender) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const prof = ctx.currentProfile();
 
@@ -434,7 +433,7 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
   const colBox = document.createElement("div");
   colBox.className = "rows-box";
   colBox.style.marginTop = "0";
-  colBox.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:8px">1. Pick Starter Home Collections</div>`;
+  colBox.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:8px">1. Pick Starter Home Collections</div>`;
   const colGrid = document.createElement("div");
   colGrid.className = "cards-grid-sm";
   (st.libraryCollections || [])
@@ -454,7 +453,10 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
         rerender();
       };
       const top = document.createElement("div");
-      top.className = "switch";
+      top.className = "switch chip" + (checked ? " active" : "");
+      top.style.border = "none";
+      top.style.background = "transparent";
+      top.style.padding = "0";
       top.append(chk, document.createTextNode(lc.title));
       const sub = document.createElement("div");
       sub.style.fontSize = "11px";
@@ -469,10 +471,10 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
   const regRecipe = (st.libraryCollections || []).find(lc => lc.id === "regional-cinema");
   if (regRecipe && Array.isArray(regRecipe.presets) && regRecipe.presets.length) {
     const regTitle = document.createElement("div");
-    regTitle.style.fontSize = "12.5px";
+    regTitle.style.fontSize = "12px";
     regTitle.style.fontWeight = "600";
     regTitle.style.margin = "14px 0 6px";
-    regTitle.textContent = "🌍 Optional Regional Cinema Shelves:";
+    regTitle.textContent = "Optional Regional Cinema Shelves";
     colBox.appendChild(regTitle);
     const regChips = document.createElement("div");
     regChips.className = "chip-row";
@@ -481,7 +483,7 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
       const active = wiz.selectedRegional.has(code);
       const b = document.createElement("button");
       b.className = "btn icon-btn" + (active ? " accent-outline" : "");
-      b.textContent = `${active ? "✓ " : "+ "}${pr.label}`;
+      b.innerHTML = `${icon(active ? "check" : "plus", 12)} <span>${escapeHtml(pr.label)}</span>`;
       b.onclick = () => {
         if (active) wiz.selectedRegional.delete(code);
         else wiz.selectedRegional.add(code);
@@ -496,7 +498,7 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
   // Subtitle & Dual-Sub preferences
   const subBox = document.createElement("div");
   subBox.className = "rows-box";
-  subBox.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:8px">2. Subtitles &amp; Bilingual Dual-Subtitles</div>`;
+  subBox.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:8px">2. Subtitles &amp; Bilingual Dual-Subtitles</div>`;
   const subGrid = document.createElement("div");
   subGrid.className = "grid-equal";
 
@@ -591,7 +593,7 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
 
   const authBtn = document.createElement("button");
   authBtn.className = "btn accent-outline";
-  authBtn.textContent = nuvioReady ? "🔄 Re-Authenticate" : "🔐 Sign In to Nuvio";
+  authBtn.innerHTML = `${icon(nuvioReady ? "refresh" : "lock", 13)} <span>${nuvioReady ? "Re-Authenticate" : "Sign In to Nuvio"}</span>`;
   authBtn.onclick = async () => {
     authBtn.disabled = true;
     try {
@@ -614,7 +616,7 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
 }
 
 function renderStep4Launch(container, wiz, ctx, rerender) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const prof = ctx.currentProfile();
   const nuvioReady = Boolean(prof?.nuvio?.loginReady);
@@ -625,7 +627,7 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
     ["Hosting", wiz.hostingMode === "elfhosted" ? "ElfHosted Public" : "Custom Self-Hosted"],
     ["Primary Provider", wiz.debrid.toUpperCase()],
     ["Home Shelves", `${wiz.selectedCols.size + wiz.selectedRegional.size} collections selected`],
-    ["Nuvio Sync", nuvioReady ? "Authenticated & Ready ✅" : "Instances only (sign in anytime)"],
+    ["Nuvio Sync", nuvioReady ? "Authenticated & Ready" : "Instances only (sign in anytime)"],
   ].forEach(([k, v]) => {
     const c = document.createElement("div");
     c.className = "env-card";
@@ -652,14 +654,14 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
   launchBtn.className = "btn primary";
   launchBtn.style.marginTop = "12px";
   launchBtn.disabled = wiz.launching;
-  launchBtn.textContent = wiz.launching
-    ? "⏳ Provisioning & Streaming Push…"
-    : "🚀 Provision Instances & Push to Nuvio";
+  launchBtn.innerHTML = wiz.launching
+    ? `<span>Provisioning &amp; Streaming Push…</span>`
+    : `${icon("upload", 14)} <span>Provision Instances &amp; Push to Nuvio</span>`;
 
   launchBtn.onclick = async () => {
     wiz.launching = true;
     wiz.launchError = "";
-    wiz.launchSteps = ["Saving wizard preferences & keys…"];
+    wiz.launchSteps = ["> Saving wizard preferences & keys…"];
     rerender();
 
     try {
@@ -717,18 +719,18 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
 
       const alreadyProv = ctx.state.tenant?.aiostreamsProvisioned && ctx.state.tenant?.aiometadataProvisioned;
       if (!alreadyProv) {
-        wiz.launchSteps.push("Provisioning AIOStreams & AIOMetadata UUIDs…");
+        wiz.launchSteps.push("> Provisioning AIOStreams & AIOMetadata UUIDs…");
         rerender();
         const provRes = await ctx.api("/api/provision", {});
-        (provRes.steps || []).forEach(s => wiz.launchSteps.push(`✓ ${s}`));
+        (provRes.steps || []).forEach(s => wiz.launchSteps.push(`+ ${s}`));
         rerender();
       }
 
       const pushTarget = "all";
-      wiz.launchSteps.push(`Streaming workspace push (target: ${pushTarget})…`);
+      wiz.launchSteps.push(`> Streaming workspace push (target: ${pushTarget})…`);
       rerender();
       await ctx.streamPush({ target: pushTarget }, (stepLine) => {
-        wiz.launchSteps.push(`✓ ${stepLine}`);
+        wiz.launchSteps.push(`+ ${stepLine}`);
         rerender();
       });
 
@@ -749,7 +751,7 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
     logOut.style.marginBottom = "0";
     if (wiz.launchError) logOut.classList.add("error");
     logOut.innerHTML = wiz.launchSteps.map(s => `<div>${escapeHtml(s)}</div>`).join("") +
-      (wiz.launchError ? `<div style="color:#f87171;margin-top:6px">❌ ${escapeHtml(wiz.launchError)}</div>` : "");
+      (wiz.launchError ? `<div style="color:var(--danger);margin-top:6px">ERROR: ${escapeHtml(wiz.launchError)}</div>` : "");
     launchBox.appendChild(logOut);
   }
 
@@ -765,7 +767,7 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
       a1.href = tInfo.aiostreamsConfigureUrl;
       a1.target = "_blank";
       a1.rel = "noreferrer";
-      a1.textContent = "🔧 Open AIOStreams Configure ↗";
+      a1.innerHTML = `<span>Open AIOStreams Configure</span> ${icon("externalLink", 12)}`;
       linksRow.appendChild(a1);
     }
     if (tInfo.aiometadataConfigureUrl) {
@@ -774,7 +776,7 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
       a2.href = tInfo.aiometadataConfigureUrl;
       a2.target = "_blank";
       a2.rel = "noreferrer";
-      a2.textContent = "🎬 Open AIOMetadata Configure ↗";
+      a2.innerHTML = `<span>Open AIOMetadata Configure</span> ${icon("externalLink", 12)}`;
       linksRow.appendChild(a2);
     }
     launchBox.appendChild(linksRow);

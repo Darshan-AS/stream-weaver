@@ -16,10 +16,10 @@ export function renderAioManagerTab(root, ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. AIOManager Cloud Sync & Autopilot Panel
+// AIOManager Cloud Sync & Autopilot Panel
 // ---------------------------------------------------------------------------
 function renderCloudSyncAndAutopilotCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { icon } = ctx.ui;
   const st = ctx.state;
   const mgr = st.aiomanagerPower || {
     present: true,
@@ -44,13 +44,14 @@ function renderCloudSyncAndAutopilotCard(ctx) {
   card.innerHTML = `
     <div class="row-between" style="flex-wrap:wrap">
       <div>
-        <h2>1. AIOManager Cloud Sync &amp; Autopilot Failover</h2>
-        <p class="sub" style="margin-bottom:0">Optional AES-256-GCM encrypted cloud reconciliation across Stremio &amp; Nuvio accounts, shared key vault, and Autopilot health failover. (When left blank, Studio syncs directly to Nuvio Cloud.)</p>
+        <div class="card-eyebrow">${icon("cloud", 12)} Cloud Sync &amp; Autopilot</div>
+        <h2>AIOManager Cloud Sync &amp; Failover</h2>
+        <p class="sub" style="margin-bottom:0">Optional AES-256-GCM encrypted cloud reconciliation across Stremio &amp; Nuvio accounts, shared key vault, and Autopilot health failover. When left blank, Studio syncs directly to Nuvio Cloud.</p>
       </div>
       <div class="row-wrap">
-        <span class="pill ${isSynced ? "ok" : ""}">${isSynced ? "Cloud Sync Configured ✓" : "Optional — Direct Nuvio Sync"}</span>
+        <span class="pill ${isSynced ? "ok" : ""}">${isSynced ? "Cloud Sync Active" : "Optional · Direct Nuvio Sync"}</span>
         <span class="pill ${mgr.webhookLinked ? "ok" : ""}">${mgr.webhookLinked ? "Webhook Linked" : "No Webhook"}</span>
-        <span class="pill accent">🔐 Vault Keys: ${Number(mgr.vaultCount || 0)}</span>
+        <span class="pill accent">Vault Keys: ${Number(mgr.vaultCount || 0)}</span>
       </div>
     </div>
   `;
@@ -90,14 +91,14 @@ function renderCloudSyncAndAutopilotCard(ctx) {
 
   const autoToggleWrap = document.createElement("div");
   autoToggleWrap.appendChild(
-    ctx.ui.makeSwitch("🛡️ Enable AIOManager Autopilot Failover & Auto-Sync", Boolean(mgr.autopilotEnabled), (v) => {
+    ctx.ui.makeSwitch("Enable AIOManager Autopilot Failover & Auto-Sync", Boolean(mgr.autopilotEnabled), (v) => {
       mgr.autopilotEnabled = v;
       ctx.saveSection("aiomanagerPower", true);
     })
   );
   autoToggleWrap.insertAdjacentHTML(
     "beforeend",
-    `<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Monitors upstream addon health and automatically reconciles household client accounts on schedule.</div>`
+    `<div style="font-size:11.5px;color:var(--muted);margin-top:5px">Monitors upstream addon health and automatically reconciles household client accounts on schedule.</div>`
   );
 
   const intLbl = document.createElement("label");
@@ -143,7 +144,7 @@ function renderCloudSyncAndAutopilotCard(ctx) {
     openLink.href = mgrBase;
     openLink.target = "_blank";
     openLink.rel = "noreferrer";
-    openLink.textContent = "☁️ Open AIOManager Dashboard ↗";
+    openLink.innerHTML = `<span>Open AIOManager Dashboard</span> ${icon("externalLink", 12)}`;
     linkRow.appendChild(openLink);
     autoBox.appendChild(linkRow);
   }
@@ -153,10 +154,10 @@ function renderCloudSyncAndAutopilotCard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Managed Household Accounts (Dual-Client Status per Profile)
+// Managed Household Accounts (Dual-Client Status per Profile)
 // ---------------------------------------------------------------------------
 function renderManagedAccountsCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const managedBySlug = {};
   (st.aiomanagerPower?.managedAccounts || []).forEach(acc => {
@@ -170,13 +171,14 @@ function renderManagedAccountsCard(ctx) {
   top.style.marginBottom = "12px";
   top.innerHTML = `
     <div>
-      <h2>2. Managed Household Accounts (${(st.profiles || []).length})</h2>
+      <div class="card-eyebrow">${icon("users", 12)} Household Accounts</div>
+      <h2>Managed Household Accounts (${(st.profiles || []).length})</h2>
       <p class="sub" style="margin-bottom:0">Each Stream Weaver profile compiles into a managed household account with dual Nuvio + Stremio client bindings.</p>
     </div>
   `;
   const newProfBtn = document.createElement("button");
   newProfBtn.className = "btn accent-outline";
-  newProfBtn.textContent = "+ New Household Profile";
+  newProfBtn.innerHTML = `${icon("plus", 13)} <span>New Household Profile</span>`;
   newProfBtn.onclick = () => ctx.openNewProfileModal();
   top.appendChild(newProfBtn);
   card.appendChild(top);
@@ -195,11 +197,11 @@ function renderManagedAccountsCard(ctx) {
     box.className = "pack-card" + (idx === ctx.activeProfileIdx ? " on" : "");
     box.innerHTML = `
       <div class="row-between">
-        <strong style="font-size:14px">${escapeHtml(prof.emoji || "🎬")} ${escapeHtml(prof.displayName)} <span style="color:var(--muted);font-weight:400">(${escapeHtml(prof.name)})</span></strong>
+        <strong style="font-size:13.5px">${escapeHtml(prof.emoji || "🎬")} ${escapeHtml(prof.displayName)} <span style="color:var(--muted);font-weight:400">(${escapeHtml(prof.name)})</span></strong>
         <span class="pill accent">${addonsCount} Addons</span>
       </div>
       <div class="chip-row">
-        <span class="pill ${nuvioOk ? "ok" : "warn"}">Nuvio: ${nuvioOk ? "Connected ✓" : "Sign-In Needed"}</span>
+        <span class="pill ${nuvioOk ? "ok" : "warn"}">Nuvio: ${nuvioOk ? "Connected" : "Sign-In Needed"}</span>
         <span class="pill ${stremioOn ? "ok" : ""}">Stremio: ${stremioOn ? "Dual-Sync On" : "Off"}</span>
         <span class="pill">Metadata: <code>${escapeHtml(metaInst)}</code></span>
       </div>
@@ -221,7 +223,7 @@ function renderManagedAccountsCard(ctx) {
     if (idx !== ctx.activeProfileIdx) {
       const editBtn = document.createElement("button");
       editBtn.className = "btn icon-btn";
-      editBtn.textContent = "Select Profile →";
+      editBtn.textContent = "Select";
       editBtn.onclick = () => ctx.selectProfile(idx);
       actions.appendChild(editBtn);
     }
@@ -234,10 +236,10 @@ function renderManagedAccountsCard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Profile Standalone Addons Manager (`p.extraAddons`)
+// Profile Standalone Addons Manager (`p.extraAddons`)
 // ---------------------------------------------------------------------------
 function renderStandaloneAddonsCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const p = ctx.currentProfile();
   const card = document.createElement("div");
   card.className = "card";
@@ -261,11 +263,11 @@ function renderStandaloneAddonsCard(ctx) {
   }
 
   card.innerHTML = `
-    <h2>3. Profile Standalone Addons — ${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</h2>
+    <div class="card-eyebrow">${icon("package", 12)} Standalone Addons</div>
+    <h2>Profile Standalone Addons — ${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</h2>
     <p class="sub">Install standalone Stremio/Nuvio addons (BingeCat, Cinemeta, StremThru, AnimeCatalogs, Contraband, etc.) directly onto <strong>${escapeHtml(p.displayName)}</strong> alongside AIOStreams &amp; AIOMetadata.</p>
   `;
 
-  // Installer Bar
   const instBox = document.createElement("div");
   instBox.className = "rows-box";
   instBox.style.marginTop = "0";
@@ -286,7 +288,7 @@ function renderStandaloneAddonsCard(ctx) {
 
   const inspBtn = document.createElement("button");
   inspBtn.className = "btn accent-outline";
-  inspBtn.textContent = "🔎 Inspect Manifest";
+  inspBtn.innerHTML = `${icon("search", 13)} <span>Inspect Manifest</span>`;
   inspBtn.onclick = async () => {
     if (!urlIn.value.trim()) return;
     inspBtn.disabled = true;
@@ -303,7 +305,7 @@ function renderStandaloneAddonsCard(ctx) {
 
   const directAddBtn = document.createElement("button");
   directAddBtn.className = "btn";
-  directAddBtn.textContent = "+ Add URL Directly";
+  directAddBtn.innerHTML = `${icon("plus", 13)} <span>Add URL Directly</span>`;
   directAddBtn.onclick = () => {
     const raw = urlIn.value.trim();
     if (!raw) return;
@@ -352,7 +354,7 @@ function renderStandaloneAddonsCard(ctx) {
 
     const addBtn = document.createElement("button");
     addBtn.className = "btn primary";
-    addBtn.textContent = `+ Add to ${p.displayName}`;
+    addBtn.innerHTML = `${icon("plus", 14)} <span>Add to ${escapeHtml(p.displayName)}</span>`;
     addBtn.onclick = () => {
       const slug = (m.name || m.id || "addon").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "addon";
       p.extraAddons.push({
@@ -371,7 +373,6 @@ function renderStandaloneAddonsCard(ctx) {
   }
   card.appendChild(instBox);
 
-  // Installed Standalone Addons List
   const list = document.createElement("div");
   list.className = "col-list";
   list.style.marginTop = "14px";
@@ -407,8 +408,8 @@ function renderStandaloneAddonsCard(ctx) {
     }
     if (addon.name !== "cinemeta") {
       const rm = document.createElement("button");
-      rm.className = "btn icon-btn danger";
-      rm.textContent = "✕ Remove";
+      rm.className = "btn ghost icon-btn danger";
+      rm.innerHTML = `${icon("trash", 12)} <span>Remove</span>`;
       rm.onclick = () => {
         p.extraAddons.splice(idx, 1);
         ctx.saveSection("profile", true);

@@ -168,7 +168,7 @@ def test_static_assets_served_and_path_traversal_rejected(tmp_path: Path) -> Non
     assert css_resp.content_type == "text/css; charset=utf-8"
     assert b"--accent" in css_resp.body
 
-    for js_asset in ("app.js", "wizard.js", "home.js", "streams.js", "aiomanager.js", "nuvio.js", "keys.js"):
+    for js_asset in ("icons.js", "app.js", "wizard.js", "home.js", "streams.js", "aiomanager.js", "nuvio.js", "keys.js"):
         js_resp = dispatcher.dispatch("GET", f"/static/{js_asset}")
         assert js_resp.status == 200, js_asset
         assert js_resp.content_type == "application/javascript; charset=utf-8"

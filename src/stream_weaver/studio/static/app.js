@@ -1,5 +1,6 @@
-// Stream Weaver Studio v2 — Core State Store, NDJSON Stream Client & Global Modals
+// Stream Weaver Studio v2 — Core State Store, NDJSON Stream Client, Command Palette & Global Modals
 
+import { icon } from "./icons.js";
 import { openSetupWizard } from "./wizard.js";
 import { renderHomeTab } from "./home.js";
 import { renderStreamsTab } from "./streams.js";
@@ -9,6 +10,14 @@ import { renderKeysTab } from "./keys.js";
 
 const STORAGE_KEY = "stream_weaver_studio_bundle_v1";
 const CSRF_TOKEN = document.querySelector('meta[name="sw-csrf-token"]')?.content || "";
+
+const TAB_TITLES = {
+  home: "Home & Simulator",
+  streams: "AIOStreams & Metadata",
+  aiomanager: "AIOManager & Addons",
+  nuvio: "Nuvio & Visuals",
+  keys: "Keys & Accounts",
+};
 
 let appMode = "local";
 let bundle = null;
@@ -128,6 +137,12 @@ function renderColoredDiff(unifiedDiff) {
   return pre;
 }
 
+function closeSidebarMobile() {
+  document.getElementById("sidebar")?.classList.remove("open");
+  const bd = document.getElementById("sidebar-backdrop");
+  if (bd) bd.hidden = true;
+}
+
 // ---------------------------------------------------------------------------
 // Log Drawer & Clipboard
 // ---------------------------------------------------------------------------
@@ -137,7 +152,7 @@ function showLog(title, lines = [], isError = false) {
   const stepsEl = document.getElementById("log-drawer-steps");
   drawer.hidden = false;
   drawer.classList.toggle("error", isError);
-  titleEl.textContent = `${isError ? "❌" : "✅"} ${title}`;
+  titleEl.innerHTML = `${icon(isError ? "alert" : "check", 14)} <span>${escapeHtml(title)}</span>`;
   stepsEl.innerHTML = "";
   (lines || []).forEach(line => {
     const d = document.createElement("div");
@@ -151,7 +166,7 @@ function appendLogStep(stepText) {
   const stepsEl = document.getElementById("log-drawer-steps");
   drawer.hidden = false;
   const d = document.createElement("div");
-  d.textContent = `✓ ${stepText}`;
+  d.textContent = `> ${stepText}`;
   stepsEl.appendChild(d);
   stepsEl.scrollTop = stepsEl.scrollHeight;
 }
@@ -400,7 +415,7 @@ async function saveSection(section, quiet = true) {
 }
 
 // ---------------------------------------------------------------------------
-// Modal Host & Global Modals (New Profile, Raw JSON, Doctor, Diff)
+// Modal Host & Command Palette + Global Modals
 // ---------------------------------------------------------------------------
 function openModal(renderFn) {
   const backdrop = document.getElementById("modal-backdrop");
@@ -418,15 +433,130 @@ function closeModal() {
   root.innerHTML = "";
 }
 
+function openCommandPalette() {
+  openModal((dialog) => {
+    dialog.classList.add("modal-cmdk");
+    let query = "";
+    let selectedIdx = 0;
+
+    const getItems = () => {
+      const items = [
+        { group: "Navigation", label: "Home & Nuvio Simulator", ic: "home", kbd: "1", run: () => { activeTab = "home"; render(); } },
+        { group: "Navigation", label: "AIOStreams & AIOMetadata Power", ic: "zap", kbd: "2", run: () => { activeTab = "streams"; render(); } },
+        { group: "Navigation", label: "AIOManager & Standalone Addons", ic: "cloud", kbd: "3", run: () => { activeTab = "aiomanager"; render(); } },
+        { group: "Navigation", label: "Nuvio Themes, Badges & Operations", ic: "sliders", kbd: "4", run: () => { activeTab = "nuvio"; render(); } },
+        { group: "Navigation", label: "Keys, Secrets & Account Logins", ic: "key", kbd: "5", run: () => { activeTab = "keys"; render(); } },
+        { group: "Tools & Actions", label: "Launch Day-0 Setup Wizard", ic: "compass", run: () => openSetupWizard(makeCtx()) },
+        { group: "Tools & Actions", label: "Run Live Health Doctor", ic: "activity", run: () => openDoctorModal() },
+        { group: "Tools & Actions", label: "Inspect Local vs. Remote Drift Diff", ic: "gitDiff", run: () => openDiffModal() },
+        { group: "Tools & Actions", label: "Open Raw JSON Escape Hatch", ic: "code", run: () => openRawJsonModal("aiostreams") },
+        { group: "Tools & Actions", label: "Create Household Profile", ic: "users", run: () => openNewProfileModal() },
+        { group: "Tools & Actions", label: "Save Workspace Changes", ic: "save", run: () => saveChanges(false) },
+        { group: "Tools & Actions", label: "Save & Push Live to AIO + Nuvio", ic: "upload", run: () => document.getElementById("btn-push")?.click() },
+        { group: "Tools & Actions", label: "Pull Live Configs into Workspace", ic: "download", run: () => document.getElementById("btn-pull")?.click() },
+        { group: "Tools & Actions", label: "Export Portable GitOps Zip", ic: "package", run: () => document.getElementById("btn-export")?.click() },
+      ];
+      (state?.profiles || []).forEach((pr, idx) => {
+        items.push({
+          group: "Household Profiles",
+          label: `Switch to ${pr.displayName} (${pr.name})`,
+          ic: "users",
+          kbd: idx === activeProfileIdx ? "Active" : "",
+          run: () => { activeProfileIdx = idx; render(); },
+        });
+      });
+      const q = query.trim().toLowerCase();
+      return q ? items.filter(it => it.label.toLowerCase().includes(q) || it.group.toLowerCase().includes(q)) : items;
+    };
+
+    const head = document.createElement("div");
+    head.className = "cmdk-head";
+    head.innerHTML = icon("search", 15);
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "cmdk-input";
+    inp.placeholder = "Type a command, tab, tool, or household profile…";
+    head.appendChild(inp);
+    const escKbd = document.createElement("kbd");
+    escKbd.textContent = "ESC";
+    head.appendChild(escKbd);
+
+    const listEl = document.createElement("div");
+    listEl.className = "cmdk-list";
+    dialog.append(head, listEl);
+
+    const paintList = () => {
+      const items = getItems();
+      if (selectedIdx >= items.length) selectedIdx = Math.max(0, items.length - 1);
+      listEl.innerHTML = "";
+      if (!items.length) {
+        listEl.innerHTML = `<div style="padding:18px;text-align:center;font-size:12.5px;color:var(--muted)">No matching commands.</div>`;
+        return;
+      }
+      let lastGroup = "";
+      items.forEach((it, idx) => {
+        if (it.group !== lastGroup) {
+          lastGroup = it.group;
+          const gl = document.createElement("div");
+          gl.className = "cmdk-group-lbl";
+          gl.textContent = lastGroup;
+          listEl.appendChild(gl);
+        }
+        const btn = document.createElement("button");
+        btn.className = "cmdk-item" + (idx === selectedIdx ? " active" : "");
+        btn.innerHTML = `
+          <span class="cmdk-item-left">${icon(it.ic, 14)} <span>${escapeHtml(it.label)}</span></span>
+          ${it.kbd ? `<kbd>${escapeHtml(it.kbd)}</kbd>` : ""}
+        `;
+        btn.onmouseenter = () => {
+          selectedIdx = idx;
+          Array.from(listEl.querySelectorAll(".cmdk-item")).forEach((el, j) => el.classList.toggle("active", j === selectedIdx));
+        };
+        btn.onclick = () => {
+          closeModal();
+          it.run();
+        };
+        listEl.appendChild(btn);
+      });
+    };
+
+    inp.oninput = () => {
+      query = inp.value;
+      selectedIdx = 0;
+      paintList();
+    };
+    inp.onkeydown = (e) => {
+      const items = getItems();
+      if (e.key === "ArrowDown" && items.length) {
+        e.preventDefault();
+        selectedIdx = (selectedIdx + 1) % items.length;
+        paintList();
+      } else if (e.key === "ArrowUp" && items.length) {
+        e.preventDefault();
+        selectedIdx = (selectedIdx - 1 + items.length) % items.length;
+        paintList();
+      } else if (e.key === "Enter" && items[selectedIdx]) {
+        e.preventDefault();
+        const chosen = items[selectedIdx];
+        closeModal();
+        chosen.run();
+      }
+    };
+
+    paintList();
+    setTimeout(() => inp.focus(), 10);
+  });
+}
+
 function openNewProfileModal() {
   const emojis = ["🎬", "🍿", "🧸", "🎮", "🌙", "🎭", "🚀", "💎"];
-  const colors = ["#38bdf8", "#ef4444", "#a855f7", "#10b981", "#f59e0b", "#ec4899"];
+  const colors = ["#818cf8", "#38bdf8", "#f43f5e", "#22c55e", "#f59e0b", "#ec4899"];
   const formState = {
     displayName: "",
     name: "",
     slugTouched: false,
     emoji: "🍿",
-    accentColor: "#a855f7",
+    accentColor: "#818cf8",
     preset: "standard",
     sourceProfile: (state?.profiles?.[0]?.name) || "main",
     nuvioProfileName: "",
@@ -441,13 +571,13 @@ function openNewProfileModal() {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:17px">👨‍👩‍👧‍👦 Create Household Profile</h2>
-          <p class="sub" style="margin:3px 0 0">Add a family member with their own shelves, Nuvio sub-profile, theme, and optional dedicated AIOMetadata instance.</p>
+          <h2>${icon("users", 17)} Create Household Profile</h2>
+          <p class="sub" style="margin:3px 0 0">Add a household member with dedicated shelves, Nuvio sub-profile, theme, and optional isolated AIOMetadata instance.</p>
         </div>
       `;
       const xBtn = document.createElement("button");
-      xBtn.className = "btn icon-btn";
-      xBtn.textContent = "✕";
+      xBtn.className = "btn ghost icon-btn";
+      xBtn.innerHTML = icon("x", 15);
       xBtn.onclick = closeModal;
       head.appendChild(xBtn);
       dialog.appendChild(head);
@@ -487,7 +617,7 @@ function openNewProfileModal() {
       styleRow.style.marginTop = "12px";
 
       const emBox = document.createElement("div");
-      emBox.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:6px">Avatar Emoji</div>`;
+      emBox.innerHTML = `<div style="font-size:12px;font-weight:500;color:var(--text-soft);margin-bottom:6px">Avatar Badge</div>`;
       const emRow = document.createElement("div");
       emRow.className = "chip-row";
       emojis.forEach(em => {
@@ -500,7 +630,7 @@ function openNewProfileModal() {
       emBox.appendChild(emRow);
 
       const colBox = document.createElement("div");
-      colBox.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:6px">Accent Color</div>`;
+      colBox.innerHTML = `<div style="font-size:12px;font-weight:500;color:var(--text-soft);margin-bottom:6px">Accent Color</div>`;
       const colRow = document.createElement("div");
       colRow.className = "chip-row";
       colors.forEach(clr => {
@@ -517,20 +647,26 @@ function openNewProfileModal() {
       // Preset Picker
       const presetBox = document.createElement("div");
       presetBox.className = "rows-box";
-      presetBox.innerHTML = `<div style="font-size:12.5px;font-weight:700;margin-bottom:8px">Starter Collection Preset</div>`;
+      presetBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Starter Collection Preset</div>`;
       const pCards = document.createElement("div");
       pCards.className = "cards-grid-sm";
       [
-        ["standard", "🎬 Standard", "All 7 curated discovery, studio & genre collections"],
-        ["minimal", "⚡ Minimal", "Streamlined Discovery, Streaming Services & Genres"],
-        ["kids", "🧸 Kids & Family", "Animation, Pixar/Ghibli & family-safe shelves (no horror)"],
-        ["clone", "🧬 Clone Existing", "Copy shelves & settings from an existing household profile"],
+        ["standard", "Standard", "All 7 curated discovery, studio & genre collections"],
+        ["minimal", "Minimal", "Streamlined Discovery, Streaming Services & Genres"],
+        ["kids", "Kids & Family", "Animation, Pixar/Ghibli & family-safe shelves (no horror)"],
+        ["clone", "Clone Existing", "Copy shelves & settings from an existing household profile"],
       ].forEach(([pid, title, desc]) => {
         const c = document.createElement("div");
         c.className = "pack-card" + (formState.preset === pid ? " on" : "");
         c.style.cursor = "pointer";
         c.onclick = () => { formState.preset = pid; paint(); };
-        c.innerHTML = `<strong>${escapeHtml(title)}</strong><div style="font-size:11.5px;color:var(--muted)">${escapeHtml(desc)}</div>`;
+        c.innerHTML = `
+          <div class="row-between">
+            <strong>${escapeHtml(title)}</strong>
+            ${formState.preset === pid ? `<span class="pill accent">Selected</span>` : ""}
+          </div>
+          <div style="font-size:11.5px;color:var(--muted)">${escapeHtml(desc)}</div>
+        `;
         pCards.appendChild(c);
       });
       presetBox.appendChild(pCards);
@@ -544,7 +680,7 @@ function openNewProfileModal() {
         (state.profiles || []).forEach(pr => {
           const o = document.createElement("option");
           o.value = pr.name;
-          o.textContent = `${pr.emoji || "🎬"} ${pr.displayName} (${pr.name})`;
+          o.textContent = `${pr.displayName} (${pr.name})`;
           if (formState.sourceProfile === pr.name) o.selected = true;
           srcSel.appendChild(o);
         });
@@ -572,7 +708,7 @@ function openNewProfileModal() {
       const chkStack = document.createElement("div");
       chkStack.style.display = "flex";
       chkStack.style.flexDirection = "column";
-      chkStack.style.gap = "8px";
+      chkStack.style.gap = "9px";
       chkStack.appendChild(
         makeSwitch("Dedicated AIOMetadata Instance (creates isolated aiometadata.<profile>.json)", formState.dedicatedMetadataInstance, (v) => {
           formState.dedicatedMetadataInstance = v;
@@ -596,7 +732,7 @@ function openNewProfileModal() {
 
       const createBtn = document.createElement("button");
       createBtn.className = "btn primary";
-      createBtn.textContent = "+ Create Household Profile";
+      createBtn.innerHTML = `${icon("plus", 14)} <span>Create Profile</span>`;
       createBtn.onclick = async () => {
         if (!formState.name.trim()) {
           showLog("Enter a profile name / slug.", [], true);
@@ -669,7 +805,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
         }
         renderEditor(res.content || "{}");
       } catch (err) {
-        dialog.innerHTML = `<div style="padding:20px;color:#f87171">Failed to load ${escapeHtml(activeDoc)}: ${escapeHtml(err.message)}</div>`;
+        dialog.innerHTML = `<div style="padding:20px;color:var(--danger)">Failed to load ${escapeHtml(activeDoc)}: ${escapeHtml(err.message)}</div>`;
       }
     };
 
@@ -679,23 +815,23 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:17px">🛠️ Raw JSON Escape Hatch</h2>
-          <p class="sub" style="margin:3px 0 0">Validated against Stream Weaver schemas on save. Any raw secrets pasted into service configs are automatically harvested into <code>.env</code> and scrubbed into <code>{{SECRET_*}}</code> placeholders.</p>
+          <h2>${icon("code", 17)} Raw JSON Escape Hatch</h2>
+          <p class="sub" style="margin:3px 0 0">Validated against Stream Weaver schemas on save. Raw secrets pasted into service configs are automatically harvested into <code>.env</code> and scrubbed into <code>{{SECRET_*}}</code> placeholders.</p>
         </div>
       `;
       const xBtn = document.createElement("button");
-      xBtn.className = "btn icon-btn";
-      xBtn.textContent = "✕";
+      xBtn.className = "btn ghost icon-btn";
+      xBtn.innerHTML = icon("x", 15);
       xBtn.onclick = closeModal;
       head.appendChild(xBtn);
       dialog.appendChild(head);
 
       const docTabs = document.createElement("div");
-      docTabs.className = "tabs";
+      docTabs.className = "segmented";
       docTabs.style.margin = "12px 0";
       availableDocs.forEach(dk => {
         const b = document.createElement("button");
-        b.className = "tab" + (dk === activeDoc ? " active" : "");
+        b.className = "seg-btn" + (dk === activeDoc ? " active" : "");
         b.textContent = dk;
         b.onclick = () => {
           activeDoc = dk;
@@ -710,11 +846,11 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
       statusRow.style.marginBottom = "8px";
       const syntaxPill = document.createElement("span");
       syntaxPill.className = "pill ok";
-      syntaxPill.textContent = "Valid JSON ✓";
+      syntaxPill.textContent = "Valid JSON";
 
       const fmtBtn = document.createElement("button");
       fmtBtn.className = "btn icon-btn";
-      fmtBtn.textContent = "✨ Format Pretty JSON";
+      fmtBtn.innerHTML = `${icon("sparkles", 13)} <span>Format JSON</span>`;
       statusRow.append(syntaxPill, fmtBtn);
       dialog.appendChild(statusRow);
 
@@ -726,7 +862,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
         try {
           JSON.parse(editor.value);
           syntaxPill.className = "pill ok";
-          syntaxPill.textContent = "Valid JSON ✓";
+          syntaxPill.textContent = "Valid JSON";
         } catch (e) {
           syntaxPill.className = "pill danger";
           syntaxPill.textContent = `JSON Syntax Error: ${e.message}`;
@@ -736,7 +872,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
         try {
           editor.value = JSON.stringify(JSON.parse(editor.value), null, 2) + "\n";
           syntaxPill.className = "pill ok";
-          syntaxPill.textContent = "Formatted ✓";
+          syntaxPill.textContent = "Formatted";
         } catch (e) {
           syntaxPill.className = "pill danger";
           syntaxPill.textContent = `Cannot format: ${e.message}`;
@@ -754,7 +890,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
 
       const saveBtn = document.createElement("button");
       saveBtn.className = "btn primary";
-      saveBtn.textContent = "💾 Validate, Scrub Secrets & Save";
+      saveBtn.innerHTML = `${icon("save", 14)} <span>Validate, Scrub &amp; Save</span>`;
       saveBtn.onclick = async () => {
         saveBtn.disabled = true;
         try {
@@ -767,7 +903,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
             editor.value = saved.content;
           }
           syntaxPill.className = "pill ok";
-          syntaxPill.textContent = "Saved & Scrubbed ✓";
+          syntaxPill.textContent = "Saved & Scrubbed";
           render();
           showLog(`Saved raw document "${activeDoc}" (secrets scrubbed & derived files synced).`, []);
         } catch (err) {
@@ -787,7 +923,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
 
 function openDoctorModal() {
   openModal(async (dialog) => {
-    dialog.innerHTML = `<div style="padding:20px;color:var(--muted)">🩺 Probing workspace health &amp; live API keys…</div>`;
+    dialog.innerHTML = `<div style="padding:20px;color:var(--muted)">Probing workspace health &amp; live API keys…</div>`;
     try {
       const res = await api("/api/doctor", { pendingEnv: pendingEnvEdits });
       const rep = res.report || res;
@@ -798,14 +934,14 @@ function openDoctorModal() {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:17px">🩺 Workspace Health Doctor</h2>
+          <h2>${icon("activity", 17)} Workspace Health Doctor</h2>
           <p class="sub" style="margin:3px 0 0">Live verification across required <code>.env</code> keys, AIOStreams/AIOMetadata manifests, Debrid tokens, and TMDB/MDBList.</p>
         </div>
         <span class="pill ${ov === "healthy" ? "ok" : (ov === "warn" ? "warn" : "danger")}">${escapeHtml(ov.toUpperCase())} (${sum.ok || 0} ok · ${sum.warn || 0} warn · ${sum.error || 0} err)</span>
       `;
       const xBtn = document.createElement("button");
-      xBtn.className = "btn icon-btn";
-      xBtn.textContent = "✕";
+      xBtn.className = "btn ghost icon-btn";
+      xBtn.innerHTML = icon("x", 15);
       xBtn.onclick = closeModal;
       head.appendChild(xBtn);
       dialog.appendChild(head);
@@ -828,7 +964,7 @@ function openDoctorModal() {
       });
       dialog.appendChild(grid);
     } catch (err) {
-      dialog.innerHTML = `<div style="padding:20px;color:#f87171">Doctor failed: ${escapeHtml(err.message)}</div>`;
+      dialog.innerHTML = `<div style="padding:20px;color:var(--danger)">Doctor failed: ${escapeHtml(err.message)}</div>`;
     }
   });
 }
@@ -836,7 +972,7 @@ function openDoctorModal() {
 function openDiffModal() {
   openModal(async (dialog) => {
     dialog.classList.add("modal-wide");
-    dialog.innerHTML = `<div style="padding:20px;color:var(--muted)">🔍 Comparing local GitOps documents against live remote servers…</div>`;
+    dialog.innerHTML = `<div style="padding:20px;color:var(--muted)">Comparing local GitOps documents against live remote servers…</div>`;
     try {
       if (dirty) await saveChanges(true);
       const res = await api("/api/diff", { target: "all" });
@@ -846,13 +982,13 @@ function openDiffModal() {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:17px">🔍 Local vs. Remote Drift Diff</h2>
+          <h2>${icon("gitDiff", 17)} Local vs. Remote Drift Diff</h2>
           <p class="sub" style="margin:3px 0 0">Normalized semantic diff across AIOStreams, AIOMetadata, AIOManager, and Nuvio Cloud.</p>
         </div>
       `;
       const xBtn = document.createElement("button");
-      xBtn.className = "btn icon-btn";
-      xBtn.textContent = "✕";
+      xBtn.className = "btn ghost icon-btn";
+      xBtn.innerHTML = icon("x", 15);
       xBtn.onclick = closeModal;
       head.appendChild(xBtn);
       dialog.appendChild(head);
@@ -870,7 +1006,7 @@ function openDiffModal() {
           box.innerHTML = `
             <div class="row-between" style="margin-bottom:6px">
               <strong><code>${escapeHtml(o.target)}</code></strong>
-              <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync ✓" : `+${o.addedLines} / -${o.removedLines} (${(o.changedKeys || []).join(", ")})`}</span>
+              <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync" : `+${o.addedLines} / -${o.removedLines} (${(o.changedKeys || []).join(", ")})`}</span>
             </div>
           `;
           if (!o.inSync && o.unifiedDiff) {
@@ -881,7 +1017,7 @@ function openDiffModal() {
       }
       dialog.appendChild(list);
     } catch (err) {
-      dialog.innerHTML = `<div style="padding:20px;color:#f87171">Diff failed: ${escapeHtml(err.message)}</div>`;
+      dialog.innerHTML = `<div style="padding:20px;color:var(--danger)">Diff failed: ${escapeHtml(err.message)}</div>`;
     }
   });
 }
@@ -933,6 +1069,7 @@ function makeCtx() {
     render,
     switchTab(tab) {
       activeTab = tab;
+      closeSidebarMobile();
       render();
     },
     showLog,
@@ -944,6 +1081,7 @@ function makeCtx() {
     openDoctorModal,
     openDiffModal,
     ui: {
+      icon,
       escapeHtml,
       makeSwitch,
       makeParamInput,
@@ -953,43 +1091,62 @@ function makeCtx() {
 }
 
 // ---------------------------------------------------------------------------
-// Header, Profile Pills, Onboarding Banner & Main Render
+// Header, Sidebar Profile List, Onboarding Banner & Main Render
 // ---------------------------------------------------------------------------
 function renderHeader() {
   if (!state) return;
 
+  const titleEl = document.getElementById("view-title");
+  if (titleEl) {
+    titleEl.textContent = TAB_TITLES[activeTab] || "Home & Simulator";
+  }
+
   document.getElementById("subtitle").textContent =
     appMode === "stateless"
-      ? "Stateless Browser Studio · Bundle & keys stay in browser localStorage"
-      : `Tenant: ${state.tenant.name} · ${state.tenant.root}`;
+      ? "Stateless Browser · Bundle & secrets stay in browser localStorage"
+      : `${state.tenant.name} · ${state.tenant.root}`;
 
   const modePill = document.getElementById("mode-pill");
-  modePill.textContent = appMode === "stateless" ? "Stateless Browser" : "Local GitOps";
+  modePill.textContent = appMode === "stateless" ? "Stateless" : "Local GitOps";
   modePill.className = "pill " + (appMode === "stateless" ? "warn" : "ok");
 
   const reqEnv = (state.env || []).filter(e => e.required);
   const readyCount = reqEnv.filter(
     e => e.isSet || (pendingEnvEdits[e.key] && pendingEnvEdits[e.key].trim())
   ).length;
-  const envPill = document.getElementById("env-ready-pill");
-  envPill.textContent = `Keys: ${readyCount}/${reqEnv.length}` + (dirty ? " · Unsaved" : "");
-  envPill.className = "pill " + (readyCount === reqEnv.length && !dirty ? "ok" : "warn");
+  const pct = reqEnv.length ? Math.round((readyCount / reqEnv.length) * 100) : 100;
 
-  // Household Profile Switcher Pills
+  const envPill = document.getElementById("env-ready-pill");
+  envPill.textContent = `${readyCount}/${reqEnv.length}`;
+  envPill.className = "pill " + (readyCount === reqEnv.length ? "ok" : "warn");
+
+  const fillEl = document.getElementById("env-progress-fill");
+  if (fillEl) {
+    fillEl.style.width = `${pct}%`;
+    fillEl.style.background = readyCount === reqEnv.length ? "var(--ok)" : "var(--warn)";
+  }
+
+  const dirtyPill = document.getElementById("dirty-pill");
+  if (dirtyPill) dirtyPill.hidden = !dirty;
+
+  // Household Profile Switcher in Sidebar
   const pBar = document.getElementById("profile-tabs");
   pBar.innerHTML = "";
   const canDelete = (state.profiles || []).length > 1;
   (state.profiles || []).forEach((p, idx) => {
     const wrap = document.createElement("div");
     wrap.className = "profile-pill-wrap" + (idx === activeProfileIdx ? " active" : "");
-    wrap.style.setProperty("--profile-accent", p.accentColor || "#38bdf8");
+    wrap.style.setProperty("--profile-accent", p.accentColor || "#818cf8");
 
     const btn = document.createElement("button");
     btn.className = "profile-pill-btn";
-    btn.innerHTML = `<span class="profile-dot" style="background:${escapeHtml(p.accentColor || "#38bdf8")}"></span>
-      <span>${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>`;
+    const metaInst = p.aiometadataInstance || p.instances?.aiometadata || "default";
+    btn.innerHTML = `<span class="profile-dot" style="background:${escapeHtml(p.accentColor || "#818cf8")}"></span>
+      <span class="profile-label">${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>
+      ${metaInst !== "default" ? `<span class="profile-badge-mini">${escapeHtml(metaInst)}</span>` : ""}`;
     btn.onclick = () => {
       activeProfileIdx = idx;
+      closeSidebarMobile();
       render();
     };
     wrap.appendChild(btn);
@@ -998,7 +1155,8 @@ function renderHeader() {
       const del = document.createElement("button");
       del.className = "profile-del-btn";
       del.title = `Delete profile ${p.displayName}`;
-      del.textContent = "✕";
+      del.setAttribute("aria-label", `Delete profile ${p.displayName}`);
+      del.innerHTML = icon("x", 12);
       del.onclick = (e) => {
         e.stopPropagation();
         deleteProfile(p.name);
@@ -1008,26 +1166,31 @@ function renderHeader() {
     pBar.appendChild(wrap);
   });
 
-  // Onboarding Banner
+  // Onboarding Banner & Wizard Pulse
   const banner = document.getElementById("onboarding-banner");
   const allProv = Boolean(state.tenant?.aiostreamsProvisioned && state.tenant?.aiometadataProvisioned);
   const prof = currentProfile();
   const nuvioReady = Boolean(prof?.nuvio?.loginReady);
-  if (dismissBanner || (allProv && nuvioReady && readyCount === reqEnv.length)) {
+  const setupComplete = allProv && nuvioReady && readyCount === reqEnv.length;
+
+  const pulseDot = document.getElementById("wizard-pulse-dot");
+  if (pulseDot) pulseDot.hidden = setupComplete;
+
+  if (dismissBanner || setupComplete) {
     banner.hidden = true;
   } else {
     banner.hidden = false;
     banner.className = "card onboarding-banner";
-    banner.style.borderColor = "var(--border-strong)";
     banner.innerHTML = "";
     const row = document.createElement("div");
     row.className = "row-between";
     row.style.flexWrap = "wrap";
     row.innerHTML = `
       <div>
-        <strong style="font-size:14.5px">🧭 First-Time Workspace Setup</strong>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:2px">
-          ${allProv ? "Instances provisioned ✓" : "Instances unprovisioned"} · Keys ${readyCount}/${reqEnv.length} · Nuvio ${nuvioReady ? "Signed In ✓" : "Sign-in pending"}
+        <div class="card-eyebrow">${icon("compass", 12)} Workspace Onboarding</div>
+        <strong style="font-size:14px">Finish Day-0 Provisioning &amp; Sign-In</strong>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">
+          ${allProv ? "Instances provisioned" : "Instances pending"} · Vault keys ${readyCount}/${reqEnv.length} · Nuvio ${nuvioReady ? "connected" : "sign-in pending"}
         </div>
       </div>
     `;
@@ -1035,11 +1198,12 @@ function renderHeader() {
     btns.className = "row-wrap";
     const wizBtn = document.createElement("button");
     wizBtn.className = "btn primary";
-    wizBtn.textContent = "🧭 Launch Guided Setup Wizard";
+    wizBtn.innerHTML = `${icon("compass", 14)} <span>Launch Setup Wizard</span>`;
     wizBtn.onclick = () => openSetupWizard(makeCtx());
     const xBtn = document.createElement("button");
-    xBtn.className = "btn icon-btn";
-    xBtn.textContent = "✕";
+    xBtn.className = "btn ghost icon-btn";
+    xBtn.setAttribute("aria-label", "Dismiss onboarding banner");
+    xBtn.innerHTML = icon("x", 14);
     xBtn.onclick = () => { dismissBanner = true; renderHeader(); };
     btns.append(wizBtn, xBtn);
     row.appendChild(btns);
@@ -1051,7 +1215,7 @@ function render() {
   if (!state) return;
   renderHeader();
 
-  document.querySelectorAll("#nav-tabs .tab").forEach(btn => {
+  document.querySelectorAll("#nav-tabs .nav-item").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === activeTab);
   });
 
@@ -1066,14 +1230,25 @@ function render() {
 }
 
 // ---------------------------------------------------------------------------
-// Wire Top-Bar Event Listeners & Boot
+// Wire Shell Event Listeners & Boot
 // ---------------------------------------------------------------------------
-document.querySelectorAll("#nav-tabs .tab").forEach(btn => {
+document.querySelectorAll("#nav-tabs .nav-item").forEach(btn => {
   btn.onclick = () => {
     activeTab = btn.dataset.tab;
+    closeSidebarMobile();
     render();
   };
 });
+
+document.getElementById("btn-mobile-menu").onclick = () => {
+  const sb = document.getElementById("sidebar");
+  const bd = document.getElementById("sidebar-backdrop");
+  const next = !sb.classList.contains("open");
+  sb.classList.toggle("open", next);
+  if (bd) bd.hidden = !next;
+};
+
+document.getElementById("sidebar-backdrop").onclick = closeSidebarMobile;
 
 document.getElementById("btn-close-log").onclick = () => {
   document.getElementById("log-drawer").hidden = true;
@@ -1084,14 +1259,25 @@ document.getElementById("modal-backdrop").onclick = (e) => {
 };
 
 document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    const backdrop = document.getElementById("modal-backdrop");
+    if (backdrop && !backdrop.hidden && document.getElementById("modal-root")?.classList.contains("modal-cmdk")) {
+      closeModal();
+    } else {
+      openCommandPalette();
+    }
+    return;
+  }
   if (e.key === "Escape") closeModal();
 });
 
-document.getElementById("btn-wizard").onclick = () => openSetupWizard(makeCtx());
-document.getElementById("btn-new-profile").onclick = () => openNewProfileModal();
-document.getElementById("btn-doctor").onclick = () => openDoctorModal();
-document.getElementById("btn-diff").onclick = () => openDiffModal();
-document.getElementById("btn-raw-json").onclick = () => openRawJsonModal("aiostreams");
+document.getElementById("btn-cmd-k").onclick = () => openCommandPalette();
+document.getElementById("btn-wizard").onclick = () => { closeSidebarMobile(); openSetupWizard(makeCtx()); };
+document.getElementById("btn-new-profile").onclick = () => { closeSidebarMobile(); openNewProfileModal(); };
+document.getElementById("btn-doctor").onclick = () => { closeSidebarMobile(); openDoctorModal(); };
+document.getElementById("btn-diff").onclick = () => { closeSidebarMobile(); openDiffModal(); };
+document.getElementById("btn-raw-json").onclick = () => { closeSidebarMobile(); openRawJsonModal("aiostreams"); };
 document.getElementById("btn-save").onclick = () => saveChanges(false);
 
 document.getElementById("btn-push").onclick = async () => {
@@ -1109,9 +1295,9 @@ document.getElementById("btn-push").onclick = async () => {
       (step) => appendLogStep(step)
     );
     clearPendingEdits();
-    document.getElementById("log-drawer-title").textContent = "✅ Push complete!";
+    document.getElementById("log-drawer-title").innerHTML = `${icon("check", 14)} <span>Push complete</span>`;
     if (done && Array.isArray(done.steps) && !document.getElementById("log-drawer-steps").children.length) {
-      showLog("Push complete!", done.steps);
+      showLog("Push complete", done.steps);
     }
     render();
   } catch (err) {
@@ -1128,7 +1314,7 @@ document.getElementById("btn-pull").onclick = async () => {
     if (dirty) await saveChanges(true);
     showLog("Pulling live state from AIO instances & Nuvio…", []);
     const res = await api("/api/pull", { target: "all" });
-    showLog("Pulled live state & scrubbed secrets into .env:", res.steps || []);
+    showLog("Pulled live state & scrubbed secrets into .env", res.steps || []);
     render();
   } catch (err) {
     showLog(err.message, [], true);

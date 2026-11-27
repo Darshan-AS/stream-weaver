@@ -1,4 +1,4 @@
-// Tab 1 — Home Screen, Collection/Folder Reordering, DIY Builder & Live Poster Strip Simulator
+// Tab 1 — Home Screen, Collection/Folder Reordering, DIY Builder & Live Nuvio TV Viewport Simulator
 
 let selectedColIdx = 0;
 let selectedFolderIdx = 0;
@@ -48,7 +48,7 @@ function buildPreviewSpec(selCol, folderIdx, activeFolder) {
 }
 
 export function renderHomeTab(root, ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const p = ctx.currentProfile();
   if (!p) return;
@@ -68,7 +68,7 @@ export function renderHomeTab(root, ctx) {
   left.className = "card";
   left.innerHTML = `
     <div class="row-between" style="margin-bottom:4px">
-      <h2>Active Home Collections (${p.collections.length})</h2>
+      <h2>${icon("layers", 15)} Home Shelves (${p.collections.length})</h2>
       <span class="pill accent">${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>
     </div>
     <p class="sub">Top-to-bottom order on Nuvio Home. Adding or removing shelves automatically derives AIOMetadata catalogs.</p>
@@ -89,16 +89,16 @@ export function renderHomeTab(root, ctx) {
     const info = document.createElement("div");
     info.innerHTML = `
       <div class="col-item-title">${idx + 1}. ${escapeHtml(col.title)}</div>
-      <div class="col-item-meta">${(col.folders || []).length} folder tab(s) · <code>${escapeHtml(col.ref || "diy-inline")}</code></div>
+      <div class="col-item-meta">${(col.folders || []).length} tab(s) · <code>${escapeHtml(col.ref || "diy-inline")}</code></div>
     `;
 
     const ctrls = document.createElement("div");
     ctrls.className = "col-controls";
 
     const up = document.createElement("button");
-    up.className = "btn icon-btn";
+    up.className = "btn ghost icon-btn";
     up.title = "Move collection up";
-    up.textContent = "↑";
+    up.innerHTML = icon("chevronUp", 13);
     up.disabled = idx === 0;
     up.onclick = (e) => {
       e.stopPropagation();
@@ -108,9 +108,9 @@ export function renderHomeTab(root, ctx) {
     };
 
     const dn = document.createElement("button");
-    dn.className = "btn icon-btn";
+    dn.className = "btn ghost icon-btn";
     dn.title = "Move collection down";
-    dn.textContent = "↓";
+    dn.innerHTML = icon("chevronDown", 13);
     dn.disabled = idx === p.collections.length - 1;
     dn.onclick = (e) => {
       e.stopPropagation();
@@ -120,9 +120,9 @@ export function renderHomeTab(root, ctx) {
     };
 
     const rm = document.createElement("button");
-    rm.className = "btn icon-btn danger";
+    rm.className = "btn ghost icon-btn danger";
     rm.title = "Remove collection from profile";
-    rm.textContent = "✕";
+    rm.innerHTML = icon("x", 13);
     rm.onclick = (e) => {
       e.stopPropagation();
       p.collections.splice(idx, 1);
@@ -139,15 +139,10 @@ export function renderHomeTab(root, ctx) {
   // DIY Modal Launch Button
   const diyBtns = document.createElement("div");
   diyBtns.style.marginTop = "14px";
-  diyBtns.style.display = "flex";
-  diyBtns.style.gap = "8px";
-  diyBtns.style.flexWrap = "wrap";
 
   const modalDiyBtn = document.createElement("button");
-  modalDiyBtn.className = "btn accent-outline";
-  modalDiyBtn.style.width = "100%";
-  modalDiyBtn.style.justifyContent = "center";
-  modalDiyBtn.textContent = "✨ + DIY Collection / Folder Builder (TMDB · MDBList · Addons)";
+  modalDiyBtn.className = "btn accent-outline full-width";
+  modalDiyBtn.innerHTML = `${icon("sparkles", 14)} <span>DIY Collection / Folder Builder</span>`;
   modalDiyBtn.onclick = () => openDiyBuilderModal(ctx, p, selCol);
   diyBtns.appendChild(modalDiyBtn);
   left.appendChild(diyBtns);
@@ -157,7 +152,7 @@ export function renderHomeTab(root, ctx) {
   addSec.style.marginTop = "16px";
   addSec.style.borderTop = "1px solid var(--border)";
   addSec.style.paddingTop = "14px";
-  addSec.innerHTML = `<h3>➕ Curated Recipe Collections</h3>`;
+  addSec.innerHTML = `<h3>${icon("plus", 14)} Curated Recipe Collections</h3>`;
 
   const usedRefs = new Set(p.collections.filter(c => c.ref).map(c => c.ref));
   const standardCols = (st.libraryCollections || []).filter(
@@ -171,12 +166,9 @@ export function renderHomeTab(root, ctx) {
 
   Object.entries(grouped).forEach(([cat, cols]) => {
     const grpLbl = document.createElement("div");
-    grpLbl.style.fontSize = "11px";
-    grpLbl.style.fontWeight = "600";
-    grpLbl.style.textTransform = "uppercase";
-    grpLbl.style.letterSpacing = "0.04em";
-    grpLbl.style.color = "var(--muted)";
-    grpLbl.style.margin = "10px 0 6px";
+    grpLbl.className = "eyebrow";
+    grpLbl.style.padding = "0";
+    grpLbl.style.margin = "11px 0 6px";
     grpLbl.textContent = CATEGORY_LABELS[cat] || "More Collections";
     addSec.appendChild(grpLbl);
 
@@ -185,7 +177,7 @@ export function renderHomeTab(root, ctx) {
     cols.forEach(lc => {
       const btn = document.createElement("button");
       btn.className = "btn icon-btn";
-      btn.textContent = `+ ${lc.title}`;
+      btn.innerHTML = `${icon("plus", 12)} <span>${escapeHtml(lc.title)}</span>`;
       btn.title = lc.description || lc.id;
       btn.onclick = () => {
         p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
@@ -202,12 +194,9 @@ export function renderHomeTab(root, ctx) {
   const regRecipe = (st.libraryCollections || []).find(lc => lc.id === "regional-cinema");
   if (regRecipe && Array.isArray(regRecipe.presets) && regRecipe.presets.length) {
     const regHead = document.createElement("div");
-    regHead.style.fontSize = "11px";
-    regHead.style.fontWeight = "600";
-    regHead.style.textTransform = "uppercase";
-    regHead.style.letterSpacing = "0.04em";
-    regHead.style.color = "var(--muted)";
-    regHead.style.margin = "12px 0 6px";
+    regHead.className = "eyebrow";
+    regHead.style.padding = "0";
+    regHead.style.margin = "14px 0 6px";
     regHead.textContent = "Regional Cinema Builder";
     addSec.appendChild(regHead);
 
@@ -218,13 +207,13 @@ export function renderHomeTab(root, ctx) {
     regRecipe.presets.forEach((pr, idx) => {
       const opt = document.createElement("option");
       opt.value = String(idx);
-      opt.textContent = `🌍 ${pr.label} (${pr.with.language})`;
+      opt.textContent = `${pr.label} (${pr.with.language})`;
       sel.appendChild(opt);
     });
     const addRegBtn = document.createElement("button");
     addRegBtn.className = "btn accent-outline";
     addRegBtn.style.whiteSpace = "nowrap";
-    addRegBtn.textContent = "+ Add Language";
+    addRegBtn.innerHTML = `${icon("plus", 13)} <span>Add Language</span>`;
     addRegBtn.onclick = () => {
       const chosen = regRecipe.presets[Number(sel.value)];
       p.collections.push({ ref: "regional-cinema", with: { ...chosen.with }, title: chosen.label, folders: [] });
@@ -238,17 +227,31 @@ export function renderHomeTab(root, ctx) {
   left.appendChild(addSec);
 
   // =========================================================================
-  // RIGHT COLUMN — Interactive Nuvio TV Simulator + Live Poster Strip
+  // RIGHT COLUMN — Nuvio TV Viewport Simulator + Live Poster Strip
   // =========================================================================
   const right = document.createElement("div");
   right.className = "card";
 
   if (!selCol) {
-    right.innerHTML = `<h2>Interactive Nuvio TV Home Simulator</h2>
+    right.innerHTML = `<h2>${icon("tv", 15)} Interactive Nuvio TV Home Simulator</h2>
       <p class="sub">Select or add a collection on the left to preview its folders and live catalog posters.</p>`;
   } else {
     const libMeta = (st.libraryCollections || []).find(lc => lc.id === selCol.ref);
     const isInline = !selCol.ref && Boolean(selCol.raw);
+
+    const viewport = document.createElement("div");
+    viewport.className = "tv-viewport";
+
+    const chrome = document.createElement("div");
+    chrome.className = "tv-chrome-bar";
+    chrome.innerHTML = `
+      <span class="tv-chrome-brand">${icon("tv", 13)} Nuvio TV Preview</span>
+      <span class="row-wrap">
+        <span class="pill">${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>
+        <span class="pill accent">4K UHD</span>
+      </span>
+    `;
+    viewport.appendChild(chrome);
 
     // Hero Banner
     const hero = document.createElement("div");
@@ -260,20 +263,20 @@ export function renderHomeTab(root, ctx) {
     heroTop.className = "row-between";
     heroTop.style.marginBottom = "8px";
     heroTop.style.flexWrap = "wrap";
-    heroTop.innerHTML = `<span class="pill ${isInline ? "accent" : ""}">${isInline ? "DIY Custom Collection" : "Curated Recipe Collection"}</span>`;
+    heroTop.innerHTML = `<span class="pill ${isInline ? "accent" : ""}">${isInline ? "DIY Custom Collection" : "Curated Recipe"}</span>`;
 
     const heroActions = document.createElement("div");
     heroActions.className = "row-wrap";
     const addFolderModalBtn = document.createElement("button");
     addFolderModalBtn.className = "btn icon-btn accent-outline";
-    addFolderModalBtn.textContent = "+ Add Folder Tab";
+    addFolderModalBtn.innerHTML = `${icon("plus", 12)} <span>Add Folder Tab</span>`;
     addFolderModalBtn.onclick = () => openDiyBuilderModal(ctx, p, selCol);
     heroActions.appendChild(addFolderModalBtn);
 
     if (!isInline && selCol.inlineTemplate) {
       const unlockBtn = document.createElement("button");
       unlockBtn.className = "btn icon-btn";
-      unlockBtn.textContent = "✏️ Unlock to Customize Art / Tabs";
+      unlockBtn.innerHTML = `${icon("wand", 12)} <span>Customize Art / Tabs</span>`;
       unlockBtn.onclick = () => {
         ensureInlineCollection(selCol);
         ctx.saveSection("profile", true);
@@ -289,7 +292,7 @@ export function renderHomeTab(root, ctx) {
     hMeta.className = "meta";
     hMeta.textContent = (libMeta && libMeta.description) || `${(selCol.folders || []).length} tabbed folder(s) configured`;
     hero.append(hTitle, hMeta);
-    right.appendChild(hero);
+    viewport.appendChild(hero);
 
     // Inline Collection Metadata Editor
     if (isInline && selCol.raw) {
@@ -328,7 +331,7 @@ export function renderHomeTab(root, ctx) {
       };
       cBgLbl.appendChild(cBgIn);
       metaBar.append(cTitleLbl, cBgLbl);
-      right.appendChild(metaBar);
+      viewport.appendChild(metaBar);
     }
 
     // Recipe Parameter Checkboxes (e.g., Streaming Services OTT filter)
@@ -342,7 +345,7 @@ export function renderHomeTab(root, ctx) {
         const currentVals = Array.isArray((selCol.with || {})[listParam.name])
           ? selCol.with[listParam.name]
           : (listParam.default || []);
-        paramBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Customize ${escapeHtml(listParam.label)}:</div>`;
+        paramBox.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:8px">Customize ${escapeHtml(listParam.label)}</div>`;
         const chkWrap = document.createElement("div");
         chkWrap.className = "chip-row";
         listParam.options.forEach(opt => {
@@ -366,7 +369,7 @@ export function renderHomeTab(root, ctx) {
           chkWrap.appendChild(lbl);
         });
         paramBox.appendChild(chkWrap);
-        right.appendChild(paramBox);
+        viewport.appendChild(paramBox);
       }
     }
 
@@ -377,8 +380,8 @@ export function renderHomeTab(root, ctx) {
     const folderStripHead = document.createElement("div");
     folderStripHead.className = "row-between";
     folderStripHead.style.marginBottom = "10px";
-    folderStripHead.innerHTML = `<strong style="font-size:13px">Folder Tabs (${folders.length}) — Click a folder to simulate live Nuvio posters</strong>`;
-    right.appendChild(folderStripHead);
+    folderStripHead.innerHTML = `<strong style="font-size:12.5px">Folder Tabs (${folders.length}) · Select a tab to simulate live posters</strong>`;
+    viewport.appendChild(folderStripHead);
 
     const grid = document.createElement("div");
     grid.className = "folders-strip";
@@ -397,15 +400,15 @@ export function renderHomeTab(root, ctx) {
         <div class="folder-body">
           <div style="min-width:0">
             <div class="folder-title">${escapeHtml(f.title)}</div>
-            <div class="folder-count">${(f.rows || []).length} catalog row(s)</div>
+            <div class="folder-count">${(f.rows || []).length} row(s)</div>
           </div>
         </div>
       `;
       grid.appendChild(fc);
     });
-    right.appendChild(grid);
+    viewport.appendChild(grid);
 
-    // Selected Folder Controls (↑ / ↓ Reorder + Artwork + Catalog Rows + Live Poster Strip!)
+    // Selected Folder Controls (↑ / ↓ Reorder + Artwork + Catalog Rows + Live Poster Strip)
     const activeFolder = folders[selectedFolderIdx];
     if (activeFolder) {
       const rbox = document.createElement("div");
@@ -413,15 +416,15 @@ export function renderHomeTab(root, ctx) {
       const rHead = document.createElement("div");
       rHead.className = "row-between";
       rHead.style.flexWrap = "wrap";
-      rHead.innerHTML = `<div style="font-size:13.5px;font-weight:700">📂 Folder "${escapeHtml(activeFolder.title)}"</div>`;
+      rHead.innerHTML = `<div style="font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">${icon("folder", 14)} <span>${escapeHtml(activeFolder.title)}</span></div>`;
 
       const fCtrls = document.createElement("div");
       fCtrls.className = "col-controls";
 
       const fUp = document.createElement("button");
       fUp.className = "btn icon-btn";
-      fUp.title = "Move folder earlier (↑ / ←)";
-      fUp.textContent = "↑";
+      fUp.title = "Move folder earlier";
+      fUp.innerHTML = icon("chevronUp", 13);
       fUp.disabled = selectedFolderIdx === 0;
       fUp.onclick = () => {
         const rawDoc = ensureInlineCollection(selCol);
@@ -435,8 +438,8 @@ export function renderHomeTab(root, ctx) {
 
       const fDown = document.createElement("button");
       fDown.className = "btn icon-btn";
-      fDown.title = "Move folder later (↓ / →)";
-      fDown.textContent = "↓";
+      fDown.title = "Move folder later";
+      fDown.innerHTML = icon("chevronDown", 13);
       fDown.disabled = selectedFolderIdx >= folders.length - 1;
       fDown.onclick = () => {
         const rawDoc = ensureInlineCollection(selCol);
@@ -450,7 +453,7 @@ export function renderHomeTab(root, ctx) {
 
       const fDel = document.createElement("button");
       fDel.className = "btn icon-btn danger";
-      fDel.textContent = "🗑 Remove Folder";
+      fDel.innerHTML = `${icon("trash", 12)} <span>Remove</span>`;
       fDel.disabled = folders.length <= 1;
       fDel.onclick = () => {
         const rawDoc = ensureInlineCollection(selCol);
@@ -513,11 +516,13 @@ export function renderHomeTab(root, ctx) {
         chips.appendChild(c);
       });
       rbox.appendChild(chips);
-      right.appendChild(rbox);
+      viewport.appendChild(rbox);
 
       // LIVE POSTER STRIP SIMULATOR (`POST /api/preview-catalog`)
-      right.appendChild(renderPosterSimulator(ctx, p, selCol, selectedFolderIdx, activeFolder));
+      viewport.appendChild(renderPosterSimulator(ctx, p, selCol, selectedFolderIdx, activeFolder));
     }
+
+    right.appendChild(viewport);
   }
 
   wrap.append(left, right);
@@ -525,20 +530,20 @@ export function renderHomeTab(root, ctx) {
 }
 
 function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const spec = buildPreviewSpec(selCol, folderIdx, activeFolder);
   const cacheKey = `${profile.name}::${selCol.id}::${folderIdx}::${JSON.stringify(spec)}`;
 
   const simBox = document.createElement("div");
   simBox.className = "rows-box";
-  simBox.style.borderColor = "var(--border-strong)";
+  simBox.style.borderColor = "rgba(255, 255, 255, 0.1)";
 
   const head = document.createElement("div");
   head.className = "row-between";
   head.style.marginBottom = "10px";
 
   const titleWrap = document.createElement("div");
-  titleWrap.innerHTML = `<strong style="font-size:13.5px">🎞️ Live Nuvio Poster Strip Simulator — "${escapeHtml(activeFolder.title)}"</strong>`;
+  titleWrap.innerHTML = `<strong style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">${icon("play", 12)} <span>Poster Strip — ${escapeHtml(activeFolder.title)}</span></strong>`;
 
   const rightControls = document.createElement("div");
   rightControls.className = "row-wrap";
@@ -546,8 +551,8 @@ function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
   srcPill.className = "pill";
   srcPill.textContent = "Loading…";
   const refreshBtn = document.createElement("button");
-  refreshBtn.className = "btn icon-btn";
-  refreshBtn.textContent = "🔄 Refresh";
+  refreshBtn.className = "btn ghost icon-btn";
+  refreshBtn.innerHTML = `${icon("refresh", 12)} <span>Refresh</span>`;
   rightControls.append(srcPill, refreshBtn);
   head.append(titleWrap, rightControls);
   simBox.appendChild(head);
@@ -555,6 +560,15 @@ function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
   const shelf = document.createElement("div");
   shelf.className = "poster-shelf";
   simBox.appendChild(shelf);
+
+  const paintSkeletons = () => {
+    shelf.innerHTML = "";
+    for (let i = 0; i < 6; i += 1) {
+      const sk = document.createElement("div");
+      sk.className = "poster-skeleton";
+      shelf.appendChild(sk);
+    }
+  };
 
   const paintItems = (data) => {
     const items = (data && Array.isArray(data.items)) ? data.items : [];
@@ -593,7 +607,7 @@ function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
       paintItems(posterPreviewCache.get(cacheKey));
       return;
     }
-    shelf.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:10px">Fetching poster strip…</div>`;
+    paintSkeletons();
     try {
       const res = await ctx.api("/api/preview-catalog", {
         spec,
@@ -604,7 +618,7 @@ function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
     } catch (err) {
       srcPill.className = "pill danger";
       srcPill.textContent = "Preview Error";
-      shelf.innerHTML = `<div style="font-size:12px;color:#f87171;padding:10px">${escapeHtml(err.message)}</div>`;
+      shelf.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px">${escapeHtml(err.message)}</div>`;
     }
   };
 
@@ -620,7 +634,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
   let newColBackdrop = "";
 
   ctx.openModal((dialog) => {
-    const { escapeHtml } = ctx.ui;
+    const { icon } = ctx.ui;
     const st = ctx.state;
 
     const renderModal = () => {
@@ -629,32 +643,32 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
       head.className = "row-between";
       head.innerHTML = `
         <div>
-          <h2 style="margin:0;font-size:17px">✨ DIY Collection &amp; Folder Builder</h2>
-          <p class="sub" style="margin:3px 0 0">Creates both the AIOMetadata catalog definition and the Nuvio Home folder in a single step.</p>
+          <h2>${icon("sparkles", 17)} DIY Collection &amp; Folder Builder</h2>
+          <p class="sub" style="margin:3px 0 0">Creates both the AIOMetadata catalog definition and the Nuvio Home folder in one step.</p>
         </div>
       `;
       const closeBtn = document.createElement("button");
-      closeBtn.className = "btn icon-btn";
-      closeBtn.textContent = "✕";
+      closeBtn.className = "btn ghost icon-btn";
+      closeBtn.innerHTML = icon("x", 15);
       closeBtn.onclick = () => ctx.closeModal();
       head.appendChild(closeBtn);
       dialog.appendChild(head);
 
-      // Destination selector (Add to current collection vs Create new DIY collection)
+      // Destination selector
       const destBox = document.createElement("div");
       destBox.className = "rows-box";
       const destTabs = document.createElement("div");
-      destTabs.className = "tabs";
+      destTabs.className = "segmented";
       if (currentCol) {
         const bExist = document.createElement("button");
-        bExist.className = "tab" + (targetMode === "existing" ? " active" : "");
-        bExist.textContent = `📂 Add Tab to "${currentCol.title}"`;
+        bExist.className = "seg-btn" + (targetMode === "existing" ? " active" : "");
+        bExist.textContent = `Add Tab to "${currentCol.title}"`;
         bExist.onclick = () => { targetMode = "existing"; renderModal(); };
         destTabs.appendChild(bExist);
       }
       const bNew = document.createElement("button");
-      bNew.className = "tab" + (targetMode === "new" ? " active" : "");
-      bNew.textContent = "✨ Create Brand-New DIY Collection";
+      bNew.className = "seg-btn" + (targetMode === "new" ? " active" : "");
+      bNew.textContent = "Create Brand-New Shelf";
       bNew.onclick = () => { targetMode = "new"; renderModal(); };
       destTabs.appendChild(bNew);
       destBox.appendChild(destTabs);
@@ -685,14 +699,14 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
       const srcBox = document.createElement("div");
       srcBox.className = "rows-box";
       const modeTabs = document.createElement("div");
-      modeTabs.className = "tabs";
+      modeTabs.className = "segmented";
       [
-        ["tmdb", "🎬 TMDB Discover Filter"],
-        ["mdblist", "📋 MDBList URL / ID"],
-        ["catalog", "🔌 Catalog Picker"],
+        ["tmdb", "TMDB Discover Filter"],
+        ["mdblist", "MDBList URL / ID"],
+        ["catalog", "Catalog Picker"],
       ].forEach(([mId, mLbl]) => {
         const b = document.createElement("button");
-        b.className = "tab" + (diyMode === mId ? " active" : "");
+        b.className = "seg-btn" + (diyMode === mId ? " active" : "");
         b.textContent = mLbl;
         b.onclick = () => { diyMode = mId; renderModal(); };
         modeTabs.appendChild(b);
@@ -773,7 +787,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
 
         const addBtn = document.createElement("button");
         addBtn.className = "btn primary";
-        addBtn.textContent = "+ Build & Save TMDB Folder";
+        addBtn.innerHTML = `${icon("plus", 14)} <span>Build &amp; Save TMDB Folder</span>`;
         addBtn.onclick = async () => {
           addBtn.disabled = true;
           try {
@@ -803,7 +817,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
         const coverCtrl = makeIn("Folder Cover Artwork URL (Optional)", "https://image.tmdb.org/t/p/w780/…");
         const addBtn = document.createElement("button");
         addBtn.className = "btn primary";
-        addBtn.textContent = "+ Resolve & Save MDBList Folder";
+        addBtn.innerHTML = `${icon("plus", 14)} <span>Resolve &amp; Save MDBList</span>`;
         addBtn.onclick = async () => {
           addBtn.disabled = true;
           try {
@@ -856,7 +870,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
 
         const newFBtn = document.createElement("button");
         newFBtn.className = "btn primary";
-        newFBtn.textContent = "+ Save as New Folder";
+        newFBtn.innerHTML = `${icon("plus", 14)} <span>Save as New Folder</span>`;
         newFBtn.onclick = async () => {
           const picked = getFiltered()[Number(catCtrl.sel.value)];
           if (!picked) return;
@@ -868,7 +882,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
         if (targetMode === "existing" && currentCol) {
           const rowBtn = document.createElement("button");
           rowBtn.className = "btn accent-outline";
-          rowBtn.textContent = "+ Append Row to Active Folder";
+          rowBtn.innerHTML = `${icon("plus", 13)} <span>Append Row to Active Folder</span>`;
           rowBtn.onclick = async () => {
             const picked = getFiltered()[Number(catCtrl.sel.value)];
             if (!picked) return;

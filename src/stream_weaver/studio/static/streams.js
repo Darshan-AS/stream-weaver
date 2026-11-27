@@ -1,5 +1,6 @@
 // Tab 2 — AIOStreams & AIOMetadata Power Studio
 
+let streamsSubFilter = "all"; // all | streams | metadata
 let inspectedStreamAddon = null;
 let customManifestUrlInput = "";
 let customGroupChoice = "primary";
@@ -12,21 +13,21 @@ const DEFAULT_FORMATTER_PRESETS = [
     id: "prism",
     label: "Prism Tech Badges",
     description: "Multi-line technical breakdown with HDR/DV, audio codecs, bit-depth, seeders, and file size.",
-    sampleName: "⚡ TorBox · 4K DV\n💎 Group 1",
-    sampleDescription: "🎬 Dune: Part Two (2024) REMUX\n📺 2160p · Dolby Vision · HDR10+ · HEVC 10bit\n🔊 TrueHD Atmos 7.1 · 📦 58.4 GB · 🌱 312",
+    sampleName: "TorBox · 4K DV\nGroup 1",
+    sampleDescription: "Dune: Part Two (2024) REMUX\n2160p · Dolby Vision · HDR10+ · HEVC 10bit\nTrueHD Atmos 7.1 · 58.4 GB · 312 seeders",
   },
   {
     id: "compact_tv",
     label: "Compact TV 2-Line",
     description: "Clean sofa-readable 2-line card tailored for 10-foot Android TV & Apple TV screens.",
-    sampleName: "⚡ 4K DV · TB",
+    sampleName: "4K DV · TB",
     sampleDescription: "Dune Part Two · TrueHD Atmos 7.1 · REMUX · 58.4 GB",
   },
   {
     id: "minimal",
     label: "Fast Minimalist",
     description: "Ultra-concise single-glance stream row showing resolution, cache status, and size.",
-    sampleName: "⚡ 2160p",
+    sampleName: "2160p",
     sampleDescription: "DV · Atmos · 58.4 GB (TorBox)",
   },
 ];
@@ -64,7 +65,7 @@ function getFormatterPresets(fmtState) {
       id: p.id,
       label: p.label || p.title || p.id,
       description: p.description || "",
-      sampleName: p.sampleName || "⚡ 4K",
+      sampleName: p.sampleName || "4K",
       sampleDescription: p.sampleDescription || "",
     }));
   }
@@ -73,7 +74,7 @@ function getFormatterPresets(fmtState) {
       id,
       label: p.label || p.title || id,
       description: p.description || "",
-      sampleName: p.sampleName || "⚡ 4K",
+      sampleName: p.sampleName || "4K",
       sampleDescription: p.sampleDescription || "",
     }));
   }
@@ -84,29 +85,57 @@ export function renderStreamsTab(root, ctx) {
   const stack = document.createElement("div");
   stack.className = "section-stack";
 
-  stack.appendChild(renderMultiDebridSection(ctx));
-  stack.appendChild(renderFormatterSection(ctx));
-  stack.appendChild(renderAdvancedFiltersSection(ctx));
-  stack.appendChild(renderPacksAndCustomAddonsSection(ctx));
-  stack.appendChild(renderDualSubtitlesSection(ctx));
-  stack.appendChild(renderMetadataPowerSection(ctx));
-  stack.appendChild(renderUpstreamDeepLinksSection(ctx));
+  // Top Segmented Sub-Filter
+  const topBar = document.createElement("div");
+  topBar.className = "row-between";
+  topBar.style.flexWrap = "wrap";
+  const seg = document.createElement("div");
+  seg.className = "segmented";
+  [
+    ["all", "All Controls"],
+    ["streams", "AIOStreams Engine"],
+    ["metadata", "AIOMetadata & Portals"],
+  ].forEach(([fid, lbl]) => {
+    const b = document.createElement("button");
+    b.className = "seg-btn" + (streamsSubFilter === fid ? " active" : "");
+    b.textContent = lbl;
+    b.onclick = () => {
+      streamsSubFilter = fid;
+      ctx.render();
+    };
+    seg.appendChild(b);
+  });
+  topBar.appendChild(seg);
+  stack.appendChild(topBar);
+
+  if (streamsSubFilter === "all" || streamsSubFilter === "streams") {
+    stack.appendChild(renderMultiDebridSection(ctx));
+    stack.appendChild(renderFormatterSection(ctx));
+    stack.appendChild(renderAdvancedFiltersSection(ctx));
+    stack.appendChild(renderPacksAndCustomAddonsSection(ctx));
+    stack.appendChild(renderDualSubtitlesSection(ctx));
+  }
+  if (streamsSubFilter === "all" || streamsSubFilter === "metadata") {
+    stack.appendChild(renderMetadataPowerSection(ctx));
+    stack.appendChild(renderUpstreamDeepLinksSection(ctx));
+  }
 
   root.appendChild(stack);
 }
 
 // ---------------------------------------------------------------------------
-// 1. Multi-Debrid & Usenet Priority Stacker
+// Multi-Debrid & Usenet Priority Stacker
 // ---------------------------------------------------------------------------
 function renderMultiDebridSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { icon } = ctx.ui;
   const st = ctx.state;
   const providers = getDebridList(st);
 
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>1. Multi-Debrid &amp; Usenet Priority Stacker</h2>
+    <div class="card-eyebrow">${icon("zap", 12)} AIOStreams Backends</div>
+    <h2>Multi-Debrid &amp; Usenet Priority Stacker</h2>
     <p class="sub">Enable one or more cached Debrid &amp; Usenet backends simultaneously. AIOStreams queries enabled services in top-to-bottom priority order.</p>
   `;
 
@@ -158,15 +187,15 @@ function renderMultiDebridSection(ctx) {
 
     const keyPill = document.createElement("span");
     keyPill.className = "pill " + (keysReady ? "ok" : (prov.enabled ? "warn" : ""));
-    keyPill.textContent = keysReady ? "Key Ready ✓" : `Needs ${prov.secretKeys.join(" + ")}`;
+    keyPill.textContent = keysReady ? "Key Ready" : `Needs ${prov.secretKeys.join(" + ")}`;
 
     left.append(sw, rankPill, keyPill);
 
     const ctrls = document.createElement("div");
     ctrls.className = "col-controls";
     const up = document.createElement("button");
-    up.className = "btn icon-btn";
-    up.textContent = "↑";
+    up.className = "btn ghost icon-btn";
+    up.innerHTML = icon("chevronUp", 13);
     up.title = "Raise provider priority";
     up.disabled = idx === 0;
     up.onclick = () => {
@@ -174,8 +203,8 @@ function renderMultiDebridSection(ctx) {
       commitDebridList(providers);
     };
     const dn = document.createElement("button");
-    dn.className = "btn icon-btn";
-    dn.textContent = "↓";
+    dn.className = "btn ghost icon-btn";
+    dn.innerHTML = icon("chevronDown", 13);
     dn.title = "Lower provider priority";
     dn.disabled = idx === providers.length - 1;
     dn.onclick = () => {
@@ -214,10 +243,10 @@ function renderMultiDebridSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Stream Formatter & Live Stream Card Simulator
+// Stream Formatter & Live Stream Card Simulator
 // ---------------------------------------------------------------------------
 function renderFormatterSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const fmt = st.streamFormatter || { preset: "prism", active: "prism" };
   const activeId = fmt.preset || fmt.active || fmt.id || "prism";
@@ -228,7 +257,8 @@ function renderFormatterSection(ctx) {
   card.innerHTML = `
     <div class="row-between">
       <div>
-        <h2>2. Stream Result Formatter &amp; Live Card Preview</h2>
+        <div class="card-eyebrow">${icon("monitor", 12)} Presentation</div>
+        <h2>Stream Result Formatter &amp; Live Card Preview</h2>
         <p class="sub">Choose how AIOStreams renders stream cards inside Nuvio &amp; Stremio.</p>
       </div>
       ${activeId === "custom" ? `<span class="pill warn">Custom Formatter Preserved</span>` : ""}
@@ -270,7 +300,7 @@ function renderFormatterSection(ctx) {
   previewWrap.className = "stream-card-sim";
   previewWrap.innerHTML = `
     <div class="row-between">
-      <span style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Live Nuvio Stream Picker Preview</span>
+      <span class="eyebrow" style="padding:0">Live Nuvio Stream Picker Preview</span>
       <span class="pill accent">${escapeHtml(activePreset ? activePreset.label : activeId)}</span>
     </div>
     <div class="stream-sim-row">
@@ -285,10 +315,10 @@ function renderFormatterSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Advanced Stream Filters & Global Audio Languages
+// Advanced Stream Filters & Global Audio Languages
 // ---------------------------------------------------------------------------
 function renderAdvancedFiltersSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const sp = st.streamPreferences || { maxResolution: "2160p", cachedOnly: true, audioLanguages: ["English"] };
   const adv = st.advancedStreamFilters || {
@@ -305,14 +335,14 @@ function renderAdvancedFiltersSection(ctx) {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>3. Advanced Stream Filters, Codecs &amp; Global Audio Policy</h2>
+    <div class="card-eyebrow">${icon("filter", 12)} Ranking &amp; Filtering</div>
+    <h2>Advanced Stream Filters, Codecs &amp; Global Audio Policy</h2>
     <p class="sub">Fine-tune resolution caps, instant-play cache enforcement, file size limits, HDR/DV priority, video codecs, excluded release tags, and 21-language audio filters.</p>
   `;
 
   const topGrid = document.createElement("div");
   topGrid.className = "cards-grid";
 
-  // Max Resolution
   const resLbl = document.createElement("label");
   resLbl.className = "field";
   resLbl.textContent = "Max Stream Resolution";
@@ -335,7 +365,6 @@ function renderAdvancedFiltersSection(ctx) {
   };
   resLbl.appendChild(resSel);
 
-  // HDR / DV Policy
   const hdrLbl = document.createElement("label");
   hdrLbl.className = "field";
   hdrLbl.textContent = "HDR / Dolby Vision Policy";
@@ -357,7 +386,6 @@ function renderAdvancedFiltersSection(ctx) {
   };
   hdrLbl.appendChild(hdrSel);
 
-  // Max File Size (GB)
   const sizeLbl = document.createElement("label");
   sizeLbl.className = "field";
   sizeLbl.textContent = "Max File Size (GB — 0 or blank = Unlimited)";
@@ -374,7 +402,6 @@ function renderAdvancedFiltersSection(ctx) {
   };
   sizeLbl.appendChild(sizeIn);
 
-  // Min Seeders
   const seedLbl = document.createElement("label");
   seedLbl.className = "field";
   seedLbl.textContent = "Minimum P2P Seeders";
@@ -392,7 +419,6 @@ function renderAdvancedFiltersSection(ctx) {
   topGrid.append(resLbl, hdrLbl, sizeLbl, seedLbl);
   card.appendChild(topGrid);
 
-  // Toggles Row: Cached-Only + RPDB Posters in Streams
   const toggleGrid = document.createElement("div");
   toggleGrid.className = "grid-equal";
   toggleGrid.style.marginTop = "12px";
@@ -426,7 +452,7 @@ function renderAdvancedFiltersSection(ctx) {
 
   const codecBox = document.createElement("div");
   codecBox.className = "rows-box";
-  codecBox.innerHTML = `<div style="font-size:12.5px;font-weight:700;margin-bottom:8px">🎞️ Preferred Video Codecs</div>`;
+  codecBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Preferred Video Codecs</div>`;
   const codecRow = document.createElement("div");
   codecRow.className = "chip-row";
   const codecChoices = Array.isArray(adv.codecOptions) && adv.codecOptions.length ? adv.codecOptions : CODEC_CHOICES;
@@ -449,7 +475,7 @@ function renderAdvancedFiltersSection(ctx) {
 
   const qualBox = document.createElement("div");
   qualBox.className = "rows-box";
-  qualBox.innerHTML = `<div style="font-size:12.5px;font-weight:700;margin-bottom:8px">🚫 Excluded Low-Quality / Theatrical Tags</div>`;
+  qualBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Excluded Low-Quality / Theatrical Tags</div>`;
   const qualRow = document.createElement("div");
   qualRow.className = "chip-row";
   const qualChoices = Array.isArray(adv.qualityOptions) && adv.qualityOptions.length ? adv.qualityOptions : EXCLUDE_QUALITY_CHOICES;
@@ -477,7 +503,7 @@ function renderAdvancedFiltersSection(ctx) {
   // Excluded Keywords Tag Builder
   const kwBox = document.createElement("div");
   kwBox.className = "rows-box";
-  kwBox.innerHTML = `<div style="font-size:12.5px;font-weight:700;margin-bottom:8px">🔇 Excluded Release Keywords</div>`;
+  kwBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Excluded Release Keywords</div>`;
   const kwChips = document.createElement("div");
   kwChips.className = "chip-row";
   const curKw = Array.isArray(adv.excludeKeywords) ? adv.excludeKeywords : [];
@@ -486,8 +512,8 @@ function renderAdvancedFiltersSection(ctx) {
     pill.className = "chip";
     pill.innerHTML = `<code>${escapeHtml(kw)}</code>`;
     const rm = document.createElement("button");
-    rm.className = "btn icon-btn danger";
-    rm.textContent = "✕";
+    rm.className = "btn ghost icon-btn danger";
+    rm.innerHTML = icon("x", 12);
     rm.onclick = () => {
       adv.excludeKeywords.splice(idx, 1);
       ctx.saveSection("advancedStreamFilters", true);
@@ -507,7 +533,7 @@ function renderAdvancedFiltersSection(ctx) {
   const kwAdd = document.createElement("button");
   kwAdd.className = "btn accent-outline";
   kwAdd.style.whiteSpace = "nowrap";
-  kwAdd.textContent = "+ Exclude Keyword";
+  kwAdd.innerHTML = `${icon("plus", 13)} <span>Exclude Keyword</span>`;
   kwAdd.onclick = () => {
     const val = kwIn.value.trim();
     if (!val) return;
@@ -528,7 +554,7 @@ function renderAdvancedFiltersSection(ctx) {
     audioBox.className = "rows-box";
     const curAudio = sp.audioLanguages || ["English"];
     audioBox.innerHTML = `
-      <div style="font-size:12.5px;font-weight:700;margin-bottom:4px">🔊 Global Stream Audio Languages (21 Languages — Original &amp; Multi Always Allowed)</div>
+      <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Global Stream Audio Languages (21 Languages — Original &amp; Multi Always Allowed)</div>
       <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Select every dubbed/audio language AIOStreams should accept and rank.</div>
     `;
     const aChips = document.createElement("div");
@@ -559,16 +585,17 @@ function renderAdvancedFiltersSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Modular Addon Packs & Universal Custom `manifest.json` Addon Installer
+// Modular Addon Packs & Universal Custom `manifest.json` Addon Installer
 // ---------------------------------------------------------------------------
 function renderPacksAndCustomAddonsSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
 
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>4. Modular Addon Packs &amp; Universal Custom Addon Installer</h2>
+    <div class="card-eyebrow">${icon("package", 12)} Scrapers &amp; Extensions</div>
+    <h2>Modular Addon Packs &amp; Universal Custom Addon Installer</h2>
     <p class="sub">Toggle built-in scraper packs or paste ANY Stremio <code>manifest.json</code> URL to inspect and wire directly into AIOStreams Group 1 (Primary), Group 2 (Fallback), or Subtitles.</p>
   `;
 
@@ -600,7 +627,7 @@ function renderPacksAndCustomAddonsSection(ctx) {
   customBox.className = "rows-box";
   customBox.style.borderColor = "var(--border-strong)";
   customBox.innerHTML = `
-    <div style="font-size:13.5px;font-weight:700">🔌 Universal Custom Stremio Addon Installer</div>
+    <div style="font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">${icon("plus", 14)} <span>Universal Custom Stremio Addon Installer</span></div>
     <div style="font-size:12px;color:var(--muted);margin-top:2px">Paste any Stremio addon URL or <code>stremio://…/manifest.json</code> link, inspect its live manifest, and assign its execution group.</div>
   `;
 
@@ -620,7 +647,7 @@ function renderPacksAndCustomAddonsSection(ctx) {
 
   const inspectBtn = document.createElement("button");
   inspectBtn.className = "btn accent-outline";
-  inspectBtn.textContent = "🔎 Inspect Manifest";
+  inspectBtn.innerHTML = `${icon("search", 13)} <span>Inspect Manifest</span>`;
   inspectBtn.onclick = async () => {
     if (!urlIn.value.trim()) return;
     inspectBtn.disabled = true;
@@ -692,7 +719,7 @@ function renderPacksAndCustomAddonsSection(ctx) {
 
     const installBtn = document.createElement("button");
     installBtn.className = "btn primary";
-    installBtn.textContent = "+ Install into AIOStreams";
+    installBtn.innerHTML = `${icon("plus", 14)} <span>Install into AIOStreams</span>`;
     installBtn.onclick = () => {
       if (!Array.isArray(st.customStreamAddons)) st.customStreamAddons = [];
       const slug = m.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toLowerCase() || "cst";
@@ -758,8 +785,8 @@ function renderPacksAndCustomAddonsSection(ctx) {
       };
 
       const rmBtn = document.createElement("button");
-      rmBtn.className = "btn icon-btn danger";
-      rmBtn.textContent = "✕";
+      rmBtn.className = "btn ghost icon-btn danger";
+      rmBtn.innerHTML = icon("x", 13);
       rmBtn.onclick = () => {
         st.customStreamAddons.splice(idx, 1);
         ctx.saveSection("customStreamAddons", true);
@@ -776,22 +803,23 @@ function renderPacksAndCustomAddonsSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Strelingo 19-Language Dual-Subtitle Pair Builder
+// Strelingo 19-Language Dual-Subtitle Pair Builder
 // ---------------------------------------------------------------------------
 function renderDualSubtitlesSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const ds = st.dualSubtitles;
   const card = document.createElement("div");
   card.className = "card";
   if (!ds || !Array.isArray(ds.languages)) {
-    card.innerHTML = `<h2>5. Strelingo Bilingual Dual-Subtitles</h2><p class="sub">Dual-subtitle configuration unavailable.</p>`;
+    card.innerHTML = `<div class="card-eyebrow">${icon("subtitles", 12)} Dual-Subtitles</div><h2>Strelingo Bilingual Dual-Subtitles</h2><p class="sub">Dual-subtitle configuration unavailable.</p>`;
     return card;
   }
 
   const dualPack = (st.packs || []).find(pk => pk.id === "dual_subtitles");
   card.innerHTML = `
-    <h2>5. Strelingo 19-Language Dual-Subtitle Pair Builder</h2>
+    <div class="card-eyebrow">${icon("subtitles", 12)} Dual-Subtitles</div>
+    <h2>Strelingo 19-Language Dual-Subtitle Pair Builder</h2>
     <p class="sub">Render two simultaneous subtitle tracks (spoken language on top, translation underneath) powered by Strelingo + SubSource.</p>
   `;
 
@@ -825,8 +853,8 @@ function renderDualSubtitlesSection(ctx) {
     pill.className = "chip";
     pill.innerHTML = `<strong>${escapeHtml(m.label)} (${escapeHtml(m.short)}) → ${escapeHtml(t.label)} (${escapeHtml(t.short)})</strong>`;
     const rmBtn = document.createElement("button");
-    rmBtn.className = "btn icon-btn danger";
-    rmBtn.textContent = "✕";
+    rmBtn.className = "btn ghost icon-btn danger";
+    rmBtn.innerHTML = icon("x", 12);
     rmBtn.onclick = () => {
       ds.pairs.splice(idx, 1);
       ctx.saveSection("dualSubtitlePairs", true);
@@ -861,7 +889,7 @@ function renderDualSubtitlesSection(ctx) {
   const transCtrl = makeLangSelect("Secondary Translation Language", "eng");
   const addBtn = document.createElement("button");
   addBtn.className = "btn accent-outline";
-  addBtn.textContent = "+ Add Dual-Sub Pair";
+  addBtn.innerHTML = `${icon("plus", 13)} <span>Add Dual-Sub Pair</span>`;
   addBtn.onclick = () => {
     if (mainCtrl.sel.value === transCtrl.sel.value) {
       ctx.showLog("Primary and translation subtitle languages must differ.", [], true);
@@ -876,10 +904,10 @@ function renderDualSubtitlesSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. AIOMetadata Power Controls
+// AIOMetadata Power Controls
 // ---------------------------------------------------------------------------
 function renderMetadataPowerSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const mp = st.metadataPower || {
     movieProvider: "tmdb",
@@ -897,7 +925,8 @@ function renderMetadataPowerSection(ctx) {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>6. AIOMetadata Power Controls</h2>
+    <div class="card-eyebrow">${icon("database", 12)} AIOMetadata</div>
+    <h2>AIOMetadata Power Controls</h2>
     <p class="sub">Configure metadata routers per media type, natural-language AI Search (Gemini / OpenRouter), poster rating overlays, and per-catalog overrides.</p>
   `;
 
@@ -937,7 +966,7 @@ function renderMetadataPowerSection(ctx) {
 
   const posterBox = document.createElement("div");
   posterBox.className = "rows-box";
-  posterBox.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:8px">🖼️ Poster Rating Badge Engine</div>`;
+  posterBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Poster Rating Badge Engine</div>`;
   const posterGrid = document.createElement("div");
   posterGrid.className = "cards-grid-sm";
   [
@@ -967,7 +996,7 @@ function renderMetadataPowerSection(ctx) {
 
   const aiBox = document.createElement("div");
   aiBox.className = "rows-box";
-  aiBox.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:8px">🔍 Search Engines &amp; AI Natural-Language Search</div>`;
+  aiBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Search Engines &amp; AI Natural-Language Search</div>`;
   const seRow = document.createElement("div");
   seRow.className = "chip-row";
   seRow.style.marginBottom = "10px";
@@ -988,7 +1017,7 @@ function renderMetadataPowerSection(ctx) {
   aiBox.appendChild(seRow);
 
   aiBox.appendChild(
-    ctx.ui.makeSwitch("✨ Enable AI Natural-Language Search", Boolean(mp.aiSearchEnabled), (v) => {
+    ctx.ui.makeSwitch("Enable AI Natural-Language Search", Boolean(mp.aiSearchEnabled), (v) => {
       mp.aiSearchEnabled = v;
       ctx.saveSection("metadataPower", true);
     })
@@ -1013,7 +1042,7 @@ function renderMetadataPowerSection(ctx) {
     const keyName = (mp.aiSearchProvider || "gemini") === "openrouter" ? "SECRET_OPENROUTER_API_KEY" : "SECRET_GEMINI_API_KEY";
     const keyIn = document.createElement("input");
     keyIn.type = "password";
-    keyIn.placeholder = ctx.isEnvKeyReady(keyName) ? `${keyName} saved ✓` : `Paste ${keyName}…`;
+    keyIn.placeholder = ctx.isEnvKeyReady(keyName) ? `${keyName} saved` : `Paste ${keyName}…`;
     keyIn.value = ctx.pendingEnvEdits[keyName] || "";
     keyIn.onchange = () => {
       ctx.setPendingEnv(keyName, keyIn.value);
@@ -1035,7 +1064,7 @@ function renderMetadataPowerSection(ctx) {
     catHead.className = "row-between";
     catHead.style.marginBottom = "10px";
     catHead.style.flexWrap = "wrap";
-    catHead.innerHTML = `<strong style="font-size:13px">📋 AIOMetadata Catalog Overrides (${cats.length} catalogs)</strong>`;
+    catHead.innerHTML = `<strong style="font-size:12.5px">AIOMetadata Catalog Overrides (${cats.length} catalogs)</strong>`;
 
     const searchIn = document.createElement("input");
     searchIn.type = "text";
@@ -1154,10 +1183,10 @@ function renderMetadataPowerSection(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Upstream Instance Deep-Links
+// Upstream Instance Deep-Links
 // ---------------------------------------------------------------------------
 function renderUpstreamDeepLinksSection(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const t = ctx.state.tenant || {};
   const sUuid = t.aiostreamsUuid || "";
   const sUrl = t.aiostreamsConfigureUrl || "https://aiostreams.elfhosted.com/stremio/configure";
@@ -1167,8 +1196,9 @@ function renderUpstreamDeepLinksSection(ctx) {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>7. Upstream Instance Editors &amp; OAuth Portals</h2>
-    <p class="sub">Open your live AIOStreams or AIOMetadata Configure UI for one-time Trakt/Simkl OAuth or Torznab indexers, then click <strong>📥 Pull</strong> in the top bar.</p>
+    <div class="card-eyebrow">${icon("externalLink", 12)} Upstream Portals</div>
+    <h2>Upstream Instance Editors &amp; OAuth Portals</h2>
+    <p class="sub">Open your live AIOStreams or AIOMetadata Configure UI for one-time Trakt/Simkl OAuth or Torznab indexers, then click <strong>Pull</strong> in the top bar.</p>
   `;
 
   const grid = document.createElement("div");
@@ -1191,7 +1221,7 @@ function renderUpstreamDeepLinksSection(ctx) {
     if (uuid) {
       const cp = document.createElement("button");
       cp.className = "btn icon-btn";
-      cp.textContent = "📋 Copy UUID";
+      cp.innerHTML = `${icon("copy", 12)} <span>Copy UUID</span>`;
       cp.onclick = () => ctx.copyText(uuid, `${title} UUID`);
       btns.appendChild(cp);
     }
@@ -1200,7 +1230,7 @@ function renderUpstreamDeepLinksSection(ctx) {
     a.href = url;
     a.target = "_blank";
     a.rel = "noreferrer";
-    a.textContent = `Open ${title} ↗`;
+    a.innerHTML = `<span>Open ${escapeHtml(title)}</span> ${icon("externalLink", 12)}`;
     btns.appendChild(a);
     box.appendChild(btns);
     grid.appendChild(box);

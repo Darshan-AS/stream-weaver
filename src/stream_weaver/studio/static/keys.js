@@ -26,16 +26,16 @@ export function renderKeysTab(root, ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Nuvio Sign-In & Profile Binding
+// Nuvio Sign-In & Profile Binding
 // ---------------------------------------------------------------------------
 function renderNuvioSignInCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const p = ctx.currentProfile();
   const card = document.createElement("div");
   card.className = "card";
 
   if (!p || !p.nuvio) {
-    card.innerHTML = `<h2>1. Nuvio Cloud Account</h2><p class="sub">Nuvio client sync is not enabled on this profile.</p>`;
+    card.innerHTML = `<div class="card-eyebrow">${icon("lock", 12)} Client Auth</div><h2>Nuvio Cloud Account</h2><p class="sub">Nuvio client sync is not enabled on this profile.</p>`;
     return card;
   }
 
@@ -43,7 +43,8 @@ function renderNuvioSignInCard(ctx) {
   card.innerHTML = `
     <div class="row-between" style="flex-wrap:wrap">
       <div>
-        <h2>1. Nuvio Cloud Sign-In &amp; Profile Binding (Login: <code>${escapeHtml(p.nuvio.login)}</code>)</h2>
+        <div class="card-eyebrow">${icon("lock", 12)} Client Auth</div>
+        <h2>Nuvio Cloud Sign-In &amp; Profile Binding (Login: <code>${escapeHtml(p.nuvio.login)}</code>)</h2>
         <p class="sub" style="margin-bottom:0">Sign in once on each Nuvio device (TV / Desktop / Mobile) to initialize its cloud blob, then authenticate here to sync collections, badges, and settings.</p>
       </div>
       <span class="pill ${ready ? "ok" : "warn"}">${ready ? `Signed In ${escapeHtml(p.nuvio.email ? "· " + p.nuvio.email : "")}` : "Not Signed In Yet"}</span>
@@ -96,7 +97,7 @@ function renderNuvioSignInCard(ctx) {
 
   const loginBtn = document.createElement("button");
   loginBtn.className = "btn accent-outline";
-  loginBtn.textContent = ready ? "🔄 Sign In / Refresh Profiles" : "🔐 Sign In to Nuvio";
+  loginBtn.innerHTML = `${icon(ready ? "refresh" : "lock", 13)} <span>${ready ? "Sign In / Refresh Profiles" : "Sign In to Nuvio"}</span>`;
   loginBtn.onclick = async () => {
     loginBtn.disabled = true;
     try {
@@ -124,7 +125,7 @@ function renderNuvioSignInCard(ctx) {
   const platRow = document.createElement("div");
   platRow.className = "row-wrap";
   platRow.style.marginTop = "12px";
-  platRow.innerHTML = `<span style="font-size:12px;color:var(--muted);font-weight:600">Synced Nuvio Platforms:</span>`;
+  platRow.innerHTML = `<span style="font-size:12px;color:var(--muted);font-weight:500">Synced Nuvio Platforms:</span>`;
   const curPlats = Array.isArray(p.nuvio.platforms) ? p.nuvio.platforms : ["tv", "desktop", "mobile"];
   ["tv", "desktop", "mobile"].forEach(plat => {
     const lbl = document.createElement("label");
@@ -150,10 +151,10 @@ function renderNuvioSignInCard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Grouped Secret & Instance URL Vault
+// Grouped Secret & Instance URL Vault
 // ---------------------------------------------------------------------------
 function renderEnvVaultCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const st = ctx.state;
   const envList = st.env || [];
 
@@ -166,7 +167,8 @@ function renderEnvVaultCard(ctx) {
   topRow.style.marginBottom = "12px";
   topRow.innerHTML = `
     <div>
-      <h2>2. Grouped API Keys, Passwords &amp; Instance URLs</h2>
+      <div class="card-eyebrow">${icon("key", 12)} Secrets Vault</div>
+      <h2>Grouped API Keys, Passwords &amp; Instance URLs</h2>
       <p class="sub" style="margin-bottom:0">Secrets remain masked in the UI and scrubbed from GitOps JSON files. Leave a secret input blank to retain its saved value.</p>
     </div>
   `;
@@ -182,7 +184,9 @@ function renderEnvVaultCard(ctx) {
   const provBtn = document.createElement("button");
   provBtn.className = "btn accent-outline";
   const allProv = st.tenant?.aiostreamsProvisioned && st.tenant?.aiometadataProvisioned;
-  provBtn.textContent = allProv ? "✅ Instances Provisioned" : "✨ Provision New UUIDs";
+  provBtn.innerHTML = allProv
+    ? `${icon("check", 13)} <span>Instances Provisioned</span>`
+    : `${icon("sparkles", 13)} <span>Provision New UUIDs</span>`;
   provBtn.onclick = async () => {
     provBtn.disabled = true;
     try {
@@ -200,14 +204,14 @@ function renderEnvVaultCard(ctx) {
   topRow.appendChild(topActions);
   card.appendChild(topRow);
 
-  // Group Filter Tabs
+  // Group Filter Segmented Tabs
   const groupTabs = document.createElement("div");
-  groupTabs.className = "tabs";
+  groupTabs.className = "segmented";
   groupTabs.style.marginBottom = "14px";
   const groupsPresent = ["all", ...Array.from(new Set(envList.map(e => e.group || "other")))];
   groupsPresent.forEach(grp => {
     const b = document.createElement("button");
-    b.className = "tab" + (activeEnvGroup === grp ? " active" : "");
+    b.className = "seg-btn" + (activeEnvGroup === grp ? " active" : "");
     b.textContent = ENV_GROUP_LABELS[grp] || grp;
     b.onclick = () => {
       activeEnvGroup = grp;
@@ -231,9 +235,9 @@ function renderEnvVaultCard(ctx) {
     const pendingVal = ctx.pendingEnvEdits[item.key] || "";
     const ready = item.isSet || Boolean(pendingVal.trim());
     const pillCls = ready ? "ok" : (item.required ? "warn" : "");
-    const pillTxt = ready ? "Ready ✓" : (item.required ? "Required" : "Optional");
+    const pillTxt = ready ? "Ready" : (item.required ? "Required" : "Optional");
     const linkHtml = item.signupUrl
-      ? `<a href="${escapeHtml(item.signupUrl)}" target="_blank" rel="noreferrer">Get Key ↗</a>`
+      ? `<a href="${escapeHtml(item.signupUrl)}" target="_blank" rel="noreferrer"><span>Get Key</span> ${icon("externalLink", 11)}</a>`
       : "";
 
     box.innerHTML = `
@@ -266,7 +270,8 @@ function renderEnvVaultCard(ctx) {
       const eye = document.createElement("button");
       eye.className = "btn icon-btn";
       eye.title = "Toggle visibility";
-      eye.textContent = isRev ? "🙈" : "👁️";
+      eye.setAttribute("aria-label", "Toggle secret visibility");
+      eye.innerHTML = icon(isRev ? "eyeOff" : "eye", 14);
       eye.onclick = () => {
         if (revealedKeys.has(item.key)) revealedKeys.delete(item.key);
         else revealedKeys.add(item.key);
@@ -284,10 +289,10 @@ function renderEnvVaultCard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Raw JSON Escape Hatch Launcher Card
+// Raw JSON Escape Hatch Launcher Card
 // ---------------------------------------------------------------------------
 function renderRawEscapeHatchCard(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const p = ctx.currentProfile();
   const profKey = p ? `profile:${p.name}` : "profile:main";
 
@@ -296,7 +301,8 @@ function renderRawEscapeHatchCard(ctx) {
   card.innerHTML = `
     <div class="row-between" style="flex-wrap:wrap">
       <div>
-        <h2>3. 🛠️ Raw JSON Escape Hatch (Zero Lock-In)</h2>
+        <div class="card-eyebrow">${icon("code", 12)} GitOps Files</div>
+        <h2>Raw JSON Escape Hatch (Zero Lock-In)</h2>
         <p class="sub" style="margin-bottom:0">Inspect or hand-edit any workspace JSON document directly in Studio. Service configs are schema-checked and auto-scrubbed via SecretLens so raw API tokens never hit disk.</p>
       </div>
     </div>
@@ -322,7 +328,7 @@ function renderRawEscapeHatchCard(ctx) {
     `;
     const btn = document.createElement("button");
     btn.className = "btn accent-outline";
-    btn.textContent = "🛠️ Edit Raw JSON →";
+    btn.innerHTML = `${icon("code", 13)} <span>Edit Raw JSON</span>`;
     btn.onclick = () => ctx.openRawJsonModal(docKey);
     box.appendChild(btn);
     docsGrid.appendChild(box);

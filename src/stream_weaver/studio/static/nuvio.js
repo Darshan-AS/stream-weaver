@@ -53,18 +53,16 @@ export function renderNuvioTab(root, ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Visual Elite-Badges Card Preview (TOP / BOTTOM)
+// Visual Elite-Badges Card Preview (TOP / BOTTOM)
 // ---------------------------------------------------------------------------
 function renderEliteBadgesSimulatorCard(ctx, p) {
+  const { icon } = ctx.ui;
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <div class="row-between">
-      <div>
-        <h2>🏷️ Visual Elite-Badges Stream Card Preview</h2>
-        <p class="sub">Regex-matched 4K, Dolby Vision, HDR10+, Atmos, and Debrid badges across TV, Desktop, and Mobile.</p>
-      </div>
-    </div>
+    <div class="card-eyebrow">${icon("layers", 12)} Badges Preview</div>
+    <h2>Elite-Badges Stream Card Simulator</h2>
+    <p class="sub">Regex-matched 4K, Dolby Vision, HDR10+, Atmos, and Debrid badges across TV, Desktop, and Mobile.</p>
   `;
 
   const ctrlRow = document.createElement("div");
@@ -80,12 +78,10 @@ function renderEliteBadgesSimulatorCard(ctx, p) {
   );
 
   const posTabs = document.createElement("div");
-  posTabs.className = "tabs";
-  [["BOTTOM", "Badge Row: BOTTOM"], ["TOP", "Badge Row: TOP"]].forEach(([pos, lbl]) => {
+  posTabs.className = "segmented";
+  [["BOTTOM", "Row: BOTTOM"], ["TOP", "Row: TOP"]].forEach(([pos, lbl]) => {
     const b = document.createElement("button");
-    b.className = "tab" + (badgePlacementPreview === pos ? " active" : "");
-    b.style.padding = "5px 10px";
-    b.style.fontSize = "11.5px";
+    b.className = "seg-btn" + (badgePlacementPreview === pos ? " active" : "");
     b.textContent = lbl;
     b.onclick = () => {
       badgePlacementPreview = pos;
@@ -103,7 +99,7 @@ function renderEliteBadgesSimulatorCard(ctx, p) {
         <span class="elite-badge b-hdr">HDR10+</span>
         <span class="elite-badge b-codec">HEVC 10bit</span>
         <span class="elite-badge b-atmos">Dolby Atmos</span>
-        <span class="elite-badge b-cached">Cached ⚡</span>
+        <span class="elite-badge b-cached">Cached Instant</span>
       </div>`
     : `<div style="font-size:11.5px;color:var(--muted)">Elite-Badges disabled on this profile (plain text stream card only).</div>`;
 
@@ -111,8 +107,8 @@ function renderEliteBadgesSimulatorCard(ctx, p) {
   simCard.className = "stream-card-sim";
   const textBlock = `
     <div class="stream-sim-row">
-      <div class="stream-sim-name">AIOStreams\n⚡ Instant</div>
-      <div class="stream-sim-desc"><strong>Oppenheimer.2023.2160p.UHD.BluRay.REMUX.DV.HDR10Plus.TrueHD.7.1.Atmos-FGT</strong>\n📦 74.2 GB · IMAX Edition · TorBox Cloud</div>
+      <div class="stream-sim-name">AIOStreams\nInstant</div>
+      <div class="stream-sim-desc"><strong>Oppenheimer.2023.2160p.UHD.BluRay.REMUX.DV.HDR10Plus.TrueHD.7.1.Atmos-FGT</strong>\n74.2 GB · IMAX Edition · TorBox Cloud</div>
     </div>
   `;
   simCard.innerHTML = badgePlacementPreview === "TOP"
@@ -124,9 +120,10 @@ function renderEliteBadgesSimulatorCard(ctx, p) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Interactive 16:9 Player Subtitle Scale Simulator
+// Interactive 16:9 Cinema Player Subtitle Scale Simulator
 // ---------------------------------------------------------------------------
 function renderSubtitleScaleSimulatorCard(ctx, p) {
+  const { icon } = ctx.ui;
   const sWith = p.settings?.with || {};
   const themeId = sWith.theme || "ocean";
   const swatch = THEME_SWATCHES.find(t => t.id === themeId) || THEME_SWATCHES[0];
@@ -140,22 +137,21 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
 
   const head = document.createElement("div");
   head.className = "row-between";
-  head.style.marginBottom = "10px";
+  head.style.marginBottom = "12px";
   head.style.flexWrap = "wrap";
   head.innerHTML = `
     <div>
-      <h2>🎬 Interactive 16:9 Subtitle Scale Simulator</h2>
+      <div class="card-eyebrow">${icon("subtitles", 12)} Player Stage</div>
+      <h2>16:9 Subtitle Scale Simulator</h2>
       <p class="sub" style="margin-bottom:0">Drag sliders to preview live subtitle legibility before pushing to devices.</p>
     </div>
   `;
 
   const modeSwitch = document.createElement("div");
-  modeSwitch.className = "tabs";
-  [["tv", "📺 TV Scale (%)"], ["desktop", "💻 Desktop/Mobile (sp)"]].forEach(([m, lbl]) => {
+  modeSwitch.className = "segmented";
+  [["tv", "TV Scale (%)"], ["desktop", "Desktop (sp)"]].forEach(([m, lbl]) => {
     const b = document.createElement("button");
-    b.className = "tab" + (playerPreviewTarget === m ? " active" : "");
-    b.style.padding = "5px 10px";
-    b.style.fontSize = "11.5px";
+    b.className = "seg-btn" + (playerPreviewTarget === m ? " active" : "");
     b.textContent = lbl;
     b.onclick = () => {
       playerPreviewTarget = m;
@@ -193,9 +189,9 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
   const seekbar = document.createElement("div");
   seekbar.className = "player-seekbar";
   seekbar.innerHTML = `
-    <div class="row-between" style="font-size:10.5px;color:var(--muted)">
-      <span>01:42:18</span>
-      <span>02:43:47</span>
+    <div class="player-controls-row">
+      <div class="player-icons">${icon("play", 12)} ${icon("volume", 12)} <span>01:42:18</span></div>
+      <div class="player-icons">${icon("subtitles", 12)} <span>02:43:47</span></div>
     </div>
     <div class="player-progress-track"><div class="player-progress-fill"></div></div>
   `;
@@ -211,7 +207,8 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
   const spLbl = document.createElement("label");
   spLbl.className = "field";
   const spValSpan = document.createElement("span");
-  spValSpan.textContent = `Desktop/Mobile Size: ${sizeSp} sp`;
+  spValSpan.className = "tabular";
+  spValSpan.textContent = `Desktop / Mobile Size: ${sizeSp} sp`;
   const spRange = document.createElement("input");
   spRange.type = "range";
   spRange.min = "12";
@@ -219,7 +216,7 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
   spRange.value = String(sizeSp);
   spRange.oninput = () => {
     sizeSp = Number(spRange.value);
-    spValSpan.textContent = `Desktop/Mobile Size: ${sizeSp} sp`;
+    spValSpan.textContent = `Desktop / Mobile Size: ${sizeSp} sp`;
     if (playerPreviewTarget === "desktop") {
       subOverlay.style.fontSize = `${computePx()}px`;
     }
@@ -234,6 +231,7 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
   const tvLbl = document.createElement("label");
   tvLbl.className = "field";
   const tvValSpan = document.createElement("span");
+  tvValSpan.className = "tabular";
   tvValSpan.textContent = `TV Subtitle Scale: ${tvPercent}%`;
   const tvRange = document.createElement("input");
   tvRange.type = "range";
@@ -262,9 +260,10 @@ function renderSubtitleScaleSimulatorCard(ctx, p) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. 12 Nuvio Themes + AMOLED + Layout + Playback & Languages
+// 12 Nuvio Themes + AMOLED + Layout + Playback & Languages
 // ---------------------------------------------------------------------------
 function renderAppearanceAndPlaybackCard(ctx, p) {
+  const { icon } = ctx.ui;
   const st = ctx.state;
   const sWith = p.settings?.with || {};
   const curTheme = sWith.theme || "ocean";
@@ -273,8 +272,9 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>🎨 Nuvio Themes, TV Layout &amp; Playback (<code>nuvio_settings</code>)</h2>
-    <p class="sub">Read-modify-write sync across TV, Desktop, and Mobile—device decoders and buffers remain untouched.</p>
+    <div class="card-eyebrow">${icon("sliders", 12)} Appearance &amp; Playback</div>
+    <h2>Nuvio Themes, TV Layout &amp; Playback (<code>nuvio_settings</code>)</h2>
+    <p class="sub">Read-modify-write sync across TV, Desktop, and Mobile — device decoders and buffers remain untouched.</p>
   `;
 
   card.appendChild(
@@ -285,7 +285,6 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
   );
 
   if (p.settings?.enabled) {
-    // 12 Theme Swatches
     const swatchBox = document.createElement("div");
     swatchBox.className = "rows-box";
     const swTop = document.createElement("div");
@@ -315,7 +314,6 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
     swatchBox.appendChild(swatchGrid);
     card.appendChild(swatchBox);
 
-    // Remaining settings recipe params (TV Home Layout, Stream Auto-Select, Languages, Spoiler Blur)
     const skipNames = new Set(["theme", "amoledBlack", "subtitleSizeSp", "tvSubtitleSizePercent"]);
     const fields = document.createElement("div");
     fields.style.display = "grid";
@@ -340,14 +338,16 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Details-Page Enrichment & MDBList 8-Source Ratings (`nuvio_meta`)
+// Details-Page Enrichment & MDBList 8-Source Ratings (`nuvio_meta`)
 // ---------------------------------------------------------------------------
 function renderMetaEnrichmentCard(ctx, p) {
+  const { icon } = ctx.ui;
   const st = ctx.state;
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <h2>⭐ 8-Source MDBList Ratings &amp; Spoiler Protection (<code>nuvio_meta</code>)</h2>
+    <div class="card-eyebrow">${icon("shield", 12)} Details &amp; Spoilers</div>
+    <h2>8-Source MDBList Ratings &amp; Spoiler Protection (<code>nuvio_meta</code>)</h2>
     <p class="sub">Syncs IMDb · TMDB · Rotten Tomatoes · Audience · Metacritic · Letterboxd · Trakt · MAL ratings bar, TMDB hero trailers, and spoiler blur.</p>
   `;
 
@@ -363,7 +363,7 @@ function renderMetaEnrichmentCard(ctx, p) {
   ratingPreview.style.marginTop = "12px";
   [
     ["IMDb", "8.6"], ["TMDB", "84%"], ["RT Critics", "93%"], ["RT Audience", "91%"],
-    ["Metacritic", "83"], ["Letterboxd", "4.3★"], ["Trakt", "88%"], ["MAL", "8.9"],
+    ["Metacritic", "83"], ["Letterboxd", "4.3"], ["Trakt", "88%"], ["MAL", "8.9"],
   ].forEach(([src, val]) => {
     const c = document.createElement("span");
     c.className = "chip" + (p.meta?.enabled ? " active" : "");
@@ -393,16 +393,17 @@ function renderMetaEnrichmentCard(ctx, p) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
+// Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
 // ---------------------------------------------------------------------------
 function renderOperationsPanel(ctx) {
-  const { escapeHtml } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
     <div class="row-between" style="flex-wrap:wrap">
       <div>
-        <h2>🩺 Live Workspace Operations &amp; Diagnostics</h2>
+        <div class="card-eyebrow">${icon("activity", 12)} Diagnostics</div>
+        <h2>Live Workspace Operations &amp; Diagnostics</h2>
         <p class="sub" style="margin-bottom:0">Verify API keys &amp; instance reachability, inspect live vs. local drift, or pre-warm Home catalog caches.</p>
       </div>
     </div>
@@ -414,7 +415,7 @@ function renderOperationsPanel(ctx) {
 
   const docBtn = document.createElement("button");
   docBtn.className = "btn accent-outline";
-  docBtn.textContent = "🩺 Run Live Health Doctor";
+  docBtn.innerHTML = `${icon("activity", 13)} <span>Run Live Health Doctor</span>`;
   docBtn.onclick = async () => {
     docBtn.disabled = true;
     try {
@@ -429,7 +430,7 @@ function renderOperationsPanel(ctx) {
 
   const diffBtn = document.createElement("button");
   diffBtn.className = "btn";
-  diffBtn.textContent = "🔍 Check Live Drift Diff";
+  diffBtn.innerHTML = `${icon("gitDiff", 13)} <span>Check Live Drift Diff</span>`;
   diffBtn.onclick = async () => {
     diffBtn.disabled = true;
     try {
@@ -444,7 +445,7 @@ function renderOperationsPanel(ctx) {
 
   const warmBtn = document.createElement("button");
   warmBtn.className = "btn";
-  warmBtn.textContent = "🔥 Pre-Warm Home Rows";
+  warmBtn.innerHTML = `${icon("flame", 13)} <span>Pre-Warm Home Rows</span>`;
   warmBtn.onclick = async () => {
     warmBtn.disabled = true;
     try {
@@ -464,7 +465,7 @@ function renderOperationsPanel(ctx) {
   if (inlineWarmResult) {
     const wBox = document.createElement("div");
     wBox.className = "rows-box";
-    wBox.innerHTML = `<span class="pill ok">🔥 Warm Complete</span> Warmed <strong>${Number(inlineWarmResult.warmed ?? 0)} / ${Number(inlineWarmResult.total ?? 0)}</strong> Home catalog endpoints.`;
+    wBox.innerHTML = `<span class="pill ok">Warm Complete</span> Warmed <strong>${Number(inlineWarmResult.warmed ?? 0)} / ${Number(inlineWarmResult.total ?? 0)}</strong> Home catalog endpoints.`;
     card.appendChild(wBox);
   }
 
@@ -501,7 +502,7 @@ function renderOperationsPanel(ctx) {
   if (inlineDiffOutcomes) {
     const dfBox = document.createElement("div");
     dfBox.className = "rows-box";
-    dfBox.innerHTML = `<strong style="font-size:13px;display:block;margin-bottom:8px">Local vs. Remote Drift Diff</strong>`;
+    dfBox.innerHTML = `<strong style="font-size:12.5px;display:block;margin-bottom:8px">Local vs. Remote Drift Diff</strong>`;
     if (!inlineDiffOutcomes.length) {
       dfBox.insertAdjacentHTML("beforeend", `<div style="font-size:12px;color:var(--muted)">No provisioned remote targets to diff yet.</div>`);
     } else {
@@ -511,7 +512,7 @@ function renderOperationsPanel(ctx) {
         item.innerHTML = `
           <div class="row-between" style="margin-bottom:4px">
             <strong><code>${escapeHtml(o.target)}</code></strong>
-            <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync ✓" : `+${o.addedLines} / -${o.removedLines}`}</span>
+            <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync" : `+${o.addedLines} / -${o.removedLines}`}</span>
           </div>
         `;
         if (!o.inSync && o.unifiedDiff) {
