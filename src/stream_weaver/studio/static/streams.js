@@ -1,6 +1,15 @@
 // Tab 2 — AIOStreams & AIOMetadata Power Studio
 
+import {
+  getViewportState,
+  hasZeroWidthBadgeEncoding,
+  renderNuvioStreamCard,
+  setViewportState,
+} from "./nuvio_viewport.js";
+
 let streamsSubFilter = "all"; // all | streams | metadata
+let previewClientMode = "nuvio"; // nuvio | stremio
+let previewShowBadgesOverride = null; // null = follow active profile's nuvio_badges setting
 let inspectedStreamAddon = null;
 let customManifestUrlInput = "";
 let customGroupChoice = "primary";
@@ -293,21 +302,101 @@ function renderFormatterSection(ctx) {
   });
 
   const activePreset = presets.find(p => p.id === activeId) || presets[0];
-  const sampleName = fmt.sampleName && activeId === "custom" ? fmt.sampleName : activePreset.sampleName;
-  const sampleDesc = fmt.sampleDescription && activeId === "custom" ? fmt.sampleDescription : activePreset.sampleDescription;
+  const profile = ctx.currentProfile();
+  const vp = getViewportState();
+  const profileBadgesOn =
+    profile?.badgesEnabled !== undefined
+      ? Boolean(profile.badgesEnabled)
+      : Boolean(profile?.compiledPreview?.badges?.enabled);
+  const showBadges = previewShowBadgesOverride !== null ? previewShowBadgesOverride : profileBadgesOn;
+  const badgePlacement = vp.badgePlacement || profile?.compiledPreview?.badges?.placement || "BOTTOM";
+  const theme = profile?.settings?.with?.theme || profile?.compiledPreview?.settings?.theme || "ocean";
+  const amoled =
+    profile?.settings?.with?.amoledBlack !== undefined
+      ? Boolean(profile.settings.with.amoledBlack)
+      : (profile?.compiledPreview?.settings?.amoledBlack !== false);
+  const isZeroWidthCustom = activeId === "custom" && hasZeroWidthBadgeEncoding(fmt);
 
   const previewWrap = document.createElement("div");
-  previewWrap.className = "stream-card-sim";
-  previewWrap.innerHTML = `
-    <div class="row-between">
-      <span class="eyebrow" style="padding:0">Live Nuvio Stream Picker Preview</span>
-      <span class="pill accent">${escapeHtml(activePreset ? activePreset.label : activeId)}</span>
-    </div>
-    <div class="stream-sim-row">
-      <div class="stream-sim-name">${escapeHtml(sampleName)}</div>
-      <div class="stream-sim-desc">${escapeHtml(sampleDesc)}</div>
-    </div>
-  `;
+  previewWrap.className = "nv-device-frame";
+  previewWrap.dataset.nuvioTheme = theme;
+  previewWrap.dataset.nuvioAmoled = String(amoled);
+  previewWrap.style.cssText = "padding:14px;display:flex;flex-direction:column;gap:11px;border-radius:12px";
+
+  const previewTop = document.createElement("div");
+  previewTop.className = "row-between";
+  previewTop.style.flexWrap = "wrap";
+  previewTop.innerHTML = `<span class="eyebrow" style="padding:0;color:var(--nv-muted)">Live ${previewClientMode === "nuvio" ? "Nuvio" : "Stremio"} Stream Card</span>`;
+
+  const pControls = document.createElement("div");
+  pControls.className = "row-wrap";
+  pControls.style.gap = "6px";
+
+  const clientSeg = document.createElement("div");
+  clientSeg.className = "segmented";
+  [["nuvio", "Nuvio"], ["stremio", "Stremio"]].forEach(([cm, lbl]) => {
+    const b = document.createElement("button");
+    b.className = "seg-btn" + (previewClientMode === cm ? " active" : "");
+    b.textContent = lbl;
+    b.onclick = () => {
+      previewClientMode = cm;
+      ctx.render();
+    };
+    clientSeg.appendChild(b);
+  });
+  pControls.appendChild(clientSeg);
+
+  if (previewClientMode === "nuvio") {
+    const badgeToggle = document.createElement("button");
+    badgeToggle.className = "btn ghost icon-btn" + (showBadges ? " accent-outline" : "");
+    badgeToggle.style.fontSize = "11px";
+    badgeToggle.innerHTML = `${icon("shield", 11)} <span>Badges: ${showBadges ? "ON" : "OFF"}</span>`;
+    badgeToggle.title = "Toggle Nuvio Elite-Badges preview (synced from active profile by default)";
+    badgeToggle.onclick = () => {
+      previewShowBadgesOverride = !showBadges;
+      ctx.render();
+    };
+    pControls.appendChild(badgeToggle);
+
+    if (showBadges) {
+      const posBtn = document.createElement("button");
+      posBtn.className = "btn ghost icon-btn";
+      posBtn.style.fontSize = "11px";
+      posBtn.textContent = badgePlacement;
+      posBtn.title = "Toggle badge placement TOP vs BOTTOM";
+      posBtn.onclick = () => {
+        setViewportState({ badgePlacement: badgePlacement === "TOP" ? "BOTTOM" : "TOP" });
+        ctx.render();
+      };
+      pControls.appendChild(posBtn);
+    }
+  }
+
+  previewTop.appendChild(pControls);
+  previewWrap.appendChild(previewTop);
+
+  previewWrap.appendChild(
+    renderNuvioStreamCard(ctx, {
+      profile,
+      fmtPreset: activeId,
+      showBadges,
+      placement: badgePlacement,
+      clientMode: previewClientMode,
+    })
+  );
+
+  const note = document.createElement("div");
+  note.style.cssText = "font-size:11px;color:var(--nv-muted);line-height:1.42";
+  if (isZeroWidthCustom && previewClientMode === "nuvio") {
+    note.textContent = showBadges
+      ? "Zero-width Elite-Badges formatter detected: invisible markers in stream.name trigger Nuvio's crisp PNG badges without cluttering text."
+      : "Zero-width Elite-Badges formatter detected: turn Badges ON (nuvio_badges) so Nuvio renders 4K, DV, Atmos, and Debrid icons.";
+  } else if (previewClientMode === "stremio") {
+    note.textContent = "Stremio renders a 2-column Name | Description split without Nuvio Elite-Badges PNG icons.";
+  } else {
+    note.textContent = `Showing ${activePreset ? activePreset.label : activeId} inside Nuvio's stacked StreamCard (${theme}${amoled ? " · AMOLED" : ""}).`;
+  }
+  previewWrap.appendChild(note);
 
   layout.append(choices, previewWrap);
   card.appendChild(layout);

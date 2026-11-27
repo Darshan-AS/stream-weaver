@@ -49,39 +49,75 @@ const THEME_ACCENT_HEX = {
 const STREAM_SAMPLES = [
   {
     addon: "AIOStreams",
+    scraper: "Torrentio",
     source: "TorBox",
     quality: "2160p",
     remux: true,
     cached: true,
-    hdr: "Dolby Vision HDR10+",
+    hdr: "DV HDR10+",
+    hdrFull: "Dolby Vision HDR10+",
     codec: "HEVC 10bit",
+    encode: "HEVC",
     audio: "TrueHD 7.1 Atmos",
-    size: "68.4 GB",
-    origin: "BluRay REMUX · FGT",
+    audioShort: "Atmos 7.1",
+    size: "42.8 GB",
+    bitrate: "58.4 Mbps",
+    duration: "2h 46m",
+    qualityType: "BluRay REMUX",
+    releaseGroup: "FraMeSToR",
+    languages: "English · Japanese",
+    subs: "EN · JA",
+    filename: "Dune.Part.Two.2024.2160p.UHD.BluRay.REMUX.DV.HDR10+.TrueHD.7.1.Atmos-FraMeSToR.mkv",
+    origin: "BluRay REMUX · FraMeSToR",
+    scoreStars: "◆◆◆◆◇",
   },
   {
     addon: "AIOStreams",
+    scraper: "MediaFusion",
     source: "TorBox",
     quality: "2160p",
     remux: false,
     cached: true,
-    hdr: "Dolby Vision",
+    hdr: "DV",
+    hdrFull: "Dolby Vision",
     codec: "HEVC 10bit",
+    encode: "HEVC",
     audio: "DD+ 5.1 Atmos",
+    audioShort: "Atmos 5.1",
     size: "18.7 GB",
+    bitrate: "16.2 Mbps",
+    duration: "2h 46m",
+    qualityType: "WEB-DL",
+    releaseGroup: "FLUX",
+    languages: "English",
+    subs: "EN · ES",
+    filename: "Dune.Part.Two.2024.2160p.NF.WEB-DL.DDP5.1.Atmos.DV.H.265-FLUX.mkv",
     origin: "NF WEB-DL · FLUX",
+    scoreStars: "◆◆◆◆◇",
   },
   {
     addon: "AIOStreams",
+    scraper: "Comet",
     source: "TorBox",
     quality: "1080p",
     remux: false,
     cached: true,
     hdr: "SDR",
+    hdrFull: "SDR",
     codec: "AVC",
-    audio: "AAC 2.0",
-    size: "4.2 GB",
+    encode: "AVC",
+    audio: "DD+ 5.1",
+    audioShort: "DD+ 5.1",
+    size: "6.4 GB",
+    bitrate: "5.4 Mbps",
+    duration: "2h 46m",
+    qualityType: "WEB-DL",
+    releaseGroup: "NTb",
+    languages: "English",
+    subs: "EN",
+    filename: "Dune.Part.Two.2024.1080p.ATVP.WEB-DL.DDP5.1.H.264-NTb.mkv",
     origin: "ATVP WEB-DL · NTb",
+    scoreStars: "◆◆◆◇◇",
   },
 ];
 
@@ -346,14 +382,27 @@ function effectiveBadges(profile) {
   };
 }
 
+function debridShortCode(debridIdOrLabel) {
+  const s = String(debridIdOrLabel || "").toLowerCase();
+  if (s.includes("torbox") || s === "tb") return "TB";
+  if (s.includes("real") || s === "rd") return "RD";
+  if (s.includes("alldebrid") || s === "ad") return "AD";
+  if (s.includes("premiumize") || s === "pm") return "PM";
+  if (s.includes("easynews") || s === "en") return "EN";
+  if (s.includes("debrid-link") || s === "dl") return "DL";
+  if (s.includes("offcloud") || s === "oc") return "OC";
+  return "TB";
+}
+
 function matchStreamBadgeIds(sample, debridLabel) {
   const ids = [];
   if (sample.quality === "2160p") ids.push("4k-ultra-hd");
   if (sample.quality === "1080p") ids.push("1080p-full-hd");
   if (sample.remux) ids.push("remux");
   else if (sample.origin.includes("WEB-DL")) ids.push("webdl");
-  if (sample.hdr.includes("Dolby Vision")) ids.push("dolby-vision");
-  if (sample.hdr.includes("HDR10+")) ids.push("hdr10-plus");
+  const hdrTxt = sample.hdrFull || sample.hdr || "";
+  if (hdrTxt.includes("Dolby Vision") || hdrTxt.includes("DV")) ids.push("dolby-vision");
+  if (hdrTxt.includes("HDR10+")) ids.push("hdr10-plus");
   if (sample.codec.includes("HEVC")) ids.push("hevc", "10bit");
   else if (sample.codec.includes("AVC")) ids.push("avc");
   if (sample.audio.includes("Atmos")) ids.push("dolby-atmos");
@@ -387,25 +436,113 @@ function renderBadgesStrip(ctx, badgeCfg, sample, debridLabel) {
   return items.length ? `<div class="nv-badges-row">${items.join("")}</div>` : "";
 }
 
-function formatSampleStream(sample, debridLabel, fmtPreset) {
-  const preset = fmtPreset || "prism";
-  const srcName = debridLabel || sample.source;
+export function hasZeroWidthBadgeEncoding(fmtState) {
+  const nameDef = String(fmtState?.currentDefinition?.name || "");
+  return /[\u200b\u200c\u200d\u2060\u2061\u2062\u2063\u2064]/.test(nameDef);
+}
+
+export function formatSampleStream(sample, debridLabel, fmtPreset, fmtState = null) {
+  const preset = fmtPreset || fmtState?.preset || fmtState?.active || "prism";
+  const shortCode = debridShortCode(debridLabel || sample.source);
+  const scraper = sample.scraper || "Torrentio";
+  const hdrPart = sample.hdr && sample.hdr !== "SDR" ? ` ${sample.hdr}` : "";
+  const cachedIcon = sample.cached !== false ? "⚡ " : "⏳ ";
+
+  if (preset === "custom") {
+    const isZeroWidth = hasZeroWidthBadgeEncoding(fmtState);
+    if (isZeroWidth && sample === STREAM_SAMPLES[0] && fmtState?.sampleName && fmtState?.sampleDescription) {
+      return {
+        name: fmtState.sampleName,
+        desc: fmtState.sampleDescription,
+        addon: sample.addon || "AIOStreams",
+      };
+    }
+    return {
+      name: `${cachedIcon}${shortCode !== "TB" ? `[${shortCode}] ` : ""}${scraper} · ${sample.scoreStars || "◆◆◆◆◇"}`,
+      desc:
+        `◧ ${sample.size} · ⟡ ${sample.bitrate || "24.0 Mbps"} · ◷ ${sample.duration || "2h 18m"}\n` +
+        `⌗ ${sample.releaseGroup || "FLUX"} · ◈ ${sample.qualityType || "WEB-DL"}\n` +
+        `♫ ${sample.languages || "English"}\n` +
+        `▤ ${sample.filename || sample.origin}`,
+      addon: sample.addon || "AIOStreams",
+    };
+  }
   if (preset === "minimal") {
     return {
-      left: `${sample.quality}\n${srcName}`,
-      desc: `${sample.origin} · ${sample.size}`,
+      name: `${cachedIcon}${sample.quality}${sample.hdr && sample.hdr !== "SDR" ? ` ${sample.hdr.split(" ")[0]}` : ""}`,
+      desc: `${sample.size} · ${sample.qualityType || sample.origin} · ${scraper}`,
+      addon: sample.addon || "AIOStreams",
     };
   }
   if (preset === "compact_tv") {
     return {
-      left: `${sample.quality}\nCached`,
-      desc: `${sample.hdr} · ${sample.audio}\n${srcName} · ${sample.size}`,
+      name: `${cachedIcon}[${shortCode}] ${sample.quality}${sample.hdr && sample.hdr !== "SDR" ? ` · ${sample.hdr}` : ""}`,
+      desc:
+        `${sample.size} · ${sample.qualityType || "WEB-DL"} · ${sample.encode || sample.codec} ${sample.audioShort || sample.audio}\n` +
+        `${scraper} · ${(sample.languages || "English").replace(/ · /g, "/")} · ${sample.releaseGroup || "FLUX"}`,
+      addon: sample.addon || "AIOStreams",
     };
   }
   return {
-    left: `${sample.addon}\n${sample.quality} ⚡`,
-    desc: `${sample.origin}\n${sample.hdr} · ${sample.codec} · ${sample.audio} · ${srcName} (${sample.size})`,
+    name: `${cachedIcon}[${shortCode}] ${scraper} · ${sample.quality}${hdrPart} · ${sample.encode || sample.codec} ${sample.audioShort || sample.audio}`,
+    desc:
+      `◧ ${sample.size} · ⟡ ${sample.bitrate || "24.0 Mbps"} · ◷ ${sample.duration || "2h 18m"}\n` +
+      `◈ ${sample.qualityType || "WEB-DL"} · ⌗ ${sample.releaseGroup || "FLUX"}\n` +
+      `♫ ${sample.languages || "English"}${sample.subs ? ` · ☰ ${sample.subs}` : ""}\n` +
+      `▤ ${sample.filename || sample.origin}`,
+    addon: sample.addon || "AIOStreams",
   };
+}
+
+export function renderNuvioStreamCard(ctx, options = {}) {
+  const { escapeHtml } = ctx.ui;
+  const st = ctx.state;
+  const profile = options.profile || ctx.currentProfile();
+  const sample = options.sample || STREAM_SAMPLES[0];
+  const debridLabel =
+    options.debridLabel ||
+    (st.debridServices?.available || []).find(d => d.enabled)?.label ||
+    (st.debridProviders || []).find(d => d.id === st.debridProvider)?.label ||
+    st.debridProvider ||
+    "TorBox";
+  const fmtState = st.streamFormatter || {};
+  const fmtPreset = options.fmtPreset || fmtState.preset || fmtState.active || "prism";
+  const badgeCfg = options.badgeCfg || effectiveBadges(profile);
+  const showBadges = options.showBadges !== undefined ? Boolean(options.showBadges) : badgeCfg.enabled;
+  const placement = options.placement || badgeCfg.placement || "BOTTOM";
+  const clientMode = options.clientMode || "nuvio";
+
+  const formatted = formatSampleStream(sample, debridLabel, fmtPreset, fmtState);
+
+  if (clientMode === "stremio") {
+    const el = document.createElement("div");
+    el.className = "nv-stremio-card";
+    el.innerHTML = `
+      <div class="nv-stremio-name">${escapeHtml(formatted.name)}</div>
+      <div class="nv-stremio-desc">${escapeHtml(formatted.desc)}</div>
+    `;
+    return el;
+  }
+
+  const badgesHtml = showBadges
+    ? renderBadgesStrip(ctx, { ...badgeCfg, enabled: true }, sample, debridLabel)
+    : "";
+
+  const card = document.createElement("div");
+  card.className = "nv-stream-card";
+  const textHtml = `
+    <div class="nv-stream-name">${escapeHtml(formatted.name)}</div>
+    <div class="nv-stream-desc">${escapeHtml(formatted.desc)}</div>
+  `;
+  card.innerHTML = `
+    <div class="nv-stream-body">
+      ${placement === "TOP" ? `${badgesHtml}${textHtml}` : `${textHtml}${badgesHtml}`}
+    </div>
+    <div class="nv-stream-trailing">
+      <span class="nv-addon-chip">${escapeHtml(formatted.addon || "AIOStreams")}</span>
+    </div>
+  `;
+  return card;
 }
 
 function buildPreviewSpecForFolder(col, folderIdx, profile) {
@@ -1301,12 +1438,16 @@ function renderDetailsScreen(root, ctx, _profile, _col, s, metaCfg, _st) {
 // =========================================================================
 // Screen 4 — Dedicated Streams Picker (Desktop/TV Split Pane + Elite-Badges)
 // =========================================================================
-function renderStreamsScreen(root, ctx, _profile, _s, badgeCfg, st) {
+function renderStreamsScreen(root, ctx, profile, _s, badgeCfg, st) {
   const { escapeHtml, icon } = ctx.ui;
   const item = vpState.selectedItem || DEFAULT_HERO_SLIDES[0];
   const bd = item.backdropUrl || item.posterUrl || "";
-  const debridLabel = (st.debridProviders || []).find(d => d.id === st.debridProvider)?.label || st.debridProvider || "TorBox";
-  const fmtPreset = st.streamFormatter?.preset || "prism";
+  const debridLabel =
+    (st.debridServices?.available || []).find(d => d.enabled)?.label ||
+    (st.debridProviders || []).find(d => d.id === st.debridProvider)?.label ||
+    st.debridProvider ||
+    "TorBox";
+  const fmtPreset = st.streamFormatter?.preset || st.streamFormatter?.active || "prism";
 
   const wrap = document.createElement("div");
   wrap.className = "nv-streams-root";
@@ -1407,12 +1548,14 @@ function renderStreamsScreen(root, ctx, _profile, _s, badgeCfg, st) {
   const list = document.createElement("div");
   list.className = "nv-stream-list";
   filtered.forEach((sample, idx) => {
-    const formatted = formatSampleStream(sample, debridLabel, fmtPreset);
-    const badgesHtml = renderBadgesStrip(ctx, badgeCfg, sample, debridLabel);
-    const card = document.createElement("div");
-    card.className = "nv-stream-card";
-    const bodyHtml = `<div class="nv-stream-main"><div class="nv-stream-left">${escapeHtml(formatted.left)}</div><div class="nv-stream-desc">${escapeHtml(formatted.desc)}</div></div>`;
-    card.innerHTML = badgeCfg.placement === "TOP" ? `${badgesHtml}${bodyHtml}` : `${bodyHtml}${badgesHtml}`;
+    const card = renderNuvioStreamCard(ctx, {
+      profile,
+      sample,
+      debridLabel,
+      fmtPreset,
+      badgeCfg,
+      clientMode: "nuvio",
+    });
     card.onclick = () => {
       vpState.selectedStreamIdx = idx;
       vpState.screen = "player";
