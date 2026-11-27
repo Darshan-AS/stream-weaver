@@ -1778,3 +1778,73 @@ label.field span.hint {
   border-color: rgba(34, 197, 94, 0.35);
   color: #86efac;
 }
+
+/* Split Stage + Persistent Live Nuvio Viewport + Drag & Drop */
+.studio-split-stage {
+  display: grid;
+  grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 1120px) {
+  .studio-split-stage {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sticky-stage {
+  position: sticky;
+  top: 72px;
+}
+
+@media (max-width: 1120px) {
+  .sticky-stage {
+    position: static;
+  }
+}
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-2);
+  cursor: grab;
+  padding: 2px 4px;
+  font-size: 12px;
+  letter-spacing: -1px;
+  user-select: none;
+}
+
+.col-item[draggable="true"] {
+  cursor: grab;
+}
+
+.col-item.dragging,
+.dnd-row.dragging {
+  opacity: 0.45;
+}
+
+.col-item.drag-over,
+.dnd-row.drag-over {
+  border-color: var(--accent);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.dnd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.dnd-row.active {
+  border-color: var(--border-strong);
+  background: var(--accent-soft);
+}

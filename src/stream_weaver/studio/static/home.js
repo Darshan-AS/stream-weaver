@@ -1,10 +1,11 @@
-// Tab 1 — Home Screen, Collection/Folder Reordering, DIY Builder & Live Nuvio TV Viewport Simulator
+// Tab 1 — Home Screen, Drag-and-Drop Reordering, DIY Builder & Persistent Real-Time Nuvio Viewport
+
+import { renderNuvioViewport, setViewportState } from "./nuvio_viewport.js";
 
 let selectedColIdx = 0;
 let selectedFolderIdx = 0;
 let diyMode = "tmdb";
 let catalogSearchQuery = "";
-const posterPreviewCache = new Map();
 
 const CATEGORY_LABELS = {
   personal: "Personal & Trackers",
@@ -23,7 +24,7 @@ function ensureInlineCollection(col) {
     folders: (col.folders || []).map(f => ({
       id: f.id || "fld-item",
       title: f.title || "Folder",
-      sources: [],
+      sources: f.sources || [],
     })),
   };
   col.raw = JSON.parse(JSON.stringify(tpl));
@@ -32,18 +33,37 @@ function ensureInlineCollection(col) {
   return col.raw;
 }
 
-function buildPreviewSpec(selCol, folderIdx, activeFolder) {
-  const inlineSource =
-    selCol?.raw?.folders?.[folderIdx]?.sources?.[0] ||
-    selCol?.inlineTemplate?.folders?.[folderIdx]?.sources?.[0] ||
-    null;
-  const base = inlineSource ? { ...inlineSource } : {};
-  return {
-    ...base,
-    folderId: activeFolder?.id || base.catalogId || "folder",
-    folderTitle: activeFolder?.title || base.title || "Featured",
-    collectionTitle: selCol?.title || "Home",
-    rowTitle: (activeFolder?.rows && activeFolder.rows[0]) || activeFolder?.title || "",
+function attachDragReorder(el, idx, getDragIdx, setDragIdx, onDropReorder) {
+  el.draggable = true;
+  el.ondragstart = (e) => {
+    setDragIdx(idx);
+    el.classList.add("dragging");
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(idx));
+    }
+  };
+  el.ondragend = () => {
+    setDragIdx(-1);
+    el.classList.remove("dragging");
+  };
+  el.ondragover = (e) => {
+    const src = getDragIdx();
+    if (src >= 0 && src !== idx) {
+      e.preventDefault();
+      el.classList.add("drag-over");
+    }
+  };
+  el.ondragleave = () => {
+    el.classList.remove("drag-over");
+  };
+  el.ondrop = (e) => {
+    e.preventDefault();
+    el.classList.remove("drag-over");
+    const src = getDragIdx();
+    if (src >= 0 && src !== idx) {
+      onDropReorder(src, idx);
+    }
   };
 }
 
@@ -57,13 +77,18 @@ export function renderHomeTab(root, ctx) {
     selectedColIdx = Math.max(0, p.collections.length - 1);
   }
   const selCol = p.collections[selectedColIdx] || null;
+  const folders = selCol?.folders || [];
+  if (selectedFolderIdx >= folders.length) selectedFolderIdx = 0;
 
   const wrap = document.createElement("div");
-  wrap.className = "grid-2";
+  wrap.className = "studio-split-stage";
 
   // =========================================================================
-  // LEFT COLUMN — Active Shelves + DIY Modal Trigger + Curated Catalogs
+  // LEFT COLUMN — Drag-and-Drop Shelves + Folder Tabs Editor + Recipe Catalog
   // =========================================================================
+  const leftStack = document.createElement("div");
+  leftStack.className = "section-stack";
+
   const left = document.createElement("div");
   left.className = "card";
   left.innerHTML = `
@@ -71,9 +96,10 @@ export function renderHomeTab(root, ctx) {
       <h2>${icon("layers", 15)} Home Shelves (${p.collections.length})</h2>
       <span class="pill accent">${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>
     </div>
-    <p class="sub">Top-to-bottom order on Nuvio Home. Adding or removing shelves automatically derives AIOMetadata catalogs.</p>
+    <p class="sub">Drag shelves to reorder Nuvio Home. Adding or removing shelves updates AIOMetadata catalogs automatically.</p>
   `;
 
+  let dragColIdx = -1;
   const list = document.createElement("div");
   list.className = "col-list";
 
@@ -83,13 +109,33 @@ export function renderHomeTab(root, ctx) {
     item.onclick = () => {
       selectedColIdx = idx;
       selectedFolderIdx = 0;
+      setViewportState({ colIdx: idx, folderIdx: 0 });
       ctx.render();
     };
 
+    attachDragReorder(
+      item,
+      idx,
+      () => dragColIdx,
+      (v) => { dragColIdx = v; },
+      (from, to) => {
+        const [moved] = p.collections.splice(from, 1);
+        p.collections.splice(to, 0, moved);
+        selectedColIdx = to;
+        selectedFolderIdx = 0;
+        setViewportState({ colIdx: to, folderIdx: 0 });
+        ctx.saveSection("profile", true);
+      }
+    );
+
     const info = document.createElement("div");
+    info.style.cssText = "display:flex;align-items:center;gap:6px;min-width:0";
     info.innerHTML = `
-      <div class="col-item-title">${idx + 1}. ${escapeHtml(col.title)}</div>
-      <div class="col-item-meta">${(col.folders || []).length} tab(s) · <code>${escapeHtml(col.ref || "diy-inline")}</code></div>
+      <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+      <div style="min-width:0">
+        <div class="col-item-title">${idx + 1}. ${escapeHtml(col.title)}</div>
+        <div class="col-item-meta">${(col.folders || []).length} tab(s) · <code>${escapeHtml(col.ref || "diy-inline")}</code></div>
+      </div>
     `;
 
     const ctrls = document.createElement("div");
@@ -104,6 +150,7 @@ export function renderHomeTab(root, ctx) {
       e.stopPropagation();
       [p.collections[idx - 1], p.collections[idx]] = [p.collections[idx], p.collections[idx - 1]];
       selectedColIdx = idx - 1;
+      setViewportState({ colIdx: selectedColIdx, folderIdx: 0 });
       ctx.saveSection("profile", true);
     };
 
@@ -116,6 +163,7 @@ export function renderHomeTab(root, ctx) {
       e.stopPropagation();
       [p.collections[idx + 1], p.collections[idx]] = [p.collections[idx], p.collections[idx + 1]];
       selectedColIdx = idx + 1;
+      setViewportState({ colIdx: selectedColIdx, folderIdx: 0 });
       ctx.saveSection("profile", true);
     };
 
@@ -127,6 +175,7 @@ export function renderHomeTab(root, ctx) {
       e.stopPropagation();
       p.collections.splice(idx, 1);
       selectedColIdx = Math.max(0, selectedColIdx - 1);
+      setViewportState({ colIdx: selectedColIdx, folderIdx: 0 });
       ctx.saveSection("profile", true);
     };
 
@@ -136,177 +185,51 @@ export function renderHomeTab(root, ctx) {
   });
   left.appendChild(list);
 
-  // DIY Modal Launch Button
-  const diyBtns = document.createElement("div");
-  diyBtns.style.marginTop = "14px";
-
-  const modalDiyBtn = document.createElement("button");
-  modalDiyBtn.className = "btn accent-outline full-width";
-  modalDiyBtn.innerHTML = `${icon("sparkles", 14)} <span>DIY Collection / Folder Builder</span>`;
-  modalDiyBtn.onclick = () => openDiyBuilderModal(ctx, p, selCol);
-  diyBtns.appendChild(modalDiyBtn);
-  left.appendChild(diyBtns);
-
-  // Curated Starter Collections
-  const addSec = document.createElement("div");
-  addSec.style.marginTop = "16px";
-  addSec.style.borderTop = "1px solid var(--border)";
-  addSec.style.paddingTop = "14px";
-  addSec.innerHTML = `<h3>${icon("plus", 14)} Curated Recipe Collections</h3>`;
-
-  const usedRefs = new Set(p.collections.filter(c => c.ref).map(c => c.ref));
-  const standardCols = (st.libraryCollections || []).filter(
-    lc => (!lc.presets || lc.presets.length === 0) && !usedRefs.has(lc.id)
-  );
-  const grouped = {};
-  standardCols.forEach(lc => {
-    const cat = lc.category || "other";
-    (grouped[cat] = grouped[cat] || []).push(lc);
-  });
-
-  Object.entries(grouped).forEach(([cat, cols]) => {
-    const grpLbl = document.createElement("div");
-    grpLbl.className = "eyebrow";
-    grpLbl.style.padding = "0";
-    grpLbl.style.margin = "11px 0 6px";
-    grpLbl.textContent = CATEGORY_LABELS[cat] || "More Collections";
-    addSec.appendChild(grpLbl);
-
-    const addChips = document.createElement("div");
-    addChips.className = "chip-row";
-    cols.forEach(lc => {
-      const btn = document.createElement("button");
-      btn.className = "btn icon-btn";
-      btn.innerHTML = `${icon("plus", 12)} <span>${escapeHtml(lc.title)}</span>`;
-      btn.title = lc.description || lc.id;
-      btn.onclick = () => {
-        p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
-        selectedColIdx = p.collections.length - 1;
-        selectedFolderIdx = 0;
-        ctx.saveSection("profile", true);
-      };
-      addChips.appendChild(btn);
-    });
-    addSec.appendChild(addChips);
-  });
-
-  // Regional Cinema Builder
-  const regRecipe = (st.libraryCollections || []).find(lc => lc.id === "regional-cinema");
-  if (regRecipe && Array.isArray(regRecipe.presets) && regRecipe.presets.length) {
-    const regHead = document.createElement("div");
-    regHead.className = "eyebrow";
-    regHead.style.padding = "0";
-    regHead.style.margin = "14px 0 6px";
-    regHead.textContent = "Regional Cinema Builder";
-    addSec.appendChild(regHead);
-
-    const regRow = document.createElement("div");
-    regRow.style.display = "flex";
-    regRow.style.gap = "8px";
-    const sel = document.createElement("select");
-    regRecipe.presets.forEach((pr, idx) => {
-      const opt = document.createElement("option");
-      opt.value = String(idx);
-      opt.textContent = `${pr.label} (${pr.with.language})`;
-      sel.appendChild(opt);
-    });
-    const addRegBtn = document.createElement("button");
-    addRegBtn.className = "btn accent-outline";
-    addRegBtn.style.whiteSpace = "nowrap";
-    addRegBtn.innerHTML = `${icon("plus", 13)} <span>Add Language</span>`;
-    addRegBtn.onclick = () => {
-      const chosen = regRecipe.presets[Number(sel.value)];
-      p.collections.push({ ref: "regional-cinema", with: { ...chosen.with }, title: chosen.label, folders: [] });
-      selectedColIdx = p.collections.length - 1;
-      selectedFolderIdx = 0;
-      ctx.saveSection("profile", true);
-    };
-    regRow.append(sel, addRegBtn);
-    addSec.appendChild(regRow);
-  }
-  left.appendChild(addSec);
-
-  // =========================================================================
-  // RIGHT COLUMN — Nuvio TV Viewport Simulator + Live Poster Strip
-  // =========================================================================
-  const right = document.createElement("div");
-  right.className = "card";
-
-  if (!selCol) {
-    right.innerHTML = `<h2>${icon("tv", 15)} Interactive Nuvio TV Home Simulator</h2>
-      <p class="sub">Select or add a collection on the left to preview its folders and live catalog posters.</p>`;
-  } else {
+  if (selCol) {
     const libMeta = (st.libraryCollections || []).find(lc => lc.id === selCol.ref);
     const isInline = !selCol.ref && Boolean(selCol.raw);
 
-    const viewport = document.createElement("div");
-    viewport.className = "tv-viewport";
+    const detailBox = document.createElement("div");
+    detailBox.className = "rows-box";
+    detailBox.style.marginTop = "14px";
 
-    const chrome = document.createElement("div");
-    chrome.className = "tv-chrome-bar";
-    chrome.innerHTML = `
-      <span class="tv-chrome-brand">${icon("tv", 13)} Nuvio TV Preview</span>
-      <span class="row-wrap">
-        <span class="pill">${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</span>
-        <span class="pill accent">4K UHD</span>
-      </span>
-    `;
-    viewport.appendChild(chrome);
+    const dHead = document.createElement("div");
+    dHead.className = "row-between";
+    dHead.style.cssText = "margin-bottom:10px;flex-wrap:wrap";
+    dHead.innerHTML = `<strong>${escapeHtml(selCol.title)}</strong>`;
 
-    // Hero Banner
-    const hero = document.createElement("div");
-    hero.className = "hero-preview";
-    if (selCol.backdropUrl) {
-      hero.style.backgroundImage = `url('${selCol.backdropUrl.replace(/'/g, "\\'")}')`;
-    }
-    const heroTop = document.createElement("div");
-    heroTop.className = "row-between";
-    heroTop.style.marginBottom = "8px";
-    heroTop.style.flexWrap = "wrap";
-    heroTop.innerHTML = `<span class="pill ${isInline ? "accent" : ""}">${isInline ? "DIY Custom Collection" : "Curated Recipe"}</span>`;
+    const dActs = document.createElement("div");
+    dActs.className = "row-wrap";
 
-    const heroActions = document.createElement("div");
-    heroActions.className = "row-wrap";
-    const addFolderModalBtn = document.createElement("button");
-    addFolderModalBtn.className = "btn icon-btn accent-outline";
-    addFolderModalBtn.innerHTML = `${icon("plus", 12)} <span>Add Folder Tab</span>`;
-    addFolderModalBtn.onclick = () => openDiyBuilderModal(ctx, p, selCol);
-    heroActions.appendChild(addFolderModalBtn);
+    const openPreviewBtn = document.createElement("button");
+    openPreviewBtn.className = "btn ghost icon-btn";
+    openPreviewBtn.innerHTML = `${icon("tv", 12)} <span>Inspect Posters</span>`;
+    openPreviewBtn.onclick = () => {
+      setViewportState({ colIdx: selectedColIdx, folderIdx: selectedFolderIdx, screen: "collection" });
+      ctx.render();
+    };
+    dActs.appendChild(openPreviewBtn);
 
     if (!isInline && selCol.inlineTemplate) {
       const unlockBtn = document.createElement("button");
       unlockBtn.className = "btn icon-btn";
-      unlockBtn.innerHTML = `${icon("wand", 12)} <span>Customize Art / Tabs</span>`;
+      unlockBtn.innerHTML = `${icon("wand", 12)} <span>Unlock Tabs &amp; Art</span>`;
       unlockBtn.onclick = () => {
         ensureInlineCollection(selCol);
         ctx.saveSection("profile", true);
       };
-      heroActions.appendChild(unlockBtn);
+      dActs.appendChild(unlockBtn);
     }
-    heroTop.appendChild(heroActions);
-    hero.appendChild(heroTop);
+    dHead.appendChild(dActs);
+    detailBox.appendChild(dHead);
 
-    const hTitle = document.createElement("h3");
-    hTitle.textContent = selCol.title;
-    const hMeta = document.createElement("div");
-    hMeta.className = "meta";
-    hMeta.textContent = (libMeta && libMeta.description) || `${(selCol.folders || []).length} tabbed folder(s) configured`;
-    hero.append(hTitle, hMeta);
-    viewport.appendChild(hero);
-
-    // Inline Collection Metadata Editor
     if (isInline && selCol.raw) {
-      const metaBar = document.createElement("div");
-      metaBar.className = "rows-box";
-      metaBar.style.marginTop = "0";
-      metaBar.style.marginBottom = "14px";
-      metaBar.style.display = "grid";
-      metaBar.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
-      metaBar.style.gap = "10px";
+      const metaGrid = document.createElement("div");
+      metaGrid.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px";
 
       const cTitleLbl = document.createElement("label");
       cTitleLbl.className = "field";
-      cTitleLbl.textContent = "Collection Shelf Title";
+      cTitleLbl.textContent = "Collection Title";
       const cTitleIn = document.createElement("input");
       cTitleIn.type = "text";
       cTitleIn.value = selCol.raw.title || "";
@@ -330,24 +253,23 @@ export function renderHomeTab(root, ctx) {
         ctx.saveSection("profile", true);
       };
       cBgLbl.appendChild(cBgIn);
-      metaBar.append(cTitleLbl, cBgLbl);
-      viewport.appendChild(metaBar);
+      metaGrid.append(cTitleLbl, cBgLbl);
+      detailBox.appendChild(metaGrid);
     }
 
-    // Recipe Parameter Checkboxes (e.g., Streaming Services OTT filter)
     if (!isInline && libMeta && Array.isArray(libMeta.params)) {
       const listParam = libMeta.params.find(pr => pr.type === "list" && pr.options && pr.options.length > 0);
       if (listParam) {
-        const paramBox = document.createElement("div");
-        paramBox.className = "rows-box";
-        paramBox.style.marginTop = "0";
-        paramBox.style.marginBottom = "14px";
         const currentVals = Array.isArray((selCol.with || {})[listParam.name])
           ? selCol.with[listParam.name]
           : (listParam.default || []);
-        paramBox.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:8px">Customize ${escapeHtml(listParam.label)}</div>`;
+        const pLbl = document.createElement("div");
+        pLbl.style.cssText = "font-size:11.5px;font-weight:600;margin:4px 0 6px;color:var(--text-soft)";
+        pLbl.textContent = `Customize ${listParam.label}`;
+        detailBox.appendChild(pLbl);
         const chkWrap = document.createElement("div");
         chkWrap.className = "chip-row";
+        chkWrap.style.marginBottom = "10px";
         listParam.options.forEach(opt => {
           const lbl = document.createElement("label");
           lbl.className = "switch chip" + (currentVals.includes(opt.value) ? " active" : "");
@@ -368,264 +290,238 @@ export function renderHomeTab(root, ctx) {
           lbl.append(chk, document.createTextNode(opt.label));
           chkWrap.appendChild(lbl);
         });
-        paramBox.appendChild(chkWrap);
-        viewport.appendChild(paramBox);
+        detailBox.appendChild(chkWrap);
       }
     }
 
-    // Folder Tabs Strip
-    const folders = selCol.folders || [];
-    if (selectedFolderIdx >= folders.length) selectedFolderIdx = 0;
-
-    const folderStripHead = document.createElement("div");
-    folderStripHead.className = "row-between";
-    folderStripHead.style.marginBottom = "10px";
-    folderStripHead.innerHTML = `<strong style="font-size:12.5px">Folder Tabs (${folders.length}) · Select a tab to simulate live posters</strong>`;
-    viewport.appendChild(folderStripHead);
-
-    const grid = document.createElement("div");
-    grid.className = "folders-strip";
+    let dragFolderIdx = -1;
+    const fList = document.createElement("div");
+    fList.className = "col-list";
+    fList.style.marginTop = "6px";
     folders.forEach((f, fIdx) => {
-      const fc = document.createElement("div");
-      fc.className = "folder-card" + (fIdx === selectedFolderIdx ? " active" : "");
-      fc.onclick = () => {
+      const row = document.createElement("div");
+      row.className = "dnd-row" + (fIdx === selectedFolderIdx ? " active" : "");
+      row.onclick = () => {
         selectedFolderIdx = fIdx;
+        setViewportState({ colIdx: selectedColIdx, folderIdx: fIdx, screen: "collection" });
         ctx.render();
       };
-      const artHtml = f.coverUrl
-        ? `<img class="folder-art" src="${escapeHtml(f.coverUrl)}" alt="${escapeHtml(f.title)}" loading="lazy" />`
-        : `<div class="folder-art-fallback">${escapeHtml(f.title)}</div>`;
-      fc.innerHTML = `
-        ${artHtml}
-        <div class="folder-body">
-          <div style="min-width:0">
-            <div class="folder-title">${escapeHtml(f.title)}</div>
-            <div class="folder-count">${(f.rows || []).length} row(s)</div>
-          </div>
-        </div>
-      `;
-      grid.appendChild(fc);
-    });
-    viewport.appendChild(grid);
 
-    // Selected Folder Controls (↑ / ↓ Reorder + Artwork + Catalog Rows + Live Poster Strip)
-    const activeFolder = folders[selectedFolderIdx];
-    if (activeFolder) {
-      const rbox = document.createElement("div");
-      rbox.className = "rows-box";
-      const rHead = document.createElement("div");
-      rHead.className = "row-between";
-      rHead.style.flexWrap = "wrap";
-      rHead.innerHTML = `<div style="font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">${icon("folder", 14)} <span>${escapeHtml(activeFolder.title)}</span></div>`;
-
-      const fCtrls = document.createElement("div");
-      fCtrls.className = "col-controls";
-
-      const fUp = document.createElement("button");
-      fUp.className = "btn icon-btn";
-      fUp.title = "Move folder earlier";
-      fUp.innerHTML = icon("chevronUp", 13);
-      fUp.disabled = selectedFolderIdx === 0;
-      fUp.onclick = () => {
-        const rawDoc = ensureInlineCollection(selCol);
-        if (Array.isArray(rawDoc.folders) && rawDoc.folders[selectedFolderIdx]) {
-          const rf = rawDoc.folders;
-          [rf[selectedFolderIdx - 1], rf[selectedFolderIdx]] = [rf[selectedFolderIdx], rf[selectedFolderIdx - 1]];
-          selectedFolderIdx -= 1;
-          ctx.saveSection("profile", true);
+      attachDragReorder(
+        row,
+        fIdx,
+        () => dragFolderIdx,
+        (v) => { dragFolderIdx = v; },
+        (from, to) => {
+          const rawDoc = ensureInlineCollection(selCol);
+          if (Array.isArray(rawDoc.folders)) {
+            const [moved] = rawDoc.folders.splice(from, 1);
+            rawDoc.folders.splice(to, 0, moved);
+            selectedFolderIdx = to;
+            setViewportState({ colIdx: selectedColIdx, folderIdx: to });
+            ctx.saveSection("profile", true);
+          }
         }
-      };
+      );
 
-      const fDown = document.createElement("button");
-      fDown.className = "btn icon-btn";
-      fDown.title = "Move folder later";
-      fDown.innerHTML = icon("chevronDown", 13);
-      fDown.disabled = selectedFolderIdx >= folders.length - 1;
-      fDown.onclick = () => {
-        const rawDoc = ensureInlineCollection(selCol);
-        if (Array.isArray(rawDoc.folders) && rawDoc.folders[selectedFolderIdx]) {
-          const rf = rawDoc.folders;
-          [rf[selectedFolderIdx + 1], rf[selectedFolderIdx]] = [rf[selectedFolderIdx], rf[selectedFolderIdx + 1]];
-          selectedFolderIdx += 1;
-          ctx.saveSection("profile", true);
-        }
-      };
+      const leftInfo = document.createElement("div");
+      leftInfo.style.cssText = "display:flex;align-items:center;gap:6px;min-width:0;font-size:12px";
+      leftInfo.innerHTML = `<span class="drag-handle">⋮⋮</span><span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(f.title)}</span>`;
+
+      const fBtns = document.createElement("div");
+      fBtns.className = "col-controls";
 
       const fDel = document.createElement("button");
-      fDel.className = "btn icon-btn danger";
-      fDel.innerHTML = `${icon("trash", 12)} <span>Remove</span>`;
+      fDel.className = "btn ghost icon-btn danger";
+      fDel.title = "Remove folder tab";
+      fDel.innerHTML = icon("x", 12);
       fDel.disabled = folders.length <= 1;
-      fDel.onclick = () => {
+      fDel.onclick = (e) => {
+        e.stopPropagation();
         const rawDoc = ensureInlineCollection(selCol);
         if (Array.isArray(rawDoc.folders) && rawDoc.folders.length > 1) {
-          rawDoc.folders.splice(selectedFolderIdx, 1);
+          rawDoc.folders.splice(fIdx, 1);
           selectedFolderIdx = Math.max(0, selectedFolderIdx - 1);
+          setViewportState({ colIdx: selectedColIdx, folderIdx: selectedFolderIdx });
           ctx.saveSection("profile", true);
         }
       };
 
-      fCtrls.append(fUp, fDown, fDel);
-      rHead.appendChild(fCtrls);
-      rbox.appendChild(rHead);
+      fBtns.appendChild(fDel);
+      row.append(leftInfo, fBtns);
+      fList.appendChild(row);
+    });
+    detailBox.appendChild(fList);
 
-      if (isInline && selCol.raw?.folders?.[selectedFolderIdx]) {
-        const rawF = selCol.raw.folders[selectedFolderIdx];
-        const fEditGrid = document.createElement("div");
-        fEditGrid.style.display = "grid";
-        fEditGrid.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
-        fEditGrid.style.gap = "10px";
-        fEditGrid.style.marginTop = "10px";
+    if (isInline && selCol.raw?.folders?.[selectedFolderIdx]) {
+      const rawF = selCol.raw.folders[selectedFolderIdx];
+      const fEdit = document.createElement("div");
+      fEdit.style.cssText = "display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px";
 
-        const ftLbl = document.createElement("label");
-        ftLbl.className = "field";
-        ftLbl.textContent = "Folder Tab Name";
-        const ftIn = document.createElement("input");
-        ftIn.type = "text";
-        ftIn.value = rawF.title || "";
-        ftIn.onchange = () => {
-          rawF.title = ftIn.value.trim() || "Folder";
-          ctx.saveSection("profile", true);
-        };
-        ftLbl.appendChild(ftIn);
+      const ftLbl = document.createElement("label");
+      ftLbl.className = "field";
+      ftLbl.textContent = "Folder Tab Name";
+      const ftIn = document.createElement("input");
+      ftIn.type = "text";
+      ftIn.value = rawF.title || "";
+      ftIn.onchange = () => {
+        rawF.title = ftIn.value.trim() || "Folder";
+        ctx.saveSection("profile", true);
+      };
+      ftLbl.appendChild(ftIn);
 
-        const fcLbl = document.createElement("label");
-        fcLbl.className = "field";
-        fcLbl.textContent = "Folder Cover Artwork URL";
-        const fcIn = document.createElement("input");
-        fcIn.type = "text";
-        fcIn.placeholder = "https://image.tmdb.org/t/p/w780/…";
-        fcIn.value = rawF.coverImageUrl || "";
-        fcIn.onchange = () => {
-          const v = fcIn.value.trim();
-          if (v) rawF.coverImageUrl = v;
-          else delete rawF.coverImageUrl;
-          ctx.saveSection("profile", true);
-        };
-        fcLbl.appendChild(fcIn);
-        fEditGrid.append(ftLbl, fcLbl);
-        rbox.appendChild(fEditGrid);
-      }
-
-      const chips = document.createElement("div");
-      chips.className = "chip-row";
-      chips.style.marginTop = "10px";
-      (activeFolder.rows || []).forEach(r => {
-        const c = document.createElement("span");
-        c.className = "chip";
-        c.textContent = r;
-        chips.appendChild(c);
-      });
-      rbox.appendChild(chips);
-      viewport.appendChild(rbox);
-
-      // LIVE POSTER STRIP SIMULATOR (`POST /api/preview-catalog`)
-      viewport.appendChild(renderPosterSimulator(ctx, p, selCol, selectedFolderIdx, activeFolder));
+      const fcLbl = document.createElement("label");
+      fcLbl.className = "field";
+      fcLbl.textContent = "Folder Cover Artwork URL";
+      const fcIn = document.createElement("input");
+      fcIn.type = "text";
+      fcIn.placeholder = "https://image.tmdb.org/t/p/w780/…";
+      fcIn.value = rawF.coverImageUrl || "";
+      fcIn.onchange = () => {
+        const v = fcIn.value.trim();
+        if (v) rawF.coverImageUrl = v;
+        else delete rawF.coverImageUrl;
+        ctx.saveSection("profile", true);
+      };
+      fcLbl.appendChild(fcIn);
+      fEdit.append(ftLbl, fcLbl);
+      detailBox.appendChild(fEdit);
     }
 
-    right.appendChild(viewport);
+    left.appendChild(detailBox);
   }
 
-  wrap.append(left, right);
-  root.appendChild(wrap);
-}
+  const diyBtns = document.createElement("div");
+  diyBtns.style.marginTop = "12px";
+  const modalDiyBtn = document.createElement("button");
+  modalDiyBtn.className = "btn accent-outline full-width";
+  modalDiyBtn.innerHTML = `${icon("sparkles", 14)} <span>DIY Collection / Folder Builder</span>`;
+  modalDiyBtn.onclick = () => openDiyBuilderModal(ctx, p, selCol);
+  diyBtns.appendChild(modalDiyBtn);
+  left.appendChild(diyBtns);
 
-function renderPosterSimulator(ctx, profile, selCol, folderIdx, activeFolder) {
-  const { escapeHtml, icon } = ctx.ui;
-  const spec = buildPreviewSpec(selCol, folderIdx, activeFolder);
-  const cacheKey = `${profile.name}::${selCol.id}::${folderIdx}::${JSON.stringify(spec)}`;
+  leftStack.appendChild(left);
 
-  const simBox = document.createElement("div");
-  simBox.className = "rows-box";
-  simBox.style.borderColor = "rgba(255, 255, 255, 0.1)";
+  // Card 2: Curated Starter & Regional Cinema Recipes
+  const addCard = document.createElement("div");
+  addCard.className = "card";
+  addCard.innerHTML = `<h2>${icon("plus", 15)} Add Curated &amp; Regional Shelves</h2>`;
 
-  const head = document.createElement("div");
-  head.className = "row-between";
-  head.style.marginBottom = "10px";
+  const usedRefs = new Set(p.collections.filter(c => c.ref).map(c => c.ref));
+  const standardCols = (st.libraryCollections || []).filter(
+    lc => (!lc.presets || lc.presets.length === 0) && !usedRefs.has(lc.id)
+  );
+  const grouped = {};
+  standardCols.forEach(lc => {
+    const cat = lc.category || "other";
+    (grouped[cat] = grouped[cat] || []).push(lc);
+  });
 
-  const titleWrap = document.createElement("div");
-  titleWrap.innerHTML = `<strong style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px">${icon("play", 12)} <span>Poster Strip — ${escapeHtml(activeFolder.title)}</span></strong>`;
+  if (!Object.keys(grouped).length) {
+    addCard.insertAdjacentHTML("beforeend", `<p class="sub" style="margin-bottom:8px">All standard starter recipes are already on your Home screen.</p>`);
+  }
 
-  const rightControls = document.createElement("div");
-  rightControls.className = "row-wrap";
-  const srcPill = document.createElement("span");
-  srcPill.className = "pill";
-  srcPill.textContent = "Loading…";
-  const refreshBtn = document.createElement("button");
-  refreshBtn.className = "btn ghost icon-btn";
-  refreshBtn.innerHTML = `${icon("refresh", 12)} <span>Refresh</span>`;
-  rightControls.append(srcPill, refreshBtn);
-  head.append(titleWrap, rightControls);
-  simBox.appendChild(head);
+  Object.entries(grouped).forEach(([cat, cols]) => {
+    const grpLbl = document.createElement("div");
+    grpLbl.className = "eyebrow";
+    grpLbl.style.cssText = "padding:0;margin:10px 0 6px";
+    grpLbl.textContent = CATEGORY_LABELS[cat] || "More Collections";
+    addCard.appendChild(grpLbl);
 
-  const shelf = document.createElement("div");
-  shelf.className = "poster-shelf";
-  simBox.appendChild(shelf);
-
-  const paintSkeletons = () => {
-    shelf.innerHTML = "";
-    for (let i = 0; i < 6; i += 1) {
-      const sk = document.createElement("div");
-      sk.className = "poster-skeleton";
-      shelf.appendChild(sk);
-    }
-  };
-
-  const paintItems = (data) => {
-    const items = (data && Array.isArray(data.items)) ? data.items : [];
-    const src = (data && data.source) || "sample";
-    srcPill.className = "pill " + (src === "sample" ? "warn" : "ok");
-    srcPill.textContent = src === "aiometadata"
-      ? "Live AIOMetadata"
-      : (src === "tmdb" ? "Live TMDB" : "Sample Preview");
-
-    shelf.innerHTML = "";
-    if (!items.length) {
-      shelf.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:10px">No poster items returned for this catalog.</div>`;
-      return;
-    }
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "poster-card";
-      const ratingText = item.rating ? `★ ${escapeHtml(String(item.rating))}` : "";
-      const artHtml = item.posterUrl
-        ? `<img class="poster-img" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}" loading="lazy" />`
-        : `<div class="poster-placeholder"><span>${escapeHtml(item.title)}</span></div>`;
-      card.innerHTML = `
-        ${artHtml}
-        ${ratingText ? `<span class="poster-rating">${ratingText}</span>` : ""}
-        <div class="poster-meta">
-          <div class="poster-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
-          <div class="poster-year">${escapeHtml(String(item.year || ""))} · ${escapeHtml(item.type || "movie")}</div>
-        </div>
-      `;
-      shelf.appendChild(card);
+    const addChips = document.createElement("div");
+    addChips.className = "chip-row";
+    cols.forEach(lc => {
+      const btn = document.createElement("button");
+      btn.className = "btn icon-btn";
+      btn.innerHTML = `${icon("plus", 12)} <span>${escapeHtml(lc.title)}</span>`;
+      btn.title = lc.description || lc.id;
+      btn.onclick = () => {
+        p.collections.push({ ref: lc.id, with: {}, title: lc.title, folders: lc.folders });
+        selectedColIdx = p.collections.length - 1;
+        selectedFolderIdx = 0;
+        setViewportState({ colIdx: selectedColIdx, folderIdx: 0, screen: "home" });
+        ctx.saveSection("profile", true);
+      };
+      addChips.appendChild(btn);
     });
+    addCard.appendChild(addChips);
+  });
+
+  const regRecipe = (st.libraryCollections || []).find(lc => lc.id === "regional-cinema");
+  if (regRecipe && Array.isArray(regRecipe.presets) && regRecipe.presets.length) {
+    const regHead = document.createElement("div");
+    regHead.className = "eyebrow";
+    regHead.style.cssText = "padding:0;margin:12px 0 6px";
+    regHead.textContent = "Regional Cinema Builder";
+    addCard.appendChild(regHead);
+
+    const regRow = document.createElement("div");
+    regRow.style.cssText = "display:flex;gap:8px";
+    const sel = document.createElement("select");
+    regRecipe.presets.forEach((pr, idx) => {
+      const opt = document.createElement("option");
+      opt.value = String(idx);
+      opt.textContent = `${pr.label} (${pr.with.language})`;
+      sel.appendChild(opt);
+    });
+    const addRegBtn = document.createElement("button");
+    addRegBtn.className = "btn accent-outline";
+    addRegBtn.style.whiteSpace = "nowrap";
+    addRegBtn.innerHTML = `${icon("plus", 13)} <span>Add Language</span>`;
+    addRegBtn.onclick = () => {
+      const chosen = regRecipe.presets[Number(sel.value)];
+      p.collections.push({ ref: "regional-cinema", with: { ...chosen.with }, title: chosen.label, folders: [] });
+      selectedColIdx = p.collections.length - 1;
+      selectedFolderIdx = 0;
+      setViewportState({ colIdx: selectedColIdx, folderIdx: 0, screen: "home" });
+      ctx.saveSection("profile", true);
+    };
+    regRow.append(sel, addRegBtn);
+    addCard.appendChild(regRow);
+  }
+  leftStack.appendChild(addCard);
+
+  // =========================================================================
+  // RIGHT COLUMN — Persistent Real-Time Nuvio Viewport Showcase
+  // =========================================================================
+  const right = document.createElement("div");
+  right.className = "card sticky-stage";
+  right.innerHTML = `
+    <div class="row-between" style="margin-bottom:8px;flex-wrap:wrap">
+      <div>
+        <div class="card-eyebrow">${icon("tv", 12)} Real-Time Showcase</div>
+        <h2 style="margin-bottom:2px">Live Nuvio Layout Preview</h2>
+      </div>
+      <span class="pill">Click any shelf, poster, or stream</span>
+    </div>
+  `;
+
+  right.appendChild(
+    renderNuvioViewport(ctx, {
+      syncSelection: { colIdx: selectedColIdx, folderIdx: selectedFolderIdx },
+      onSelectCollection: (cIdx, fIdx) => {
+        selectedColIdx = cIdx;
+        selectedFolderIdx = fIdx;
+      },
+    })
+  );
+
+  right.tabIndex = 0;
+  right.onkeydown = (e) => {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) return;
+    if (e.key === "ArrowRight" && folders.length > 1) {
+      selectedFolderIdx = (selectedFolderIdx + 1) % folders.length;
+      setViewportState({ colIdx: selectedColIdx, folderIdx: selectedFolderIdx });
+      ctx.render();
+    } else if (e.key === "ArrowLeft" && folders.length > 1) {
+      selectedFolderIdx = (selectedFolderIdx - 1 + folders.length) % folders.length;
+      setViewportState({ colIdx: selectedColIdx, folderIdx: selectedFolderIdx });
+      ctx.render();
+    }
   };
 
-  const fetchPosters = async (force = false) => {
-    if (!force && posterPreviewCache.has(cacheKey)) {
-      paintItems(posterPreviewCache.get(cacheKey));
-      return;
-    }
-    paintSkeletons();
-    try {
-      const res = await ctx.api("/api/preview-catalog", {
-        spec,
-        pendingEnv: ctx.pendingEnvEdits,
-      });
-      posterPreviewCache.set(cacheKey, res);
-      paintItems(res);
-    } catch (err) {
-      srcPill.className = "pill danger";
-      srcPill.textContent = "Preview Error";
-      shelf.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px">${escapeHtml(err.message)}</div>`;
-    }
-  };
-
-  refreshBtn.onclick = () => fetchPosters(true);
-  fetchPosters(false);
-
-  return simBox;
+  wrap.append(leftStack, right);
+  root.appendChild(wrap);
 }
 
 function openDiyBuilderModal(ctx, profile, currentCol) {
@@ -654,7 +550,6 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
       head.appendChild(closeBtn);
       dialog.appendChild(head);
 
-      // Destination selector
       const destBox = document.createElement("div");
       destBox.className = "rows-box";
       const destTabs = document.createElement("div");
@@ -695,7 +590,6 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
       }
       dialog.appendChild(destBox);
 
-      // Source Type Tabs
       const srcBox = document.createElement("div");
       srcBox.className = "rows-box";
       const modeTabs = document.createElement("div");
@@ -714,11 +608,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
       srcBox.appendChild(modeTabs);
 
       const form = document.createElement("div");
-      form.style.display = "grid";
-      form.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
-      form.style.gap = "10px";
-      form.style.marginTop = "14px";
-      form.style.alignItems = "end";
+      form.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:10px;margin-top:14px;align-items:end";
 
       const makeIn = (lbl, ph, val = "") => {
         const l = document.createElement("label"); l.className = "field"; l.textContent = lbl;
@@ -771,6 +661,7 @@ function openDiyBuilderModal(ctx, profile, currentCol) {
             selectedFolderIdx = rawDoc.folders.length - 1;
           }
         }
+        setViewportState({ colIdx: selectedColIdx, folderIdx: selectedFolderIdx, screen: "collection" });
         ctx.closeModal();
         await ctx.saveSection("profile", true);
       };

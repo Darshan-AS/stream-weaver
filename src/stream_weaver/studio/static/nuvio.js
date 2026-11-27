@@ -1,7 +1,7 @@
-// Tab 4 — Nuvio Experience, Visual Elite-Badges & 16:9 Subtitle Simulators, and Operations Panel
+// Tab 4 — Nuvio Experience, Split Controls + Sticky Real-Time Nuvio Viewport, and Operations Panel
 
-let badgePlacementPreview = "BOTTOM";
-let playerPreviewTarget = "tv";
+import { getViewportState, renderNuvioViewport, setViewportState } from "./nuvio_viewport.js";
+
 let inlineDoctorReport = null;
 let inlineDiffOutcomes = null;
 let inlineWarmResult = null;
@@ -22,259 +22,64 @@ const THEME_SWATCHES = [
 ];
 
 export function renderNuvioTab(root, ctx) {
+  const { icon } = ctx.ui;
   const p = ctx.currentProfile();
   if (!p) return;
 
   const stack = document.createElement("div");
   stack.className = "section-stack";
 
-  // Row 1: Visual Simulators (Elite-Badges Card Preview + 16:9 Player Subtitle Scale Simulator)
-  const simGrid = document.createElement("div");
-  simGrid.className = "grid-equal";
-  simGrid.append(
-    renderEliteBadgesSimulatorCard(ctx, p),
-    renderSubtitleScaleSimulatorCard(ctx, p)
-  );
-  stack.appendChild(simGrid);
+  // Split Stage: Controls (Left) + Sticky Real-Time Nuvio Viewport (Right)
+  const split = document.createElement("div");
+  split.className = "studio-split-stage";
 
-  // Row 2: 12 Nuvio Themes + Layout + Playback + Spoiler Blur & 8-Source Ratings
-  const cfgGrid = document.createElement("div");
-  cfgGrid.className = "grid-equal";
-  cfgGrid.append(
-    renderAppearanceAndPlaybackCard(ctx, p),
-    renderMetaEnrichmentCard(ctx, p)
+  const controlsStack = document.createElement("div");
+  controlsStack.className = "section-stack";
+  controlsStack.append(
+    renderAppearanceAndSubtitlesCard(ctx, p),
+    renderBadgesAndMetaCard(ctx, p)
   );
-  stack.appendChild(cfgGrid);
 
-  // Row 3: Live Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
+  const right = document.createElement("div");
+  right.className = "card sticky-stage";
+  right.innerHTML = `
+    <div class="row-between" style="margin-bottom:8px;flex-wrap:wrap">
+      <div>
+        <div class="card-eyebrow">${icon("tv", 12)} Live Simulator</div>
+        <h2 style="margin-bottom:2px">Real-Time Nuvio Experience Preview</h2>
+      </div>
+      <span class="pill">Updates live on every edit</span>
+    </div>
+  `;
+  right.appendChild(renderNuvioViewport(ctx, {}));
+
+  split.append(controlsStack, right);
+  stack.appendChild(split);
+
+  // Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
   stack.appendChild(renderOperationsPanel(ctx));
 
   root.appendChild(stack);
 }
 
 // ---------------------------------------------------------------------------
-// Visual Elite-Badges Card Preview (TOP / BOTTOM)
+// Card 1 — Appearance, Themes, Layout & Subtitle Scale
 // ---------------------------------------------------------------------------
-function renderEliteBadgesSimulatorCard(ctx, p) {
-  const { icon } = ctx.ui;
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `
-    <div class="card-eyebrow">${icon("layers", 12)} Badges Preview</div>
-    <h2>Elite-Badges Stream Card Simulator</h2>
-    <p class="sub">Regex-matched 4K, Dolby Vision, HDR10+, Atmos, and Debrid badges across TV, Desktop, and Mobile.</p>
-  `;
-
-  const ctrlRow = document.createElement("div");
-  ctrlRow.className = "row-between";
-  ctrlRow.style.marginBottom = "14px";
-  ctrlRow.style.flexWrap = "wrap";
-
-  ctrlRow.appendChild(
-    ctx.ui.makeSwitch("Enable Elite-Badges Pack", Boolean(p.badgesEnabled), (v) => {
-      p.badgesEnabled = v;
-      ctx.saveSection("profile", true);
-    })
-  );
-
-  const posTabs = document.createElement("div");
-  posTabs.className = "segmented";
-  [["BOTTOM", "Row: BOTTOM"], ["TOP", "Row: TOP"]].forEach(([pos, lbl]) => {
-    const b = document.createElement("button");
-    b.className = "seg-btn" + (badgePlacementPreview === pos ? " active" : "");
-    b.textContent = lbl;
-    b.onclick = () => {
-      badgePlacementPreview = pos;
-      ctx.render();
-    };
-    posTabs.appendChild(b);
-  });
-  ctrlRow.appendChild(posTabs);
-  card.appendChild(ctrlRow);
-
-  const badgeStripHtml = p.badgesEnabled
-    ? `<div class="elite-badges-strip">
-        <span class="elite-badge b-4k">4K UHD</span>
-        <span class="elite-badge b-dv">Dolby Vision</span>
-        <span class="elite-badge b-hdr">HDR10+</span>
-        <span class="elite-badge b-codec">HEVC 10bit</span>
-        <span class="elite-badge b-atmos">Dolby Atmos</span>
-        <span class="elite-badge b-cached">Cached Instant</span>
-      </div>`
-    : `<div style="font-size:11.5px;color:var(--muted)">Elite-Badges disabled on this profile (plain text stream card only).</div>`;
-
-  const simCard = document.createElement("div");
-  simCard.className = "stream-card-sim";
-  const textBlock = `
-    <div class="stream-sim-row">
-      <div class="stream-sim-name">AIOStreams\nInstant</div>
-      <div class="stream-sim-desc"><strong>Oppenheimer.2023.2160p.UHD.BluRay.REMUX.DV.HDR10Plus.TrueHD.7.1.Atmos-FGT</strong>\n74.2 GB · IMAX Edition · TorBox Cloud</div>
-    </div>
-  `;
-  simCard.innerHTML = badgePlacementPreview === "TOP"
-    ? `${badgeStripHtml}${textBlock}`
-    : `${textBlock}${badgeStripHtml}`;
-
-  card.appendChild(simCard);
-  return card;
-}
-
-// ---------------------------------------------------------------------------
-// Interactive 16:9 Cinema Player Subtitle Scale Simulator
-// ---------------------------------------------------------------------------
-function renderSubtitleScaleSimulatorCard(ctx, p) {
-  const { icon } = ctx.ui;
-  const sWith = p.settings?.with || {};
-  const themeId = sWith.theme || "ocean";
-  const swatch = THEME_SWATCHES.find(t => t.id === themeId) || THEME_SWATCHES[0];
-  const amoled = sWith.amoledBlack !== false;
-  let sizeSp = Number(sWith.subtitleSizeSp ?? 18);
-  let tvPercent = Number(sWith.tvSubtitleSizePercent ?? 100);
-  const secLang = sWith.subtitleSecondary || "";
-
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const head = document.createElement("div");
-  head.className = "row-between";
-  head.style.marginBottom = "12px";
-  head.style.flexWrap = "wrap";
-  head.innerHTML = `
-    <div>
-      <div class="card-eyebrow">${icon("subtitles", 12)} Player Stage</div>
-      <h2>16:9 Subtitle Scale Simulator</h2>
-      <p class="sub" style="margin-bottom:0">Drag sliders to preview live subtitle legibility before pushing to devices.</p>
-    </div>
-  `;
-
-  const modeSwitch = document.createElement("div");
-  modeSwitch.className = "segmented";
-  [["tv", "TV Scale (%)"], ["desktop", "Desktop (sp)"]].forEach(([m, lbl]) => {
-    const b = document.createElement("button");
-    b.className = "seg-btn" + (playerPreviewTarget === m ? " active" : "");
-    b.textContent = lbl;
-    b.onclick = () => {
-      playerPreviewTarget = m;
-      ctx.render();
-    };
-    modeSwitch.appendChild(b);
-  });
-  head.appendChild(modeSwitch);
-  card.appendChild(head);
-
-  // 16:9 Cinema Stage
-  const stage = document.createElement("div");
-  stage.className = "player-stage" + (amoled ? " amoled" : "");
-  stage.style.setProperty("--player-accent", swatch.color);
-
-  const osdTop = document.createElement("div");
-  osdTop.className = "player-osd-top";
-  osdTop.innerHTML = `
-    <span><strong>Blade Runner 2049</strong> · 2160p DV Atmos</span>
-    <span class="pill" style="border-color:${swatch.color};color:${swatch.color}">${swatch.label}${amoled ? " · AMOLED" : ""}</span>
-  `;
-
-  const subOverlay = document.createElement("div");
-  subOverlay.className = "player-sub-overlay";
-  const computePx = () => {
-    if (playerPreviewTarget === "tv") {
-      return Math.round(18 * (tvPercent / 100));
-    }
-    return Math.round(sizeSp * 0.95);
-  };
-  subOverlay.style.fontSize = `${computePx()}px`;
-  subOverlay.innerHTML = `All those moments will be lost in time, like tears in rain.` +
-    (secLang ? `<span class="player-sub-secondary">[${secLang.toUpperCase()}] すべての瞬間はいずれ時の中に消えていく…</span>` : "");
-
-  const seekbar = document.createElement("div");
-  seekbar.className = "player-seekbar";
-  seekbar.innerHTML = `
-    <div class="player-controls-row">
-      <div class="player-icons">${icon("play", 12)} ${icon("volume", 12)} <span>01:42:18</span></div>
-      <div class="player-icons">${icon("subtitles", 12)} <span>02:43:47</span></div>
-    </div>
-    <div class="player-progress-track"><div class="player-progress-fill"></div></div>
-  `;
-
-  stage.append(osdTop, subOverlay, seekbar);
-  card.appendChild(stage);
-
-  // Sliders
-  const slidersGrid = document.createElement("div");
-  slidersGrid.className = "grid-equal";
-  slidersGrid.style.marginTop = "12px";
-
-  const spLbl = document.createElement("label");
-  spLbl.className = "field";
-  const spValSpan = document.createElement("span");
-  spValSpan.className = "tabular";
-  spValSpan.textContent = `Desktop / Mobile Size: ${sizeSp} sp`;
-  const spRange = document.createElement("input");
-  spRange.type = "range";
-  spRange.min = "12";
-  spRange.max = "36";
-  spRange.value = String(sizeSp);
-  spRange.oninput = () => {
-    sizeSp = Number(spRange.value);
-    spValSpan.textContent = `Desktop / Mobile Size: ${sizeSp} sp`;
-    if (playerPreviewTarget === "desktop") {
-      subOverlay.style.fontSize = `${computePx()}px`;
-    }
-  };
-  spRange.onchange = () => {
-    p.settings.enabled = true;
-    p.settings.with = { ...(p.settings.with || {}), subtitleSizeSp: sizeSp };
-    ctx.saveSection("profile", true);
-  };
-  spLbl.append(spValSpan, spRange);
-
-  const tvLbl = document.createElement("label");
-  tvLbl.className = "field";
-  const tvValSpan = document.createElement("span");
-  tvValSpan.className = "tabular";
-  tvValSpan.textContent = `TV Subtitle Scale: ${tvPercent}%`;
-  const tvRange = document.createElement("input");
-  tvRange.type = "range";
-  tvRange.min = "60";
-  tvRange.max = "180";
-  tvRange.step = "5";
-  tvRange.value = String(tvPercent);
-  tvRange.oninput = () => {
-    tvPercent = Number(tvRange.value);
-    tvValSpan.textContent = `TV Subtitle Scale: ${tvPercent}%`;
-    if (playerPreviewTarget === "tv") {
-      subOverlay.style.fontSize = `${computePx()}px`;
-    }
-  };
-  tvRange.onchange = () => {
-    p.settings.enabled = true;
-    p.settings.with = { ...(p.settings.with || {}), tvSubtitleSizePercent: tvPercent };
-    ctx.saveSection("profile", true);
-  };
-  tvLbl.append(tvValSpan, tvRange);
-
-  slidersGrid.append(tvLbl, spLbl);
-  card.appendChild(slidersGrid);
-
-  return card;
-}
-
-// ---------------------------------------------------------------------------
-// 12 Nuvio Themes + AMOLED + Layout + Playback & Languages
-// ---------------------------------------------------------------------------
-function renderAppearanceAndPlaybackCard(ctx, p) {
+function renderAppearanceAndSubtitlesCard(ctx, p) {
   const { icon } = ctx.ui;
   const st = ctx.state;
   const sWith = p.settings?.with || {};
   const curTheme = sWith.theme || "ocean";
   const curAmoled = sWith.amoledBlack !== false;
+  let sizeSp = Number(sWith.subtitleSizeSp ?? 18);
+  let tvPercent = Number(sWith.tvSubtitleSizePercent ?? 100);
 
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <div class="card-eyebrow">${icon("sliders", 12)} Appearance &amp; Playback</div>
-    <h2>Nuvio Themes, TV Layout &amp; Playback (<code>nuvio_settings</code>)</h2>
-    <p class="sub">Read-modify-write sync across TV, Desktop, and Mobile — device decoders and buffers remain untouched.</p>
+    <div class="card-eyebrow">${icon("sliders", 12)} Appearance &amp; Player</div>
+    <h2>Nuvio Themes, Layout &amp; Subtitles (<code>nuvio_settings</code>)</h2>
+    <p class="sub">Changes reflect immediately in the live TV/Desktop/Mobile viewport.</p>
   `;
 
   card.appendChild(
@@ -292,7 +97,7 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
     swTop.style.marginBottom = "10px";
     swTop.innerHTML = `<strong style="font-size:12.5px">12 Nuvio Accent Themes</strong>`;
     swTop.appendChild(
-      ctx.ui.makeSwitch("AMOLED True Black", curAmoled, (v) => {
+      ctx.ui.makeSwitch("AMOLED Black", curAmoled, (v) => {
         p.settings.with = { ...(p.settings.with || {}), amoledBlack: v };
         ctx.saveSection("profile", true);
       })
@@ -314,12 +119,89 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
     swatchBox.appendChild(swatchGrid);
     card.appendChild(swatchBox);
 
+    const subBox = document.createElement("div");
+    subBox.className = "rows-box";
+    subBox.innerHTML = `
+      <div class="row-between" style="margin-bottom:8px">
+        <strong style="font-size:12.5px">Subtitle Scale</strong>
+        <button class="btn ghost icon-btn" data-jump-player>${icon("play", 11)} <span>Open Player OSD</span></button>
+      </div>
+    `;
+    subBox.querySelector("[data-jump-player]").onclick = () => {
+      setViewportState({ screen: "player" });
+      ctx.render();
+    };
+
+    const slidersGrid = document.createElement("div");
+    slidersGrid.className = "grid-equal";
+
+    const updateLiveSub = (targetDev, px) => {
+      const vp = getViewportState();
+      if (vp.screen !== "player") {
+        setViewportState({ screen: "player", device: targetDev });
+        ctx.render();
+        return;
+      }
+      const subEl = document.querySelector(".nv-sub-box");
+      if (subEl && vp.device === targetDev) {
+        subEl.style.fontSize = `${px}px`;
+      }
+    };
+
+    const tvLbl = document.createElement("label");
+    tvLbl.className = "field";
+    const tvValSpan = document.createElement("span");
+    tvValSpan.className = "tabular";
+    tvValSpan.textContent = `TV Scale: ${tvPercent}%`;
+    const tvRange = document.createElement("input");
+    tvRange.type = "range";
+    tvRange.min = "60";
+    tvRange.max = "180";
+    tvRange.step = "5";
+    tvRange.value = String(tvPercent);
+    tvRange.oninput = () => {
+      tvPercent = Number(tvRange.value);
+      tvValSpan.textContent = `TV Scale: ${tvPercent}%`;
+      p.settings.with = { ...(p.settings.with || {}), tvSubtitleSizePercent: tvPercent };
+      updateLiveSub("tv", Math.round(18 * (tvPercent / 100)));
+    };
+    tvRange.onchange = () => {
+      p.settings.enabled = true;
+      p.settings.with = { ...(p.settings.with || {}), tvSubtitleSizePercent: tvPercent };
+      ctx.saveSection("profile", true);
+    };
+    tvLbl.append(tvValSpan, tvRange);
+
+    const spLbl = document.createElement("label");
+    spLbl.className = "field";
+    const spValSpan = document.createElement("span");
+    spValSpan.className = "tabular";
+    spValSpan.textContent = `Desktop/Mobile: ${sizeSp} sp`;
+    const spRange = document.createElement("input");
+    spRange.type = "range";
+    spRange.min = "12";
+    spRange.max = "36";
+    spRange.value = String(sizeSp);
+    spRange.oninput = () => {
+      sizeSp = Number(spRange.value);
+      spValSpan.textContent = `Desktop/Mobile: ${sizeSp} sp`;
+      p.settings.with = { ...(p.settings.with || {}), subtitleSizeSp: sizeSp };
+      updateLiveSub("desktop", Math.round(sizeSp * 0.95));
+    };
+    spRange.onchange = () => {
+      p.settings.enabled = true;
+      p.settings.with = { ...(p.settings.with || {}), subtitleSizeSp: sizeSp };
+      ctx.saveSection("profile", true);
+    };
+    spLbl.append(spValSpan, spRange);
+
+    slidersGrid.append(tvLbl, spLbl);
+    subBox.appendChild(slidersGrid);
+    card.appendChild(subBox);
+
     const skipNames = new Set(["theme", "amoledBlack", "subtitleSizeSp", "tvSubtitleSizePercent"]);
     const fields = document.createElement("div");
-    fields.style.display = "grid";
-    fields.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
-    fields.style.gap = "10px";
-    fields.style.marginTop = "14px";
+    fields.style.cssText = "display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px";
 
     (st.settingsParams || [])
       .filter(pr => !skipNames.has(pr.name))
@@ -327,6 +209,11 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
         fields.appendChild(
           ctx.ui.makeParamInput(param, p.settings.with, (val) => {
             p.settings.with = { ...(p.settings.with || {}), [param.name]: val };
+            if (param.name === "homeLayout") setViewportState({ screen: "home" });
+            else if (param.name === "blurUnwatchedEpisodes") setViewportState({ screen: "details" });
+            else if (param.name === "subtitlePreferred" || param.name === "subtitleSecondary") {
+              setViewportState({ screen: "player" });
+            }
             ctx.saveSection("profile", true);
           })
         );
@@ -338,50 +225,62 @@ function renderAppearanceAndPlaybackCard(ctx, p) {
 }
 
 // ---------------------------------------------------------------------------
-// Details-Page Enrichment & MDBList 8-Source Ratings (`nuvio_meta`)
+// Card 2 — Elite-Badges & Details-Page Enrichment (`nuvio_badges` + `nuvio_meta`)
 // ---------------------------------------------------------------------------
-function renderMetaEnrichmentCard(ctx, p) {
+function renderBadgesAndMetaCard(ctx, p) {
   const { icon } = ctx.ui;
   const st = ctx.state;
+  const vp = getViewportState();
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <div class="card-eyebrow">${icon("shield", 12)} Details &amp; Spoilers</div>
-    <h2>8-Source MDBList Ratings &amp; Spoiler Protection (<code>nuvio_meta</code>)</h2>
-    <p class="sub">Syncs IMDb · TMDB · Rotten Tomatoes · Audience · Metacritic · Letterboxd · Trakt · MAL ratings bar, TMDB hero trailers, and spoiler blur.</p>
+    <div class="card-eyebrow">${icon("shield", 12)} Stream Badges &amp; Details Page</div>
+    <h2>Elite-Badges &amp; 8-Source Ratings</h2>
+    <p class="sub">Real badge icons render on Streams &amp; Player OSD; MDBList + spoiler controls update Details.</p>
   `;
 
-  card.appendChild(
-    ctx.ui.makeSwitch("Enable Details-Page Enrichment & 8-Source Ratings", Boolean(p.meta?.enabled), (v) => {
-      p.meta.enabled = v;
+  const badgeRow = document.createElement("div");
+  badgeRow.className = "row-between";
+  badgeRow.style.cssText = "margin-bottom:12px;flex-wrap:wrap";
+  badgeRow.appendChild(
+    ctx.ui.makeSwitch("Enable Elite-Badges Pack", Boolean(p.badgesEnabled), (v) => {
+      p.badgesEnabled = v;
+      setViewportState({ screen: "details" });
       ctx.saveSection("profile", true);
     })
   );
 
-  const ratingPreview = document.createElement("div");
-  ratingPreview.className = "chip-row";
-  ratingPreview.style.marginTop = "12px";
-  [
-    ["IMDb", "8.6"], ["TMDB", "84%"], ["RT Critics", "93%"], ["RT Audience", "91%"],
-    ["Metacritic", "83"], ["Letterboxd", "4.3"], ["Trakt", "88%"], ["MAL", "8.9"],
-  ].forEach(([src, val]) => {
-    const c = document.createElement("span");
-    c.className = "chip" + (p.meta?.enabled ? " active" : "");
-    c.textContent = `${src} ${val}`;
-    ratingPreview.appendChild(c);
+  const posTabs = document.createElement("div");
+  posTabs.className = "segmented";
+  [["BOTTOM", "Row: BOTTOM"], ["TOP", "Row: TOP"]].forEach(([pos, lbl]) => {
+    const b = document.createElement("button");
+    b.className = "seg-btn" + (vp.badgePlacement === pos ? " active" : "");
+    b.textContent = lbl;
+    b.onclick = () => {
+      setViewportState({ badgePlacement: pos, screen: "details" });
+      ctx.render();
+    };
+    posTabs.appendChild(b);
   });
-  card.appendChild(ratingPreview);
+  badgeRow.appendChild(posTabs);
+  card.appendChild(badgeRow);
+
+  card.appendChild(
+    ctx.ui.makeSwitch("Enable Details Enrichment & 8-Source Ratings (nuvio_meta)", Boolean(p.meta?.enabled), (v) => {
+      p.meta.enabled = v;
+      setViewportState({ screen: "details" });
+      ctx.saveSection("profile", true);
+    })
+  );
 
   if (p.meta?.enabled && Array.isArray(st.metaParams) && st.metaParams.length) {
     const fields = document.createElement("div");
-    fields.style.display = "grid";
-    fields.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
-    fields.style.gap = "10px";
-    fields.style.marginTop = "14px";
+    fields.style.cssText = "display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px";
     st.metaParams.forEach(param => {
       fields.appendChild(
         ctx.ui.makeParamInput(param, p.meta.with, (val) => {
           p.meta.with = { ...(p.meta.with || {}), [param.name]: val };
+          setViewportState({ screen: "details" });
           ctx.saveSection("profile", true);
         })
       );
