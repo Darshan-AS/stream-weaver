@@ -301,6 +301,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt15239678",
         "title": "Dune: Part Two",
         "year": "2024",
+        "runtime": "2h 46m",
+        "certification": "PG-13",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg",
         "logoUrl": "",
@@ -313,6 +316,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt15398776",
         "title": "Oppenheimer",
         "year": "2023",
+        "runtime": "3h 0m",
+        "certification": "R",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
         "logoUrl": "",
@@ -325,6 +331,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt9362722",
         "title": "Spider-Man: Across the Spider-Verse",
         "year": "2023",
+        "runtime": "2h 20m",
+        "certification": "PG",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg",
         "logoUrl": "",
@@ -337,6 +346,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt0245429",
         "title": "Spirited Away",
         "year": "2001",
+        "runtime": "2h 5m",
+        "certification": "PG",
+        "language": "JA",
         "posterUrl": "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/bSXfU4dwZyBA1vMmXvejdRXBvuF.jpg",
         "logoUrl": "",
@@ -349,6 +361,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt0816692",
         "title": "Interstellar",
         "year": "2014",
+        "runtime": "2h 49m",
+        "certification": "PG-13",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/pbrkL804c8yAv3zBZR4QPEafpAR.jpg",
         "logoUrl": "",
@@ -361,6 +376,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt6710474",
         "title": "Everything Everywhere All at Once",
         "year": "2022",
+        "runtime": "2h 19m",
+        "certification": "R",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/w3LxiVYdWWRvEVdn5RYq6jIqkb1.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/ss0Os3uWJfQAENILHZUdX8Tt1OC.jpg",
         "logoUrl": "",
@@ -373,6 +391,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt29623480",
         "title": "The Wild Robot",
         "year": "2024",
+        "runtime": "1h 42m",
+        "certification": "PG",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/4zlOPT9CrtIX05bBIkYxNZsm5zN.jpg",
         "logoUrl": "",
@@ -385,6 +406,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt6751668",
         "title": "Parasite",
         "year": "2019",
+        "runtime": "2h 12m",
+        "certification": "R",
+        "language": "KO",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg",
         "logoUrl": "",
@@ -397,6 +421,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt2380307",
         "title": "Coco",
         "year": "2017",
+        "runtime": "1h 45m",
+        "certification": "PG",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/askg3SMvhqEl4OL52YuvdtY40Yb.jpg",
         "logoUrl": "",
@@ -409,6 +436,9 @@ _SAMPLE_MOVIE_CARDS: tuple[JsonDict, ...] = (
         "id": "tt1856101",
         "title": "Blade Runner 2049",
         "year": "2017",
+        "runtime": "2h 44m",
+        "certification": "R",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/ilRyazdMJwN05exqhwK4tMKBYZs.jpg",
         "logoUrl": "",
@@ -424,6 +454,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt11280740",
         "title": "Severance",
         "year": "2022",
+        "runtime": "55m",
+        "certification": "TV-MA",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/lFf6LLrQjYldcZItzOkGmMMigP7.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/ixgFmf1X59PUy2yE85gB2kG0v7m.jpg",
         "logoUrl": "",
@@ -436,6 +469,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt2788316",
         "title": "Shogun",
         "year": "2024",
+        "runtime": "1h 0m",
+        "certification": "TV-MA",
+        "language": "JA",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7O4iVfOMQmdCSxhOg1WnzG1AgYT.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/5zmiBoMzeeVdQ62no55JOJMY498.jpg",
         "logoUrl": "",
@@ -448,6 +484,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt11126994",
         "title": "Arcane",
         "year": "2021",
+        "runtime": "42m",
+        "certification": "TV-14",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg",
         "logoUrl": "",
@@ -460,6 +499,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt2934286",
         "title": "Frieren: Beyond Journey's End",
         "year": "2023",
+        "runtime": "24m",
+        "certification": "TV-14",
+        "language": "JA",
         "posterUrl": "https://image.tmdb.org/t/p/w500/dqZENchTd7lp5zht7BdlqM7RBhD.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/96RT2A47UdzWlUugIERFyBsIKk2.jpg",
         "logoUrl": "",
@@ -472,6 +514,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt7660850",
         "title": "Succession",
         "year": "2018",
+        "runtime": "1h 2m",
+        "certification": "TV-MA",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/6k81A5aP3e5uL9xKz7L1Y6U5J9a.jpg",
         "logoUrl": "",
@@ -484,6 +529,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt14452776",
         "title": "The Bear",
         "year": "2022",
+        "runtime": "35m",
+        "certification": "TV-MA",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/6fYtlV6v2F6x6rC4W6X5F1z6A3e.jpg",
         "logoUrl": "",
@@ -496,6 +544,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt7366338",
         "title": "Chernobyl",
         "year": "2019",
+        "runtime": "1h 5m",
+        "certification": "TV-MA",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/900tHlUYUkp7Ol04XFSoAaEIXcT.jpg",
         "logoUrl": "",
@@ -508,6 +559,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt9253866",
         "title": "Andor",
         "year": "2022",
+        "runtime": "48m",
+        "certification": "TV-14",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/59SVNwLfoMnZPPB6ukW6dlPxAdI.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/kNt9jG8wW2D9t3y5oR2P6X2W3V8.jpg",
         "logoUrl": "",
@@ -520,6 +574,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt7678620",
         "title": "Bluey",
         "year": "2018",
+        "runtime": "7m",
+        "certification": "TV-Y",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/b9mY0X5T20s0v8K3X9Q0s0V6B0s.jpg",
         "backdropUrl": "",
         "logoUrl": "",
@@ -532,6 +589,9 @@ _SAMPLE_SERIES_CARDS: tuple[JsonDict, ...] = (
         "id": "tt3032476",
         "title": "Better Call Saul",
         "year": "2015",
+        "runtime": "52m",
+        "certification": "TV-MA",
+        "language": "EN",
         "posterUrl": "https://image.tmdb.org/t/p/w500/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg",
         "backdropUrl": "https://image.tmdb.org/t/p/w1280/hPea3Qy5Gd6z4kJLUruBbwAH8Rm.jpg",
         "logoUrl": "",
@@ -1115,6 +1175,20 @@ def _inline_template_from_compiled(comp_col: Mapping[str, Any], cp: CompiledProf
         }
         if f.get("coverImageUrl"):
             f_doc["coverImageUrl"] = str(f["coverImageUrl"])
+        if f.get("tileShape"):
+            f_doc["tileShape"] = str(f["tileShape"])
+        if "hideTitle" in f:
+            f_doc["hideTitle"] = bool(f["hideTitle"])
+        if f.get("focusGifUrl"):
+            f_doc["focusGifUrl"] = str(f["focusGifUrl"])
+        if "focusGifEnabled" in f:
+            f_doc["focusGifEnabled"] = bool(f["focusGifEnabled"])
+        if f.get("coverEmoji"):
+            f_doc["coverEmoji"] = str(f["coverEmoji"])
+        if f.get("heroBackdropUrl"):
+            f_doc["heroBackdropUrl"] = str(f["heroBackdropUrl"])
+        if f.get("titleLogoUrl"):
+            f_doc["titleLogoUrl"] = str(f["titleLogoUrl"])
         folders_out.append(f_doc)
     out: JsonDict = {
         "id": str(comp_col.get("id") or "col-custom"),
@@ -1123,6 +1197,14 @@ def _inline_template_from_compiled(comp_col: Mapping[str, Any], cp: CompiledProf
     }
     if comp_col.get("backdropImageUrl"):
         out["backdropImageUrl"] = str(comp_col["backdropImageUrl"])
+    if comp_col.get("viewMode"):
+        out["viewMode"] = str(comp_col["viewMode"])
+    if "showAllTab" in comp_col:
+        out["showAllTab"] = bool(comp_col["showAllTab"])
+    if "pinToTop" in comp_col:
+        out["pinToTop"] = bool(comp_col["pinToTop"])
+    if "focusGlowEnabled" in comp_col:
+        out["focusGlowEnabled"] = bool(comp_col["focusGlowEnabled"])
     return out
 
 
@@ -1328,18 +1410,25 @@ def inspect_tenant_state(
                 rec = ws.library.recipes[("collection", ref_id)]
                 summary = describe_recipe(rec, ws.library, with_params=with_params)
                 required_keys.update(summary.required_secrets)
-                folders_view = [
-                    {
-                        "id": f.id,
-                        "title": f.title,
-                        "coverUrl": f.cover_url,
-                        "rows": list(f.row_titles),
-                        "sources": _compact_sources_view(
-                            comp_folders[f_idx] if f_idx < len(comp_folders) else None
-                        ),
-                    }
-                    for f_idx, f in enumerate(summary.folders)
-                ]
+                folders_view = []
+                for f_idx, f in enumerate(summary.folders):
+                    cf = comp_folders[f_idx] if f_idx < len(comp_folders) else {}
+                    folders_view.append(
+                        {
+                            "id": f.id,
+                            "title": f.title,
+                            "coverUrl": str(cf.get("coverImageUrl") or f.cover_url or ""),
+                            "tileShape": str(cf.get("tileShape") or "LANDSCAPE").upper(),
+                            "hideTitle": bool(cf.get("hideTitle", False)),
+                            "focusGifUrl": str(cf.get("focusGifUrl") or ""),
+                            "focusGifEnabled": bool(cf.get("focusGifEnabled", False)),
+                            "coverEmoji": str(cf.get("coverEmoji") or ""),
+                            "heroBackdropUrl": str(cf.get("heroBackdropUrl") or ""),
+                            "titleLogoUrl": str(cf.get("titleLogoUrl") or ""),
+                            "rows": list(f.row_titles),
+                            "sources": _compact_sources_view(cf if cf else None),
+                        }
+                    )
                 col_title = str(comp_col.get("title") or summary.title)
                 backdrop = str(comp_col.get("backdropImageUrl") or summary.backdrop_url)
             else:
@@ -1350,6 +1439,13 @@ def inspect_tenant_state(
                         "id": str(f.get("id") or ""),
                         "title": str(f.get("title") or ""),
                         "coverUrl": str(f.get("coverImageUrl") or ""),
+                        "tileShape": str(f.get("tileShape") or "LANDSCAPE").upper(),
+                        "hideTitle": bool(f.get("hideTitle", False)),
+                        "focusGifUrl": str(f.get("focusGifUrl") or ""),
+                        "focusGifEnabled": bool(f.get("focusGifEnabled", False)),
+                        "coverEmoji": str(f.get("coverEmoji") or ""),
+                        "heroBackdropUrl": str(f.get("heroBackdropUrl") or ""),
+                        "titleLogoUrl": str(f.get("titleLogoUrl") or ""),
                         "rows": [
                             str(s.get("title") or s.get("catalogId") or "")
                             for s in (f.get("sources") or [])
@@ -1385,6 +1481,10 @@ def inspect_tenant_state(
                     "id": str(comp_col.get("id") or ref_id or idx),
                     "title": col_title,
                     "backdropUrl": backdrop,
+                    "viewMode": str(comp_col.get("viewMode") or "TABBED_GRID"),
+                    "showAllTab": bool(comp_col.get("showAllTab", True)),
+                    "pinToTop": bool(comp_col.get("pinToTop", False)),
+                    "focusGlowEnabled": bool(comp_col.get("focusGlowEnabled", True)),
                     "folders": folders_view,
                 }
             )
@@ -2659,6 +2759,13 @@ def preview_catalog_items(
                                     "id": str(m.get("id") or f"meta-{idx}"),
                                     "title": str(m.get("name") or m.get("title") or "Untitled"),
                                     "year": rel[:4],
+                                    "runtime": str(m.get("runtime") or ""),
+                                    "certification": str(
+                                        m.get("certification") or m.get("ageRating") or ""
+                                    ),
+                                    "language": str(
+                                        m.get("language") or m.get("originalLanguage") or "EN"
+                                    ).upper()[:4],
                                     "posterUrl": str(m.get("poster") or m.get("posterUrl") or ""),
                                     "backdropUrl": str(m.get("background") or m.get("backdropUrl") or ""),
                                     "logoUrl": str(m.get("logo") or m.get("logoUrl") or ""),
@@ -2716,6 +2823,9 @@ def preview_catalog_items(
                                     "id": f"tmdb:{r.get('id', idx)}",
                                     "title": str(r.get("title") or r.get("name") or "Untitled"),
                                     "year": date_str[:4],
+                                    "runtime": "",
+                                    "certification": "",
+                                    "language": str(r.get("original_language") or "EN").upper()[:4],
                                     "posterUrl": poster_url,
                                     "backdropUrl": bd_url,
                                     "logoUrl": "",
