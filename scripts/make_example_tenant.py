@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
 Regenerates `examples/home/` — the identity-free demo tenant used by docs and as the test
-fixture — from a real workspace (default sibling `../stream-braid`, profile `don`).
+fixture — from a real workspace (default sibling `../stream-braid`, profile `main`).
 
 What it strips / rewrites (deterministically, so re-runs are idempotent):
-  * hostnames of the source instances → `*.example.com`
+  * instance hostnames discovered from `.env` (or `--scrub-host`) → `*.example.com`
   * every UUID → a stable fake UUID (`00000000-0000-4000-8000-0000000000NN`)
   * personal names / labels → "Demo"
   * AIOManager sync salts → fixed demo salts; personal vault, API keys & deletedAddons cleared
   * AIOMetadata `managerAccounts` webhook links cleared; disabled Gemini key slot cleared
   * the Contraband (`swc`) custom preset and every catalog / folder that references it
   * `raw.githubusercontent.com/<owner>/aio_contraband/...` cover art → placeholder images
-  * scopes to a single starter profile (`--profile don`) with Nuvio defaulting to profile index 1
+  * scopes to a single starter profile (`--profile main`) with Nuvio defaulting to profile index 1
 
 Usage:
-    uv run python scripts/make_example_tenant.py            # from ../stream-braid (profile don)
-    uv run python scripts/make_example_tenant.py --from /path/to/workspace --profile main
+    uv run python scripts/make_example_tenant.py --from ../stream-braid --profile main
+    uv run python scripts/make_example_tenant.py --from /path/to/workspace --profile main --scrub-host custom.example.org=aiostreams.example.com
 """
 
 from __future__ import annotations
@@ -23,12 +23,12 @@ from __future__ import annotations
 import argparse
 import copy
 import json
-import os
 import re
 import shutil
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -46,18 +46,8 @@ CONTRABAND_PRESET_ID = "swc"
 CONTRABAND_CATALOG_PREFIX = "swce3b0."
 CONTRABAND_RAW_RE = re.compile(r"https://raw\.githubusercontent\.com/[^/]+/aio_contraband/[^\"\s]+")
 
-HOST_MAP = {
-    "aiostreams.example.com": "aiostreams.example.com",
-    "aiometadata.example.com": "aiometadata.example.com",
-    "aiomanager.example.com": "aiomanager.example.com",
-}
-TEXT_MAP = {
-    "Demo AIOManager": "Demo AIOManager",
-    "Bingecat AI Assistant - demo": "Bingecat AI Assistant - demo",
-    "ZGVtby1zYWx0LWRlbW8tc2FsdA==": "ZGVtby1zYWx0LWRlbW8tc2FsdA==",
-    "ameu09paiJ5Mx1oQYiyobg==": "ZGVtby1zeW5jLXNhbHQtZGVtbw==",
-}
-EXACT_VALUE_MAP = {"Don": "Demo", "darshan": "demo"}
+DEMO_SALT = "ZGVtby1zYWx0LWRlbW8tc2FsdA=="
+DEMO_SYNC_SALT = "ZGVtby1zeW5jLXNhbHQtZGVtbw=="
 PLACEHOLDER_COVER = "https://placehold.co/600x900/111827/f9fafb/webp?text=Folder"
 PLACEHOLDER_BACKDROP = "https://placehold.co/1920x1080/111827/f9fafb/webp?text=Backdrop"
 
@@ -73,8 +63,17 @@ DOC_NAMES = (
 
 
 class Scrubber:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        host_map: dict[str, str] | None = None,
+        text_map: dict[str, str] | None = None,
+        exact_value_map: dict[str, str] | None = None,
+    ) -> None:
         self._uuids: dict[str, str] = {}
+        self._host_map: dict[str, str] = dict(host_map or {})
+        self._text_map: dict[str, str] = dict(text_map or {})
+        self._exact_value_map: dict[str, str] = dict(exact_value_map or {})
 
     def fake_uuid(self, real: str) -> str:
         key = real.lower()
@@ -89,12 +88,12 @@ class Scrubber:
             self.fake_uuid(m.group(0))
 
     def text(self, s: str) -> str:
-        for real, fake in HOST_MAP.items():
+        for real, fake in self._host_map.items():
             s = s.replace(real, fake)
-        for real, fake in TEXT_MAP.items():
+        for real, fake in self._text_map.items():
             s = s.replace(real, fake)
-        if s in EXACT_VALUE_MAP:
-            return EXACT_VALUE_MAP[s]
+        if s in self._exact_value_map:
+            return self._exact_value_map[s]
         s = UUID_RE.sub(lambda m: self.fake_uuid(m.group(0)), s)
         for real, fake in self._uuids.items():
             s = s.replace(real[:12], fake[:12]).replace(real[:8], fake[:8])
@@ -186,8 +185,25 @@ def _clean_aiomanager_for_example(
         out["accountStates"] = {k: v for k, v in out["accountStates"].items() if k in kept_ids}
     out["apiKeys"] = {}
     out["vault"] = []
+    if "salt" in out and isinstance(out["salt"], str):
+        out["salt"] = DEMO_SALT
+    if "syncSalt" in out and isinstance(out["syncSalt"], str):
+        out["syncSalt"] = DEMO_SYNC_SALT
+    if isinstance(out.get("syncMeta"), dict):
+        if isinstance(out["syncMeta"].get("salt"), str):
+            out["syncMeta"]["salt"] = DEMO_SALT
+        if isinstance(out["syncMeta"].get("syncSalt"), str):
+            out["syncMeta"]["syncSalt"] = DEMO_SYNC_SALT
     if isinstance(out.get("profiles"), list) and out["profiles"]:
-        out["profiles"] = out["profiles"][:1]
+        prof0 = copy.deepcopy(out["profiles"][0])
+        if isinstance(prof0, dict):
+            if "salt" in prof0 and isinstance(prof0["salt"], str):
+                prof0["salt"] = DEMO_SALT
+            if "syncSalt" in prof0 and isinstance(prof0["syncSalt"], str):
+                prof0["syncSalt"] = DEMO_SYNC_SALT
+            if isinstance(prof0.get("name"), str) and prof0["name"].endswith("AIOManager"):
+                prof0["name"] = "Demo AIOManager"
+        out["profiles"] = [prof0]
     return out
 
 
@@ -229,12 +245,23 @@ def _strip_extra_instance_env_lines(text: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def _parse_kv_pairs(items: list[str]) -> dict[str, str]:
+    pairs: dict[str, str] = {}
+    for item in items:
+        old, sep, new = item.partition("=")
+        if sep and old:
+            pairs[old] = new
+    return pairs
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="source", default="../stream-braid")
     ap.add_argument("--to", dest="target", default="examples/home")
-    ap.add_argument("--profile", dest="profile", default="don")
+    ap.add_argument("--profile", dest="profile", default="main")
     ap.add_argument("--out-profile", dest="out_profile", default="main")
+    ap.add_argument("--scrub-host", action="append", default=[], metavar="OLD=NEW")
+    ap.add_argument("--scrub-text", action="append", default=[], metavar="OLD=NEW")
     args = ap.parse_args()
 
     src = (ROOT / args.source).resolve()
@@ -248,13 +275,43 @@ def main() -> None:
     src_account_id = raw_src_profile.get("accountId")
     src_display_name = str(raw_src_profile.get("displayName") or args.profile)
 
-    scrub = Scrubber()
+    host_map: dict[str, str] = {}
+    text_map: dict[str, str] = {
+        f"{src_display_name}'s AIOManager": "Demo AIOManager",
+        f"Bingecat AI Assistant - {args.profile}": "Bingecat AI Assistant - demo",
+        f"Bingecat AI Assistant - {src_display_name}": "Bingecat AI Assistant - demo",
+    }
+    exact_map: dict[str, str] = {src_display_name: "Demo", args.profile: "demo"}
+
     env_file = src / ".env"
+    service_host_targets = {
+        "AIOSTREAMS_URL": "aiostreams.example.com",
+        "AIOMETADATA_URL": "aiometadata.example.com",
+        "AIOMANAGER_URL": "aiomanager.example.com",
+    }
+    env_uuids: list[str] = []
     if env_file.is_file():
         for line in env_file.read_text(encoding="utf-8").splitlines():
             key, _, val = line.partition("=")
-            if key.strip().endswith("_UUID") and UUID_RE.fullmatch(val.strip()):
-                scrub.fake_uuid(val.strip())
+            key = key.strip()
+            val = val.strip().strip("\"'")
+            if key.endswith("_UUID") and UUID_RE.fullmatch(val):
+                env_uuids.append(val)
+            elif key in service_host_targets and val:
+                host = urlparse(val).hostname
+                if host:
+                    host_map[host] = service_host_targets[key]
+            elif key.startswith("AIOMETADATA_") and key.endswith("_URL") and val:
+                host = urlparse(val).hostname
+                if host:
+                    host_map[host] = "aiometadata.example.com"
+
+    host_map.update(_parse_kv_pairs(args.scrub_host))
+    text_map.update(_parse_kv_pairs(args.scrub_text))
+
+    scrub = Scrubber(host_map=host_map, text_map=text_map, exact_value_map=exact_map)
+    for uid in env_uuids:
+        scrub.fake_uuid(uid)
 
     prepared_docs: dict[str, dict[str, Any]] = {}
     for name in DOC_NAMES:

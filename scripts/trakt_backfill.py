@@ -2,7 +2,7 @@
 """
 One-off: back-fill Trakt history from Nuvio Sync's watched items (preserving original `watched_at`).
 
-Usage (from the repo root; tenant via STREAM_WEAVER_DIR or STREAM_WEAVER_TENANT, default `don`):
+Usage (from the repo root; workspace via STREAM_WEAVER_DIR, STREAM_WEAVER_TENANT, or saved default workspace):
 
     .venv/bin/python scripts/trakt_backfill.py            # dry run: prints what WOULD be sent
     .venv/bin/python scripts/trakt_backfill.py --apply    # authorise via Trakt device code, then push
@@ -33,17 +33,24 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-# Tenant directory: STREAM_WEAVER_DIR, else ./tenants/<STREAM_WEAVER_TENANT or "don">
-TENANT_DIR = Path(
-    os.environ.get("STREAM_WEAVER_DIR")
-    or ROOT / "tenants" / os.environ.get("STREAM_WEAVER_TENANT", "don")
-).resolve()
-
 from stream_weaver.cli.nuvio import profile_nuvio_connection  # noqa: E402
 from stream_weaver.core.result import Ok  # noqa: E402
 from stream_weaver.effects.http import HttpxClient  # noqa: E402
-from stream_weaver.effects.storage import load_env_file  # noqa: E402
+from stream_weaver.effects.storage import load_default_workspace, load_env_file  # noqa: E402
 from stream_weaver.providers.services.clients import NuvioClientSync  # noqa: E402
+
+
+def _resolve_workspace_dir() -> Path:
+    if explicit := os.environ.get("STREAM_WEAVER_DIR", "").strip():
+        return Path(explicit).expanduser().resolve()
+    if tenant := os.environ.get("STREAM_WEAVER_TENANT", "").strip():
+        return (ROOT / "tenants" / tenant).resolve()
+    if default_ws := load_default_workspace():
+        return default_ws
+    return Path.cwd().resolve()
+
+
+TENANT_DIR = _resolve_workspace_dir()
 
 TRAKT_API = "https://api.trakt.tv"
 NUVIO_RPC = "https://api.nuvio.tv/rest/v1/rpc"

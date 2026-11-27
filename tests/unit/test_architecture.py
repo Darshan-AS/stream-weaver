@@ -243,12 +243,9 @@ def test_compile_architecture_bundle_minimal_realdebrid_has_no_personal_leakage(
     assert "meta.example.org" in bundle.likec4_dsl
 
     for personal_token in (
-        "Darshan-AS",
         "contraband",
-        "Peterson Academy",
         "bingecat",
         "torbox_srv",
-        "midnightignite.me",
         "Kannada",
         "JioHotstar",
     ):

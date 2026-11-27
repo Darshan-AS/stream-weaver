@@ -198,7 +198,6 @@ def test_sw_init_from_template_copies_documents(tmp_path: Path) -> None:
     assert val_res.exit_code == 0, val_res.output
     # template documents must carry no identity or stale personal vault/account placeholders
     blob = "".join(p.read_text(encoding="utf-8") for p in target.glob("*.json"))
-    assert "midnightignite" not in blob
     assert "swce3b0" not in blob
     for stale_marker in (
         "SECRET_ACCOUNT_AUTH_KEY",

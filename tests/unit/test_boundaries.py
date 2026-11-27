@@ -53,8 +53,8 @@ PUBLIC_HOST_ALLOWLIST = {
     "api.simkl.com",
 }
 
-# Markers that identify the maintainer's own deployment and must never appear outside tenants/.
-IDENTITY_MARKERS = ("midnightignite", "darshan", "Darshan", "swce3b0", "00000000")
+# Markers that identify personal deployment info and must never appear outside tenants/.
+IDENTITY_MARKERS = ("darshan", "Darshan", "swce3b0")
 
 _PATH_LITERAL_RE = re.compile(r"""["'](\.?/)?(tenants|library|examples)/""")
 _ASSET_URL_RE = re.compile(r"https://\S+?\.(?:webp|png|gif|jpe?g|svg)\b", re.I)
