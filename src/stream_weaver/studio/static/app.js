@@ -33,6 +33,29 @@ let saveInFlight = false;
 let saveQueued = false;
 let saveQueuedQuiet = true;
 let activeSavePromise = null;
+let pendingPushCount = 0;
+
+function pushStorageKey() {
+  const rootKey = state?.tenant?.root || appMode || "default";
+  return `sw_pending_push_${rootKey}`;
+}
+
+function loadPendingPushCount() {
+  try {
+    const raw = sessionStorage.getItem(pushStorageKey());
+    const parsed = Number(raw);
+    pendingPushCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  } catch (_) {
+    pendingPushCount = 0;
+  }
+}
+
+function setPendingPushCount(n) {
+  pendingPushCount = Math.max(0, Number(n) || 0);
+  try {
+    sessionStorage.setItem(pushStorageKey(), String(pendingPushCount));
+  } catch (_) {}
+}
 
 function createEmptyChangedSections() {
   return {
@@ -431,6 +454,8 @@ async function saveChanges(quiet = false) {
       const sentEnv = { ...pendingEnvEdits };
       const sentSections = { ...changedSections };
       const mut = buildMutationPayload();
+      const hasEnv = mut.envUpdates && Object.values(mut.envUpdates).some(v => String(v || "").trim() !== "");
+      const hasOther = Object.keys(mut).some(k => k !== "envUpdates" && mut[k] !== undefined);
       clearPendingEdits();
       try {
         const res = await fetch("/api/mutate", {
@@ -441,6 +466,9 @@ async function saveChanges(quiet = false) {
         const data = await res.json();
         if (!res.ok || data.ok === false) {
           throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        if (hasEnv || hasOther) {
+          setPendingPushCount(pendingPushCount + 1);
         }
         if (data.mode) appMode = data.mode;
         if (data.bundle) persistBundle(data.bundle);
@@ -835,6 +863,7 @@ function openNewProfileModal() {
           });
           const idx = (state.profiles || []).findIndex(p => p.name === formState.name.trim());
           if (idx >= 0) activeProfileIdx = idx;
+          setPendingPushCount(pendingPushCount + 1);
           closeModal();
           render();
           showLog(`Created household profile "${formState.name.trim()}".`, []);
@@ -857,6 +886,7 @@ async function deleteProfile(profName) {
   try {
     await api("/api/profile", { action: "delete", name: profName });
     activeProfileIdx = 0;
+    setPendingPushCount(pendingPushCount + 1);
     render();
     showLog(`Deleted profile "${profName}".`, []);
   } catch (err) {
@@ -983,6 +1013,7 @@ function openRawJsonModal(initialDocKey = "aiostreams") {
           if (typeof saved.content === "string") {
             editor.value = saved.content;
           }
+          setPendingPushCount(pendingPushCount + 1);
           syntaxPill.className = "pill ok";
           syntaxPill.textContent = "Saved & Scrubbed";
           render();
@@ -1112,7 +1143,21 @@ function makeCtx() {
     get mode() { return appMode; },
     get activeProfileIdx() { return activeProfileIdx; },
     get pendingEnvEdits() { return pendingEnvEdits; },
+    get pendingPushCount() { return pendingPushCount; },
     get nuvioProfilesCache() { return nuvioProfilesCache; },
+    markPushed() {
+      setPendingPushCount(0);
+      renderHeader();
+    },
+    markUnpushed() {
+      setPendingPushCount(pendingPushCount + 1);
+      renderHeader();
+    },
+    discardPendingEnv() {
+      pendingEnvEdits = {};
+      dirty = Object.values(changedSections).some(Boolean);
+      renderHeader();
+    },
     currentProfile,
     selectProfile(idx) {
       activeProfileIdx = idx;
@@ -1211,6 +1256,12 @@ function renderHeader() {
 
   const dirtyPill = document.getElementById("dirty-pill");
   if (dirtyPill) dirtyPill.hidden = !dirty;
+
+  const pushPill = document.getElementById("push-pending-pill");
+  if (pushPill) {
+    pushPill.hidden = pendingPushCount <= 0;
+    pushPill.textContent = pendingPushCount === 1 ? "1 edit to push" : `${pendingPushCount} edits to push`;
+  }
 
   // Household Profile Switcher in Sidebar
   const pBar = document.getElementById("profile-tabs");
@@ -1363,21 +1414,25 @@ document.getElementById("btn-diff").onclick = () => { closeSidebarMobile(); open
 document.getElementById("btn-raw-json").onclick = () => { closeSidebarMobile(); openRawJsonModal("aiostreams"); };
 document.getElementById("btn-save").onclick = () => saveChanges(false);
 
-document.getElementById("btn-push").onclick = async () => {
+async function executePushNow(targetOverride = null) {
   const btn = document.getElementById("btn-push");
   const warmChecked = Boolean(document.getElementById("chk-push-warm")?.checked);
-  btn.disabled = true;
-  showLog("Streaming workspace push…", []);
+  const anyNuvio = (state?.profiles || []).some(p => p.nuvio?.loginReady);
+  const anyStremio = (state?.profiles || []).some(p => p.stremioEnabled && p.stremio?.loginReady);
+  const chosenTarget = targetOverride || (anyNuvio || anyStremio ? "all" : "instances");
+  if (btn) btn.disabled = true;
+  showLog(`Streaming workspace push (target: ${chosenTarget})…`, []);
   try {
     const done = await streamPush(
       {
-        target: "all",
+        target: chosenTarget,
         warmCatalogs: warmChecked,
         mutation: buildMutationPayload(),
       },
       (step) => appendLogStep(step)
     );
     clearPendingEdits();
+    setPendingPushCount(0);
     document.getElementById("log-drawer-title").innerHTML = `${icon("check", 14)} <span>Push complete</span>`;
     if (done && Array.isArray(done.steps) && !document.getElementById("log-drawer-steps").children.length) {
       showLog("Push complete", done.steps);
@@ -1386,9 +1441,139 @@ document.getElementById("btn-push").onclick = async () => {
   } catch (err) {
     showLog(err.message, [], true);
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
-};
+}
+
+function openPushConfirmModal() {
+  if (!state) return;
+  const t = state.tenant || {};
+  const warmChecked = Boolean(document.getElementById("chk-push-warm")?.checked);
+  const profs = state.profiles || [];
+  const anyNuvio = profs.some(p => p.nuvio?.loginReady);
+  const anyStremioOn = profs.some(p => p.stremioEnabled);
+  const anyStremioReady = profs.some(p => p.stremioEnabled && p.stremio?.loginReady);
+  const mgrReady = Boolean(state.aiomanagerPower?.syncConfigured);
+
+  openModal((dialog) => {
+    const head = document.createElement("div");
+    head.className = "row-between";
+    head.innerHTML = `
+      <div>
+        <h2>${icon("upload", 17)} Confirm Live Push</h2>
+        <p class="sub" style="margin:3px 0 0">Review remote targets before pushing your local GitOps workspace live.</p>
+      </div>
+    `;
+    const xBtn = document.createElement("button");
+    xBtn.className = "btn ghost icon-btn";
+    xBtn.innerHTML = icon("x", 15);
+    xBtn.onclick = closeModal;
+    head.appendChild(xBtn);
+    dialog.appendChild(head);
+
+    const targetsBox = document.createElement("div");
+    targetsBox.className = "rows-box";
+    targetsBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Push Targets</div>`;
+    const chips = document.createElement("div");
+    chips.className = "chip-row";
+    [
+      ["AIOStreams", t.aiostreamsProvisioned ? "Update live" : "Needs provisioning", t.aiostreamsProvisioned ? "ok" : "warn"],
+      ["AIOMetadata", t.aiometadataProvisioned ? "Update live" : "Needs provisioning", t.aiometadataProvisioned ? "ok" : "warn"],
+      ["Nuvio Cloud", anyNuvio ? "Push Home, themes & badges" : "Skipped (not signed in)", anyNuvio ? "ok" : "warn"],
+      ...(anyStremioOn ? [["Stremio", anyStremioReady ? "Sync addons" : "Needs sign-in on Keys tab", anyStremioReady ? "ok" : "warn"]] : []),
+      ...(mgrReady ? [["AIOManager", "Cloud Sync active", "ok"]] : []),
+    ].forEach(([name, detail, cls]) => {
+      const pill = document.createElement("span");
+      pill.className = `pill ${cls}`;
+      pill.textContent = `${name}: ${detail}`;
+      chips.appendChild(pill);
+    });
+    targetsBox.appendChild(chips);
+
+    const metaNote = document.createElement("div");
+    metaNote.style.cssText = "font-size:12px;color:var(--muted);margin-top:10px";
+    const notes = [];
+    if (pendingPushCount > 0) notes.push(`${pendingPushCount} saved workspace edit(s) waiting to push`);
+    if (dirty) notes.push("unsaved form edits will be saved first");
+    if (warmChecked) notes.push("Home catalog rows will be pre-warmed");
+    metaNote.textContent = notes.length ? notes.join(" · ") + "." : "Workspace is clean and ready to sync.";
+    targetsBox.appendChild(metaNote);
+    dialog.appendChild(targetsBox);
+
+    const diffHost = document.createElement("div");
+    dialog.appendChild(diffHost);
+
+    const foot = document.createElement("div");
+    foot.className = "row-between";
+    foot.style.marginTop = "16px";
+
+    const leftActs = document.createElement("div");
+    leftActs.className = "row-wrap";
+    const diffBtn = document.createElement("button");
+    diffBtn.className = "btn";
+    diffBtn.innerHTML = `${icon("gitDiff", 13)} <span>Check Drift Diff</span>`;
+    diffBtn.onclick = async () => {
+      diffBtn.disabled = true;
+      diffHost.innerHTML = `<div class="rows-box" style="font-size:12px;color:var(--muted)">Checking remote drift…</div>`;
+      try {
+        if (dirty) await saveChanges(true);
+        const res = await api("/api/diff", { target: "all" });
+        const outs = res.outcomes || [];
+        diffHost.innerHTML = "";
+        const wrap = document.createElement("div");
+        wrap.className = "rows-box";
+        if (!outs.length) {
+          wrap.innerHTML = `<div style="font-size:12px;color:var(--muted)">No provisioned instances yet to diff.</div>`;
+        } else {
+          outs.forEach(o => {
+            const row = document.createElement("div");
+            row.style.marginBottom = "8px";
+            row.innerHTML = `
+              <div class="row-between">
+                <code>${escapeHtml(o.target)}</code>
+                <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync" : `+${o.addedLines} / -${o.removedLines}`}</span>
+              </div>
+            `;
+            if (!o.inSync && o.unifiedDiff) {
+              row.appendChild(renderColoredDiff(o.unifiedDiff));
+            }
+            wrap.appendChild(row);
+          });
+        }
+        diffHost.appendChild(wrap);
+      } catch (err) {
+        diffHost.innerHTML = `<div class="rows-box" style="color:var(--danger)">${escapeHtml(err.message)}</div>`;
+      } finally {
+        diffBtn.disabled = false;
+      }
+    };
+    leftActs.appendChild(diffBtn);
+
+    const rightActs = document.createElement("div");
+    rightActs.className = "row-wrap";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.onclick = closeModal;
+
+    const pushBtn = document.createElement("button");
+    pushBtn.className = "btn primary";
+    pushBtn.innerHTML = `${icon("upload", 14)} <span>Push Live Now</span>`;
+    pushBtn.onclick = () => {
+      closeModal();
+      executePushNow();
+    };
+    rightActs.append(cancelBtn, pushBtn);
+    foot.append(leftActs, rightActs);
+    dialog.appendChild(foot);
+  });
+}
+
+document.getElementById("btn-push").onclick = () => openPushConfirmModal();
+const pushPendingEl = document.getElementById("push-pending-pill");
+if (pushPendingEl) {
+  pushPendingEl.onclick = () => openPushConfirmModal();
+}
 
 document.getElementById("btn-pull").onclick = async () => {
   const btn = document.getElementById("btn-pull");
@@ -1397,6 +1582,7 @@ document.getElementById("btn-pull").onclick = async () => {
     if (dirty) await saveChanges(true);
     showLog("Pulling live state from AIO instances & Nuvio…", []);
     const res = await api("/api/pull", { target: "all" });
+    setPendingPushCount(0);
     showLog("Pulled live state & scrubbed secrets into .env", res.steps || []);
     render();
   } catch (err) {
@@ -1431,6 +1617,7 @@ document.getElementById("btn-export").onclick = async () => {
     const saved = loadSavedBundle();
     const data = saved ? await api("/api/state", { bundle: saved }) : await api("/api/state");
     if (data.mode !== "stateless") bundle = null;
+    loadPendingPushCount();
     render();
 
     // Auto-open Day-0 Setup Wizard on first unprovisioned visit unless dismissed

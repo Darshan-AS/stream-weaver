@@ -135,6 +135,23 @@ class _FakeStudioV2Http:
                     text="",
                 )
             )
+        if url == "https://api.strem.io/api/login":
+            pw = (json_body or {}).get("password") if isinstance(json_body, Mapping) else ""
+            if pw == "wrong":
+                return Ok(
+                    HttpResponse(
+                        status_code=401,
+                        data={"error": {"message": "Invalid email or password"}},
+                        text="Invalid",
+                    )
+                )
+            return Ok(
+                HttpResponse(
+                    status_code=200,
+                    data={"result": {"authKey": "stremio-test-auth-key-99"}},
+                    text="",
+                )
+            )
 
         raise AssertionError(f"Unexpected Studio v2 upstream URL: {url}")
 
@@ -200,6 +217,7 @@ def test_static_assets_served_and_path_traversal_rejected(tmp_path: Path) -> Non
         "/api/preview-catalog",
         "/api/raw-doc",
         "/api/warm",
+        "/api/stremio-login",
         "/api/push-stream",
     ],
 )
@@ -859,3 +877,84 @@ def test_studio_all_tabs_mutation_roundtrip_and_static_checks(tmp_path: Path) ->
         assert token in app_js
     styles_css = dispatcher.dispatch("GET", "/static/styles.css").body.decode("utf-8")
     assert "[hidden]" in styles_css
+
+
+def test_studio_stremio_login_and_instances_only_push(tmp_path: Path) -> None:
+    tenant_dir, dispatcher = _make_local_dispatcher(tmp_path)
+
+    # Enable Stremio sync on main profile first
+    en_resp = dispatcher.dispatch(
+        "POST",
+        "/api/mutate",
+        json.dumps({"mutation": {"profile": {"name": "main", "stremioEnabled": True}}}).encode("utf-8"),
+    )
+    assert en_resp.status == 200, en_resp.body
+
+    # Bad credentials fail cleanly
+    bad_resp = dispatcher.dispatch(
+        "POST",
+        "/api/stremio-login",
+        json.dumps({"login": "main", "email": "user@example.org", "password": "wrong"}).encode("utf-8"),
+    )
+    assert bad_resp.status == 400
+
+    # Valid sign-in stores authKey/email in .env, registers login, and keeps authKey out of /api/state
+    ok_resp = dispatcher.dispatch(
+        "POST",
+        "/api/stremio-login",
+        json.dumps({"login": "main", "email": "user@example.org", "password": "secret"}).encode("utf-8"),
+    )
+    assert ok_resp.status == 200, ok_resp.body
+    ok_data = json.loads(ok_resp.body)
+    assert ok_data["stremio"]["email"] == "user@example.org"
+    assert ok_data["state"]["profiles"][0]["stremio"]["loginReady"] is True
+    assert "stremio-test-auth-key-99" not in ok_resp.body.decode("utf-8")
+    env_text = (tenant_dir / ".env").read_text(encoding="utf-8")
+    assert "SECRET_STREMIO_AUTH_KEY=stremio-test-auth-key-99" in env_text
+    assert "SECRET_STREMIO_EMAIL=user@example.org" in env_text
+
+    # Push target="instances" works even without Nuvio login and returns non-secret manifest URLs
+    push_resp = dispatcher.dispatch(
+        "POST",
+        "/api/push-stream",
+        json.dumps(
+            {
+                "target": "instances",
+                "create": True,
+                "mutation": {
+                    "enabledPacks": ["core_debrid"],
+                    "envUpdates": {
+                        "AIOSTREAMS_URL": "https://streams.example.org",
+                        "AIOSTREAMS_PASSWORD": "pw-instances",
+                        "AIOMETADATA_URL": "https://meta.example.org",
+                        "AIOMETADATA_PASSWORD": "pw-meta",
+                        "SECRET_TORBOX_API_KEY": "tb-key",
+                        "SECRET_TMDB_API_KEY": "0123456789abcdef0123456789abcdef",
+                        "SECRET_TMDB_ACCESS_TOKEN": "eyJ-token",
+                        "SECRET_TVDB_API_KEY": "tvdb-key",
+                        "SECRET_MDBLIST_API_KEY": "mdb-key",
+                        "SECRET_TRAKT_TOKEN_ID": "trakt-token-id",
+                    }
+                },
+            }
+        ).encode("utf-8"),
+    )
+    assert push_resp.status == 200, push_resp.body
+    done_evt = json.loads(push_resp.body.decode("utf-8").splitlines()[-1])
+    assert done_evt["type"] == "done"
+    assert done_evt["ok"] is True
+    tenant_view = done_evt["state"]["tenant"]
+    assert tenant_view["aiometadataManifestUrl"] == "https://meta.example.org/stremio/00000000-0000-4000-8000-000000000082/manifest.json"
+    assert tenant_view["aiometadataStremioUrl"] == "stremio://meta.example.org/stremio/00000000-0000-4000-8000-000000000082/manifest.json"
+    assert "enc-v2-password" not in json.dumps(tenant_view)
+
+    # Static asset sanity assertions for onboarding improvements
+    wizard_js = dispatcher.dispatch("GET", "/static/wizard.js").body.decode("utf-8")
+    for token in ("adopt", "SECRET_TMDB_ACCESS_TOKEN", "instances", "/api/stremio-login"):
+        assert token in wizard_js
+    keys_js = dispatcher.dispatch("GET", "/static/keys.js").body.decode("utf-8")
+    for token in ("/api/stremio-login", "Save Vault Keys"):
+        assert token in keys_js
+    index_html = dispatcher.dispatch("GET", "/").body.decode("utf-8")
+    assert "push-pending-pill" in index_html
+    assert "openPushConfirmModal" in dispatcher.dispatch("GET", "/static/app.js").body.decode("utf-8")

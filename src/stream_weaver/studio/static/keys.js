@@ -1,4 +1,6 @@
-// Tab 5 — Keys, Nuvio Cloud Sign-In, Provisioning & Raw JSON Escape Hatch
+// Tab 5 — Keys, Nuvio & Stremio Sign-In, Provisioning & Raw JSON Escape Hatch
+
+import { KEY_HELP, validateKeyFormat } from "./wizard.js";
 
 let showAllEnv = true;
 let activeEnvGroup = "all";
@@ -19,6 +21,7 @@ export function renderKeysTab(root, ctx) {
   stack.className = "section-stack";
 
   stack.appendChild(renderNuvioSignInCard(ctx));
+  stack.appendChild(renderStremioSignInCard(ctx));
   stack.appendChild(renderEnvVaultCard(ctx));
   stack.appendChild(renderRawEscapeHatchCard(ctx));
 
@@ -151,6 +154,93 @@ function renderNuvioSignInCard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
+// Stremio Sign-In & Dual-Sync Control
+// ---------------------------------------------------------------------------
+function renderStremioSignInCard(ctx) {
+  const { escapeHtml, icon } = ctx.ui;
+  const p = ctx.currentProfile();
+  const st = ctx.state;
+  const card = document.createElement("div");
+  card.className = "card";
+  if (!p) return card;
+
+  const enabled = Boolean(p.stremioEnabled);
+  const ready = Boolean(p.stremio?.loginReady || st.tenant?.stremioReady);
+  const savedEmail = p.stremio?.email || st.tenant?.stremioEmail || "";
+
+  const head = document.createElement("div");
+  head.className = "row-between";
+  head.style.flexWrap = "wrap";
+  head.innerHTML = `
+    <div>
+      <div class="card-eyebrow">${icon("lock", 12)} Stremio Client Auth</div>
+      <h2>Stremio Account Sign-In</h2>
+      <p class="sub" style="margin-bottom:0">Optionally sync your household profile addons to Stremio alongside Nuvio.</p>
+    </div>
+    <span class="pill ${ready ? "ok" : (enabled ? "warn" : "")}">${ready ? `Signed In${savedEmail ? " · " + escapeHtml(savedEmail) : ""}` : (enabled ? "Sign-In Needed" : "Optional · Disabled")}</span>
+  `;
+  card.appendChild(head);
+
+  const toggleWrap = document.createElement("div");
+  toggleWrap.style.marginTop = "12px";
+  toggleWrap.appendChild(
+    ctx.ui.makeSwitch(`Sync Addons to Stremio (${p.displayName})`, enabled, (val) => {
+      p.stremioEnabled = val;
+      ctx.saveSection("profile", true);
+    })
+  );
+  card.appendChild(toggleWrap);
+
+  const form = document.createElement("div");
+  form.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:10px;margin-top:12px;align-items:end";
+
+  const emL = document.createElement("label");
+  emL.className = "field"; emL.textContent = "Stremio Account Email";
+  const emIn = document.createElement("input");
+  emIn.type = "email";
+  emIn.placeholder = savedEmail || "you@example.com";
+  emIn.value = savedEmail;
+  emL.appendChild(emIn);
+
+  const pwL = document.createElement("label");
+  pwL.className = "field"; pwL.textContent = "Stremio Account Password";
+  const pwIn = document.createElement("input");
+  pwIn.type = "password";
+  pwIn.placeholder = "••••••••";
+  pwL.appendChild(pwIn);
+
+  const loginBtn = document.createElement("button");
+  loginBtn.className = "btn accent-outline";
+  loginBtn.innerHTML = `${icon(ready ? "refresh" : "lock", 13)} <span>${ready ? "Re-Authenticate Stremio" : "Sign In to Stremio"}</span>`;
+  loginBtn.onclick = async () => {
+    loginBtn.disabled = true;
+    try {
+      const res = await ctx.api("/api/stremio-login", {
+        login: p.stremio?.login || "main",
+        email: emIn.value,
+        password: pwIn.value,
+      });
+      pwIn.value = "";
+      if (!p.stremioEnabled) {
+        p.stremioEnabled = true;
+        await ctx.saveSection("profile", true);
+      } else {
+        ctx.render();
+      }
+      ctx.showLog(`Authenticated Stremio (${res.stremio?.email || emIn.value}).`, []);
+    } catch (err) {
+      ctx.showLog(err.message, [], true);
+    } finally {
+      loginBtn.disabled = false;
+    }
+  };
+
+  form.append(emL, pwL, loginBtn);
+  card.appendChild(form);
+  return card;
+}
+
+// ---------------------------------------------------------------------------
 // Grouped Secret & Instance URL Vault
 // ---------------------------------------------------------------------------
 function renderEnvVaultCard(ctx) {
@@ -169,7 +259,7 @@ function renderEnvVaultCard(ctx) {
     <div>
       <div class="card-eyebrow">${icon("key", 12)} Secrets Vault</div>
       <h2>Grouped API Keys, Passwords &amp; Instance URLs</h2>
-      <p class="sub" style="margin-bottom:0">Secrets remain masked in the UI and scrubbed from GitOps JSON files. Leave a secret input blank to retain its saved value.</p>
+      <p class="sub" style="margin-bottom:0">Tabs 1–4 auto-save to disk. After editing keys below, click <strong>Save Vault Keys</strong>. Leave a secret input blank to retain its saved value.</p>
     </div>
   `;
 
@@ -221,6 +311,30 @@ function renderEnvVaultCard(ctx) {
   });
   card.appendChild(groupTabs);
 
+  const pendingKeyCount = Object.values(ctx.pendingEnvEdits || {}).filter(v => String(v || "").trim() !== "").length;
+  const saveBar = document.createElement("div");
+  saveBar.className = "vault-save-bar";
+  saveBar.hidden = pendingKeyCount <= 0;
+  saveBar.innerHTML = `
+    <span style="font-size:12.5px;font-weight:600;color:#fbbf24">${pendingKeyCount} pending key edit(s) staged — save to write into <code>.env</code></span>
+  `;
+  const saveBarBtns = document.createElement("div");
+  saveBarBtns.className = "row-wrap";
+  const discBtn = document.createElement("button");
+  discBtn.className = "btn ghost";
+  discBtn.textContent = "Discard";
+  discBtn.onclick = () => {
+    if (typeof ctx.discardPendingEnv === "function") ctx.discardPendingEnv();
+    ctx.render();
+  };
+  const saveVaultBtn = document.createElement("button");
+  saveVaultBtn.className = "btn primary";
+  saveVaultBtn.innerHTML = `${icon("save", 13)} <span>Save Vault Keys</span>`;
+  saveVaultBtn.onclick = () => ctx.saveChanges(false);
+  saveBarBtns.append(discBtn, saveVaultBtn);
+  saveBar.appendChild(saveBarBtns);
+  card.appendChild(saveBar);
+
   const visible = envList.filter(e => {
     if (!showAllEnv && !e.required && !e.key.endsWith("_UUID")) return false;
     if (activeEnvGroup !== "all" && (e.group || "other") !== activeEnvGroup) return false;
@@ -261,8 +375,22 @@ function renderEnvVaultCard(ctx) {
     inp.placeholder = item.isSecret
       ? (item.isSet ? `${item.masked} (saved — type to replace)` : (item.hint || "Paste secret…"))
       : (item.hint || "Enter value…");
+    const warnEl = document.createElement("div");
+    warnEl.className = "key-format-warn";
+    const syncVaultWarn = (val) => {
+      const issue = validateKeyFormat(item.key, val);
+      warnEl.hidden = !issue;
+      warnEl.textContent = issue ? issue.msg : "";
+      const stagedCount = Object.values(ctx.pendingEnvEdits || {}).filter(v => String(v || "").trim() !== "").length;
+      saveBar.hidden = stagedCount <= 0;
+      const barText = saveBar.querySelector("span");
+      if (barText && stagedCount > 0) {
+        barText.textContent = `${stagedCount} pending key edit(s) staged — save to write into .env`;
+      }
+    };
     inp.oninput = () => {
       ctx.setPendingEnv(item.key, inp.value);
+      syncVaultWarn(inp.value);
     };
     inputRow.appendChild(inp);
 
@@ -281,6 +409,14 @@ function renderEnvVaultCard(ctx) {
     }
 
     box.appendChild(inputRow);
+    if (KEY_HELP[item.key]) {
+      const helpEl = document.createElement("div");
+      helpEl.className = "key-format-help";
+      helpEl.textContent = KEY_HELP[item.key];
+      box.appendChild(helpEl);
+    }
+    syncVaultWarn(pendingVal);
+    box.appendChild(warnEl);
     grid.appendChild(box);
   });
 

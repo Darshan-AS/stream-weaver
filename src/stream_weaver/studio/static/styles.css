@@ -1892,3 +1892,16 @@ label.field span.hint {
   margin-top: 4px;
   line-height: 1.35;
 }
+
+.vault-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: var(--warn-bg);
+  margin-bottom: 12px;
+}

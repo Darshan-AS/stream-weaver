@@ -1049,11 +1049,16 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
       }
 
       const enabledPacks = (st.packs || [])
-        .filter(pk => pk.enabled || (wiz.dualSubQuick && pk.id === "dual_subtitles"))
+        .filter(pk => {
+          if (pk.id === "dual_subtitles") {
+            return Boolean(wiz.dualSubQuick) || ctx.isEnvKeyReady("SECRET_SUBSOURCE_API_KEY");
+          }
+          if (Array.isArray(pk.requiredSecrets) && pk.requiredSecrets.length) {
+            return pk.enabled && pk.requiredSecrets.every(k => isWizardKeyReady(ctx, wiz, k));
+          }
+          return pk.enabled;
+        })
         .map(pk => pk.id);
-      if (wiz.dualSubQuick && !enabledPacks.includes("dual_subtitles")) {
-        enabledPacks.push("dual_subtitles");
-      }
 
       const envUpdates = effectiveWizardEnv(ctx, wiz);
       const mut = {
