@@ -9,8 +9,14 @@ import {
   setViewportState,
 } from "./nuvio_viewport.js";
 
-let streamsSubFilter = "all"; // all | streams | metadata
+let streamsSubTab = "sources"; // sources | look | metadata | addons
 let previewClientMode = "nuvio"; // nuvio | stremio
+
+export function setStreamsSubTab(tab) {
+  if (["sources", "look", "metadata", "addons"].includes(tab)) {
+    streamsSubTab = tab;
+  }
+}
 let previewShowBadgesOverride = null; // null = follow active profile's nuvio_badges setting
 let posterPreviewShape = "poster"; // poster | landscape
 let inspectedStreamAddon = null;
@@ -93,26 +99,35 @@ function getFormatterPresets(fmtState) {
   return DEFAULT_FORMATTER_PRESETS;
 }
 
+const SUBTAB_INTROS = {
+  sources: "Pick which Debrid / Usenet services search for playable files, plus everyday resolution, HDR, and instant-play caching.",
+  look: "Choose how playable stream rows look on your TV and optionally add bilingual dual-subtitle pairs.",
+  metadata: "Customize movie posters (ratings, upcoming banners, awards), pick metadata sources, or tweak individual catalogs.",
+  addons: "Enable built-in scraper packs inside AIOStreams or open the upstream AIOStreams / AIOMetadata Configure portals.",
+};
+
 export function renderStreamsTab(root, ctx) {
+  const { icon } = ctx.ui;
   const stack = document.createElement("div");
   stack.className = "section-stack";
 
-  // Top Segmented Sub-Filter
+  // Top Segmented Sub-Tabs
   const topBar = document.createElement("div");
   topBar.className = "row-between";
   topBar.style.flexWrap = "wrap";
   const seg = document.createElement("div");
   seg.className = "segmented";
   [
-    ["all", "All Controls"],
-    ["streams", "AIOStreams Engine"],
-    ["metadata", "AIOMetadata & Portals"],
+    ["sources", "Sources & Quality"],
+    ["look", "Stream Look & Subtitles"],
+    ["metadata", "Posters & Metadata"],
+    ["addons", "Addons & Portals"],
   ].forEach(([fid, lbl]) => {
     const b = document.createElement("button");
-    b.className = "seg-btn" + (streamsSubFilter === fid ? " active" : "");
+    b.className = "seg-btn" + (streamsSubTab === fid ? " active" : "");
     b.textContent = lbl;
     b.onclick = () => {
-      streamsSubFilter = fid;
+      streamsSubTab = fid;
       ctx.render();
     };
     seg.appendChild(b);
@@ -120,15 +135,21 @@ export function renderStreamsTab(root, ctx) {
   topBar.appendChild(seg);
   stack.appendChild(topBar);
 
-  if (streamsSubFilter === "all" || streamsSubFilter === "streams") {
+  const intro = document.createElement("div");
+  intro.className = "tab-intro";
+  intro.innerHTML = `<span>${icon("compass", 13)} ${SUBTAB_INTROS[streamsSubTab] || ""}</span>`;
+  stack.appendChild(intro);
+
+  if (streamsSubTab === "sources") {
     stack.appendChild(renderMultiDebridSection(ctx));
-    stack.appendChild(renderFormatterSection(ctx));
     stack.appendChild(renderAdvancedFiltersSection(ctx));
-    stack.appendChild(renderPacksAndCustomAddonsSection(ctx));
+  } else if (streamsSubTab === "look") {
+    stack.appendChild(renderFormatterSection(ctx));
     stack.appendChild(renderDualSubtitlesSection(ctx));
-  }
-  if (streamsSubFilter === "all" || streamsSubFilter === "metadata") {
+  } else if (streamsSubTab === "metadata") {
     stack.appendChild(renderMetadataPowerSection(ctx));
+  } else if (streamsSubTab === "addons") {
+    stack.appendChild(renderPacksAndCustomAddonsSection(ctx));
     stack.appendChild(renderUpstreamDeepLinksSection(ctx));
   }
 
@@ -440,13 +461,13 @@ function renderAdvancedFiltersSection(ctx) {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <div class="card-eyebrow">${icon("filter", 12)} Ranking &amp; Filtering</div>
-    <h2>Advanced Stream Filters, Codecs &amp; Global Audio Policy</h2>
-    <p class="sub">Fine-tune resolution caps, instant-play cache enforcement, file size limits, HDR/DV priority, video codecs, excluded release tags, and 21-language audio filters.</p>
+    <div class="card-eyebrow">${icon("filter", 12)} Quality &amp; Speed</div>
+    <h2>Stream Quality &amp; Filters</h2>
+    <p class="sub">Choose resolution, HDR, and instant-play caching. Open the drawers below for audio languages or advanced codec/keyword rules.</p>
   `;
 
   const topGrid = document.createElement("div");
-  topGrid.className = "cards-grid";
+  topGrid.className = "grid-equal";
 
   const resLbl = document.createElement("label");
   resLbl.className = "field";
@@ -491,6 +512,84 @@ function renderAdvancedFiltersSection(ctx) {
   };
   hdrLbl.appendChild(hdrSel);
 
+  topGrid.append(resLbl, hdrLbl);
+  card.appendChild(topGrid);
+
+  const cacheCard = document.createElement("div");
+  cacheCard.className = "pack-card" + (sp.cachedOnly ? " on" : "");
+  cacheCard.style.marginTop = "12px";
+  cacheCard.appendChild(
+    ctx.ui.makeSwitch("Instant-Play Cached Streams Only", Boolean(sp.cachedOnly), (v) => {
+      sp.cachedOnly = v;
+      ctx.saveSection("streamPreferences", true);
+    })
+  );
+  cacheCard.insertAdjacentHTML("beforeend", `<div style="font-size:11.5px;color:var(--muted)">Hides uncached magnet torrents so every listed stream starts immediately.</div>`);
+  card.appendChild(cacheCard);
+
+  // Global Wanted Audio Languages (21 langs) inside progressive disclosure drawer
+  if (Array.isArray(sp.audioLanguageOptions) && sp.audioLanguageOptions.length) {
+    const curAudio = sp.audioLanguages || ["English"];
+    const audioSummaryText = curAudio.length <= 2
+      ? curAudio.join(", ")
+      : `${curAudio.slice(0, 2).join(", ")} +${curAudio.length - 2}`;
+
+    const audioDrawer = document.createElement("details");
+    audioDrawer.className = "adv-drawer";
+    audioDrawer.innerHTML = `
+      <summary>
+        <span class="adv-drawer-title">Stream Audio Languages</span>
+        <span class="pill">${escapeHtml(audioSummaryText)}</span>
+      </summary>
+    `;
+    const audioBody = document.createElement("div");
+    audioBody.className = "adv-drawer-body";
+    audioBody.innerHTML = `
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Select every dubbed/audio language AIOStreams should accept and rank (Original &amp; Multi are always allowed).</div>
+    `;
+    const aChips = document.createElement("div");
+    aChips.className = "chip-row";
+    sp.audioLanguageOptions.forEach(lang => {
+      const lbl = document.createElement("label");
+      lbl.className = "switch chip" + (curAudio.includes(lang) ? " active" : "");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = curAudio.includes(lang);
+      chk.onchange = () => {
+        const liveAudio = Array.isArray(sp.audioLanguages) ? sp.audioLanguages : ["English"];
+        const next = sp.audioLanguageOptions.filter(l => (l === lang ? chk.checked : liveAudio.includes(l)));
+        if (!next.length) {
+          chk.checked = true;
+          return;
+        }
+        sp.audioLanguages = next;
+        ctx.saveSection("streamPreferences", true);
+      };
+      lbl.append(chk, document.createTextNode(lang));
+      aChips.appendChild(lbl);
+    });
+    audioBody.appendChild(aChips);
+    audioDrawer.appendChild(audioBody);
+    card.appendChild(audioDrawer);
+  }
+
+  // Expert Filters Drawer (Size cap, P2P seeders, RPDB posters, Codecs, Quality & Keyword Exclusions)
+  const curExQual = Array.isArray(adv.excludeQualities) ? adv.excludeQualities : [];
+  const curKw = Array.isArray(adv.excludeKeywords) ? adv.excludeKeywords : [];
+  const expertDrawer = document.createElement("details");
+  expertDrawer.className = "adv-drawer";
+  expertDrawer.innerHTML = `
+    <summary>
+      <span class="adv-drawer-title">Advanced Filters — Size Cap, Seeders, Codecs &amp; Excluded Keywords</span>
+      <span class="pill">${curExQual.length} tags · ${curKw.length} keywords</span>
+    </summary>
+  `;
+  const expertBody = document.createElement("div");
+  expertBody.className = "adv-drawer-body";
+
+  const expertTopGrid = document.createElement("div");
+  expertTopGrid.className = "grid-equal";
+
   const sizeLbl = document.createElement("label");
   sizeLbl.className = "field";
   sizeLbl.textContent = "Max File Size (GB — 0 or blank = Unlimited)";
@@ -520,26 +619,12 @@ function renderAdvancedFiltersSection(ctx) {
     ctx.saveSection("advancedStreamFilters", true);
   };
   seedLbl.appendChild(seedIn);
-
-  topGrid.append(resLbl, hdrLbl, sizeLbl, seedLbl);
-  card.appendChild(topGrid);
-
-  const toggleGrid = document.createElement("div");
-  toggleGrid.className = "grid-equal";
-  toggleGrid.style.marginTop = "12px";
-
-  const cacheCard = document.createElement("div");
-  cacheCard.className = "pack-card" + (sp.cachedOnly ? " on" : "");
-  cacheCard.appendChild(
-    ctx.ui.makeSwitch("Instant-Play Cached Streams Only", Boolean(sp.cachedOnly), (v) => {
-      sp.cachedOnly = v;
-      ctx.saveSection("streamPreferences", true);
-    })
-  );
-  cacheCard.insertAdjacentHTML("beforeend", `<div style="font-size:11.5px;color:var(--muted)">Hides uncached magnet torrents so every listed stream starts immediately.</div>`);
+  expertTopGrid.append(sizeLbl, seedLbl);
+  expertBody.appendChild(expertTopGrid);
 
   const rpdbCard = document.createElement("div");
   rpdbCard.className = "pack-card" + (adv.rpdbPostersEnabled ? " on" : "");
+  rpdbCard.style.marginTop = "12px";
   rpdbCard.appendChild(
     ctx.ui.makeSwitch("RPDB Rating Posters in AIOStreams Catalogs", Boolean(adv.rpdbPostersEnabled), (v) => {
       adv.rpdbPostersEnabled = v;
@@ -547,9 +632,7 @@ function renderAdvancedFiltersSection(ctx) {
     })
   );
   rpdbCard.insertAdjacentHTML("beforeend", `<div style="font-size:11.5px;color:var(--muted)">Wires <code>{{SECRET_RPDB_API_KEY}}</code> into AIOStreams catalog poster rendering.</div>`);
-
-  toggleGrid.append(cacheCard, rpdbCard);
-  card.appendChild(toggleGrid);
+  expertBody.appendChild(rpdbCard);
 
   // Codecs & Excluded Qualities
   const chipsGrid = document.createElement("div");
@@ -585,7 +668,6 @@ function renderAdvancedFiltersSection(ctx) {
   const qualRow = document.createElement("div");
   qualRow.className = "chip-row";
   const qualChoices = Array.isArray(adv.qualityOptions) && adv.qualityOptions.length ? adv.qualityOptions : EXCLUDE_QUALITY_CHOICES;
-  const curExQual = Array.isArray(adv.excludeQualities) ? adv.excludeQualities : [];
   qualChoices.forEach(q => {
     const lbl = document.createElement("label");
     lbl.className = "switch chip" + (curExQual.includes(q) ? " active" : "");
@@ -605,7 +687,7 @@ function renderAdvancedFiltersSection(ctx) {
   });
   qualBox.appendChild(qualRow);
   chipsGrid.append(codecBox, qualBox);
-  card.appendChild(chipsGrid);
+  expertBody.appendChild(chipsGrid);
 
   // Excluded Keywords Tag Builder
   const kwBox = document.createElement("div");
@@ -613,7 +695,6 @@ function renderAdvancedFiltersSection(ctx) {
   kwBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Excluded Release Keywords</div>`;
   const kwChips = document.createElement("div");
   kwChips.className = "chip-row";
-  const curKw = Array.isArray(adv.excludeKeywords) ? adv.excludeKeywords : [];
   curKw.forEach((kw, idx) => {
     const pill = document.createElement("span");
     pill.className = "chip";
@@ -653,41 +734,10 @@ function renderAdvancedFiltersSection(ctx) {
   };
   kwForm.append(kwIn, kwAdd);
   kwBox.append(kwChips, kwForm);
-  card.appendChild(kwBox);
+  expertBody.appendChild(kwBox);
 
-  // Global Wanted Audio Languages (21 langs)
-  if (Array.isArray(sp.audioLanguageOptions) && sp.audioLanguageOptions.length) {
-    const audioBox = document.createElement("div");
-    audioBox.className = "rows-box";
-    const curAudio = sp.audioLanguages || ["English"];
-    audioBox.innerHTML = `
-      <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Global Stream Audio Languages (21 Languages — Original &amp; Multi Always Allowed)</div>
-      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Select every dubbed/audio language AIOStreams should accept and rank.</div>
-    `;
-    const aChips = document.createElement("div");
-    aChips.className = "chip-row";
-    sp.audioLanguageOptions.forEach(lang => {
-      const lbl = document.createElement("label");
-      lbl.className = "switch chip" + (curAudio.includes(lang) ? " active" : "");
-      const chk = document.createElement("input");
-      chk.type = "checkbox";
-      chk.checked = curAudio.includes(lang);
-      chk.onchange = () => {
-        const liveAudio = Array.isArray(sp.audioLanguages) ? sp.audioLanguages : ["English"];
-        const next = sp.audioLanguageOptions.filter(l => (l === lang ? chk.checked : liveAudio.includes(l)));
-        if (!next.length) {
-          chk.checked = true;
-          return;
-        }
-        sp.audioLanguages = next;
-        ctx.saveSection("streamPreferences", true);
-      };
-      lbl.append(chk, document.createTextNode(lang));
-      aChips.appendChild(lbl);
-    });
-    audioBox.appendChild(aChips);
-    card.appendChild(audioBox);
-  }
+  expertDrawer.appendChild(expertBody);
+  card.appendChild(expertDrawer);
 
   return card;
 }
@@ -704,7 +754,7 @@ function renderPacksAndCustomAddonsSection(ctx) {
   card.innerHTML = `
     <div class="card-eyebrow">${icon("package", 12)} Scrapers &amp; Extensions</div>
     <h2>Modular Addon Packs &amp; Universal Custom Addon Installer</h2>
-    <p class="sub">Toggle built-in scraper packs or paste ANY Stremio <code>manifest.json</code> URL to inspect and wire directly into AIOStreams Group 1 (Primary), Group 2 (Fallback), or Subtitles.</p>
+    <p class="sub">Addons here run <strong>inside AIOStreams</strong> so streams are merged, deduplicated, and formatted together. For standalone catalog or client addons (like BingeCat or Cinemeta), use <strong>Cloud Sync &amp; Addons</strong>.</p>
   `;
 
   const pGrid = document.createElement("div");
@@ -1413,9 +1463,17 @@ function renderMetadataPowerSection(ctx) {
   studioSplit.append(controlsCol, previewCol);
   posterBox.appendChild(studioSplit);
 
+  const aiDrawer = document.createElement("details");
+  aiDrawer.className = "adv-drawer";
+  aiDrawer.open = Boolean(mp.aiSearchEnabled);
+  aiDrawer.innerHTML = `
+    <summary>
+      <span class="adv-drawer-title">Search Engines &amp; AI Natural-Language Search</span>
+      <span class="pill ${mp.aiSearchEnabled ? "ok" : ""}">${mp.aiSearchEnabled ? "AI Search On" : "Standard Search"}</span>
+    </summary>
+  `;
   const aiBox = document.createElement("div");
-  aiBox.className = "rows-box";
-  aiBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Search Engines &amp; AI Natural-Language Search</div>`;
+  aiBox.className = "adv-drawer-body";
   const seRow = document.createElement("div");
   seRow.className = "chip-row";
   seRow.style.marginBottom = "10px";
@@ -1472,19 +1530,28 @@ function renderMetadataPowerSection(ctx) {
     aiCfg.append(provSel, keyIn);
     aiBox.appendChild(aiCfg);
   }
+  aiDrawer.appendChild(aiBox);
 
-  card.append(posterBox, aiBox);
+  card.append(posterBox, aiDrawer);
 
-  // Catalog Overrides Table
+  // Catalog Overrides Table (collapsed by default)
   const cats = Array.isArray(mp.catalogs) ? mp.catalogs : [];
   if (cats.length) {
+    const catDrawer = document.createElement("details");
+    catDrawer.className = "adv-drawer";
+    catDrawer.innerHTML = `
+      <summary>
+        <span class="adv-drawer-title">Advanced: Catalog Overrides</span>
+        <span class="pill">${cats.length} catalogs</span>
+      </summary>
+    `;
     const catBox = document.createElement("div");
-    catBox.className = "rows-box";
+    catBox.className = "adv-drawer-body";
     const catHead = document.createElement("div");
     catHead.className = "row-between";
     catHead.style.marginBottom = "10px";
     catHead.style.flexWrap = "wrap";
-    catHead.innerHTML = `<strong style="font-size:12.5px">AIOMetadata Catalog Overrides (${cats.length} catalogs)</strong>`;
+    catHead.innerHTML = `<span style="font-size:12px;color:var(--muted)">Toggle built-in catalogs or customize titles not locked to a Home collection recipe.</span>`;
 
     const searchIn = document.createElement("input");
     searchIn.type = "text";
@@ -1612,7 +1679,8 @@ function renderMetadataPowerSection(ctx) {
     };
     renderRows();
     catBox.appendChild(tableWrap);
-    card.appendChild(catBox);
+    catDrawer.appendChild(catBox);
+    card.appendChild(catDrawer);
   }
 
   return card;

@@ -257,6 +257,35 @@ export function openSetupWizard(ctx) {
 function renderStep1Hosting(container, wiz, ctx, rerender) {
   const { escapeHtml, icon } = ctx.ui;
 
+  // Mental Model Overview: 3 pieces
+  const mapDrawer = document.createElement("details");
+  mapDrawer.className = "adv-drawer";
+  mapDrawer.style.marginTop = "0";
+  mapDrawer.open = true;
+  mapDrawer.innerHTML = `
+    <summary>
+      <span class="adv-drawer-title">How Stream Weaver works — 3 pieces</span>
+      <span class="pill">Quick Overview</span>
+    </summary>
+    <div class="adv-drawer-body">
+      <div class="stack-map" style="margin-top:0">
+        <div class="stack-step">
+          <strong>1. AIOMetadata</strong>
+          Catalogs, posters, ratings &amp; shelves you browse on Home.
+        </div>
+        <div class="stack-step">
+          <strong>2. AIOStreams</strong>
+          Debrid &amp; scrapers that find fast playable streams when you hit Play.
+        </div>
+        <div class="stack-step">
+          <strong>3. Nuvio / Stremio</strong>
+          Your TV, desktop &amp; phone app powered by both instances.
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(mapDrawer);
+
   // Mode Switcher: Fresh Setup vs Adopt Existing Stack
   const modeBox = document.createElement("div");
   modeBox.className = "rows-box";

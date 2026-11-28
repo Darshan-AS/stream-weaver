@@ -1,10 +1,6 @@
-// Tab 4 — Nuvio Experience, Split Controls + Sticky Real-Time Nuvio Viewport, and Operations Panel
+// Tab 4 — Nuvio Experience & Split Controls + Sticky Real-Time Nuvio Viewport
 
 import { getViewportState, renderNuvioViewport, setViewportState } from "./nuvio_viewport.js";
-
-let inlineDoctorReport = null;
-let inlineDiffOutcomes = null;
-let inlineWarmResult = null;
 
 const THEME_SWATCHES = [
   { id: "ocean", label: "Ocean", color: "#1E88E5" },
@@ -46,9 +42,6 @@ export function renderNuvioTab(root, ctx) {
   split.append(controlsStack, right);
   stack.appendChild(split);
 
-  // Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
-  stack.appendChild(renderOperationsPanel(ctx));
-
   root.appendChild(stack);
 }
 
@@ -68,11 +61,8 @@ function renderAppearanceAndSubtitlesCard(ctx, p) {
   card.className = "card";
   card.innerHTML = `
     <div class="card-eyebrow">${icon("sliders", 12)} Appearance &amp; Player</div>
-    <div class="row-between" style="gap:8px;flex-wrap:wrap;margin-bottom:4px">
-      <h2 style="margin:0">Nuvio Themes, Layout &amp; Subtitles</h2>
-      <code>nuvio_settings</code>
-    </div>
-    <p class="sub">Changes reflect immediately in the live TV/Desktop/Mobile viewport.</p>
+    <h2>Nuvio Themes, Layout &amp; Subtitles</h2>
+    <p class="sub">Changes appear immediately in the live TV, Desktop &amp; Mobile preview on the right.</p>
   `;
 
   card.appendChild(
@@ -225,8 +215,8 @@ function renderBadgesAndMetaCard(ctx, p) {
   card.className = "card";
   card.innerHTML = `
     <div class="card-eyebrow">${icon("shield", 12)} Stream Badges &amp; Details Page</div>
-    <h2>Elite-Badges &amp; 8-Source Ratings</h2>
-    <p class="sub">Real badge icons render on Streams &amp; Player OSD; MDBList + spoiler controls update Details.</p>
+    <h2>Stream Badges &amp; Details Ratings</h2>
+    <p class="sub">Badge icons appear on stream cards and the video player; extra ratings and spoiler protection appear on movie/show details.</p>
   `;
 
   const curPlacement = String(
@@ -270,7 +260,7 @@ function renderBadgesAndMetaCard(ctx, p) {
   card.appendChild(badgeRow);
 
   card.appendChild(
-    ctx.ui.makeSwitch("Enable Details Enrichment & 8-Source Ratings (nuvio_meta)", Boolean(p.meta?.enabled), (v) => {
+    ctx.ui.makeSwitch("Enable 8-Source Details Ratings & Spoiler Protection", Boolean(p.meta?.enabled), (v) => {
       p.meta.enabled = v;
       setViewportState({ screen: "details" });
       ctx.saveSection("profile", true);
@@ -290,141 +280,6 @@ function renderBadgesAndMetaCard(ctx, p) {
       );
     });
     card.appendChild(fields);
-  }
-
-  return card;
-}
-
-// ---------------------------------------------------------------------------
-// Operations Panel (Doctor, Drift Diff, Pre-Warm Home Rows)
-// ---------------------------------------------------------------------------
-function renderOperationsPanel(ctx) {
-  const { escapeHtml, icon } = ctx.ui;
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `
-    <div class="row-between" style="flex-wrap:wrap">
-      <div>
-        <div class="card-eyebrow">${icon("activity", 12)} Diagnostics</div>
-        <h2>Live Workspace Operations &amp; Diagnostics</h2>
-        <p class="sub" style="margin-bottom:0">Verify API keys &amp; instance reachability, inspect live vs. local drift, or pre-warm Home catalog caches.</p>
-      </div>
-    </div>
-  `;
-
-  const btnRow = document.createElement("div");
-  btnRow.className = "row-wrap";
-  btnRow.style.marginTop = "12px";
-
-  const docBtn = document.createElement("button");
-  docBtn.className = "btn accent-outline";
-  docBtn.innerHTML = `${icon("activity", 13)} <span>Run Live Health Doctor</span>`;
-  docBtn.onclick = async () => {
-    docBtn.disabled = true;
-    try {
-      const res = await ctx.api("/api/doctor", { pendingEnv: ctx.pendingEnvEdits });
-      inlineDoctorReport = res.report || res;
-      ctx.render();
-    } catch (err) {
-      ctx.showLog(err.message, [], true);
-      docBtn.disabled = false;
-    }
-  };
-
-  const diffBtn = document.createElement("button");
-  diffBtn.className = "btn";
-  diffBtn.innerHTML = `${icon("gitDiff", 13)} <span>Check Live Drift Diff</span>`;
-  diffBtn.onclick = async () => {
-    diffBtn.disabled = true;
-    try {
-      const res = await ctx.api("/api/diff", { target: "all" });
-      inlineDiffOutcomes = res.outcomes || [];
-      ctx.render();
-    } catch (err) {
-      ctx.showLog(err.message, [], true);
-      diffBtn.disabled = false;
-    }
-  };
-
-  const warmBtn = document.createElement("button");
-  warmBtn.className = "btn";
-  warmBtn.innerHTML = `${icon("flame", 13)} <span>Pre-Warm Home Rows</span>`;
-  warmBtn.onclick = async () => {
-    warmBtn.disabled = true;
-    try {
-      const res = await ctx.api("/api/warm", { workers: 8 });
-      inlineWarmResult = res;
-      ctx.showLog(`Pre-warmed ${res.warmed ?? 0}/${res.total ?? 0} Home catalog rows.`, []);
-      ctx.render();
-    } catch (err) {
-      ctx.showLog(err.message, [], true);
-      warmBtn.disabled = false;
-    }
-  };
-
-  btnRow.append(docBtn, diffBtn, warmBtn);
-  card.appendChild(btnRow);
-
-  if (inlineWarmResult) {
-    const wBox = document.createElement("div");
-    wBox.className = "rows-box";
-    wBox.innerHTML = `<span class="pill ok">Warm Complete</span> Warmed <strong>${Number(inlineWarmResult.warmed ?? 0)} / ${Number(inlineWarmResult.total ?? 0)}</strong> Home catalog endpoints.`;
-    card.appendChild(wBox);
-  }
-
-  if (inlineDoctorReport && Array.isArray(inlineDoctorReport.checks)) {
-    const dBox = document.createElement("div");
-    dBox.className = "rows-box";
-    const ov = inlineDoctorReport.overall || "healthy";
-    const sum = inlineDoctorReport.summary || {};
-    dBox.innerHTML = `
-      <div class="row-between" style="margin-bottom:10px">
-        <strong>Health Doctor Report</strong>
-        <span class="pill ${ov === "healthy" ? "ok" : (ov === "warn" ? "warn" : "danger")}">Overall: ${escapeHtml(ov.toUpperCase())} (${sum.ok || 0} ok · ${sum.warn || 0} warn · ${sum.error || 0} err)</span>
-      </div>
-    `;
-    const grid = document.createElement("div");
-    grid.className = "cards-grid-sm";
-    inlineDoctorReport.checks.forEach(chk => {
-      const cls = chk.status === "ok" ? "ok" : (chk.status === "warn" ? "warn" : (chk.status === "error" ? "danger" : ""));
-      const c = document.createElement("div");
-      c.className = "env-card";
-      c.innerHTML = `
-        <div class="row-between">
-          <strong style="font-size:12px">${escapeHtml(chk.label)}</strong>
-          <span class="pill ${cls}">${escapeHtml(chk.status)}</span>
-        </div>
-        <div style="font-size:11px;color:var(--muted)">${escapeHtml(chk.detail)}</div>
-      `;
-      grid.appendChild(c);
-    });
-    dBox.appendChild(grid);
-    card.appendChild(dBox);
-  }
-
-  if (inlineDiffOutcomes) {
-    const dfBox = document.createElement("div");
-    dfBox.className = "rows-box";
-    dfBox.innerHTML = `<strong style="font-size:12.5px;display:block;margin-bottom:8px">Local vs. Remote Drift Diff</strong>`;
-    if (!inlineDiffOutcomes.length) {
-      dfBox.insertAdjacentHTML("beforeend", `<div style="font-size:12px;color:var(--muted)">No provisioned remote targets to diff yet.</div>`);
-    } else {
-      inlineDiffOutcomes.forEach(o => {
-        const item = document.createElement("div");
-        item.style.marginBottom = "10px";
-        item.innerHTML = `
-          <div class="row-between" style="margin-bottom:4px">
-            <strong><code>${escapeHtml(o.target)}</code></strong>
-            <span class="pill ${o.inSync ? "ok" : "warn"}">${o.inSync ? "In Sync" : `+${o.addedLines} / -${o.removedLines}`}</span>
-          </div>
-        `;
-        if (!o.inSync && o.unifiedDiff) {
-          item.appendChild(ctx.ui.renderColoredDiff(o.unifiedDiff));
-        }
-        dfBox.appendChild(item);
-      });
-    }
-    card.appendChild(dfBox);
   }
 
   return card;

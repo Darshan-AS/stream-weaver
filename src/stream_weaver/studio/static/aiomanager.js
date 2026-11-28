@@ -5,12 +5,21 @@ let inspectedStandalone = null;
 let standaloneCustomName = "";
 
 export function renderAioManagerTab(root, ctx) {
+  const { icon } = ctx.ui;
   const stack = document.createElement("div");
   stack.className = "section-stack";
 
-  stack.appendChild(renderCloudSyncAndAutopilotCard(ctx));
-  stack.appendChild(renderManagedAccountsCard(ctx));
+  const intro = document.createElement("div");
+  intro.className = "tab-intro";
+  intro.innerHTML = `
+    <span>${icon("cloud", 13)} Everything on this tab is <strong>optional</strong>. Most setups sync directly to Nuvio Cloud — use this tab for standalone client addons, household overview, or optional AIOManager cloud sync.</span>
+    <span class="pill">Optional Tools</span>
+  `;
+  stack.appendChild(intro);
+
   stack.appendChild(renderStandaloneAddonsCard(ctx));
+  stack.appendChild(renderManagedAccountsCard(ctx));
+  stack.appendChild(renderCloudSyncAndAutopilotCard(ctx));
 
   root.appendChild(stack);
 }
@@ -56,12 +65,23 @@ function renderCloudSyncAndAutopilotCard(ctx) {
     </div>
   `;
 
+  const drawer = document.createElement("details");
+  drawer.className = "adv-drawer";
+  drawer.open = isSynced;
+  drawer.innerHTML = `
+    <summary>
+      <span class="adv-drawer-title">Configure AIOManager Cloud Sync &amp; Autopilot</span>
+      <span class="pill ${isSynced ? "ok" : ""}">${isSynced ? "Configured" : "Not Configured · Optional"}</span>
+    </summary>
+  `;
+  const drawerBody = document.createElement("div");
+  drawerBody.className = "adv-drawer-body";
+
   // Sync Env Inputs
   const envGrid = document.createElement("div");
   envGrid.className = "cards-grid";
-  envGrid.style.marginTop = "14px";
   [
-    ["AIOMANAGER_URL", "AIOManager Server URL", "https://aiomanager.elfhosted.com", false],
+    ["AIOMANAGER_URL", "AIOMANAGER_URL", "https://aiomanager.elfhosted.com", false],
     ["AIOMANAGER_UUID", "AIOManager Cloud Sync UUID", "00000000-0000-4000-8000-000000000000", false],
     ["AIOMANAGER_SYNC_PASSWORD", "AIOManager Sync Encryption Password", "••••••••••••", true],
   ].forEach(([key, label, placeholder, secret]) => {
@@ -80,7 +100,7 @@ function renderCloudSyncAndAutopilotCard(ctx) {
     l.appendChild(inp);
     envGrid.appendChild(l);
   });
-  card.appendChild(envGrid);
+  drawerBody.appendChild(envGrid);
 
   // Autopilot & Auto-Sync Interval Controls
   const autoBox = document.createElement("div");
@@ -149,7 +169,9 @@ function renderCloudSyncAndAutopilotCard(ctx) {
     autoBox.appendChild(linkRow);
   }
 
-  card.appendChild(autoBox);
+  drawerBody.appendChild(autoBox);
+  drawer.appendChild(drawerBody);
+  card.appendChild(drawer);
   return card;
 }
 
@@ -263,9 +285,9 @@ function renderStandaloneAddonsCard(ctx) {
   }
 
   card.innerHTML = `
-    <div class="card-eyebrow">${icon("package", 12)} Standalone Addons</div>
+    <div class="card-eyebrow">${icon("package", 12)} Standalone Client Addons</div>
     <h2>Profile Standalone Addons — ${escapeHtml(p.emoji || "🎬")} ${escapeHtml(p.displayName)}</h2>
-    <p class="sub">Install standalone Stremio/Nuvio addons (BingeCat, Cinemeta, StremThru, AnimeCatalogs, Contraband, etc.) directly onto <strong>${escapeHtml(p.displayName)}</strong> alongside AIOStreams &amp; AIOMetadata.</p>
+    <p class="sub">Installed <strong>directly on Nuvio / Stremio</strong> outside AIOStreams (best for catalogs and utilities like BingeCat or Cinemeta). For stream scrapers you want merged, ranked, and formatted together, use <strong>Streams &amp; Metadata → Addons &amp; Portals</strong>.</p>
   `;
 
   const instBox = document.createElement("div");

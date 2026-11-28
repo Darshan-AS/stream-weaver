@@ -948,13 +948,21 @@ def test_studio_stremio_login_and_instances_only_push(tmp_path: Path) -> None:
     assert tenant_view["aiometadataStremioUrl"] == "stremio://meta.example.org/stremio/00000000-0000-4000-8000-000000000082/manifest.json"
     assert "enc-v2-password" not in json.dumps(tenant_view)
 
-    # Static asset sanity assertions for onboarding improvements
+    # Static asset sanity assertions for onboarding & IA improvements
     wizard_js = dispatcher.dispatch("GET", "/static/wizard.js").body.decode("utf-8")
-    for token in ("adopt", "SECRET_TMDB_ACCESS_TOKEN", "instances", "/api/stremio-login"):
+    for token in ("adopt", "SECRET_TMDB_ACCESS_TOKEN", "instances", "/api/stremio-login", "stack-map"):
         assert token in wizard_js
     keys_js = dispatcher.dispatch("GET", "/static/keys.js").body.decode("utf-8")
-    for token in ("/api/stremio-login", "Save Vault Keys"):
+    for token in ("/api/stremio-login", "Save Vault Keys", "let showAllEnv = false;"):
         assert token in keys_js
+    streams_js = dispatcher.dispatch("GET", "/static/streams.js").body.decode("utf-8")
+    for token in ("setStreamsSubTab", "Posters & Metadata", "adv-drawer"):
+        assert token in streams_js
     index_html = dispatcher.dispatch("GET", "/").body.decode("utf-8")
     assert "push-pending-pill" in index_html
-    assert "openPushConfirmModal" in dispatcher.dispatch("GET", "/static/app.js").body.decode("utf-8")
+    assert "nav-badge-opt" in index_html
+    assert 'id="btn-save" class="btn" hidden' in index_html
+    assert "chk-push-warm" not in index_html
+    app_js = dispatcher.dispatch("GET", "/static/app.js").body.decode("utf-8")
+    for token in ("openPushConfirmModal", "Pre-warm Home catalog rows after push", "stack-map"):
+        assert token in app_js

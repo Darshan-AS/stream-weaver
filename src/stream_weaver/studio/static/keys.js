@@ -1,8 +1,8 @@
-// Tab 5 — Keys, Nuvio & Stremio Sign-In, Provisioning & Raw JSON Escape Hatch
+// Tab 5 — Keys, Nuvio & Stremio Sign-In & Secrets Vault
 
 import { KEY_HELP, validateKeyFormat } from "./wizard.js";
 
-let showAllEnv = true;
+let showAllEnv = false;
 let activeEnvGroup = "all";
 const revealedKeys = new Set();
 
@@ -23,7 +23,6 @@ export function renderKeysTab(root, ctx) {
   stack.appendChild(renderNuvioSignInCard(ctx));
   stack.appendChild(renderStremioSignInCard(ctx));
   stack.appendChild(renderEnvVaultCard(ctx));
-  stack.appendChild(renderRawEscapeHatchCard(ctx));
 
   root.appendChild(stack);
 }
@@ -263,10 +262,11 @@ function renderEnvVaultCard(ctx) {
     </div>
   `;
 
+  const optionalCount = envList.filter(e => !e.required && !e.key.endsWith("_UUID")).length;
   const topActions = document.createElement("div");
   topActions.className = "row-wrap";
   topActions.appendChild(
-    ctx.ui.makeSwitch("Show Optional Keys", showAllEnv, (v) => {
+    ctx.ui.makeSwitch(optionalCount > 0 ? `Show Optional Keys (+${optionalCount})` : "Show Optional Keys", showAllEnv, (v) => {
       showAllEnv = v;
       ctx.render();
     })
@@ -305,6 +305,12 @@ function renderEnvVaultCard(ctx) {
     b.textContent = ENV_GROUP_LABELS[grp] || grp;
     b.onclick = () => {
       activeEnvGroup = grp;
+      if (grp !== "all" && !showAllEnv) {
+        const hasVisibleRequired = envList.some(
+          e => (e.group || "other") === grp && e.required
+        );
+        if (!hasVisibleRequired) showAllEnv = true;
+      }
       ctx.render();
     };
     groupTabs.appendChild(b);
@@ -421,55 +427,5 @@ function renderEnvVaultCard(ctx) {
   });
 
   card.appendChild(grid);
-  return card;
-}
-
-// ---------------------------------------------------------------------------
-// Raw JSON Escape Hatch Launcher Card
-// ---------------------------------------------------------------------------
-function renderRawEscapeHatchCard(ctx) {
-  const { escapeHtml, icon } = ctx.ui;
-  const p = ctx.currentProfile();
-  const profKey = p ? `profile:${p.name}` : "profile:main";
-
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `
-    <div class="row-between" style="flex-wrap:wrap">
-      <div>
-        <div class="card-eyebrow">${icon("code", 12)} GitOps Files</div>
-        <h2>Raw JSON Escape Hatch (Zero Lock-In)</h2>
-        <p class="sub" style="margin-bottom:0">Inspect or hand-edit any workspace JSON document directly in Studio. Service configs are schema-checked and auto-scrubbed via SecretLens so raw API tokens never hit disk.</p>
-      </div>
-    </div>
-  `;
-
-  const docsGrid = document.createElement("div");
-  docsGrid.className = "cards-grid-sm";
-  docsGrid.style.marginTop = "14px";
-  [
-    ["aiostreams", "aiostreams.json", "Scrapers, SEL expressions, groups & formatters"],
-    ["aiometadata", "aiometadata.json", "Routers, search engines & derived catalogs"],
-    ["aiomanager", "aiomanager.json", "Managed household accounts, Autopilot & vault"],
-    ["tenant", "tenant.json", "Instances, logins, profiles & library roots"],
-    [profKey, `${p ? p.name : "main"}/profile.json`, "Active profile shelves, badges, meta & settings"],
-  ].forEach(([docKey, fileName, desc]) => {
-    const box = document.createElement("div");
-    box.className = "pack-card";
-    box.innerHTML = `
-      <div class="row-between">
-        <code>${escapeHtml(fileName)}</code>
-      </div>
-      <div style="font-size:11.5px;color:var(--muted)">${escapeHtml(desc)}</div>
-    `;
-    const btn = document.createElement("button");
-    btn.className = "btn accent-outline";
-    btn.innerHTML = `${icon("code", 13)} <span>Edit Raw JSON</span>`;
-    btn.onclick = () => ctx.openRawJsonModal(docKey);
-    box.appendChild(btn);
-    docsGrid.appendChild(box);
-  });
-
-  card.appendChild(docsGrid);
   return card;
 }

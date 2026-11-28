@@ -34,15 +34,11 @@
           <nav class="nav-list" id="nav-tabs" aria-label="Studio sections">
             <button class="nav-item active" data-tab="home">
               <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
-              <span>Home &amp; Simulator</span>
+              <span>Home &amp; Shelves</span>
             </button>
             <button class="nav-item" data-tab="streams">
               <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>AIOStreams &amp; Metadata</span>
-            </button>
-            <button class="nav-item" data-tab="aiomanager">
-              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
-              <span>AIOManager &amp; Addons</span>
+              <span>Streams &amp; Metadata</span>
             </button>
             <button class="nav-item" data-tab="nuvio">
               <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
@@ -51,6 +47,11 @@
             <button class="nav-item" data-tab="keys">
               <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
               <span>Keys &amp; Accounts</span>
+            </button>
+            <button class="nav-item" data-tab="aiomanager">
+              <svg class="sw-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+              <span>Cloud Sync &amp; Addons</span>
+              <span class="nav-badge-opt">Optional</span>
             </button>
           </nav>
         </div>
@@ -113,7 +114,7 @@
             <svg class="sw-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
           </button>
           <div class="topbar-title-wrap">
-            <div class="view-title" id="view-title">Home &amp; Simulator</div>
+            <div class="view-title" id="view-title">Home &amp; Shelves</div>
             <div class="brand-subtitle" id="subtitle">Initializing workspace engine…</div>
           </div>
         </div>
@@ -130,16 +131,11 @@
             <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
             <span>Pull</span>
           </button>
-          <button id="btn-save" class="btn" title="Save pending edits to workspace">
+          <button id="btn-save" class="btn" hidden title="Save pending edits to workspace">
             <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span>Save</span>
           </button>
           <div class="push-cluster">
-            <label class="warm-toggle" title="Pre-warm Home catalog rows immediately after pushing">
-              <input type="checkbox" id="chk-push-warm" />
-              <svg class="sw-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-              <span>Warm</span>
-            </label>
             <button id="btn-push" class="btn primary" title="Save &amp; stream live push across AIO instances and Nuvio">
               <svg class="sw-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
               <span>Save &amp; Push</span>

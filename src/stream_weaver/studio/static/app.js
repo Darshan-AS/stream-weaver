@@ -3,7 +3,7 @@
 import { icon } from "./icons.js";
 import { openSetupWizard } from "./wizard.js";
 import { renderHomeTab } from "./home.js";
-import { renderStreamsTab } from "./streams.js";
+import { renderStreamsTab, setStreamsSubTab } from "./streams.js";
 import { renderAioManagerTab } from "./aiomanager.js";
 import { renderNuvioTab } from "./nuvio.js";
 import { renderKeysTab } from "./keys.js";
@@ -12,9 +12,9 @@ const STORAGE_KEY = "stream_weaver_studio_bundle_v1";
 const CSRF_TOKEN = document.querySelector('meta[name="sw-csrf-token"]')?.content || "";
 
 const TAB_TITLES = {
-  home: "Home & Simulator",
-  streams: "AIOStreams & Metadata",
-  aiomanager: "AIOManager & Addons",
+  home: "Home & Shelves",
+  streams: "Streams & Metadata",
+  aiomanager: "Cloud Sync & Addons",
   nuvio: "Nuvio & Visuals",
   keys: "Keys & Accounts",
 };
@@ -550,16 +550,32 @@ function openCommandPalette() {
 
     const getItems = () => {
       const items = [
-        { group: "Navigation", label: "Home & Nuvio Simulator", ic: "home", kbd: "1", run: () => { activeTab = "home"; render(); } },
-        { group: "Navigation", label: "AIOStreams & AIOMetadata Power", ic: "zap", kbd: "2", run: () => { activeTab = "streams"; render(); } },
-        { group: "Navigation", label: "AIOManager & Standalone Addons", ic: "cloud", kbd: "3", run: () => { activeTab = "aiomanager"; render(); } },
-        { group: "Navigation", label: "Nuvio Themes, Badges & Operations", ic: "sliders", kbd: "4", run: () => { activeTab = "nuvio"; render(); } },
-        { group: "Navigation", label: "Keys, Secrets & Account Logins", ic: "key", kbd: "5", run: () => { activeTab = "keys"; render(); } },
+        { group: "Navigation", label: "Home & Shelves", ic: "home", kbd: "1", run: () => { activeTab = "home"; render(); } },
+        { group: "Navigation", label: "Streams & Metadata", ic: "zap", kbd: "2", run: () => { activeTab = "streams"; render(); } },
+        { group: "Navigation", label: "Nuvio & Visuals", ic: "sliders", kbd: "3", run: () => { activeTab = "nuvio"; render(); } },
+        { group: "Navigation", label: "Keys & Accounts", ic: "key", kbd: "4", run: () => { activeTab = "keys"; render(); } },
+        { group: "Navigation", label: "Cloud Sync & Addons (Optional)", ic: "cloud", kbd: "5", run: () => { activeTab = "aiomanager"; render(); } },
+        { group: "Quick Jumps", label: "Stream Look & Dual-Subtitles", ic: "subtitles", run: () => { setStreamsSubTab("look"); activeTab = "streams"; render(); } },
+        { group: "Quick Jumps", label: "Posters Customization Studio", ic: "database", run: () => { setStreamsSubTab("metadata"); activeTab = "streams"; render(); } },
+        { group: "Quick Jumps", label: "Addon Packs & Custom Addons", ic: "package", run: () => { setStreamsSubTab("addons"); activeTab = "streams"; render(); } },
         { group: "Tools & Actions", label: "Launch Day-0 Setup Wizard", ic: "compass", run: () => openSetupWizard(makeCtx()) },
         { group: "Tools & Actions", label: "Run Live Health Doctor", ic: "activity", run: () => openDoctorModal() },
         { group: "Tools & Actions", label: "Inspect Local vs. Remote Drift Diff", ic: "gitDiff", run: () => openDiffModal() },
         { group: "Tools & Actions", label: "Open Raw JSON Escape Hatch", ic: "code", run: () => openRawJsonModal("aiostreams") },
         { group: "Tools & Actions", label: "Create Household Profile", ic: "users", run: () => openNewProfileModal() },
+        {
+          group: "Tools & Actions",
+          label: "Pre-Warm Home Catalog Rows",
+          ic: "flame",
+          run: async () => {
+            try {
+              const res = await api("/api/warm", { workers: 8 });
+              showLog(`Pre-warmed ${res.warmed ?? 0}/${res.total ?? 0} Home catalog rows.`, []);
+            } catch (err) {
+              showLog(err.message, [], true);
+            }
+          },
+        },
         { group: "Tools & Actions", label: "Save Workspace Changes", ic: "save", run: () => saveChanges(false) },
         { group: "Tools & Actions", label: "Save & Push Live to AIO + Nuvio", ic: "upload", run: () => document.getElementById("btn-push")?.click() },
         { group: "Tools & Actions", label: "Pull Live Configs into Workspace", ic: "download", run: () => document.getElementById("btn-pull")?.click() },
@@ -1226,7 +1242,7 @@ function renderHeader() {
 
   const titleEl = document.getElementById("view-title");
   if (titleEl) {
-    titleEl.textContent = TAB_TITLES[activeTab] || "Home & Simulator";
+    titleEl.textContent = TAB_TITLES[activeTab] || "Home & Shelves";
   }
 
   document.getElementById("subtitle").textContent =
@@ -1256,6 +1272,9 @@ function renderHeader() {
 
   const dirtyPill = document.getElementById("dirty-pill");
   if (dirtyPill) dirtyPill.hidden = !dirty;
+
+  const saveBtn = document.getElementById("btn-save");
+  if (saveBtn) saveBtn.hidden = !dirty;
 
   const pushPill = document.getElementById("push-pending-pill");
   if (pushPill) {
@@ -1342,6 +1361,24 @@ function renderHeader() {
     btns.append(wizBtn, xBtn);
     row.appendChild(btns);
     banner.appendChild(row);
+
+    const mapStrip = document.createElement("div");
+    mapStrip.className = "stack-map";
+    mapStrip.innerHTML = `
+      <div class="stack-step">
+        <strong>1. AIOMetadata</strong>
+        Catalogs, posters &amp; ratings you browse on Home.
+      </div>
+      <div class="stack-step">
+        <strong>2. AIOStreams</strong>
+        Debrid &amp; scrapers that find fast streams on Play.
+      </div>
+      <div class="stack-step">
+        <strong>3. Nuvio / Stremio</strong>
+        Your TV, desktop &amp; phone app powered by both.
+      </div>
+    `;
+    banner.appendChild(mapStrip);
   }
 }
 
@@ -1414,9 +1451,8 @@ document.getElementById("btn-diff").onclick = () => { closeSidebarMobile(); open
 document.getElementById("btn-raw-json").onclick = () => { closeSidebarMobile(); openRawJsonModal("aiostreams"); };
 document.getElementById("btn-save").onclick = () => saveChanges(false);
 
-async function executePushNow(targetOverride = null) {
+async function executePushNow(targetOverride = null, warmCatalogs = false) {
   const btn = document.getElementById("btn-push");
-  const warmChecked = Boolean(document.getElementById("chk-push-warm")?.checked);
   const anyNuvio = (state?.profiles || []).some(p => p.nuvio?.loginReady);
   const anyStremio = (state?.profiles || []).some(p => p.stremioEnabled && p.stremio?.loginReady);
   const chosenTarget = targetOverride || (anyNuvio || anyStremio ? "all" : "instances");
@@ -1426,7 +1462,7 @@ async function executePushNow(targetOverride = null) {
     const done = await streamPush(
       {
         target: chosenTarget,
-        warmCatalogs: warmChecked,
+        warmCatalogs: Boolean(warmCatalogs),
         mutation: buildMutationPayload(),
       },
       (step) => appendLogStep(step)
@@ -1448,7 +1484,7 @@ async function executePushNow(targetOverride = null) {
 function openPushConfirmModal() {
   if (!state) return;
   const t = state.tenant || {};
-  const warmChecked = Boolean(document.getElementById("chk-push-warm")?.checked);
+  let warmAfterPush = false;
   const profs = state.profiles || [];
   const anyNuvio = profs.some(p => p.nuvio?.loginReady);
   const anyStremioOn = profs.some(p => p.stremioEnabled);
@@ -1492,13 +1528,30 @@ function openPushConfirmModal() {
 
     const metaNote = document.createElement("div");
     metaNote.style.cssText = "font-size:12px;color:var(--muted);margin-top:10px";
-    const notes = [];
-    if (pendingPushCount > 0) notes.push(`${pendingPushCount} saved workspace edit(s) waiting to push`);
-    if (dirty) notes.push("unsaved form edits will be saved first");
-    if (warmChecked) notes.push("Home catalog rows will be pre-warmed");
-    metaNote.textContent = notes.length ? notes.join(" · ") + "." : "Workspace is clean and ready to sync.";
+    const updateMetaNote = () => {
+      const notes = [];
+      if (pendingPushCount > 0) notes.push(`${pendingPushCount} saved workspace edit(s) waiting to push`);
+      if (dirty) notes.push("unsaved form edits will be saved first");
+      if (warmAfterPush) notes.push("Home catalog rows will be pre-warmed");
+      metaNote.textContent = notes.length ? notes.join(" · ") + "." : "Workspace is clean and ready to sync.";
+    };
+    updateMetaNote();
     targetsBox.appendChild(metaNote);
     dialog.appendChild(targetsBox);
+
+    const warmBox = document.createElement("div");
+    warmBox.className = "rows-box";
+    warmBox.appendChild(
+      makeSwitch("Pre-warm Home catalog rows after push", warmAfterPush, (v) => {
+        warmAfterPush = v;
+        updateMetaNote();
+      })
+    );
+    warmBox.insertAdjacentHTML(
+      "beforeend",
+      `<div style="font-size:11.5px;color:var(--muted);margin-top:5px">Fetches each Home shelf once after pushing so your TV loads posters faster on first open.</div>`
+    );
+    dialog.appendChild(warmBox);
 
     const diffHost = document.createElement("div");
     dialog.appendChild(diffHost);
@@ -1561,7 +1614,7 @@ function openPushConfirmModal() {
     pushBtn.innerHTML = `${icon("upload", 14)} <span>Push Live Now</span>`;
     pushBtn.onclick = () => {
       closeModal();
-      executePushNow();
+      executePushNow(null, warmAfterPush);
     };
     rightActs.append(cancelBtn, pushBtn);
     foot.append(leftActs, rightActs);
