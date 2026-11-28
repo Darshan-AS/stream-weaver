@@ -2561,6 +2561,40 @@ def cmd_studio(
         )
         mode_desc = f"Stateless Browser Mode (template: {tpl.name})"
     else:
+        has_explicit = (
+            workspace_dir is not None
+            or tenant is not None
+            or _CLI_WORKSPACE_DIR is not None
+            or _CLI_TENANT_NAME is not None
+            or bool(os.environ.get(ENV_DIR_OVERRIDE, "").strip())
+        )
+        if not has_explicit and sys.stdin.isatty():
+            probe = resolve_tenant_root(
+                None,
+                tenant_name=None,
+                env_override=None,
+                default_dir=load_default_workspace(),
+                require_marker=True,
+            )
+            if isinstance(probe, Err):
+                starter_dir = Path.home() / "my-streaming-stack"
+                if typer.confirm(
+                    f"No Stream Weaver workspace found yet. Create a starter workspace at {starter_dir} and set it as default?",
+                    default=True,
+                ):
+                    cmd_config_init(
+                        directory=starter_dir,
+                        name=None,
+                        template_dir=None,
+                        starter=True,
+                        force=False,
+                        use=True,
+                        debrid=None,
+                        packs=None,
+                        workspace_dir=None,
+                        tenant=None,
+                    )
+                    workspace_dir = starter_dir
         paths = _resolve_tenant(workspace_dir, tenant)
         dispatcher = StudioDispatcher(
             tenant_paths=paths,

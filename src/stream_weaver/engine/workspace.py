@@ -666,6 +666,8 @@ def _parse_targets(
     cleaned = target.strip().lower()
     if cleaned == "all":
         return Ok((ALL_SERVICES, ALL_NUVIO_DOCS if implicit_all_nuvio else ()))
+    if cleaned == "instances":
+        return Ok((("aiostreams", "aiometadata"), ()))
     if cleaned in NUVIO_TARGET_ALIASES:
         return Ok(((), NUVIO_TARGET_ALIASES[cleaned]))
     if cleaned in ("aiostreams", "aiometadata", "aiomanager"):
@@ -673,7 +675,7 @@ def _parse_targets(
         return Ok((svc_tuple, ()))
     return Err(
         StreamWeaverError(
-            f"Unknown service target '{target}'. Choose from: all, aiostreams, aiometadata, aiomanager, "
+            f"Unknown service target '{target}'. Choose from: all, instances, aiostreams, aiometadata, aiomanager, "
             + ", ".join(NUVIO_TARGET_ALIASES)
         )
     )
@@ -1539,6 +1541,7 @@ def inspect_tenant_state(
         meta_with = prof.meta.get("with") if isinstance(prof.meta, Mapping) else None
         settings_with = prof.settings.get("with") if isinstance(prof.settings, Mapping) else None
         nuvio_login = rp.logins.get("nuvio")
+        stremio_login = rp.logins.get("stremio")
         profiles_out.append(
             {
                 "name": prof.name,
@@ -1558,6 +1561,15 @@ def inspect_tenant_state(
                         "platforms": list(prof.nuvio.platforms),
                     }
                     if prof.nuvio
+                    else None
+                ),
+                "stremio": (
+                    {
+                        "login": prof.stremio.login,
+                        "loginReady": bool(stremio_login and stremio_login.configured()),
+                        "email": stremio_login.credentials.get("email", "") if stremio_login else "",
+                    }
+                    if prof.stremio
                     else None
                 ),
                 "stremioEnabled": prof.stremio is not None,
@@ -1663,6 +1675,19 @@ def inspect_tenant_state(
         "totalSteps": 4,
     }
 
+    meta_netloc = urllib.parse.urlsplit(meta_base).netloc
+    stremio_default_ready = False
+    stremio_default_email = ""
+    if "stremio" in ws.manifest.logins:
+        st_name = "main" if "main" in ws.manifest.logins["stremio"] else next(iter(ws.manifest.logins["stremio"]), "")
+        if (
+            st_name
+            and (lb_res := resolve_login_binding(ws.manifest, ws.env, "stremio", st_name))
+            and isinstance(lb_res, Ok)
+        ):
+            stremio_default_ready = lb_res.value.configured()
+            stremio_default_email = lb_res.value.credentials.get("email", "")
+
     return Ok(
         {
             "tenant": {
@@ -1676,6 +1701,14 @@ def inspect_tenant_state(
                 "aiometadataConfigureUrl": (
                     f"{meta_base}/stremio/{meta_uuid}/configure" if meta_uuid else f"{meta_base}/configure"
                 ),
+                "aiometadataManifestUrl": f"{meta_base}/stremio/{meta_uuid}/manifest.json" if meta_uuid else "",
+                "aiometadataStremioUrl": (
+                    f"stremio://{meta_netloc}/stremio/{meta_uuid}/manifest.json" if meta_uuid and meta_netloc else ""
+                ),
+                "stremioReady": stremio_default_ready or any(
+                    bool(p.get("stremio") and p["stremio"].get("loginReady")) for p in profiles_out
+                ),
+                "stremioEmail": stremio_default_email,
                 "aiometadataInstances": sorted(
                     ws.manifest.instances.get("aiometadata", {DEFAULT_INSTANCE: "AIOMETADATA"})
                 ),
@@ -3302,6 +3335,86 @@ def login_nuvio_and_list_profiles(
         return _run(live_client)
 
 
+def login_stremio(
+    paths: TenantPaths,
+    *,
+    login: str = "",
+    email: str | None = None,
+    password: str | None = None,
+    http_client: HttpClientProtocol | None = None,
+) -> Result[JsonDict, StreamWeaverError]:
+    """Signs in to Stremio (`api.strem.io/api/login`), stores `SECRET_<PREFIX>_*` in `.env`, and registers the login."""
+    clean_email = (email or "").strip()
+    raw_password = password or ""
+    if not clean_email or not raw_password:
+        return Err(StreamWeaverError("Enter both Stremio email and password."))
+
+    match read_json_file(paths.manifest_file):
+        case Err(err):
+            return Err(err)
+        case Ok(manifest_doc):
+            pass
+    match parse_tenant_manifest(manifest_doc):
+        case Err(m_err):
+            return Err(StreamWeaverError(str(m_err)))
+        case Ok(manifest):
+            pass
+
+    existing_stremio = manifest.logins.get("stremio", {})
+    login_name = login.strip().lower() or next(iter(existing_stremio), "main")
+    default_prefix = (
+        "STREMIO"
+        if login_name == "main" and not existing_stremio
+        else f"STREMIO_{login_name.upper().replace('-', '_')}"
+    )
+    env_prefix = existing_stremio.get(login_name, default_prefix)
+
+    def _run(client: HttpClientProtocol) -> Result[JsonDict, StreamWeaverError]:
+        match client.request_json(
+            "POST",
+            "https://api.strem.io/api/login",
+            json_body={"type": "Login", "email": clean_email, "password": raw_password, "facebook": False},
+        ):
+            case Err(net_err):
+                return Err(StreamWeaverError(str(net_err)))
+            case Ok(resp):
+                pass
+        result = resp.data.get("result") if isinstance(resp.data, dict) else None
+        auth_key = str(result.get("authKey") or "") if isinstance(result, dict) else ""
+        if resp.status_code != 200 or not auth_key:
+            err_val = resp.data.get("error") if isinstance(resp.data, dict) else None
+            detail = (
+                err_val.get("message")
+                if isinstance(err_val, dict) and err_val.get("message")
+                else (err_val or resp.text)
+            )
+            return Err(StreamWeaverError(f"Stremio sign-in failed (HTTP {resp.status_code}): {str(detail)[:200]}"))
+
+        logins_sec = dict(manifest_doc.get("logins") or {})
+        stremio_reg = dict(logins_sec.get("stremio") or {})
+        if stremio_reg.get(login_name) != env_prefix:
+            stremio_reg[login_name] = env_prefix
+            logins_sec["stremio"] = stremio_reg
+            _ = write_json_file(paths.manifest_file, {**manifest_doc, "logins": logins_sec})
+
+        updates = {
+            login_env_key(env_prefix, "AUTH_KEY"): auth_key,
+            login_env_key(env_prefix, "EMAIL"): clean_email,
+        }
+        match save_env_updates(paths.env_file, updates):
+            case Err(s_err):
+                return Err(s_err)
+            case Ok():
+                pass
+        _ = scaffold_env_keys(paths.env_example_file, list(updates))
+        return Ok({"login": login_name, "email": clean_email, "prefix": env_prefix})
+
+    if http_client is not None:
+        return _run(http_client)
+    with HttpxClient() as live_client:
+        return _run(live_client)
+
+
 def provision_instances(
     paths: TenantPaths,
     *,
@@ -3694,6 +3807,8 @@ def push_workspace(
             and any((lb := cp.resolved.logins.get("nuvio")) is not None and lb.configured() for cp in scoped_cps)
         ):
             nuvio_docs = ALL_NUVIO_DOCS
+        elif not nuvio_docs and cleaned == "all" and not aiomanager_pushed:
+            _emit("[nuvio] Skipped (not signed in yet — sign in anytime on Keys & Accounts)")
 
         if nuvio_docs:
             if "collections" in nuvio_docs and not aiomanager_pushed:

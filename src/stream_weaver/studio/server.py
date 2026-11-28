@@ -42,6 +42,7 @@ from stream_weaver.engine import (
     inspect_tenant_state,
     inspect_workspace_addon_manifest,
     login_nuvio_and_list_profiles,
+    login_stremio,
     manage_studio_profile,
     preview_catalog_items,
     provision_instances,
@@ -617,6 +618,45 @@ class StudioDispatcher:
                                 out = {
                                     "ok": True,
                                     "nuvio": login_info,
+                                    "state": snap,
+                                }
+                                if self.is_stateless:
+                                    out["bundle"] = _serialize_bundle(paths)
+                                return _json_resp(200, out)
+
+        if method == "POST" and clean_path == "/api/stremio-login":
+            payload = self._parse_json_body(body)
+            if payload is None:
+                return _err_resp(400, "Request body must be a JSON object")
+            login_name = str(payload.get("login") or "")
+            email = (
+                str(payload["email"])
+                if isinstance(payload.get("email"), str) and payload["email"].strip()
+                else None
+            )
+            password = (
+                str(payload["password"])
+                if isinstance(payload.get("password"), str) and payload["password"]
+                else None
+            )
+            with self._workspace_paths(payload) as paths:
+                match login_stremio(
+                    paths,
+                    login=login_name,
+                    email=email,
+                    password=password,
+                    http_client=self._http_client(),
+                ):
+                    case Err(err):
+                        return _err_resp(400, str(err))
+                    case Ok(login_info):
+                        match inspect_tenant_state(paths, extra_library_roots=self._extra_libs()):
+                            case Err(s_err):
+                                return _err_resp(400, str(s_err))
+                            case Ok(snap):
+                                out = {
+                                    "ok": True,
+                                    "stremio": login_info,
                                     "state": snap,
                                 }
                                 if self.is_stateless:
