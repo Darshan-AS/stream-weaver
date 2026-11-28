@@ -1874,3 +1874,21 @@ label.field span.hint {
   border-color: var(--border-strong);
   background: var(--accent-soft);
 }
+
+.key-format-help {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.key-format-warn {
+  font-size: 11px;
+  color: #fbbf24;
+  background: var(--warn-bg);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-top: 4px;
+  line-height: 1.35;
+}

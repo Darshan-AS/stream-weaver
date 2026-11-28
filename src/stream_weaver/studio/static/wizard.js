@@ -18,11 +18,81 @@ const QUICK_DUAL_SUB_PAIRS = [
   { id: "zho:eng", label: "Chinese + English (Strelingo Dual-Sub)" },
 ];
 
+export const KEY_HELP = {
+  SECRET_TMDB_API_KEY: "32-char hex v3 API Key (TMDB → Settings → API)",
+  SECRET_TMDB_ACCESS_TOKEN: "Long JWT Read Access Token starting with eyJ… (TMDB → Settings → API)",
+  SECRET_TVDB_API_KEY: "Project API Key (UUID) from thetvdb.com/api-information",
+  SECRET_TORBOX_API_KEY: "TorBox Settings → API Key",
+  SECRET_RD_API_KEY: "Private API Token from real-debrid.com/apitoken",
+  SECRET_ALLDEBRID_API_KEY: "API Key created at alldebrid.com/apikeys",
+  SECRET_PREMIUMIZE_API_KEY: "API Key from premiumize.me/account",
+};
+
+export function validateKeyFormat(key, rawVal) {
+  const val = String(rawVal || "").trim();
+  if (!val) return null;
+  if (key === "SECRET_TMDB_API_KEY") {
+    if (val.startsWith("eyJ") || val.length > 64) {
+      return {
+        level: "warn",
+        msg: "Looks like a TMDB v4 Read Access Token (JWT) — paste it into SECRET_TMDB_ACCESS_TOKEN instead.",
+      };
+    }
+    if (!/^[a-f0-9]{32}$/i.test(val)) {
+      return {
+        level: "warn",
+        msg: "TMDB v3 API Keys are usually 32 hex characters.",
+      };
+    }
+  } else if (key === "SECRET_TMDB_ACCESS_TOKEN") {
+    if (/^[a-f0-9]{32}$/i.test(val)) {
+      return {
+        level: "warn",
+        msg: "Looks like a TMDB v3 API Key — paste it into SECRET_TMDB_API_KEY instead.",
+      };
+    }
+  }
+  return null;
+}
+
 function randomPassword() {
   const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = new Uint8Array(18);
   crypto.getRandomValues(bytes);
   return "sw-" + Array.from(bytes, b => chars[b % chars.length]).join("");
+}
+
+function effectiveWizardEnv(ctx, wiz) {
+  const out = { ...ctx.pendingEnvEdits };
+  if (wiz.hostingMode === "elfhosted") {
+    if (!ctx.isEnvKeyReady("AIOSTREAMS_URL") && !("AIOSTREAMS_URL" in out)) {
+      out.AIOSTREAMS_URL = "https://aiostreams.elfhosted.com";
+    }
+    if (!ctx.isEnvKeyReady("AIOMETADATA_URL") && !("AIOMETADATA_URL" in out)) {
+      out.AIOMETADATA_URL = "https://aiometadata.elfhosted.com";
+    }
+  }
+  if (wiz.setupMode === "fresh") {
+    if (wiz.autoStreamsPw && !ctx.isEnvKeyReady("AIOSTREAMS_PASSWORD") && !("AIOSTREAMS_PASSWORD" in out)) {
+      out.AIOSTREAMS_PASSWORD = wiz.autoStreamsPw;
+    }
+    if (wiz.autoMetaPw && !ctx.isEnvKeyReady("AIOMETADATA_PASSWORD") && !("AIOMETADATA_PASSWORD" in out)) {
+      out.AIOMETADATA_PASSWORD = wiz.autoMetaPw;
+    }
+  }
+  return out;
+}
+
+function isWizardKeyReady(ctx, wiz, key) {
+  if (ctx.isEnvKeyReady(key)) return true;
+  if (wiz.hostingMode === "elfhosted" && (key === "AIOSTREAMS_URL" || key === "AIOMETADATA_URL")) {
+    return true;
+  }
+  if (wiz.setupMode === "fresh") {
+    if (key === "AIOSTREAMS_PASSWORD" && wiz.autoStreamsPw) return true;
+    if (key === "AIOMETADATA_PASSWORD" && wiz.autoMetaPw) return true;
+  }
+  return false;
 }
 
 export function openSetupWizard(ctx) {
@@ -53,8 +123,15 @@ export function openSetupWizard(ctx) {
 
   const wiz = {
     step: 1,
+    setupMode: "fresh", // "fresh" | "adopt"
     hostingMode: isElfDefault ? "elfhosted" : "custom",
     debrid: activeDebridFromServices,
+    autoStreamsPw: ctx.isEnvKeyReady("AIOSTREAMS_PASSWORD") ? "" : randomPassword(),
+    autoMetaPw: ctx.isEnvKeyReady("AIOMETADATA_PASSWORD") ? "" : randomPassword(),
+    adoptPulling: false,
+    adoptSteps: [],
+    adoptError: "",
+    adoptDone: false,
     selectedCols: existingColRefs.size ? existingColRefs : new Set(["col-for-you-discovery", "col-streaming-services", "col-genres-moods"]),
     selectedRegional: existingRegLangs,
     subtitlePref: (prof?.settings?.with?.subtitlePreferred) || "en",
@@ -62,6 +139,10 @@ export function openSetupWizard(ctx) {
     nuvioEmail: prof?.nuvio?.email || "",
     nuvioPassword: "",
     nuvioProfileId: prof?.nuvio?.profileId || "",
+    wantStremio: Boolean(prof?.stremioEnabled),
+    stremioEmail: prof?.stremio?.email || st.tenant?.stremioEmail || "",
+    stremioPassword: "",
+    stremioSigningIn: false,
     doctorReport: null,
     verifying: false,
     launching: false,
@@ -99,17 +180,17 @@ export function openSetupWizard(ctx) {
       const stepper = document.createElement("div");
       stepper.className = "wizard-steps";
       [
-        [1, "1. Hosting", "ElfHosted or Custom URLs"],
+        [1, "1. Hosting & Mode", wiz.setupMode === "adopt" ? "Adopt Existing UUIDs" : "ElfHosted or Custom"],
         [2, "2. Keys & Check", "Debrid, TMDB & Live Doctor"],
-        [3, "3. Taste & Nuvio", "Shelves, Languages & Login"],
-        [4, "4. Launch", "Provision & Push"],
+        [3, "3. Taste & Logins", "Shelves, Nuvio & Stremio"],
+        [4, "4. Launch", "Provision, Push & Devices"],
       ].forEach(([num, title, desc]) => {
         const b = document.createElement("button");
         b.className = "wizard-step-pill" + (wiz.step === num ? " active" : (wiz.step > num ? " done" : ""));
         b.innerHTML = `<div style="display:inline-flex;align-items:center;gap:5px">${wiz.step > num ? icon("check", 12) : ""}${escapeHtml(title)}</div>
           <div style="font-size:10.5px;font-weight:400;opacity:0.8">${escapeHtml(desc)}</div>`;
         b.onclick = () => {
-          if (!wiz.launching) {
+          if (!wiz.launching && !wiz.adoptPulling) {
             wiz.step = num;
             renderWizard();
           }
@@ -142,7 +223,7 @@ export function openSetupWizard(ctx) {
       const backBtn = document.createElement("button");
       backBtn.className = "btn";
       backBtn.textContent = "← Back";
-      backBtn.disabled = wiz.step === 1 || wiz.launching;
+      backBtn.disabled = wiz.step === 1 || wiz.launching || wiz.adoptPulling;
       backBtn.onclick = () => { wiz.step -= 1; renderWizard(); };
 
       const rightBtns = document.createElement("div");
@@ -150,6 +231,7 @@ export function openSetupWizard(ctx) {
       if (wiz.step < 4) {
         const nextBtn = document.createElement("button");
         nextBtn.className = "btn primary";
+        nextBtn.disabled = wiz.adoptPulling;
         nextBtn.textContent = `Continue to Step ${wiz.step + 1} →`;
         nextBtn.onclick = () => { wiz.step += 1; renderWizard(); };
         rightBtns.appendChild(nextBtn);
@@ -173,7 +255,120 @@ export function openSetupWizard(ctx) {
 }
 
 function renderStep1Hosting(container, wiz, ctx, rerender) {
-  const { icon } = ctx.ui;
+  const { escapeHtml, icon } = ctx.ui;
+
+  // Mode Switcher: Fresh Setup vs Adopt Existing Stack
+  const modeBox = document.createElement("div");
+  modeBox.className = "rows-box";
+  modeBox.style.marginTop = "0";
+  modeBox.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:8px">Setup Path</div>`;
+  const modeSeg = document.createElement("div");
+  modeSeg.className = "segmented";
+  [
+    ["fresh", "Fresh Setup (Provision New UUIDs)"],
+    ["adopt", "Adopt Existing Stack (Paste UUID + Password & Pull)"],
+  ].forEach(([mId, lbl]) => {
+    const b = document.createElement("button");
+    b.className = "seg-btn" + (wiz.setupMode === mId ? " active" : "");
+    b.textContent = lbl;
+    b.onclick = () => {
+      wiz.setupMode = mId;
+      rerender();
+    };
+    modeSeg.appendChild(b);
+  });
+  modeBox.appendChild(modeSeg);
+  container.appendChild(modeBox);
+
+  if (wiz.setupMode === "adopt") {
+    const adoptCard = document.createElement("div");
+    adoptCard.className = "rows-box";
+    adoptCard.innerHTML = `
+      <strong style="font-size:13px">Import Existing AIOStreams / AIOMetadata / AIOManager</strong>
+      <div style="font-size:12px;color:var(--muted);margin:3px 0 12px">
+        Paste your current instance URL, UUID, and Configure Password. Studio will pull your live setup, harvest secrets into <code>.env</code>, and scrub the JSON files.
+      </div>
+    `;
+
+    const grid = document.createElement("div");
+    grid.className = "cards-grid";
+    [
+      ["AIOSTREAMS_URL", "AIOStreams URL", ""],
+      ["AIOSTREAMS_UUID", "AIOStreams UUID", ""],
+      ["AIOSTREAMS_PASSWORD", "AIOStreams Password", ""],
+      ["AIOMETADATA_URL", "AIOMetadata URL", ""],
+      ["AIOMETADATA_UUID", "AIOMetadata UUID", ""],
+      ["AIOMETADATA_PASSWORD", "AIOMetadata Password", ""],
+      ["AIOMANAGER_URL", "AIOManager URL (Optional)", ""],
+      ["AIOMANAGER_UUID", "AIOManager UUID (Optional)", ""],
+      ["AIOMANAGER_SYNC_PASSWORD", "AIOManager Sync Password (Optional)", ""],
+    ].forEach(([k, label, url]) => {
+      const defUrl = k === "AIOSTREAMS_URL"
+        ? "https://aiostreams.elfhosted.com"
+        : (k === "AIOMETADATA_URL" ? "https://aiometadata.elfhosted.com" : "");
+      grid.appendChild(
+        makeWizardEnvInput(ctx, k, label, url, {
+          prefillValue: !ctx.isEnvKeyReady(k) && !(k in ctx.pendingEnvEdits) ? defUrl : "",
+        })
+      );
+    });
+    adoptCard.appendChild(grid);
+
+    const actionRow = document.createElement("div");
+    actionRow.className = "row-wrap";
+    actionRow.style.marginTop = "12px";
+    const pullBtn = document.createElement("button");
+    pullBtn.className = "btn primary";
+    pullBtn.disabled = wiz.adoptPulling;
+    pullBtn.innerHTML = `${icon("download", 14)} <span>${wiz.adoptPulling ? "Pulling Existing Stack…" : "Save Credentials & Pull Existing Stack"}</span>`;
+    pullBtn.onclick = async () => {
+      wiz.adoptPulling = true;
+      wiz.adoptError = "";
+      wiz.adoptSteps = ["> Saving instance credentials…"];
+      rerender();
+      try {
+        const envUpdates = { ...ctx.pendingEnvEdits };
+        if (!ctx.isEnvKeyReady("AIOSTREAMS_URL") && !envUpdates.AIOSTREAMS_URL) {
+          envUpdates.AIOSTREAMS_URL = "https://aiostreams.elfhosted.com";
+        }
+        if (!ctx.isEnvKeyReady("AIOMETADATA_URL") && !envUpdates.AIOMETADATA_URL) {
+          envUpdates.AIOMETADATA_URL = "https://aiometadata.elfhosted.com";
+        }
+        if (Object.keys(envUpdates).length) {
+          await ctx.api("/api/mutate", { mutation: { envUpdates } });
+          ctx.clearPendingEdits();
+        }
+        wiz.adoptSteps.push("> Pulling remote configurations & harvesting secrets…");
+        rerender();
+        const pullRes = await ctx.api("/api/pull", { target: "all" });
+        (pullRes.steps || []).forEach(s => wiz.adoptSteps.push(`+ ${s}`));
+        wiz.adoptSteps.push("+ Done! Continue to Step 2 to review keys and verify connectivity.");
+        wiz.adoptDone = true;
+      } catch (err) {
+        wiz.adoptError = err.message || String(err);
+      } finally {
+        wiz.adoptPulling = false;
+        rerender();
+      }
+    };
+    actionRow.appendChild(pullBtn);
+    adoptCard.appendChild(actionRow);
+
+    if (wiz.adoptSteps.length || wiz.adoptError) {
+      const logOut = document.createElement("div");
+      logOut.className = "log-drawer";
+      logOut.style.marginTop = "12px";
+      logOut.style.marginBottom = "0";
+      if (wiz.adoptError) logOut.classList.add("error");
+      logOut.innerHTML = wiz.adoptSteps.map(s => `<div>${escapeHtml(s)}</div>`).join("") +
+        (wiz.adoptError ? `<div style="color:var(--danger);margin-top:6px">ERROR: ${escapeHtml(wiz.adoptError)}</div>` : "");
+      adoptCard.appendChild(logOut);
+    }
+
+    container.appendChild(adoptCard);
+    return;
+  }
+
   const cards = document.createElement("div");
   cards.className = "grid-equal";
 
@@ -296,23 +491,41 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
   pwHead.className = "row-between";
   pwHead.style.marginBottom = "10px";
   pwHead.innerHTML = `<div style="font-size:13px;font-weight:600">2. Instance Passwords &amp; Metadata API Keys</div>`;
-  const genBtn = document.createElement("button");
-  genBtn.className = "btn icon-btn accent-outline";
-  genBtn.innerHTML = `${icon("wand", 12)} <span>Generate Passwords</span>`;
-  genBtn.onclick = () => {
-    const pw = randomPassword();
-    ctx.setPendingEnv("AIOSTREAMS_PASSWORD", pw);
-    ctx.setPendingEnv("AIOMETADATA_PASSWORD", pw);
-    rerender();
-  };
-  pwHead.appendChild(genBtn);
+  if (wiz.setupMode === "fresh") {
+    const genBtn = document.createElement("button");
+    genBtn.className = "btn icon-btn accent-outline";
+    genBtn.innerHTML = `${icon("wand", 12)} <span>Regenerate Passwords</span>`;
+    genBtn.onclick = () => {
+      wiz.autoStreamsPw = randomPassword();
+      wiz.autoMetaPw = randomPassword();
+      ctx.setPendingEnv("AIOSTREAMS_PASSWORD", wiz.autoStreamsPw);
+      ctx.setPendingEnv("AIOMETADATA_PASSWORD", wiz.autoMetaPw);
+      rerender();
+    };
+    pwHead.appendChild(genBtn);
+  }
   metaBox.appendChild(pwHead);
 
   const keyGrid = document.createElement("div");
   keyGrid.className = "cards-grid";
+  const showAutoStreams = wiz.setupMode === "fresh" && !ctx.isEnvKeyReady("AIOSTREAMS_PASSWORD") && wiz.autoStreamsPw;
+  const showAutoMeta = wiz.setupMode === "fresh" && !ctx.isEnvKeyReady("AIOMETADATA_PASSWORD") && wiz.autoMetaPw;
+  keyGrid.appendChild(
+    makeWizardEnvInput(ctx, "AIOSTREAMS_PASSWORD", "AIOStreams Instance Password", "", {
+      prefillValue: showAutoStreams ? wiz.autoStreamsPw : "",
+      autoGenerated: Boolean(showAutoStreams),
+      onValueChange: () => { wiz.autoStreamsPw = ""; },
+    })
+  );
+  keyGrid.appendChild(
+    makeWizardEnvInput(ctx, "AIOMETADATA_PASSWORD", "AIOMetadata Instance Password", "", {
+      prefillValue: showAutoMeta ? wiz.autoMetaPw : "",
+      autoGenerated: Boolean(showAutoMeta),
+      onValueChange: () => { wiz.autoMetaPw = ""; },
+    })
+  );
+
   [
-    ["AIOSTREAMS_PASSWORD", "New AIOStreams Instance Password", ""],
-    ["AIOMETADATA_PASSWORD", "New AIOMetadata Instance Password", ""],
     ["SECRET_TMDB_API_KEY", "TMDB v3 API Key (Required)", "https://www.themoviedb.org/settings/api"],
     ["SECRET_TMDB_ACCESS_TOKEN", "TMDB v4 Read Access Token (Required)", "https://www.themoviedb.org/settings/api"],
     ["SECRET_TVDB_API_KEY", "TheTVDB v4 API Key (Required)", "https://thetvdb.com/api-information"],
@@ -355,7 +568,7 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
     wiz.verifying = true;
     rerender();
     try {
-      const res = await ctx.api("/api/doctor", { pendingEnv: ctx.pendingEnvEdits });
+      const res = await ctx.api("/api/doctor", { pendingEnv: effectiveWizardEnv(ctx, wiz) });
       wiz.doctorReport = res.report || res;
     } catch (err) {
       wiz.doctorReport = { overall: "error", checks: [{ label: "Doctor Probe", status: "error", detail: err.message }] };
@@ -389,33 +602,83 @@ function renderStep2Keys(container, wiz, ctx, rerender) {
   container.appendChild(docBox);
 }
 
-function makeWizardEnvInput(ctx, key, label, signupUrl) {
+function makeWizardEnvInput(ctx, key, label, signupUrl, opts = {}) {
   const { escapeHtml, icon } = ctx.ui;
   const spec = (ctx.state.env || []).find(e => e.key === key);
-  const isSecret = spec ? Boolean(spec.isSecret) : key.startsWith("SECRET_") || key.endsWith("_PASSWORD");
-  const pending = ctx.pendingEnvEdits[key] || "";
-  const isSet = Boolean((spec && spec.isSet) || pending.trim());
+  const isSecret = spec
+    ? Boolean(spec.isSecret)
+    : key.startsWith("SECRET_") || key.endsWith("_PASSWORD");
+  const pending = key in ctx.pendingEnvEdits ? ctx.pendingEnvEdits[key] : "";
+  const effectiveShown = pending || (!isSecret && spec ? spec.value || "" : "") || opts.prefillValue || "";
+  const isSet = Boolean((spec && spec.isSet) || String(pending || opts.prefillValue || "").trim());
 
   const card = document.createElement("div");
   card.className = "env-card";
-  card.innerHTML = `
-    <div class="row-between">
-      <strong style="font-size:12px">${escapeHtml(label)}</strong>
-      <span class="pill ${isSet ? "ok" : "warn"}">${isSet ? "Ready" : "Needed"}</span>
-    </div>
-    <div class="row-between" style="font-size:11px;color:var(--muted)">
-      <code>${escapeHtml(key)}</code>
-      ${signupUrl ? `<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noreferrer"><span>Get Key</span> ${icon("externalLink", 10)}</a>` : ""}
-    </div>
-  `;
+
+  const top = document.createElement("div");
+  top.className = "row-between";
+  const lblEl = document.createElement("strong");
+  lblEl.style.fontSize = "12px";
+  lblEl.textContent = label;
+  const badgeRow = document.createElement("div");
+  badgeRow.className = "row-wrap";
+  badgeRow.style.gap = "5px";
+  if (opts.autoGenerated) {
+    const agPill = document.createElement("span");
+    agPill.className = "pill accent";
+    agPill.textContent = "Auto-generated";
+    badgeRow.appendChild(agPill);
+  }
+  const statusPill = document.createElement("span");
+  statusPill.className = `pill ${isSet ? "ok" : "warn"}`;
+  statusPill.textContent = isSet ? "Ready" : "Needed";
+  badgeRow.appendChild(statusPill);
+  top.append(lblEl, badgeRow);
+
+  const subRow = document.createElement("div");
+  subRow.className = "row-between";
+  subRow.style.cssText = "font-size:11px;color:var(--muted)";
+  subRow.innerHTML = `<code>${escapeHtml(key)}</code>` +
+    (signupUrl ? `<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noreferrer"><span>Get Key</span> ${icon("externalLink", 10)}</a>` : "");
+
   const inp = document.createElement("input");
-  inp.type = isSecret ? "password" : "text";
-  inp.value = pending || (!isSecret && spec ? spec.value || "" : "");
+  inp.type = isSecret && !opts.autoGenerated ? "password" : "text";
+  inp.value = effectiveShown;
   inp.placeholder = isSecret && spec && spec.isSet ? `${spec.masked} (saved)` : "Paste value…";
-  inp.oninput = () => {
-    ctx.setPendingEnv(key, inp.value);
+
+  const helpText = KEY_HELP[key] || "";
+  const helpEl = helpText ? document.createElement("div") : null;
+  if (helpEl) {
+    helpEl.className = "key-format-help";
+    helpEl.textContent = helpText;
+  }
+
+  const warnEl = document.createElement("div");
+  warnEl.className = "key-format-warn";
+  const syncValidation = (val) => {
+    const issue = validateKeyFormat(key, val);
+    if (issue) {
+      warnEl.hidden = false;
+      warnEl.textContent = issue.msg;
+    } else {
+      warnEl.hidden = true;
+      warnEl.textContent = "";
+    }
+    const readyNow = Boolean((spec && spec.isSet) || String(val || "").trim());
+    statusPill.className = `pill ${readyNow ? "ok" : "warn"}`;
+    statusPill.textContent = readyNow ? "Ready" : "Needed";
   };
-  card.appendChild(inp);
+
+  inp.oninput = () => {
+    if (opts.onValueChange) opts.onValueChange(inp.value);
+    ctx.setPendingEnv(key, inp.value);
+    syncValidation(inp.value);
+  };
+  syncValidation(pending || opts.prefillValue || "");
+
+  card.append(top, subRow, inp);
+  if (helpEl) card.appendChild(helpEl);
+  card.appendChild(warnEl);
   return card;
 }
 
@@ -546,9 +809,12 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
   nuvBox.className = "rows-box";
   const nuvioReady = Boolean(prof?.nuvio?.loginReady);
   nuvBox.innerHTML = `
-    <div class="row-between" style="margin-bottom:8px">
-      <strong style="font-size:13px">3. Connect Your Nuvio Account</strong>
-      <span class="pill ${nuvioReady ? "ok" : "warn"}">${nuvioReady ? `Signed In ${escapeHtml(prof?.nuvio?.email || "")}` : "Sign in to sync Home & Settings"}</span>
+    <div class="row-between" style="margin-bottom:6px">
+      <strong style="font-size:13px">3. Connect Your Nuvio Account (Optional now)</strong>
+      <span class="pill ${nuvioReady ? "ok" : "warn"}">${nuvioReady ? `Signed In ${escapeHtml(prof?.nuvio?.email || "")}` : "Optional · Connect Anytime"}</span>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">
+      First time using Nuvio? Sign in once inside the Nuvio app on each device (TV / Desktop / Mobile) before pushing so its cloud slot exists.
     </div>
   `;
   const nuvGrid = document.createElement("div");
@@ -608,6 +874,69 @@ function renderStep3Taste(container, wiz, ctx, rerender) {
   nuvGrid.append(emL, pwL, prL, authBtn);
   nuvBox.appendChild(nuvGrid);
   container.appendChild(nuvBox);
+
+  // Stremio Optional Dual-Sync Sign-In
+  const stBox = document.createElement("div");
+  stBox.className = "rows-box";
+  const stReady = Boolean(prof?.stremio?.loginReady || st.tenant?.stremioReady);
+  const stHead = document.createElement("div");
+  stHead.className = "row-between";
+  stHead.style.marginBottom = "8px";
+  stHead.innerHTML = `
+    <strong style="font-size:13px">4. Connect Stremio Account (Optional Dual-Sync)</strong>
+    <span class="pill ${stReady ? "ok" : ""}">${stReady ? `Signed In ${escapeHtml(prof?.stremio?.email || st.tenant?.stremioEmail || "")}` : "Optional"}</span>
+  `;
+  stBox.appendChild(stHead);
+  stBox.appendChild(
+    ctx.ui.makeSwitch("Also Sync Addons to Stremio", wiz.wantStremio, (v) => {
+      wiz.wantStremio = v;
+      rerender();
+    })
+  );
+  if (wiz.wantStremio) {
+    const stGrid = document.createElement("div");
+    stGrid.className = "cards-grid-sm";
+    stGrid.style.cssText = "align-items:end;margin-top:10px";
+
+    const sEmL = document.createElement("label");
+    sEmL.className = "field"; sEmL.textContent = "Stremio Email";
+    const sEmIn = document.createElement("input");
+    sEmIn.type = "email"; sEmIn.placeholder = "you@example.com"; sEmIn.value = wiz.stremioEmail;
+    sEmIn.oninput = () => { wiz.stremioEmail = sEmIn.value; };
+    sEmL.appendChild(sEmIn);
+
+    const sPwL = document.createElement("label");
+    sPwL.className = "field"; sPwL.textContent = "Stremio Password";
+    const sPwIn = document.createElement("input");
+    sPwIn.type = "password"; sPwIn.placeholder = "••••••••"; sPwIn.value = wiz.stremioPassword;
+    sPwIn.oninput = () => { wiz.stremioPassword = sPwIn.value; };
+    sPwL.appendChild(sPwIn);
+
+    const stBtn = document.createElement("button");
+    stBtn.className = "btn accent-outline";
+    stBtn.disabled = wiz.stremioSigningIn;
+    stBtn.innerHTML = `${icon(stReady ? "refresh" : "lock", 13)} <span>${stReady ? "Re-Authenticate Stremio" : "Sign In to Stremio"}</span>`;
+    stBtn.onclick = async () => {
+      wiz.stremioSigningIn = true;
+      rerender();
+      try {
+        await ctx.api("/api/stremio-login", {
+          login: prof?.stremio?.login || "main",
+          email: wiz.stremioEmail,
+          password: wiz.stremioPassword,
+        });
+        wiz.stremioPassword = "";
+      } catch (err) {
+        ctx.showLog(err.message, [], true);
+      } finally {
+        wiz.stremioSigningIn = false;
+        rerender();
+      }
+    };
+    stGrid.append(sEmL, sPwL, stBtn);
+    stBox.appendChild(stGrid);
+  }
+  container.appendChild(stBox);
 }
 
 function renderStep4Launch(container, wiz, ctx, rerender) {
@@ -615,14 +944,33 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
   const st = ctx.state;
   const prof = ctx.currentProfile();
   const nuvioReady = Boolean(prof?.nuvio?.loginReady);
+  const stremioReady = Boolean(prof?.stremio?.loginReady || st.tenant?.stremioReady);
+  const chosenDebrid = DEBRID_WIZARD_OPTIONS.find(d => d.id === wiz.debrid) || DEBRID_WIZARD_OPTIONS[0];
+
+  const hasStreamsPw = wiz.setupMode === "adopt"
+    ? (isWizardKeyReady(ctx, wiz, "AIOSTREAMS_PASSWORD") || ctx.isEnvKeyReady("AIOSTREAMS_UUID"))
+    : isWizardKeyReady(ctx, wiz, "AIOSTREAMS_PASSWORD");
+  const hasMetaPw = wiz.setupMode === "adopt"
+    ? (isWizardKeyReady(ctx, wiz, "AIOMETADATA_PASSWORD") || ctx.isEnvKeyReady("AIOMETADATA_UUID"))
+    : isWizardKeyReady(ctx, wiz, "AIOMETADATA_PASSWORD");
+
+  const checklist = [
+    { label: "Hosting URLs", ok: isWizardKeyReady(ctx, wiz, "AIOSTREAMS_URL") && isWizardKeyReady(ctx, wiz, "AIOMETADATA_URL") },
+    { label: "Instance Passwords", ok: hasStreamsPw && hasMetaPw },
+    { label: `${chosenDebrid.label} Key`, ok: chosenDebrid.keys.every(k => isWizardKeyReady(ctx, wiz, k)) },
+    { label: "TMDB v3 API Key", ok: isWizardKeyReady(ctx, wiz, "SECRET_TMDB_API_KEY") },
+    { label: "TMDB v4 Token", ok: isWizardKeyReady(ctx, wiz, "SECRET_TMDB_ACCESS_TOKEN") },
+    { label: "TVDB API Key", ok: isWizardKeyReady(ctx, wiz, "SECRET_TVDB_API_KEY") },
+  ];
+  const allReady = checklist.every(c => c.ok);
 
   const summaryGrid = document.createElement("div");
   summaryGrid.className = "cards-grid-sm";
   [
-    ["Hosting", wiz.hostingMode === "elfhosted" ? "ElfHosted Public" : "Custom Self-Hosted"],
+    ["Setup Path", wiz.setupMode === "adopt" ? "Adopt Existing Stack" : (wiz.hostingMode === "elfhosted" ? "ElfHosted Public" : "Custom Self-Hosted")],
     ["Primary Provider", wiz.debrid.toUpperCase()],
     ["Home Shelves", `${wiz.selectedCols.size + wiz.selectedRegional.size} collections selected`],
-    ["Nuvio Sync", nuvioReady ? "Authenticated & Ready" : "Instances only (sign in anytime)"],
+    ["Client Sync", nuvioReady || (wiz.wantStremio && stremioReady) ? "Ready to sync clients" : "Instances only (sign in anytime)"],
   ].forEach(([k, v]) => {
     const c = document.createElement("div");
     c.className = "env-card";
@@ -631,15 +979,42 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
   });
   container.appendChild(summaryGrid);
 
+  // Pre-Flight Readiness Checklist
+  const readyBox = document.createElement("div");
+  readyBox.className = "rows-box";
+  readyBox.innerHTML = `<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Pre-Flight Key Readiness</div>`;
+  const chipRow = document.createElement("div");
+  chipRow.className = "chip-row";
+  checklist.forEach(item => {
+    const pill = document.createElement("span");
+    pill.className = `pill ${item.ok ? "ok" : "warn"}`;
+    pill.textContent = `${item.ok ? "✓" : "Missing:"} ${item.label}`;
+    chipRow.appendChild(pill);
+  });
+  readyBox.appendChild(chipRow);
+  if (!allReady) {
+    const fixRow = document.createElement("div");
+    fixRow.className = "row-between";
+    fixRow.style.cssText = "margin-top:10px;gap:8px;flex-wrap:wrap";
+    fixRow.innerHTML = `<span style="font-size:12px;color:#fbbf24">Fill in the missing keys above before provisioning so your instances don't fail on launch.</span>`;
+    const jumpBtn = document.createElement("button");
+    jumpBtn.className = "btn accent-outline";
+    jumpBtn.textContent = "Fix Missing Keys in Step 2 →";
+    jumpBtn.onclick = () => { wiz.step = 2; rerender(); };
+    fixRow.appendChild(jumpBtn);
+    readyBox.appendChild(fixRow);
+  }
+  container.appendChild(readyBox);
+
   const launchBox = document.createElement("div");
   launchBox.className = "rows-box";
   launchBox.style.borderColor = "var(--border-strong)";
   launchBox.innerHTML = `
     <div class="row-between" style="flex-wrap:wrap">
       <div>
-        <strong style="font-size:14px">Ready to Provision &amp; Push</strong>
+        <strong style="font-size:14px">${nuvioReady ? "Ready to Provision &amp; Push" : "Ready to Provision &amp; Push Instances"}</strong>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">
-          Creates encrypted AIOStreams &amp; AIOMetadata instances, derives catalogs, and syncs straight to Nuvio.
+          Creates or updates encrypted AIOStreams &amp; AIOMetadata instances, derives catalogs, and syncs connected clients.
         </div>
       </div>
     </div>
@@ -648,10 +1023,11 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
   const launchBtn = document.createElement("button");
   launchBtn.className = "btn primary";
   launchBtn.style.marginTop = "12px";
-  launchBtn.disabled = wiz.launching;
+  const alreadyProv = Boolean(st.tenant?.aiostreamsProvisioned && st.tenant?.aiometadataProvisioned);
+  launchBtn.disabled = wiz.launching || (!allReady && !alreadyProv);
   launchBtn.innerHTML = wiz.launching
     ? `<span>Provisioning &amp; Streaming Push…</span>`
-    : `${icon("upload", 14)} <span>Provision Instances &amp; Push to Nuvio</span>`;
+    : `${icon("upload", 14)} <span>${alreadyProv ? "Save &amp; Push Stack Live" : "Provision Instances &amp; Push"}</span>`;
 
   launchBtn.onclick = async () => {
     wiz.launching = true;
@@ -679,11 +1055,7 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
         enabledPacks.push("dual_subtitles");
       }
 
-      const envUpdates = { ...ctx.pendingEnvEdits };
-      if (wiz.hostingMode === "elfhosted") {
-        if (!ctx.isEnvKeyReady("AIOSTREAMS_URL")) envUpdates.AIOSTREAMS_URL = "https://aiostreams.elfhosted.com";
-        if (!ctx.isEnvKeyReady("AIOMETADATA_URL")) envUpdates.AIOMETADATA_URL = "https://aiometadata.elfhosted.com";
-      }
+      const envUpdates = effectiveWizardEnv(ctx, wiz);
       const mut = {
         envUpdates,
         enabledPacks,
@@ -696,10 +1068,11 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
         mut.debridServices = [{ id: wiz.debrid, enabled: true, priority: 1 }];
       }
       if (prof) {
-        const hasMdb = ctx.isEnvKeyReady("SECRET_MDBLIST_API_KEY");
+        const hasMdb = isWizardKeyReady(ctx, wiz, "SECRET_MDBLIST_API_KEY");
         mut.profile = {
           name: prof.name,
           collections: collectionsPayload,
+          stremioEnabled: wiz.wantStremio,
           nuvio: prof.nuvio ? {
             profileId: wiz.nuvioProfileId || prof.nuvio.profileId || "",
             profileName: prof.nuvio.profileName || "",
@@ -717,8 +1090,8 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
       await ctx.api("/api/mutate", { mutation: mut });
       ctx.clearPendingEdits();
 
-      const alreadyProv = ctx.state.tenant?.aiostreamsProvisioned && ctx.state.tenant?.aiometadataProvisioned;
-      if (!alreadyProv) {
+      const provNow = ctx.state.tenant?.aiostreamsProvisioned && ctx.state.tenant?.aiometadataProvisioned;
+      if (!provNow) {
         wiz.launchSteps.push("> Provisioning AIOStreams & AIOMetadata UUIDs…");
         rerender();
         const provRes = await ctx.api("/api/provision", {});
@@ -726,13 +1099,21 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
         rerender();
       }
 
-      const pushTarget = "all";
+      const curProf = ctx.currentProfile();
+      const canPushClients = Boolean(
+        curProf?.nuvio?.loginReady || (curProf?.stremioEnabled && curProf?.stremio?.loginReady)
+      );
+      const pushTarget = canPushClients ? "all" : "instances";
       wiz.launchSteps.push(`> Streaming workspace push (target: ${pushTarget})…`);
       rerender();
       await ctx.streamPush({ target: pushTarget }, (stepLine) => {
         wiz.launchSteps.push(`+ ${stepLine}`);
         rerender();
       });
+      if (pushTarget === "instances") {
+        wiz.launchSteps.push("+ Skipped Nuvio/Stremio client sync (not signed in yet — connect anytime in Keys & Accounts).");
+      }
+      if (typeof ctx.markPushed === "function") ctx.markPushed();
 
       wiz.launchDone = true;
     } catch (err) {
@@ -755,32 +1136,111 @@ function renderStep4Launch(container, wiz, ctx, rerender) {
     launchBox.appendChild(logOut);
   }
 
-  // Deep-links once provisioned
+  container.appendChild(launchBox);
+
+  // Post-Launch "Connect Your Devices" Handoff Card
   const tInfo = ctx.state.tenant || {};
-  if (tInfo.aiostreamsProvisioned || tInfo.aiometadataProvisioned) {
-    const linksRow = document.createElement("div");
-    linksRow.className = "row-wrap";
-    linksRow.style.marginTop = "14px";
+  if (wiz.launchDone || tInfo.aiostreamsProvisioned || tInfo.aiometadataProvisioned) {
+    const handoff = document.createElement("div");
+    handoff.className = "rows-box";
+    handoff.innerHTML = `
+      <strong style="font-size:13.5px;display:inline-flex;align-items:center;gap:6px">${icon("tv", 14)} Connect Your Devices</strong>
+      <div style="font-size:12px;color:var(--muted);margin:3px 0 10px">
+        Your instances and catalogs are ready. Follow the steps below on your TV, phone, or Stremio app:
+      </div>
+    `;
+
+    const devGrid = document.createElement("div");
+    devGrid.className = "grid-equal";
+
+    const nuvStep = document.createElement("div");
+    nuvStep.className = "env-card";
+    nuvStep.innerHTML = `
+      <strong style="font-size:12.5px">1. Nuvio (TV / Desktop / Mobile)</strong>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.45">
+        Open Nuvio → sign in with your account → relaunch the app once on each platform to sync shelves, themes, and Elite-Badges.
+      </div>
+    `;
+    if (!nuvioReady) {
+      const goKeys = document.createElement("button");
+      goKeys.className = "btn accent-outline";
+      goKeys.innerHTML = `${icon("lock", 12)} <span>Connect Nuvio in Keys &amp; Accounts →</span>`;
+      goKeys.onclick = () => {
+        try { sessionStorage.setItem("sw_wizard_dismissed", "1"); } catch (_) {}
+        ctx.closeModal();
+        ctx.switchTab("keys");
+      };
+      nuvStep.appendChild(goKeys);
+    }
+
+    const stmStep = document.createElement("div");
+    stmStep.className = "env-card";
+    stmStep.innerHTML = `
+      <strong style="font-size:12.5px">2. Stremio / Direct Manifest Install</strong>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.45">
+        Install AIOMetadata catalogs or inspect your AIOStreams addon configuration directly:
+      </div>
+    `;
+    const linkBtns = document.createElement("div");
+    linkBtns.className = "row-wrap";
+    if (tInfo.aiometadataManifestUrl) {
+      const cpManifest = document.createElement("button");
+      cpManifest.className = "btn icon-btn";
+      cpManifest.innerHTML = `${icon("copy", 12)} <span>Copy Metadata Manifest URL</span>`;
+      cpManifest.onclick = () => ctx.copyText(tInfo.aiometadataManifestUrl, "AIOMetadata Manifest URL");
+      linkBtns.appendChild(cpManifest);
+    }
+    if (tInfo.aiometadataStremioUrl) {
+      const openSt = document.createElement("a");
+      openSt.className = "btn accent-outline";
+      openSt.href = tInfo.aiometadataStremioUrl;
+      openSt.innerHTML = `<span>Open in Stremio</span> ${icon("externalLink", 12)}`;
+      linkBtns.appendChild(openSt);
+    }
     if (tInfo.aiostreamsConfigureUrl) {
       const a1 = document.createElement("a");
-      a1.className = "btn accent-outline";
+      a1.className = "btn icon-btn";
       a1.href = tInfo.aiostreamsConfigureUrl;
       a1.target = "_blank";
       a1.rel = "noreferrer";
-      a1.innerHTML = `<span>Open AIOStreams Configure</span> ${icon("externalLink", 12)}`;
-      linksRow.appendChild(a1);
+      a1.innerHTML = `<span>AIOStreams Configure</span> ${icon("externalLink", 11)}`;
+      linkBtns.appendChild(a1);
     }
     if (tInfo.aiometadataConfigureUrl) {
       const a2 = document.createElement("a");
-      a2.className = "btn accent-outline";
+      a2.className = "btn icon-btn";
       a2.href = tInfo.aiometadataConfigureUrl;
       a2.target = "_blank";
       a2.rel = "noreferrer";
-      a2.innerHTML = `<span>Open AIOMetadata Configure</span> ${icon("externalLink", 12)}`;
-      linksRow.appendChild(a2);
+      a2.innerHTML = `<span>AIOMetadata Configure</span> ${icon("externalLink", 11)}`;
+      linkBtns.appendChild(a2);
     }
-    launchBox.appendChild(linksRow);
-  }
+    stmStep.appendChild(linkBtns);
+    devGrid.append(nuvStep, stmStep);
+    handoff.appendChild(devGrid);
 
-  container.appendChild(launchBox);
+    const backupRow = document.createElement("div");
+    backupRow.className = "row-wrap";
+    backupRow.style.marginTop = "10px";
+    const cpUuidBtn = document.createElement("button");
+    cpUuidBtn.className = "btn icon-btn";
+    cpUuidBtn.innerHTML = `${icon("copy", 12)} <span>Copy Instance UUIDs</span>`;
+    cpUuidBtn.onclick = () => {
+      const summary = [
+        `AIOStreams UUID: ${tInfo.aiostreamsUuid || "(unprovisioned)"}`,
+        `AIOStreams Configure: ${tInfo.aiostreamsConfigureUrl || ""}`,
+        `AIOMetadata UUID: ${tInfo.aiometadataUuid || "(unprovisioned)"}`,
+        `AIOMetadata Configure: ${tInfo.aiometadataConfigureUrl || ""}`,
+      ].join("\n");
+      ctx.copyText(summary, "Instance UUIDs");
+    };
+    const zipBtn = document.createElement("button");
+    zipBtn.className = "btn icon-btn";
+    zipBtn.innerHTML = `${icon("package", 12)} <span>Download GitOps Zip</span>`;
+    zipBtn.onclick = () => document.getElementById("btn-export")?.click();
+    backupRow.append(cpUuidBtn, zipBtn);
+    handoff.appendChild(backupRow);
+
+    container.appendChild(handoff);
+  }
 }
